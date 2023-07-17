@@ -2,9 +2,9 @@
 
 Big thanks to Asure https://github.com/Asure for getting the program working.  I am starting with his base adjustments and working from there.
 
-This currently compiles and displays as version 1.21, but I have yet to verify if it is the final revision.
-When compiling the graphics tables instead of using what is already present, some errors complain about stuff not referenced correctly,
-so the entire repo as a whole is likely not a single snapshot of one point in the game's dev cycle.
+This program currently compiles and displays as version 1.21, but has yet to be verified 100%.  When compiling the graphics tables instead of using
+the graphics that are already present, some errors complain about items not referenced correctly, so the entire repo as a whole is likely not a single
+snapshot of one point in the game's dev cycle.
 
 # Notes
 
