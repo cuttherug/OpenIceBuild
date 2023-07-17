@@ -44,7 +44,7 @@ It was included in the src so i copied it over and this fixes it.
 
 Enjoy!
 
-# Motes from me
+# Notes from me
 
 I did notice in the Windows 95 build I was using, the files I copied from the "CDROM drive" were copied as read-only and had to be adjusted to
 remove that designation so that they could be compiled.
