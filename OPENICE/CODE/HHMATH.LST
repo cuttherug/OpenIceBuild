@@ -1,0 +1,1939 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHMATH.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                            .INCLUDE        "HH.INC"
+       8                            .include        "hhmath.e"
+       9                            .include        "hhmisc.g"
+      10                            .include        "hhutil.g"
+      11                            .include        "hhd.g"
+      12                            .include        "hhpuck.g"
+      13                    
+      14                    ; end of include files
+      15                    
+      16                    
+      17 00000000                   .text
+      18 00000000                   .even
+      19                    
+      20 00000000                   .bss    cdist_store_a5,32
+      21 00000020                   .bss    cdist_store_a4,32
+      22 00000040                   .bss    cdist_store_angle,32
+      23                    
+      24                    **************************************************************************
+      25                    *                                                                        *
+      26                    * GETSIN                                                                 *
+      27                    * ; PARMS   - A0 = theta in s15.16                                       *
+      28                    * ; RETURNS - A0 = sin(theta) in s15.16                                  *
+      29                    *                                                                        *
+      30                    **************************************************************************
+      31 00000000           GETSIN
+      32 00000000                   THETA_N a0
+      33 000000e0     2a60          sra     13,A0
+      34 000000f0     24a0          sll     5,A0
+      35 00000100     0b20          addi    sin_table,A0
+         00000110 00004060" 
+      36 00000130     8600          move    *A0,A0,L
+      37 00000140     0960          rets
+      38                    
+      39                    **************************************************************************
+      40                    *                                                                        *
+      41                    * GETCOS                                                                 *
+      42                    * ; PARMS   - A0 = theta in s15.16                                       *
+      43                    * ; RETURNS - A0 = cos(theta) in s15.16                                  *
+      44                    *                                                                        *
+      45                    **************************************************************************
+      46 00000150           GETCOS
+      47 00000150                   THETA_N a0
+      48 00000230     2a60          sra     13,A0
+      49 00000240     24a0          sll     5,A0
+      50 00000250     0b20          addi    cos_table,a0
+         00000260 00009a60" 
+      51 00000280     8600          move    *A0,A0,L
+      52 00000290     0960          rets
+      53                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      54                    **************************************************************************
+      55                    *                                                                        *
+      56                    * GETSINCOS                                                              *
+      57                    * ; PARMS   - A0 = theta in s15.16                                       *
+      58                    * ; RETURNS - A0 = sin(theta) in s15.16                                  *
+      59                    * ; RETURNS - A1 = cos(theta) in s15.16                                  *
+      60                    *                                                                        *
+      61                    **************************************************************************
+      62 000002a0           GETSINCOS
+      63 000002a0                   THETA_N a0
+      64 00000380     2a60          sra     13,a0
+      65 00000390     24a0          sll     5,a0
+      66 000003a0     0b20          addi    sin_table,a0
+         000003b0 00004060" 
+      67 000003d0     b601          move    *a0(cos_table-sin_table),a1,L
+         000003e0     5a00  
+      68 000003f0     8600          move    *a0,a0,L
+      69 00000400     0960          rets
+      70                    
+      71                    **************************************************************************
+      72                    *                                                                        *
+      73                    * GETATAN                                                                *
+      74                    * ; PARMS   - A0 = tangent in s15.16 (must be from angle < pi/4)         *
+      75                    * ; RETURNS - A0 = theta in s15.16                                       *
+      76                    * ;mdp  note: more resolution for angles closer to pi/4                  *
+      77                    *                                                                        *
+      78                    **************************************************************************
+      79 00000410           GETATAN
+      80 00000410     2f20          srl     7,a0
+      81 00000420     24a0          sll     5,a0
+      82 00000430     0b20          addi    ATAN_TABLE,a0
+         00000440 00000000" 
+      83 00000460     8600          move    *a0,a0,L
+      84 00000470     0960          rets
+      85                    
+      86                    **************************************************************************
+      87                    *                                                                        *
+      88                    * get_correct_y_velocity                                                 *
+      89                    *       input   a3 = distance                                            *
+      90                    *               a1 = horizontal velocity                                 *
+      91                    *               a2 = y position                                          *
+      92                    *       output  a3 = y velocity                                          *
+      93                    *                                                                        *
+      94                    **************************************************************************
+      95 00000480           get_correct_y_velocity
+      96 00000480     4c60          move    a3,a0
+      97 00000490     ca0d          jrz     gcyv9
+      98 000004a0     0d3f          callr   DIV             ;a1 = d/v = time
+         000004b0     0043  
+      99 000004c0     4c40          move    a2,a0
+     100 000004d0     4c22          move    a1,a2           ;save time
+     101 000004e0     0d3f          callr   DIV             ;a1 = Y/t
+         000004f0     003f  
+     102 00000500     4c23          move    a1,a3           ;save Y/t
+     103 00000510     09c0          movi    [0,1500h],a0    ;1/2 gravity (was [0,1800h])
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+         00000520     1500  
+     104 00000530     4c41          move    a2,a1
+     105 00000540     0d3f          callr   MULT            ;a1 = 1/2 a * time
+         00000550     0011  
+     106 00000560     4423          sub     a1,a3           ;a3 = velocity
+     107 00000570     0960  gcyv9   rets
+     108                    
+     109                    **************************************************************************
+     110                    *                                                                        *
+     111                    * SQUARE                                                                 *
+     112                    *       squares a number in the form s15:16 and returns s15:16           *
+     113                    * input:   a1 = s15:16 number                                            *
+     114                    * output   a1 = s15:16 number                                            *
+     115                    *                                                                        *
+     116                    **************************************************************************
+     117 00000580     098f  SQUARE  mmtm    sp,a0,a2
+         00000590     a000  
+     118 000005a0     4c20          move    a1,a0
+     119 000005b0     2b80          sra     4,a0
+     120 000005c0     5c00          mpys    a0,a0
+     121 000005d0     2600          sll     16,a0
+     122 000005e0     4c22          move    a1,a2
+     123 000005f0     2e02          srl     16,a2
+     124 00000600     ec40          movx    a2,a0
+     125 00000610     2500          sll     8,a0
+     126 00000620     2f01          srl     8,a1
+     127 00000630     ee01          movy    a0,a1
+     128 00000640     09af          mmfm    sp,a0,a2
+         00000650     0005  
+     129 00000660     0960          rets
+     130                    
+     131                    **************************************************************************
+     132                    *                                                                        *
+     133                    * MULT                                                                   *
+     134                    *       multiplies two numbers in the form s15:16 and returns s15:16     *
+     135                    * input    a0 = s15:16 number                                            *
+     136                    *          a1 = s15:16 number                                            *
+     137                    * output   a1 = s15:16 number                                            *
+     138                    *                                                                        *
+     139                    **************************************************************************
+     140 00000670           MULT
+     141                            .if     DEBUG
+     142                    
+     143                            CALLR   SAFEMULT
+     144                            LOCKON  NC
+     145                            RETS
+     146                    
+     147                            .endif
+     148 00000670           QMULT
+     149 00000670     098f          mmtm    sp,a0,a2
+         00000680     a000  
+     150 00000690     2b80          sra     4,a0
+     151 000006a0     2b81          sra     4,a1
+     152 000006b0     5c20          mpys    a1,a0
+     153 000006c0     2600          sll     16,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     154 000006d0     4c22          move    a1,a2
+     155 000006e0     2e02          srl     16,a2
+     156 000006f0     ec40          movx    a2,a0
+     157 00000700     2500          sll     8,a0
+     158 00000710     2f01          srl     8,a1
+     159 00000720     ee01          movy    a0,a1
+     160 00000730     09af          mmfm    sp,a0,a2
+         00000740     0005  
+     161 00000750     0960          rets
+     162                    
+     163                    **************************************************************************
+     164                    *                                                                        *
+     165                    * SAFEMULT - same as MULT, but flags overflow with C clear               *
+     166                    *                                                                        *
+     167                    **************************************************************************
+     168                    
+     169 00000760           SAFEMULT
+     170 00000760     098f          mmtm    sp,a0,a2
+         00000770     a000  
+     171 00000780     2b80          sra     4,a0
+     172 00000790     2b81          sra     4,a1
+     173 000007a0     5c20          mpys    a1,a0
+     174 000007b0     4c02          move    a0,a2           ;store our high order r into a2 (temp
+     175 000007c0     2b22          sra     7,a2            ;we just want to look at top 25 bits
+     176 000007d0     03a2          NEG     A2              ;a2 = 0 or 1 on no overflow
+     177 000007e0     2fe2          srl     1,a2            ;drop our 1 bit
+     178 000007f0     cb0b          jrnz    mulerr          ;if we have anything left, we have overflow
+     179 00000800     2600          sll     16,a0
+     180 00000810     4c22          move    a1,a2
+     181 00000820     2e02          srl     16,a2
+     182 00000830     ec40          movx    a2,a0
+     183 00000840     2500          sll     8,a0
+     184 00000850     2f01          srl     8,a1
+     185 00000860     ee01          movy    a0,a1
+     186 00000870     09af          mmfm    sp,a0,a2
+         00000880     0005  
+     187 00000890     0de0          setc
+     188 000008a0     0960          rets
+     189 000008b0     09af  mulerr  mmfm    sp,a0,a2
+         000008c0     0005  
+     190 000008d0     0320          clrc
+     191 000008e0     0960          rets
+     192                    
+     193                    **************************************************************************
+     194                    *                                                                        *
+     195                    * DIV                                                                    *
+     196                    *       divides two numbers in the form s15:16 and returns s15:16        *
+     197                    * input    a0 = s15:16 number                                            *
+     198                    *          a1 = s15:16 number                                            *
+     199                    * output   a1 = s15:16 number (a0 / a1)                                  *
+     200                    *                                                                        *
+     201                    **************************************************************************
+     202 000008f0           DIV
+     203                            .if     DEBUG
+     204                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     205                            CALLR   SAFEDIV
+     206                            LOCKON  V
+     207                            RETS
+     208                    
+     209                            .else
+     210                    
+     211 000008f0     098f          mmtm    sp,a0,a2
+         00000900     a000  
+     212 00000910     4c22          move    a1,a2
+     213 00000920     4c01          move    a0,a1
+     214 00000930     2601          sll     16,a1
+     215 00000940     2a00          sra     16,a0
+     216 00000950     5840          divs    a2,a0
+     217 00000960     4c01          move    a0,a1
+     218 00000970     09af          mmfm    sp,a0,a2
+         00000980     0005  
+     219 00000990     0960          rets
+     220                    
+     221                            .endif
+     222                    
+     223                    **************************************************************************
+     224                    *                                                                        *
+     225                    * DIV                                                                    *
+     226                    *       divides two numbers in the form s15:16 and returns s15:16        *
+     227                    * input    a0 = s15:16 number                                            *
+     228                    *          a1 = s15:16 number                                            *
+     229                    * output   a1 = s15:16 number (a0 / a1)                                  *
+     230                    *          V SET IF OVERFLOW                                             *
+     231                    *                                                                        *
+     232                    **************************************************************************
+     233 000009a0           SAFEDIV
+     234 000009a0     098f          mmtm    sp,a0,a2
+         000009b0     a000  
+     235 000009c0     4c22          move    a1,a2
+     236 000009d0     4c01          move    a0,a1
+     237 000009e0     2601          sll     16,a1
+     238 000009f0     2a00          sra     16,a0
+     239 00000a00     5840          divs    a2,a0
+     240 00000a10     cc01          JRV     SAFEDIV_ABORT           ;BR=WE HAVE AN OVERFLOW, ABORT!
+     241 00000a20     4c01          move    a0,a1
+     242 00000a30           SAFEDIV_ABORT
+     243 00000a30     09af          mmfm    sp,a0,a2
+         00000a40     0005  
+     244 00000a50     0960          rets
+     245                    
+     246                    **************************************************************************
+     247                    *                                                                        *
+     248                    * SQUARE_ROOT                                                            *
+     249                    *       to get square root of a s15:16 number, we get the squareroot     *
+     250                    *       of it as a 32 bit and then we shift left 8 bits                  *
+     251                    * input:   a1 = s15:16 number (unsigned)                                 *
+     252                    * output:  a1 = s15:16 square root (unsigned)                            *
+     253                    *                                                                        *
+     254                    **************************************************************************
+     255 00000a60           SQUARE_ROOT
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     256 00000a60     0d3f          callr   SQROOT
+         00000a70     0002  
+     257 00000a80     2501          sll     8,a1
+     258 00000a90     0960          rets
+     259                    
+     260                    **************************************************************************
+     261                    *                                                                        *
+     262                    *  SQROOT                                                                *
+     263                    *                                                                        *
+     264                    *  Jason's square root routine !!                                        *
+     265                    *                                                                        *
+     266                    *  Input:   A1 = 32 bit number (unsigned)                                *
+     267                    *  Returns: A1 = 16 bit square root (integer)                            *
+     268                    *                                                                        *
+     269                    **************************************************************************
+     270 00000aa0     098f  SQROOT  mmtm    sp,a0
+         00000ab0     8000  
+     271 00000ac0     2f61          srl     5,a1
+     272 00000ad0     6a20          lmo     a1,a0
+     273 00000ae0     03a0          neg     a0
+     274 00000af0     1000          addk    32,a0
+     275 00000b00     57ce          clr     a14     ;# to shift left when we're done
+     276 00000b10     1540          subk    10,a0
+     277 00000b20     c606          jrle    sqg
+     278 00000b30     1020          inc     a0
+     279 00000b40     2fe0          srl     1,a0
+     280 00000b50     4c0e          move    a0,a14
+     281 00000b60     2420          sll     1,a0
+     282 00000b70     03a0          neg     a0
+     283 00000b80     6601          srl     a0,a1
+     284 00000b90     2461  sqg     sll     3,a1
+     285 00000ba0     0b21          addi    sqroot_tab,a1
+         00000bb0 00022a60" 
+     286 00000bd0     8e21          movb    *a1,a1
+     287 00000be0     2701          sll     32-8,a1
+     288 00000bf0     2d01          srl     32-8,a1
+     289 00000c00     63c1          sll     a14,a1
+     290 00000c10     09af          mmfm    sp,a0
+         00000c20     0001  
+     291 00000c30     0960          rets
+     292                    
+     293                    **************************************************************************
+     294                    *                                                                        *
+     295                    * polar_to_rect: convert from a polar velocity (theta and r)             *
+     296                    *                        to a rectangular velocity (x and z)             *
+     297                    *       input:  a0 = angle                                               *
+     298                    *               a1 = velocity                                            *
+     299                    *       output: a0 = x velocity                                          *
+     300                    *               a1 = z velocity                                          *
+     301                    *                                                                        *
+     302                    **************************************************************************
+     303 00000c40           polar_to_rect
+     304 00000c40     098f          mmtm    sp,a2,a3,a4,a5
+         00000c50     3c00  
+     305 00000c60     4c22          move    a1,a2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     306 00000c70     4c24          move    a1,a4
+     307 00000c80     0d3f          callr   GETSINCOS
+         00000c90     ff60  
+     308 00000ca0     5c22          mpys    a1,a2
+     309 00000cb0     2602          sll     16,a2
+     310 00000cc0     2e03          srl     16,a3
+     311 00000cd0     ec62          movx    a3,a2
+     312 00000ce0     5c04          mpys    a0,a4
+     313 00000cf0     2604          sll     16,a4
+     314 00000d00     2e05          srl     16,a5
+     315 00000d10     eca4          movx    a5,a4
+     316 00000d20     4c81          move    a4,a1
+     317 00000d30     4c40          move    a2,a0
+     318 00000d40     09af          mmfm    sp,a2,a3,a4,a5
+         00000d50     003c  
+     319 00000d60     0960          rets
+     320                    
+     321                    **************************************************************************
+     322                    *                                                                        *
+     323                    * rect_to_polar: convert from a rectangular velocity (x and z)           *
+     324                    *                        to a polar velocity (theta and r)               *
+     325                    *       THIS IS MUCH SLOWER THAN POLAR TO RECTANGULAR                    *
+     326                    *       input:  a0 = x velocity                                          *
+     327                    *               a1 = z velocity                                          *
+     328                    *       output: a0 = angle                                               *
+     329                    *               a1 = velocity                                            *
+     330                    * rect_to_dir: convert from a rectangular velocity (x and z)             *
+     331                    *                        to a polar angle (theta)                        *
+     332                    *       THIS IS MUCH SLOWER THAN POLAR TO RECTANGULAR                    *
+     333                    *       input:  a0 = x velocity                                          *
+     334                    *               a1 = z velocity                                          *
+     335                    *       output: a0 = angle                                               *
+     336                    *                                                                        *
+     337                    *       we split the circle into 8 parts                                 *
+     338                    *        0     < a < pi/4   a = atan(y/x)                                *
+     339                    *        pi/4  < a < pi/2   a = pi/2 - atan(x/y)                         *
+     340                    *        pi/2  < a < 3pi/4  a = pi/2 + atan(-x/y)                        *
+     341                    *        3pi/4 < a < pi     a = pi - atan(y/-x)                          *
+     342                    *        pi    < a < 5pi/4  a = pi + atan(-y/-x)                         *
+     343                    *        5pi/4 < a < 3pi/2  a = 3pi/2 - atan(-x/-y)                      *
+     344                    *        3pi/2 < a < 7pi/4  a = 3pi/2 + atan(x/-y)                       *
+     345                    *        7pi/4 < a < 2pi    a = 2pi - atan(-y/x)                         *
+     346                    *                                                                        *
+     347                    **************************************************************************
+     348 00000d70           rect_to_dir
+     349 00000d70                   PUSH    a1
+     350 00000d80     0d3f          callr   rttd
+         00000d90     0002  
+     351 00000da0                   PULLQ   a1
+     352 00000db0     0960          rets
+     353 00000dc0     098f  rttd    mmtm    sp,a3,a4,a5,a6,a7
+         00000dd0     1f00  
+     354 00000de0     56c6          clr     a6              ;set for just direction
+     355 00000df0     c003          jruc    rtpa
+     356 00000e00           rect_to_polar
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     357 00000e00     098f          mmtm    sp,a3,a4,a5,a6,a7
+         00000e10     1f00  
+     358 00000e20     1826          movk    1,a6            ;set for both direction and magnitude
+     359 00000e30           rtpa
+     360 00000e30     4c04          move    a0,a4           ;save x
+     361 00000e40     2c24          srl     31,a4           ;move sign of x into bit 0
+     362 00000e50     2424          sll     1,a4            ;and over to bit 1
+     363 00000e60     4c25          move    a1,a5           ;test sign of z
+     364 00000e70     cf01          jrnn    rtp1            ;br= z not negative, leave sign alone
+     365 00000e80     1024          inc     a4              ;z sign into bit 0.  a4 = sign bits of x and z
+     366 00000e90     0380  rtp1    abs     a0              ;get abs of x
+     367 00000ea0     4c03          move    a0,a3           ;save abs x for magnitude
+     368 00000eb0     0385          abs     a5              ;get abs of z
+     369 00000ec0     4ca7          move    a5,a7           ;save abs z for magnitude
+     370 00000ed0     48a0          cmp     a5,a0           ;compare x and z magnitudes
+     371 00000ee0     c404          jrlt    rtpxz           ;br= x magnitude less than z
+     372 00000ef0     1084          addk    4,a4            ;now a4 is bitwise x>z:signx:signz
+     373 00000f00                   swap    a5,a0           ;for z < x, swap registers for divide
+     374 00000f30     4c01  rtpxz   move    a0,a1           ;put into register pair a0:a1 for divide
+     375 00000f40     2a00          sra     16,a0           ;move mantissa down
+     376 00000f50     2601          sll     16,a1           ;move fraction up
+     377 00000f60     4ca5          move    a5,a5           ;check for divide by zero, we are stopped
+     378 00000f70     ca09          jrz     rtp_stp         ;br= we are stopped
+     379 00000f80     58a0          divs    a5,a0           ;tan now in a0
+     380 00000f90     0d3f          callr   GETATAN         ;now a0 is angle 0 - pi/4
+         00000fa0     ff46  
+     381 00000fb0     24a4          sll     5,a4            ;now get address to jump to to finish
+     382 00000fc0     0b24          addi    rtp_table,a4
+         00000fd0 00001030' 
+     383 00000ff0     8684          move    *a4,a4,L
+     384 00001000     0164          jump    a4
+     385 00001010     5600  rtp_stp clr     a0              ;direction is cleared for stopped puck
+     386 00001020     c030          jruc    smag            ;now finish with magnitude if necessary
+     387 00001030 00001130' rtp_table       .long   sqd12   ;(x)<(z), x positive, z positive
+     388 00001050 00001290'                 .long   sqd41   ;(x)<(z), x positive, z negative
+     389 00001070 00001170'                 .long   sqd21   ;(x)<(z), x negative, z positive
+     390 00001090 00001250'                 .long   sqd32   ;(x)<(z), x negative, z negative
+     391 000010b0 00001330'                 .long   sqd11   ;(x)>(z), x positive, z positive
+     392 000010d0 000012e0'                 .long   sqd42   ;(x)>(z), x positive, z negative
+     393 000010f0 000011c0'                 .long   sqd22   ;(x)>(z), x negative, z positive
+     394 00001110 00001200'                 .long   sqd31   ;(x)>(z), x negative, z negative
+     395 00001130     09e1  sqd12   movi    XD0900,a1       ;angle is p/2 - atan x/y
+         00001140 005a0000  
+     396 00001160     c01a          jruc    sqi
+     397 00001170     09e1  sqd21   movi    XD0900,a1       ;angle is p2 + atan -x/y
+         00001180 005a0000  
+     398 000011a0     4020          add     a1,a0
+     399 000011b0     c017          jruc    smag
+     400 000011c0     09e1  sqd22   movi    XD1800,a1               ;angle is p - atan y/-x
+         000011d0 00b40000  
+     401 000011f0     c011          jruc    sqi
+     402 00001200     09e1  sqd31   movi    XD1800,a1               ;angle is p + atan y/x
+         00001210 00b40000  
+     403 00001230     4020          add     a1,a0
+     404 00001240     c00e          jruc    smag
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     405 00001250     09e1  sqd32   movi    XD2700,a1       ;angle is 3p/2 - atan x/y
+         00001260 010e0000  
+     406 00001280     c008          jruc    sqi
+     407 00001290     09e1  sqd41   movi    XD2700,a1       ;angle is 3p/2 + atan x/-y
+         000012a0 010e0000  
+     408 000012c0     4020          add     a1,a0
+     409 000012d0     c005          jruc    smag
+     410 000012e0     09e1  sqd42   movi    XD3600,a1               ;angle is 2p - atan -y/x
+         000012f0 01680000  
+     411 00001310     4401  sqi     sub     a0,a1
+     412 00001320     4c20          move    a1,a0
+     413 00001330           sqd11                           ;angle is atan y/x
+     414 00001330     4cc6  smag    move    a6,a6           ;if we just want direction, leave
+     415 00001340     ca0a          jrz     smg9            ;br= just direction
+     416 00001350     2a03          sra     16,a3
+     417 00001360     4c61          move    a3,a1
+     418 00001370     5c23          mpys    a1,a3
+     419 00001380     2a07          sra     16,a7
+     420 00001390     4ce1          move    a7,a1
+     421 000013a0     5ce1          mpys    a7,a1
+     422 000013b0     4061          add     a3,a1
+     423 000013c0     0d3f          callr   SQROOT
+         000013d0     ff6c  
+     424 000013e0     2601          sll     16,a1
+     425 000013f0     09af  smg9    mmfm    sp,a3,a4,a5,a6,a7
+         00001400     00f8  
+     426 00001410     0960          rets
+     427                    
+     428                    **************************************************************************
+     429                    *                                                                        *
+     430                    * find_dsquared_to_point        finds squared distance from one point to *
+     431                    * find_dis_to_point             find distance from one point to another  *
+     432                    * find_dir_to_point             find angle from one point to another     *
+     433                    * find_dirdis_to_point  find distance and angle from 1 point to another  *
+     434                    *                                                                        *
+     435                    * input         a0 = xval of point 2                                     *
+     436                    *               a1 = zval of point 2                                     *
+     437                    *               a2 = xval of point 1                                     *
+     438                    *               a3 = zval of point 1                                     *
+     439                    * output        a0 = angle      (if output)                              *
+     440                    *               a1 = distance   (if output)                              *
+     441                    *               a4 = distance   (if output)                              *
+     442                    *                                                                        *
+     443                    **************************************************************************
+     444 00001420           find_dis_to_point_whole
+     445 00001420     098f          mmtm    sp,a0,a1,a2
+         00001430     e000  
+     446 00001440     076c          setf    12,1,1          ;quicken multiplies (12 is about the limit we can safely go)
+     447 00001450     4440          sub     a2,a0           ;x distance
+     448 00001460     4461          sub     a3,a1           ;z distance
+     449 00001470     0b20          addi    [0,08000h],a0                   ;half
+         00001480 00008000  
+     450 000014a0     2a00          sra     16,a0
+     451 000014b0     2a01          sra     16,a1
+     452 000014c0     5c21          mpys    a1,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     453 000014d0     4c22          move    a1,a2
+     454 000014e0     4c01          move    a0,a1
+     455 000014f0     5c21          mpys    a1,a1
+     456 00001500     4041          add     a2,a1
+     457 00001510     0d3f          callr   SQROOT
+         00001520     ff57  
+     458 00001530     4c24          move    a1,a4           ;***** NOTE ***** here we assume SQROOT resets field size to 32 bits
+     459 00001540     0740          setf    32,0,1          ;(it doesn't anymore, so we do here)
+     460 00001550     09af          mmfm    sp,a0,a1,a2
+         00001560     0007  
+     461 00001570     0960          rets
+     462                    
+     463 00001580           find_dsquared_to_point_whole
+     464 00001580     098f          mmtm    sp,a0,a1,a2
+         00001590     e000  
+     465 000015a0     076c          setf    12,1,1          ;quicken multiplies (12 is about the limit we can safely go)
+     466 000015b0     4440          sub     a2,a0           ;x distance
+     467 000015c0     4461          sub     a3,a1           ;z distance
+     468 000015d0     0b20          addi    [0,08000h],a0                   ;half
+         000015e0 00008000  
+     469 00001600     2a00          sra     16,a0
+     470 00001610     2a01          sra     16,a1
+     471 00001620     5c21          mpys    a1,a1
+     472 00001630     4c22          move    a1,a2
+     473 00001640     4c01          move    a0,a1
+     474 00001650     5c21          mpys    a1,a1
+     475 00001660     4041          add     a2,a1
+     476 00001670     4c24          move    a1,a4
+     477 00001680     0740          setf    32,0,1
+     478 00001690     09af          mmfm    sp,a0,a1,a2
+         000016a0     0007  
+     479 000016b0     0960          rets
+     480                    
+     481 000016c0           find_dsquared_to_point_whole_a1
+     482 000016c0     098f          mmtm    sp,a0,a2
+         000016d0     a000  
+     483 000016e0     076c          setf    12,1,1
+     484 000016f0     4440          sub     a2,a0           ;x distance
+     485 00001700     4461          sub     a3,a1           ;z distance
+     486 00001710     0b20          addi    [0,08000h],a0                   ;half
+         00001720 00008000  
+     487 00001740     2a00          sra     16,a0
+     488 00001750     2a01          sra     16,a1
+     489 00001760     5c21          mpys    a1,a1
+     490 00001770     4c22          move    a1,a2
+     491 00001780     4c01          move    a0,a1
+     492 00001790     5c21          mpys    a1,a1
+     493 000017a0     4041          add     a2,a1
+     494 000017b0     0740          setf    32,0,1
+     495 000017c0     09af          mmfm    sp,a0,a2
+         000017d0     0005  
+     496 000017e0     0960          rets
+     497                    
+     498 000017f0           dir_to_182
+     499 000017f0     4c0b          move    a0,a11
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     500 00001800     2dab          srl     16+3,a11        ;angles/8
+     501 00001810     246b          sll     3,a11           ;bytes
+     502 00001820     0b2b          addi    dt182_tab,a11
+         00001830 00001870' 
+     503 00001850     8f60          movb    *a11,a0
+     504 00001860     0960          rets
+     505                    
+     506 00001870           dt182_tab
+     507 00001870       03          .byte   3,3,3,3,3,3,5,5,5,5,5,5,5,5,5,5
+     508 000018f0       05          .byte   5,7,7,7,7,7,7,7,7,7,7,7,7,1,1,1
+     509 00001970       01          .byte   1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3
+     510 000019f0       03          .byte   3,3,3,3
+     511                    
+     512 00001a10                   .even
+     513                    
+     514                    **************************************************************************
+     515                    *                                                                        *
+     516                    * find_dir_to_point_18 - FROM POINT A TO B                               *
+     517                    *                                                                        *
+     518                    * PASS:                                                                  *
+     519                    * A0 = X POSITION OF POINT B                                             *
+     520                    * A1 = Z POSITION OF POINT B                                             *
+     521                    * A2 = X POSITION OF POINT A                                             *
+     522                    * A3 = Z POSITION OF POINT A                                             *
+     523                    * RETURN:                                                                *
+     524                    * A0 = DIRECTION (1 THROUGH 8)                                           *
+     525                    *                                                                        *
+     526                    * THRASHES: A1, A11                                                      *
+     527                    *                                                                        *
+     528                    **************************************************************************
+     529 00001a10           find_dir_to_point_18
+     530 00001a10     4c0b          move    a0,a11
+     531 00001a20     444b          sub     a2,a11
+     532 00001a30     ce29          jrn     fexn                    ;x is negative
+     533 00001a40     4461  fexp    sub     a3,a1                   ;x is positive
+     534 00001a50     ce13          jrn     fexpzn                  ;x is positive, z is negative
+     535 00001a60     482b  fexpzp  cmp     a1,a11                  ;x is positive, z is positive
+     536 00001a70     c708          jrgt    fexpgzp                 ;x is positive and greater than z is positive
+     537 00001a80     09c0  fexplzp movi    27146,a0                ;x is positive and less than z is positive
+         00001a90     6a0a  
+     538 00001aa0     0d3f          callr   QMULT                           ;tan 22.5
+         00001ab0     febb  
+     539 00001ac0     4961          cmp     a11,a1
+     540 00001ad0     c74b          jrgt    f18_5                           ;if z * tan 22.5 > x then dir = 5
+     541 00001ae0     1880  f18_4   movk    4,a0                            ;if z * tan 22.5 < x then dir = 4
+     542 00001af0     0960          rets
+     543 00001b00     09e0  fexpgzp movi    158218,a0               ;x is positive and greater than z is positive
+         00001b10 00026a0a  
+     544 00001b30     0d3f          callr   QMULT                           ;cot 22.5
+         00001b40     feb2  
+     545 00001b50     4961          cmp     a11,a1
+     546 00001b60     c7f7          jrgt    f18_4                           ;if z * cot 22.5 > x then dir = 4
+     547 00001b70     1860          movk    3,a0                            ;if z * cot 22.5 < x then dir = 3
+     548 00001b80     0960          rets
+     549 00001b90     03a1  fexpzn  neg     a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     550 00001ba0     482b          cmp     a1,a11                  ;x is positive, z is negative
+     551 00001bb0     c708          jrgt    fexpgzn                 ;x is positive and greater than z is negative
+     552 00001bc0     09c0  fexplzn movi    27146,a0                ;x is positive and less than z is negative
+         00001bd0     6a0a  
+     553 00001be0     0d3f          callr   QMULT                           ;tan 22.5
+         00001bf0     fea7  
+     554 00001c00     4961          cmp     a11,a1
+     555 00001c10     c735          jrgt    f18_1                           ;if z * tan 22.5 > x then dir = 1
+     556 00001c20     1840  f18_2   movk    2,a0                            ;if z * tan 22.5 < x then dir = 2
+     557 00001c30     0960          rets
+     558 00001c40     09e0  fexpgzn movi    158218,a0               ;x is positive and greater than z is negative
+         00001c50 00026a0a  
+     559 00001c70     0d3f          callr   QMULT                           ;cot 22.5
+         00001c80     fe9e  
+     560 00001c90     4961          cmp     a11,a1
+     561 00001ca0     c7f7          jrgt    f18_2                           ;if z * cot 22.5 > x then dir = 2
+     562 00001cb0     1860          movk    3,a0                            ;if z * cot 22.5 < x then dir = 3
+     563 00001cc0     0960          rets
+     564 00001cd0     03ab  fexn    neg     a11                     ;x is negative
+     565 00001ce0     4461          sub     a3,a1
+     566 00001cf0     ce13          jrn     fexnzn                  ;x is negative, z is negative
+     567 00001d00     482b  fexnzp  cmp     a1,a11                  ;x is negative, z is positive
+     568 00001d10     c708          jrgt    fexngzp                 ;x is negative and greater than z is positive
+     569 00001d20     09c0  fexnlzp movi    27146,a0                ;x is negative and less than z is positive
+         00001d30     6a0a  
+     570 00001d40     0d3f          callr   QMULT                           ;tan 22.5
+         00001d50     fe91  
+     571 00001d60     4961          cmp     a11,a1
+     572 00001d70     c721          jrgt    f18_5                           ;if z * tan 22.5 > x then dir = 5
+     573 00001d80     18c0  f18_6   movk    6,a0                            ;if z * tan 22.5 < x then dir = 6
+     574 00001d90     0960          rets
+     575 00001da0     09e0  fexngzp movi    158218,a0               ;x is negative and greater than z is positive
+         00001db0 00026a0a  
+     576 00001dd0     0d3f          callr   QMULT                           ;cot 22.5
+         00001de0     fe88  
+     577 00001df0     4961          cmp     a11,a1
+     578 00001e00     c7f7          jrgt    f18_6                           ;if z * cot 22.5 > x then dir = 6
+     579 00001e10     18e0          movk    7,a0                            ;if z * cot 22.5 < x then dir = 7
+     580 00001e20     0960          rets
+     581 00001e30     03a1  fexnzn  neg     a1
+     582 00001e40     482b          cmp     a1,a11                  ;x is negative, z is negative
+     583 00001e50     c708          jrgt    fexngzn                 ;x is negative and greater than z is negative
+     584 00001e60     09c0  fexnlzn movi    27146,a0                ;x is negative and less than z is negative
+         00001e70     6a0a  
+     585 00001e80     0d3f          callr   QMULT                           ;tan 22.5
+         00001e90     fe7d  
+     586 00001ea0     4961          cmp     a11,a1
+     587 00001eb0     c70b          jrgt    f18_1                           ;if z * tan 22.5 > x then dir = 1
+     588 00001ec0     1900  f18_8   movk    8,a0                            ;if z * tan 22.5 < x then dir = 8
+     589 00001ed0     0960          rets
+     590 00001ee0     09e0  fexngzn movi    158218,a0               ;x is negative and greater than z is negative
+         00001ef0 00026a0a  
+     591 00001f10     0d3f          callr   QMULT                           ;cot 22.5
+         00001f20     fe74  
+     592 00001f30     4961          cmp     a11,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     593 00001f40     c7f7          jrgt    f18_8                           ;if z * cot 22.5 > x then dir = 8
+     594 00001f50     18e0          movk    7,a0                            ;if z * cot 22.5 < x then dir = 7
+     595 00001f60     0960          rets
+     596 00001f70     1820  f18_1   movk    1,a0
+     597 00001f80     0960          rets
+     598 00001f90     18a0  f18_5   movk    5,a0
+     599 00001fa0     0960          rets
+     600                    
+     601 00001fb0           dir_to_1357
+     602 00001fb0     24e0          sll     7,a0
+     603 00001fc0     2ce0          srl     16+2+7,a0
+     604                    ;       srl     16+2,a0         ;angles/4
+     605                    
+     606 00001fd0     2460          sll     3,a0            ;bytes
+     607 00001fe0     0b20          addi    dt1357_tab,a0
+         00001ff0 00002030' 
+     608 00002010     8e00          movb    *a0,a0
+     609 00002020     0960          rets
+     610                    
+     611 00002030           dt1357_tab
+     612 00002030       03          .byte   3,3,3,3,3,3,3,3,3,3,3,3,5,5,5,5
+     613 000020b0       05          .byte   5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5
+     614 00002130       05          .byte   5,5,7,7,7,7,7,7,7,7,7,7,7,7,7,7
+     615 000021b0       07          .byte   7,7,7,7,7,7,7,7,7,1,1,1,1,1,1,1
+     616 00002230       01          .byte   1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,3
+     617 000022b0       03          .byte   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+     618 00002330       03          .byte   3
+     619                    
+     620 00002338       03          .byte   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+     621 000023b8       03          .byte   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+     622 00002438       03          .byte   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+     623 000024b8       03          .byte   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+     624                    
+     625 00002540                   .even
+     626                    
+     627 00002540           dir_to_18
+     628 00002540     24e0          sll     7,a0
+     629 00002550     2ce0          srl     16+2+7,a0
+     630                    ;       srl     16+2,a0         ;angles/4
+     631                    
+     632 00002560     2460          sll     3,a0            ;bytes
+     633 00002570     0b20          addi    dt18_tab,a0
+         00002580 000025c0' 
+     634 000025a0     8e00          movb    *a0,a0
+     635 000025b0     0960          rets
+     636                    
+     637 000025c0           dt18_tab
+     638 000025c0       03          .byte   3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4
+     639 00002640       04          .byte   4,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6
+     640 000026c0       06          .byte   6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7
+     641 00002740       07          .byte   7,7,7,8,8,8,8,8,8,8,8,8,8,8,1,1
+     642 000027c0       01          .byte   1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2
+     643 00002840       02          .byte   2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3
+     644 000028c0       04          .byte   4
+     645                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     646 000028c8       03          .byte   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+     647 00002948       03          .byte   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+     648 000029c8       03          .byte   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+     649 00002a48       03          .byte   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+     650                    
+     651 00002ad0                   .even
+     652                    
+     653                    **************************************************************************
+     654                    *                                                                        *
+     655                    * find_dir_to_point                                                      *
+     656                    * find_dirdis_to_point - FROM POINT 0 (X0,Z0) TO POINT 1 (X1,Z1)         *
+     657                    *                                                                        *
+     658                    * PASS:                                                                  *
+     659                    * A0 = X1                                                                *
+     660                    * A1 = Z1                                                                *
+     661                    * A2 = X0                                                                *
+     662                    * A3 = Z0                                                                *
+     663                    *                                                                        *
+     664                    * RETURN:                                                                *
+     665                    * A0 = ANGLE                                                             *
+     666                    * A1 = SPEED (DISTANCE FOR find_dirdis_to_point)                         *
+     667                    *                                                                        *
+     668                    **************************************************************************
+     669 00002ad0           find_dir_to_point
+     670 00002ad0     4440          sub     a2,a0
+     671 00002ae0     4461          sub     a3,a1
+     672 00002af0     c000          jruc    rect_to_dir
+         00002b00     fe26  
+     673                    
+     674 00002b10           find_dirdis_to_point
+     675 00002b10     4440          sub     a2,a0
+     676 00002b20     4461          sub     a3,a1
+     677 00002b30     c000          jruc    rect_to_polar
+         00002b40     fe2b  
+     678                    
+     679                    **************************************************************************
+     680                    *                                                                        *
+     681                    * MOVED to HHGAME                                                        *
+     682                    *                                                                        *
+     683                    **************************************************************************
+     684                    ;find_dist_quick
+     685                    ;       sub     a2,a0
+     686                    ;       abs     a0
+     687                    ;       sub     a3,a1
+     688                    ;       abs     a1
+     689                    ;       cmp     a1,a0
+     690                    ;       jrls    fdq1
+     691                    ;fdq0   srl     1,a1
+     692                    ;       move    a1,a4
+     693                    ;       add     a0,a4
+     694                    ;       rets
+     695                    ;fdq1   srl     1,a0
+     696                    ;       move    a0,a4
+     697                    ;       add     a1,a4
+     698                    ;       rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     699                    
+     700                    **************************************************************************
+     701                    *                                                                        *
+     702                    * dir_to_degrees                                                         *
+     703                    *       input   a0 = direction of travel (1-8)                           *
+     704                    *       output  a0 = degrees                                             *
+     705                    *                                                                        *
+     706                    **************************************************************************
+     707 00002b50           dir_to_degrees
+     708 00002b50     24a0          sll     5,a0
+     709 00002b60     0b20          addi    dtr_tab,a0
+         00002b70 00002bb0' 
+     710 00002b90     8600          move    *a0,a0,L
+     711 00002ba0     0960          rets
+     712 00002bb0 00000000  dtr_tab .long   0               ;0 = 0
+     713 00002bd0 010e0000          .long   XD2700          ;1 = 3pi/2
+     714 00002bf0 013b0000          .long   XD3150          ;2 = 7pi/4
+     715 00002c10 00000000          .long   0               ;3 = 0
+     716 00002c30 002d0000          .long   XD0450          ;4 = pi/4
+     717 00002c50 005a0000          .long   XD0900          ;5 = pi/2
+     718 00002c70 00870000          .long   XD1350          ;6 = 3pi/4
+     719 00002c90 00b40000          .long   XD1800          ;7 = pi
+     720 00002cb0 00e10000          .long   XD2250          ;8 = 5pi/4
+     721                    
+     722                    **************************************************************************
+     723                    *                                                                        *
+     724                    * predict_obj                                                            *
+     725                    *       input   a8 = object                                              *
+     726                    *               a0 = time ahead to predict                               *
+     727                    *       output  a0 = x position at time now+a0                           *
+     728                    *               a1 = z position at time now+a0                           *
+     729                    *                                                                        *
+     730                    **************************************************************************
+     731 00002cd0           predict_obj
+     732 00002cd0     4c0e          move    a0,a14
+     733 00002ce0     b701          move    *a8(ODT_REALXVEL),a1,L
+         00002cf0     04f0  
+     734 00002d00     5dc1          mpys    a14,a1
+     735 00002d10     b700          move    *a8(OXVAL),a0,L
+         00002d20     0140  
+     736 00002d30     4020          add     a1,a0
+     737 00002d40     b701          move    *a8(OZVEL),a1,L
+         00002d50     00e0  
+     738 00002d60     5dc1          mpys    a14,a1
+     739 00002d70     b70e          move    *a8(OZVAL),a14,L
+         00002d80     0180  
+     740 00002d90     41c1          add     a14,a1
+     741 00002da0     0960          rets
+     742                    
+     743                    **************************************************************************
+     744                    *                                                                        *
+     745                    * set_obj_to_polar                                                       *
+     746                    *       sets object vectors to the polar coordinates specified           *
+     747                    *    input    a8 = object                                                *
+     748                    *             a0 = angle                                                 *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     749                    *             a1 = velocity                                              *
+     750                    *    output to puck object                                               *
+     751                    *                                                                        *
+     752                    * set_obj_to_rect                                                        *
+     753                    *       sets object vectors to the rectangular coordinates specified     *
+     754                    *    input    a8 = object                                                *
+     755                    *             a0 = xvel                                                  *
+     756                    *             a1 = zvel                                                  *
+     757                    *    output to object                                                    *
+     758                    *                                                                        *
+     759                    **************************************************************************
+     760 00002db0           set_obj_to_polar_p      ;takes a6 player (doubles offscreen (if going on)
+     761 00002db0     b50e          move    *a8(OFLAGS),a14,W
+         00002dc0     0420  
+     762 00002dd0     1f0e          btst    B_OFSCRN,a14
+     763 00002de0     ca4a          jrz     set_obj_to_polar
+     764 00002df0     05ae          move    @PUCK_MODE,a14,W
+         00002e00 00000000! 
+     765 00002e20     0b4e          cmpi    PUM_PASS,a14
+         00002e30     fff5  
+     766 00002e40     ca03          jrz     soo2                    ;passes our pass mode test
+     767 00002e50     0b4e          cmpi    PUM_TPASS,a14
+         00002e60     fff4  
+     768 00002e70     cb07          jrnz    soo1                    ;doesn't pass our pass mode test
+     769 00002e80     05ae  soo2    move    @PUCK_INTENDED,a14,W
+         00002e90 00000000! 
+     770 00002eb0     aec2          movb    *a6(POF_NUMBER),a2
+         00002ec0     0000  
+     771 00002ed0     484e          cmp     a2,a14
+     772 00002ee0     ca3a          jrz     set_obj_to_polar        ;normal if we are receiving puck
+     773 00002ef0     b208  soo1    move    a0,*a8(ODT_DIR),L
+         00002f00     04b0  
+     774 00002f10     b228          move    a1,*a8(ODT_VEL),L
+         00002f20     04d0  
+     775 00002f30     0d3f          callr   polar_to_rect
+         00002f40     fdcf  
+     776 00002f50     b208          move    a0,*a8(ODT_REALXVEL),L
+         00002f60     04f0  
+     777 00002f70     b228          move    a1,*a8(OZVEL),L
+         00002f80     00e0  
+     778 00002f90     b502          move    *a8(OXPOS),a2,W
+         00002fa0     0150  
+     779 00002fb0     05ae          move    @WORLDX+010h,a14,W
+         00002fc0 00000010! 
+     780 00002fe0     49c2          cmp     a14,a2
+     781 00002ff0     c403          jrlt    sop_fr
+     782 00003000     4c00  sop_fl  move    a0,a0
+     783 00003010     c10f          jrp     sop_9
+     784 00003020     c002          jruc    sop9a
+     785 00003030     4c00  sop_fr  move    a0,a0
+     786 00003040     ce0c          jrn     sop_9
+     787 00003050           sop9a
+     788 00003050     444e          sub     a2,a14
+     789 00003060     0b4e          cmpi    350,a14
+         00003070     fea1  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     790 00003080     c703          jrgt    sop9b
+     791 00003090     0b4e          cmpi    -350,a14
+         000030a0     015d  
+     792 000030b0     c504          jrge    sop9d
+     793 000030c0     2b6e  sop9b   sra     5,a14
+     794 000030d0     41c2          add     a14,a2
+     795 000030e0     b048          move    a2,*a8(OXPOS),W
+         000030f0     0150  
+     796                    
+     797 00003100     2420  sop9d   sll     1,a0
+     798 00003110     b208  sop_9   move    a0,*a8(OXVEL),L
+         00003120     0100  
+     799 00003130     0960          rets
+     800 00003140           set_obj_to_polar_v      ;takes a6 player into account
+     801 00003140     4c02          move    a0,a2
+     802 00003150     4c23          move    a1,a3
+     803 00003160     b6c9          move    *a6(POF_OBJECT),a9,L
+         00003170     0280  
+     804 00003180     b721          move    *a9(ODT_DIR),a1,L
+         00003190     04b0  
+     805 000031a0     4420          sub     a1,a0
+     806 000031b0     0d5f          calla   GETCOS
+         000031c0 00000150' 
+     807 000031e0     b721          move    *a9(ODT_VEL),a1,L
+         000031f0     04d0  
+     808 00003200     2be1          sra     1,a1
+     809 00003210     0d5f          calla   MULT
+         00003220 00000670' 
+     810 00003240     4c40          move    a2,a0
+     811 00003250     4c21          move    a1,a1
+     812 00003260     ce01          jrn     sopv8
+     813 00003270     4023          add     a1,a3
+     814 00003280     4c61  sopv8   move    a3,a1
+     815 00003290           set_obj_to_polar
+     816 00003290     b208          move    a0,*a8(ODT_DIR),L
+         000032a0     04b0  
+     817 000032b0     b228          move    a1,*a8(ODT_VEL),L
+         000032c0     04d0  
+     818 000032d0     0d3f          callr   polar_to_rect
+         000032e0     fd95  
+     819 000032f0     b208          move    a0,*a8(OXVEL),L
+         00003300     0100  
+     820 00003310     b208          move    a0,*a8(ODT_REALXVEL),L
+         00003320     04f0  
+     821 00003330     b228          move    a1,*a8(OZVEL),L
+         00003340     00e0  
+     822 00003350     0960          rets
+     823 00003360           set_obj_to_rect
+     824 00003360     b208          move    a0,*a8(OXVEL),L
+         00003370     0100  
+     825 00003380     b208          move    a0,*a8(ODT_REALXVEL),L
+         00003390     04f0  
+     826 000033a0     b228          move    a1,*a8(OZVEL),L
+         000033b0     00e0  
+     827 000033c0     0d3f          callr   rect_to_polar
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+         000033d0     fda2  
+     828 000033e0     b208          move    a0,*a8(ODT_DIR),L
+         000033f0     04b0  
+     829 00003400     b228          move    a1,*a8(ODT_VEL),L
+         00003410     04d0  
+     830 00003420     0960          rets
+     831                    
+     832                    **************************************************************************
+     833                    *                                                                        *
+     834                    * move_to_speed_x       input   ;a1 = old speed                          *
+     835                    *                               ;a2 = desired end speed                  *
+     836                    *                               ;a3 = amount to move close (0-255)       *
+     837                    *                  output       ;a1 = new speed                          *
+     838                    *       DO NOT TRASH A14                                                 *
+     839                    *                                                                        *
+     840                    **************************************************************************
+     841 00003430           move_to_speed_x         ;a3 = 0-255 = % of new vs old
+     842 00003430     098f          mmtm    sp,a2,a3,a5,a6
+         00003440     3600  
+     843 00003450     2703          sll     24,a3
+     844 00003460     4c26          move    a1,a6
+     845 00003470     1905          movk    8,a5
+     846 00003480     2be6  mta     sra     1,a6
+     847 00003490     2be2          sra     1,a2
+     848 000034a0     2423          sll     1,a3
+     849 000034b0     c902          jrnc    mtan
+     850 000034c0     44c1          sub     a6,a1
+     851 000034d0     4041          add     a2,a1
+     852 000034e0     3ce5  mtan    dsjs    a5,mta
+     853 000034f0     09af          mmfm    sp,a2,a3,a5,a6
+         00003500     006c  
+     854 00003510     0960          rets
+     855                    
+     856                    **************************************************************************
+     857                    *                                                                        *
+     858                    * find_angle_difference                                                  *
+     859                    *       input   a0 = angle 1                                             *
+     860                    *               a1 = angle 2                                             *
+     861                    *       output  a3 = angle difference (abs)                              *
+     862                    *                                                                        *
+     863                    **************************************************************************
+     864 00003520           find_angle_difference
+     865 00003520     4c03          move    a0,a3
+     866 00003530     4423          sub     a1,a3
+     867 00003540                   THETA_H a3
+     868 00003650     0383          abs     a3
+     869 00003660     0960          rets
+     870                    
+     871                    **************************************************************************
+     872                    *                                                                        *
+     873                    * find_closest_distance_1o                                               *
+     874                    *       finds the closest distance between a vector                      *
+     875                    *       and a moving object                                              *
+     876                    *       input   a0 = vector direction                                    *
+     877                    *               a1 = vector velocity                                     *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+     878                    *               a2 = starting vector x direction                         *
+     879                    *               a3 = starting vector z direction                         *
+     880                    *               a9 = object to check against                             *
+     881                    *       output  a0 = distance                                            *
+     882                    * find_closest_distance                                                  *
+     883                    *       finds the shortest distance between two moving object            *
+     884                    *       assumes objects are moving at a constant velocity                *
+     885                    *       input   a8 = object 1                                            *
+     886                    *               a9 = object 2                                            *
+     887                    *       output  a0 = distance                                            *
+     888                    * find_closest_dist_r                                                    *
+     889                    *       finds the shortest distance between two moving object            *
+     890                    *       assumes objects are moving at a constant velocity                *
+     891                    *       input   a0 = x position difference                               *
+     892                    *               a1 = z position difference                               *
+     893                    *               a2 = xvel difference                                     *
+     894                    *               a3 = zvel difference                                     *
+     895                    *                                                                        *
+     896                    **************************************************************************
+     897 00003670           find_closest_distance_1o
+     898 00003670     098f          mmtm    sp,a1,a2,a3,a4,a5,a6,a7,a10,a11
+         00003680     7f30  
+     899 00003690     0d5f          calla   polar_to_rect
+         000036a0 00000c40' 
+     900 000036c0                   SWAP    a0,a2
+     901 000036f0                   SWAP    a1,a3
+     902 00003720     b72e          move    *a9(OXVAL),a14,L
+         00003730     0140  
+     903 00003740     45c0          sub     a14,a0                  ;a0 = x0 difference
+     904 00003750     b72e          move    *a9(OZVAL),a14,L
+         00003760     0180  
+     905 00003770     45c1          sub     a14,a1                  ;a1 = z0 difference
+     906 00003780     b72e          move    *a9(OXVEL),a14,L
+         00003790     0100  
+     907 000037a0     45c2          sub     a14,a2                  ;a2 = xvel difference
+     908 000037b0     b70e          move    *a8(OZVEL),a14,L
+         000037c0     00e0  
+     909 000037d0     45c3          sub     a14,a3                  ;a3 = zvel difference
+     910 000037e0     c019          jruc    fcd_1
+     911 000037f0           find_closest_distance
+     912 000037f0     098f          mmtm    sp,a1,a2,a3,a4,a5,a6,a7,a10,a11
+         00003800     7f30  
+     913 00003810     b70e          move    *a8(OXVAL),a14,L
+         00003820     0140  
+     914 00003830     b720          move    *a9(OXVAL),a0,L
+         00003840     0140  
+     915 00003850     45c0          sub     a14,a0                  ;a0 = x0 difference
+     916 00003860     b70e          move    *a8(OZVAL),a14,L
+         00003870     0180  
+     917 00003880     b721          move    *a9(OZVAL),a1,L
+         00003890     0180  
+     918 000038a0     45c1          sub     a14,a1                  ;a1 = z0 difference
+     919 000038b0     b70e          move    *a8(OXVEL),a14,L
+         000038c0     0100  
+     920 000038d0     b722          move    *a9(OXVEL),a2,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+         000038e0     0100  
+     921 000038f0     45c2          sub     a14,a2                  ;a2 = xvel difference
+     922 00003900     b70e          move    *a8(OZVEL),a14,L
+         00003910     00e0  
+     923 00003920     b723          move    *a9(OZVEL),a3,L
+         00003930     00e0  
+     924 00003940     45c3          sub     a14,a3                  ;a3 = zvel difference
+     925 00003950     c002          jruc    fcd_1
+     926 00003960           find_closest_dist_r
+     927 00003960     098f          mmtm    sp,a1,a2,a3,a4,a5,a6,a7,a10,a11
+         00003970     7f30  
+     928 00003980     4c42  fcd_1   move    a2,a2
+     929 00003990     ca31          jrz     fcd_x0                  ;xv difference = 0 ; special case
+     930 000039a0     4c63          move    a3,a3
+     931 000039b0     ca2e          jrz     fcd_z0                  ;zv difference = 0 ; special case
+     932 000039c0     4c0a          move    a0,a10
+     933 000039d0     5c6a          mpys    a3,a10
+     934 000039e0     584a          divs    a2,a10
+     935 000039f0     4c25          move    a1,a5
+     936 00003a00     4545          sub     a10,a5                  ;a5 = a1 - a3 * a0 / a2 = z @x=0
+     937 00003a10     0785          move    a5,@cdist_store_a5,L            ;for angle determination
+         00003a20 00000000- 
+     938 00003a40     0385          abs     a5
+     939 00003a50     4c2a          move    a1,a10
+     940 00003a60     5c4a          mpys    a2,a10
+     941 00003a70     586a          divs    a3,a10
+     942 00003a80     4c04          move    a0,a4
+     943 00003a90     4544          sub     a10,a4                  ;a4 = a0 - a2 * a1 / a3 = z @x=0
+     944 00003aa0     0784          move    a4,@cdist_store_a4,L            ;for angle determination
+         00003ab0 00000020- 
+     945 00003ad0     0384          abs     a4
+     946 00003ae0     4885          cmp     a4,a5
+     947 00003af0     c909          jrhs    fcd2
+     948 00003b00                   SWAP    a4,a5
+     949 00003b30                   SWAP    a0,a2
+     950 00003b60                   SWAP    a1,a3
+     951 00003b90     4c86  fcd2    move    a4,a6
+     952 00003ba0     4c87          move    a4,a7
+     953 00003bb0     2a06          sra     16,a6
+     954 00003bc0     2607          sll     16,a7
+     955 00003bd0     58a6          divs    a5,a6
+     956 00003be0     4cc0          move    a6,a0
+     957 00003bf0     0d3f          callr   GETATAN                 ;a0 = atan (a4 / a5)
+         00003c00     fc80  
+     958 00003c10     0780          move    a0,@cdist_store_angle,L
+         00003c20 00000040- 
+     959 00003c40     0d3f          callr   GETCOS
+         00003c50     fc4f  
+     960 00003c60     5c80          mpys    a4,a0                   ;a0 = Xz0 * cos (a0) = distance
+     961 00003c70     09af          mmfm    sp,a1,a2,a3,a4,a5,a6,a7,a10,a11
+         00003c80     0cfe  
+     962 00003c90     0960          rets
+     963 00003ca0     4c20  fcd_z0  move    a1,a0
+     964 00003cb0     0380  fcd_x0  abs     a0
+     965 00003cc0     2e00          srl     16,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+     966 00003cd0     09af          mmfm    sp,a1,a2,a3,a4,a5,a6,a7,a10,a11
+         00003ce0     0cfe  
+     967 00003cf0     0960          rets
+     968                    
+     969                    **************************************************************************
+     970                    *                                                                        *
+     971                    * find_cdist_angle                                                       *
+     972                    *       call after calling find_closest_distance                         *
+     973                    *       finds angle from 1st object to second object                     *
+     974                    *                                                                        *
+     975                    *       input   data stored at cdist_store_*                             *
+     976                    *       output  a0 = angle                                               *
+     977                    *                                                                        *
+     978                    **************************************************************************
+     979 00003d00           find_cdist_angle
+     980 00003d00     098f          mmtm    sp,a3,a4,a5
+         00003d10     1c00  
+     981 00003d20     07a5          move    @cdist_store_a5,a5,L
+         00003d30 00000000- 
+     982 00003d50     07a4          move    @cdist_store_a4,a4,L
+         00003d60 00000020- 
+     983 00003d80     07a0          move    @cdist_store_angle,a0,L
+         00003d90 00000040- 
+     984 00003db0     4c8e          move    a4,a14
+     985 00003dc0     038e          abs     a14
+     986 00003dd0     4ca3          move    a5,a3
+     987 00003de0     0383          abs     a3
+     988 00003df0     486e          cmp     a3,a14
+     989 00003e00     c204          jrls    fca1
+     990 00003e10     0d00          subi    XD0900,a0
+         00003e20 ffa5ffff  
+     991 00003e40     0380          abs     a0
+     992 00003e50     4c84  fca1    move    a4,a4
+     993 00003e60     cf04          jrnn    fca2
+     994 00003e70     0d00          subi    XD1800,a0
+         00003e80 ff4bffff  
+     995 00003ea0     0380          abs     a0
+     996 00003eb0     4ca5  fca2    move    a5,a5
+     997 00003ec0     cf04          jrnn    fca3
+     998 00003ed0     0d00          subi    XD3600,a0
+         00003ee0 fe97ffff  
+     999 00003f00     0380          abs     a0
+    1000 00003f10     09af  fca3    mmfm    sp,a3,a4,a5
+         00003f20     0038  
+    1001 00003f30     0960          rets
+    1002                    
+    1003 00000000                   .data
+    1004 00000000                   .even
+    1005                    
+    1006                    **************************************************************************
+    1007                    *                                                                        *
+    1008                    * ATAN_TABLE - shift atan down 7 bits (/128) and then up wordsize        *
+    1009                    *            - for angles less than pi/4                                 *
+    1010                    *                                                                        *
+    1011                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+    1012 00000000           ATAN_TABLE
+    1013 00000000 00000000          .long   0,7334,14668,22001,29335,36668,44001,51334,58666,65998
+    1014 00000140 00011e71          .long   73329,80660,87990,95320,102648,109976,117304,124630,131955,139279
+    1015 00000280 00023cab          .long   146603,153925,161246,168565,175884,183201,190517,197831,205144,212455
+    1016 000003c0 00035a75          .long   219765,227072,234379,241683,248986,256286,263585,270882,278177,285469
+    1017 00000500 00047798          .long   292760,300048,307334,314618,321899,329178,336454,343728,350999,358268
+    1018 00000640 000593de          .long   365534,372797,380058,387315,394570,401821,409070,416316,423558,430798
+    1019 00000780 0006af12          .long   438034,445267,452496,459722,466945,474164,481380,488592,495801,503006
+    1020 000008c0 0007c8ff          .long   510207,517404,524598,531788,538973,546155,553333,560507,567676,574842
+    1021 00000a00 0008e173          .long   582003,589160,596312,603461,610605,617744,624879,632009,639135,646256
+    1022 00000b40 0009f83c          .long   653372,660484,667591,674693,681790,688882,695970,703052,710129,717201
+    1023 00000c80 000b0d2c          .long   724268,731330,738387,745438,752484,759524,766560,773589,780613,787632
+    1024 00000dc0 000c2015          .long   794645,801653,808654,815651,822641,829625,836604,843577,850544,857505
+    1025 00000f00 000d30cc          .long   864460,871409,878352,885289,892219,899143,906062,912974,919879,926779
+    1026 00001040 000e3f28          .long   933672,940558,947438,954311,961178,968039,974893,981740,988580,995414
+    1027 00001180 000f4b01          .long   1002241,1009062,1015875,1022682,1029481,1036274,1043060,1049839,1056611,1063376
+    1028 000012c0 00105435          .long   1070133,1076884,1083627,1090363,1097092,1103814,1110529,1117236,1123936,1130628
+    1029 00001400 00115aa1          .long   1137313,1143991,1150661,1157324,1163979,1170627,1177267,1183899,1190524,1197141
+    1030 00001540 00125e27          .long   1203751,1210353,1216947,1223533,1230111,1236682,1243245,1249800,1256347,1262886
+    1031 00001680 00135ea9          .long   1269417,1275940,1282455,1288962,1295461,1301952,1308435,1314910,1321377,1327835
+    1032 000017c0 00145c0d          .long   1334285,1340727,1347161,1353587,1360004,1366413,1372813,1379206,1385590,1391965
+    1033 00001900 0015563d          .long   1398333,1404691,1411042,1417383,1423717,1430042,1436358,1442666,1448965,1455256
+    1034 00001a40 00164d22          .long   1461538,1467811,1474076,1480332,1486580,1492819,1499049,1505270,1511483,1517687
+    1035 00001b80 001740aa          .long   1523882,1530068,1536246,1542415,1548575,1554726,1560869,1567002,1573127,1579243
+    1036 00001cc0 001830c5          .long   1585349,1591447,1597536,1603616,1609687,1615750,1621803,1627847,1633882,1639909
+    1037 00001e00 00191d66          .long   1645926,1651934,1657933,1663923,1669904,1675876,1681839,1687793,1693738,1699673
+    1038 00001f40 001a0680          .long   1705600,1711517,1717426,1723325,1729215,1735096,1740967,1746830,1752683,1758527
+    1039 00002080 001aec0a          .long   1764362,1770188,1776005,1781812,1787610,1793399,1799179,1804949,1810710,1816462
+    1040 000021c0 001bcdfd          .long   1822205,1827939,1833663,1839378,1845084,1850780,1856467,1862145,1867814,1873473
+    1041 00002300 001cac54          .long   1879124,1884764,1890396,1896018,1901631,1907235,1912829,1918414,1923990,1929556
+    1042 00002440 001d8709          .long   1935113,1940661,1946200,1951729,1957249,1962760,1968261,1973753,1979236,1984709
+    1043 00002580 001e5e1d          .long   1990173,1995628,2001074,2006510,2011937,2017355,2022763,2028162,2033552,2038932
+    1044 000026c0 001f318f          .long   2044303,2049666,2055018,2060361,2065695,2071020,2076336,2081642,2086939,2092226
+    1045 00002800 00200161          .long   2097505,2102774,2108034,2113285,2118526,2123758,2128981,2134195,2139399,2144595
+    1046 00002940 0020cd94          .long   2149780,2154957,2160125,2165283,2170432,2175572,2180703,2185825,2190937,2196040
+    1047 00002a80 0021962e          .long   2201134,2206219,2211295,2216362,2221419,2226468,2231507,2236537,2241558,2246570
+    1048 00002bc0 00225b34          .long   2251572,2256566,2261551,2266526,2271493,2276450,2281398,2286337,2291268,2296189
+    1049 00002d00 00231cad          .long   2301101,2306004,2310898,2315783,2320659,2325526,2330385,2335233,2340074,2344905
+    1050 00002e40 0023da9f          .long   2349727,2354541,2359345,2364141,2368927,2373705,2378474,2383234,2387985,2392727
+    1051 00002f80 00249515          .long   2397461,2402185,2406901,2411608,2416306,2420995,2425676,2430347,2435010,2439664
+    1052 000030c0 00254c16          .long   2444310,2448946,2453574,2458193,2462804,2467406,2471999,2476584,2481159,2485726
+    1053 00003200 0025ffad          .long   2490285,2494835,2499376,2503909,2508433,2512948,2517455,2521954,2526443,2530925
+    1054 00003340 0026afe5          .long   2535397,2539862,2544317,2548764,2553203,2557634,2562055,2566469,2570873,2575270
+    1055 00003480 00275cca          .long   2579658,2584038,2588409,2592772,2597126,2601473,2605811,2610140,2614462,2618774
+    1056 000035c0 00280667          .long   2623079,2627375,2631664,2635944,2640215,2644479,2648734,2652981,2657220,2661450
+    1057 00003700 0028acc9          .long   2665673,2669887,2674093,2678292,2682482,2686664,2690837,2695003,2699161,2703310
+    1058 00003840 00294ffc          .long   2707452,2711586,2715712,2719829,2723939,2728041,2732134,2736220,2740298,2744368
+    1059 00003980 0029f00e          .long   2748430,2752484,2756531,2760569,2764600,2768623,2772638,2776645,2780644,2784636
+    1060 00003ac0 002a8d0c          .long   2788620,2792596,2796564,2800525,2804478,2808423,2812361,2816291,2820213,2824128
+    1061 00003c00 002b2703          .long   2828035,2831934,2835826,2839711,2843587,2847456,2851318,2855172,2859019,2862858
+    1062 00003d40 002bbe02          .long   2866690,2870514,2874330,2878140,2881942,2885736,2889523,2893302,2897075,2900840
+    1063 00003e80 002c5215          .long   2904597,2908348,2912090,2915826,2919554,2923276,2926989,2930695,2934395,2938087
+    1064 00003fc0 002ce34c          .long   2941772,2945449,2949121,2952784,2956440
+    1065                    
+    1066 00004060           sin_table
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+    1067 00004060 00000000          .long   0,143,286,429,572,715,858,1001
+    1068 00004160 00000478          .long   1144,1287,1430,1573,1716,1858,2001,2144
+    1069 00004260 000008ef          .long   2287,2430,2573,2716,2859,3001,3144,3287
+    1070 00004360 00000d66          .long   3430,3573,3715,3858,4001,4144,4286,4429
+    1071 00004460 000011dc          .long   4572,4714,4857,4999,5142,5284,5427,5569
+    1072 00004560 00001650          .long   5712,5854,5997,6139,6281,6424,6566,6708
+    1073 00004660 00001ac2          .long   6850,6993,7135,7277,7419,7561,7703,7845
+    1074 00004760 00001f33          .long   7987,8129,8271,8412,8554,8696,8838,8979
+    1075 00004860 000023a1          .long   9121,9262,9404,9545,9687,9828,9970,10111
+    1076 00004960 0000280c          .long   10252,10393,10534,10676,10817,10958,11098,11239
+    1077 00004a60 00002c74          .long   11380,11521,11662,11802,11943,12084,12224,12364
+    1078 00004b60 000030d9          .long   12505,12645,12785,12926,13066,13206,13346,13486
+    1079 00004c60 0000353a          .long   13626,13766,13905,14045,14185,14324,14464,14603
+    1080 00004d60 00003996          .long   14742,14882,15021,15160,15299,15438,15577,15716
+    1081 00004e60 00003def          .long   15855,15993,16132,16270,16409,16547,16686,16824
+    1082 00004f60 00004242          .long   16962,17100,17238,17376,17514,17651,17789,17927
+    1083 00005060 00004690          .long   18064,18202,18339,18476,18613,18750,18887,19024
+    1084 00005160 00004ad9          .long   19161,19298,19434,19571,19707,19843,19980,20116
+    1085 00005260 00004f1c          .long   20252,20388,20524,20659,20795,20930,21066,21201
+    1086 00005360 00005358          .long   21336,21472,21607,21742,21876,22011,22146,22280
+    1087 00005460 0000578f          .long   22415,22549,22683,22817,22951,23085,23219,23352
+    1088 00005560 00005bbe          .long   23486,23619,23753,23886,24019,24152,24285,24418
+    1089 00005660 00005fe6          .long   24550,24683,24815,24947,25080,25212,25343,25475
+    1090 00005760 00006407          .long   25607,25739,25870,26001,26132,26263,26394,26525
+    1091 00005860 00006820          .long   26656,26786,26917,27047,27177,27307,27437,27567
+    1092 00005960 00006c31          .long   27697,27826,27956,28085,28214,28343,28472,28601
+    1093 00005a60 00007039          .long   28729,28858,28986,29114,29242,29370,29498,29625
+    1094 00005b60 00007439          .long   29753,29880,30007,30134,30261,30388,30515,30641
+    1095 00005c60 0000782f          .long   30767,30893,31019,31145,31271,31397,31522,31647
+    1096 00005d60 00007c1c          .long   31772,31897,32022,32147,32271,32396,32520,32644
+    1097 00005e60 00008000          .long   32768,32892,33015,33139,33262,33385,33508,33631
+    1098 00005f60 000083da          .long   33754,33876,33998,34120,34242,34364,34486,34607
+    1099 00006060 000087a9          .long   34729,34850,34971,35092,35212,35333,35453,35573
+    1100 00006160 00008b6d          .long   35693,35813,35933,36052,36172,36291,36410,36529
+    1101 00006260 00008f27          .long   36647,36766,36884,37002,37120,37238,37355,37473
+    1102 00006360 000092d6          .long   37590,37707,37824,37940,38057,38173,38289,38405
+    1103 00006460 00009679          .long   38521,38637,38752,38867,38982,39097,39212,39326
+    1104 00006560 00009a11          .long   39441,39555,39669,39782,39896,40009,40122,40235
+    1105 00006660 00009d9c          .long   40348,40461,40573,40685,40797,40909,41021,41132
+    1106 00006760 0000a11b          .long   41243,41354,41465,41576,41686,41796,41906,42016
+    1107 00006860 0000a48e          .long   42126,42235,42344,42453,42562,42671,42779,42887
+    1108 00006960 0000a7f3          .long   42995,43103,43211,43318,43425,43532,43639,43746
+    1109 00006a60 0000ab4c          .long   43852,43958,44064,44170,44275,44381,44486,44591
+    1110 00006b60 0000ae97          .long   44695,44800,44904,45008,45112,45216,45319,45422
+    1111 00006c60 0000b1d5          .long   45525,45628,45730,45833,45935,46037,46138,46240
+    1112 00006d60 0000b505          .long   46341,46442,46543,46643,46744,46844,46944,47043
+    1113 00006e60 0000b827          .long   47143,47242,47341,47440,47538,47636,47735,47832
+    1114 00006f60 0000bb3a          .long   47930,48027,48125,48222,48318,48415,48511,48607
+    1115 00007060 0000be3f          .long   48703,48798,48894,48989,49084,49178,49273,49367
+    1116 00007160 0000c135          .long   49461,49554,49648,49741,49834,49927,50019,50111
+    1117 00007260 0000c41b          .long   50203,50295,50387,50478,50569,50660,50751,50841
+    1118 00007360 0000c6f3          .long   50931,51021,51111,51200,51289,51378,51467,51555
+    1119 00007460 0000c9bb          .long   51643,51731,51819,51906,51993,52080,52167,52253
+    1120 00007560 0000cc73          .long   52339,52425,52511,52596,52682,52766,52851,52936
+    1121 00007660 0000cf1c          .long   53020,53104,53187,53271,53354,53437,53519,53602
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+    1122 00007760 0000d1b4          .long   53684,53766,53847,53929,54010,54091,54171,54252
+    1123 00007860 0000d43c          .long   54332,54412,54491,54570,54650,54728,54807,54885
+    1124 00007960 0000d6b3          .long   54963,55041,55118,55196,55273,55349,55426,55502
+    1125 00007a60 0000d91a          .long   55578,55653,55729,55804,55879,55953,56028,56102
+    1126 00007b60 0000db6f          .long   56175,56249,56322,56395,56468,56540,56612,56684
+    1127 00007c60 0000ddb4          .long   56756,56827,56898,56969,57040,57110,57180,57250
+    1128 00007d60 0000dfe7          .long   57319,57388,57457,57526,57594,57662,57730,57798
+    1129 00007e60 0000e209          .long   57865,57932,57999,58065,58131,58197,58263,58328
+    1130 00007f60 0000e419          .long   58393,58458,58522,58586,58650,58714,58777,58841
+    1131 00008060 0000e617          .long   58903,58966,59028,59090,59152,59213,59274,59335
+    1132 00008160 0000e804          .long   59396,59456,59516,59576,59635,59694,59753,59812
+    1133 00008260 0000e9de          .long   59870,59928,59986,60043,60100,60157,60214,60270
+    1134 00008360 0000eba6          .long   60326,60382,60437,60493,60547,60602,60656,60710
+    1135 00008460 0000ed5c          .long   60764,60817,60870,60923,60976,61028,61080,61132
+    1136 00008560 0000eeff          .long   61183,61234,61285,61336,61386,61436,61485,61535
+    1137 00008660 0000f090          .long   61584,61632,61681,61729,61777,61825,61872,61919
+    1138 00008760 0000f20e          .long   61966,62012,62058,62104,62149,62195,62239,62284
+    1139 00008860 0000f378          .long   62328,62372,62416,62460,62503,62546,62588,62630
+    1140 00008960 0000f4d0          .long   62672,62714,62755,62796,62837,62878,62918,62958
+    1141 00008a60 0000f615          .long   62997,63037,63075,63114,63152,63191,63228,63266
+    1142 00008b60 0000f747          .long   63303,63340,63376,63413,63449,63484,63520,63555
+    1143 00008c60 0000f865          .long   63589,63624,63658,63692,63725,63758,63791,63824
+    1144 00008d60 0000f970          .long   63856,63888,63920,63951,63983,64013,64044,64074
+    1145 00008e60 0000fa68          .long   64104,64133,64163,64192,64220,64249,64277,64304
+    1146 00008f60 0000fb4c          .long   64332,64359,64386,64412,64439,64464,64490,64515
+    1147 00009060 0000fc1c          .long   64540,64565,64589,64613,64637,64661,64684,64707
+    1148 00009160 0000fcd9          .long   64729,64751,64773,64795,64816,64837,64858,64878
+    1149 00009260 0000fd82          .long   64898,64918,64937,64957,64975,64994,65012,65030
+    1150 00009360 0000fe18          .long   65048,65065,65082,65098,65115,65131,65146,65162
+    1151 00009460 0000fe99          .long   65177,65192,65206,65220,65234,65248,65261,65274
+    1152 00009560 0000ff07          .long   65287,65299,65311,65323,65334,65345,65356,65366
+    1153 00009660 0000ff60          .long   65376,65386,65396,65405,65414,65422,65431,65439
+    1154 00009760 0000ffa6          .long   65446,65454,65461,65467,65474,65480,65485,65491
+    1155 00009860 0000ffd8          .long   65496,65501,65505,65510,65514,65517,65520,65523
+    1156 00009960 0000fff6          .long   65526,65528,65530,65532,65534,65535,65535,65536
+    1157 00009a60           cos_table
+    1158 00009a60 00010000          .long   65536,65536,65535,65535,65534,65532,65530,65528
+    1159 00009b60 0000fff6          .long   65526,65523,65520,65517,65514,65510,65505,65501
+    1160 00009c60 0000ffd8          .long   65496,65491,65485,65480,65474,65467,65461,65454
+    1161 00009d60 0000ffa6          .long   65446,65439,65431,65422,65414,65405,65396,65386
+    1162 00009e60 0000ff60          .long   65376,65366,65356,65345,65334,65323,65311,65299
+    1163 00009f60 0000ff07          .long   65287,65274,65261,65248,65234,65220,65206,65192
+    1164 0000a060 0000fe99          .long   65177,65162,65146,65131,65115,65098,65082,65065
+    1165 0000a160 0000fe18          .long   65048,65030,65012,64994,64975,64957,64937,64918
+    1166 0000a260 0000fd82          .long   64898,64878,64858,64837,64816,64795,64773,64751
+    1167 0000a360 0000fcd9          .long   64729,64707,64684,64661,64637,64613,64589,64565
+    1168 0000a460 0000fc1c          .long   64540,64515,64490,64464,64439,64412,64386,64359
+    1169 0000a560 0000fb4c          .long   64332,64304,64277,64249,64220,64192,64163,64133
+    1170 0000a660 0000fa68          .long   64104,64074,64044,64013,63983,63951,63920,63888
+    1171 0000a760 0000f970          .long   63856,63824,63791,63758,63725,63692,63658,63624
+    1172 0000a860 0000f865          .long   63589,63555,63520,63484,63449,63413,63376,63340
+    1173 0000a960 0000f747          .long   63303,63266,63228,63191,63152,63114,63075,63037
+    1174 0000aa60 0000f615          .long   62997,62958,62918,62878,62837,62796,62755,62714
+    1175 0000ab60 0000f4d0          .long   62672,62630,62588,62546,62503,62460,62416,62372
+    1176 0000ac60 0000f378          .long   62328,62284,62239,62195,62149,62104,62058,62012
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+    1177 0000ad60 0000f20e          .long   61966,61919,61872,61825,61777,61729,61681,61632
+    1178 0000ae60 0000f090          .long   61584,61535,61485,61436,61386,61336,61285,61234
+    1179 0000af60 0000eeff          .long   61183,61132,61080,61028,60976,60923,60870,60817
+    1180 0000b060 0000ed5c          .long   60764,60710,60656,60602,60547,60493,60437,60382
+    1181 0000b160 0000eba6          .long   60326,60270,60214,60157,60100,60043,59986,59928
+    1182 0000b260 0000e9de          .long   59870,59812,59753,59694,59635,59576,59516,59456
+    1183 0000b360 0000e804          .long   59396,59335,59274,59213,59152,59090,59028,58966
+    1184 0000b460 0000e617          .long   58903,58841,58777,58714,58650,58586,58522,58458
+    1185 0000b560 0000e419          .long   58393,58328,58263,58197,58131,58065,57999,57932
+    1186 0000b660 0000e209          .long   57865,57798,57730,57662,57594,57526,57457,57388
+    1187 0000b760 0000dfe7          .long   57319,57250,57180,57110,57040,56969,56898,56827
+    1188 0000b860 0000ddb4          .long   56756,56684,56612,56540,56468,56395,56322,56249
+    1189 0000b960 0000db6f          .long   56175,56102,56028,55953,55879,55804,55729,55653
+    1190 0000ba60 0000d91a          .long   55578,55502,55426,55349,55273,55196,55118,55041
+    1191 0000bb60 0000d6b3          .long   54963,54885,54807,54728,54650,54570,54491,54412
+    1192 0000bc60 0000d43c          .long   54332,54252,54171,54091,54010,53929,53847,53766
+    1193 0000bd60 0000d1b4          .long   53684,53602,53519,53437,53354,53271,53187,53104
+    1194 0000be60 0000cf1c          .long   53020,52936,52851,52766,52682,52596,52511,52425
+    1195 0000bf60 0000cc73          .long   52339,52253,52167,52080,51993,51906,51819,51731
+    1196 0000c060 0000c9bb          .long   51643,51555,51467,51378,51289,51200,51111,51021
+    1197 0000c160 0000c6f3          .long   50931,50841,50751,50660,50569,50478,50387,50295
+    1198 0000c260 0000c41b          .long   50203,50111,50019,49927,49834,49741,49648,49554
+    1199 0000c360 0000c135          .long   49461,49367,49273,49178,49084,48989,48894,48798
+    1200 0000c460 0000be3f          .long   48703,48607,48511,48415,48318,48222,48125,48027
+    1201 0000c560 0000bb3a          .long   47930,47832,47735,47636,47538,47440,47341,47242
+    1202 0000c660 0000b827          .long   47143,47043,46944,46844,46744,46643,46543,46442
+    1203 0000c760 0000b505          .long   46341,46240,46138,46037,45935,45833,45730,45628
+    1204 0000c860 0000b1d5          .long   45525,45422,45319,45216,45112,45008,44904,44800
+    1205 0000c960 0000ae97          .long   44695,44591,44486,44381,44275,44170,44064,43958
+    1206 0000ca60 0000ab4c          .long   43852,43746,43639,43532,43425,43318,43211,43103
+    1207 0000cb60 0000a7f3          .long   42995,42887,42779,42671,42562,42453,42344,42235
+    1208 0000cc60 0000a48e          .long   42126,42016,41906,41796,41686,41576,41465,41354
+    1209 0000cd60 0000a11b          .long   41243,41132,41021,40909,40797,40685,40573,40461
+    1210 0000ce60 00009d9c          .long   40348,40235,40122,40009,39896,39782,39669,39555
+    1211 0000cf60 00009a11          .long   39441,39326,39212,39097,38982,38867,38752,38637
+    1212 0000d060 00009679          .long   38521,38405,38289,38173,38057,37940,37824,37707
+    1213 0000d160 000092d6          .long   37590,37473,37355,37238,37120,37002,36884,36766
+    1214 0000d260 00008f27          .long   36647,36529,36410,36291,36172,36052,35933,35813
+    1215 0000d360 00008b6d          .long   35693,35573,35453,35333,35212,35092,34971,34850
+    1216 0000d460 000087a9          .long   34729,34607,34486,34364,34242,34120,33998,33876
+    1217 0000d560 000083da          .long   33754,33631,33508,33385,33262,33139,33015,32892
+    1218 0000d660 00008000          .long   32768,32644,32520,32396,32271,32147,32022,31897
+    1219 0000d760 00007c1c          .long   31772,31647,31522,31397,31271,31145,31019,30893
+    1220 0000d860 0000782f          .long   30767,30641,30515,30388,30261,30134,30007,29880
+    1221 0000d960 00007439          .long   29753,29625,29498,29370,29242,29114,28986,28858
+    1222 0000da60 00007039          .long   28729,28601,28472,28343,28214,28085,27956,27826
+    1223 0000db60 00006c31          .long   27697,27567,27437,27307,27177,27047,26917,26786
+    1224 0000dc60 00006820          .long   26656,26525,26394,26263,26132,26001,25870,25739
+    1225 0000dd60 00006407          .long   25607,25475,25343,25212,25080,24947,24815,24683
+    1226 0000de60 00005fe6          .long   24550,24418,24285,24152,24019,23886,23753,23619
+    1227 0000df60 00005bbe          .long   23486,23352,23219,23085,22951,22817,22683,22549
+    1228 0000e060 0000578f          .long   22415,22280,22146,22011,21876,21742,21607,21472
+    1229 0000e160 00005358          .long   21336,21201,21066,20930,20795,20659,20524,20388
+    1230 0000e260 00004f1c          .long   20252,20116,19980,19843,19707,19571,19434,19298
+    1231 0000e360 00004ad9          .long   19161,19024,18887,18750,18613,18476,18339,18202
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+    1232 0000e460 00004690          .long   18064,17927,17789,17651,17514,17376,17238,17100
+    1233 0000e560 00004242          .long   16962,16824,16686,16547,16409,16270,16132,15993
+    1234 0000e660 00003def          .long   15855,15716,15577,15438,15299,15160,15021,14882
+    1235 0000e760 00003996          .long   14742,14603,14464,14324,14185,14045,13905,13766
+    1236 0000e860 0000353a          .long   13626,13486,13346,13206,13066,12926,12785,12645
+    1237 0000e960 000030d9          .long   12505,12364,12224,12084,11943,11802,11662,11521
+    1238 0000ea60 00002c74          .long   11380,11239,11098,10958,10817,10676,10534,10393
+    1239 0000eb60 0000280c          .long   10252,10111,9970,9828,9687,9545,9404,9262
+    1240 0000ec60 000023a1          .long   9121,8979,8838,8696,8554,8412,8271,8129
+    1241 0000ed60 00001f33          .long   7987,7845,7703,7561,7419,7277,7135,6993
+    1242 0000ee60 00001ac2          .long   6850,6708,6566,6424,6281,6139,5997,5854
+    1243 0000ef60 00001650          .long   5712,5569,5427,5284,5142,4999,4857,4714
+    1244 0000f060 000011dc          .long   4572,4429,4286,4144,4001,3858,3715,3573
+    1245 0000f160 00000d66          .long   3430,3287,3144,3001,2859,2716,2573,2430
+    1246 0000f260 000008ef          .long   2287,2144,2001,1858,1716,1573,1430,1287
+    1247 0000f360 00000478          .long   1144,1001,858,715,572,429,286,143
+    1248 0000f460 00000000          .long   0,-143,-286,-429,-572,-715,-858,-1001
+    1249 0000f560 fffffb88          .long   -1144,-1287,-1430,-1573,-1716,-1858,-2001,-2144
+    1250 0000f660 fffff711          .long   -2287,-2430,-2573,-2716,-2859,-3001,-3144,-3287
+    1251 0000f760 fffff29a          .long   -3430,-3573,-3715,-3858,-4001,-4144,-4286,-4429
+    1252 0000f860 ffffee24          .long   -4572,-4714,-4857,-4999,-5142,-5284,-5427,-5569
+    1253 0000f960 ffffe9b0          .long   -5712,-5854,-5997,-6139,-6281,-6424,-6566,-6708
+    1254 0000fa60 ffffe53e          .long   -6850,-6993,-7135,-7277,-7419,-7561,-7703,-7845
+    1255 0000fb60 ffffe0cd          .long   -7987,-8129,-8271,-8412,-8554,-8696,-8838,-8979
+    1256 0000fc60 ffffdc5f          .long   -9121,-9262,-9404,-9545,-9687,-9828,-9970,-10111
+    1257 0000fd60 ffffd7f4          .long   -10252,-10393,-10534,-10676,-10817,-10958,-11098,-11239
+    1258 0000fe60 ffffd38c          .long   -11380,-11521,-11662,-11802,-11943,-12084,-12224,-12364
+    1259 0000ff60 ffffcf27          .long   -12505,-12645,-12785,-12926,-13066,-13206,-13346,-13486
+    1260 00010060 ffffcac6          .long   -13626,-13766,-13905,-14045,-14185,-14324,-14464,-14603
+    1261 00010160 ffffc66a          .long   -14742,-14882,-15021,-15160,-15299,-15438,-15577,-15716
+    1262 00010260 ffffc211          .long   -15855,-15993,-16132,-16270,-16409,-16547,-16686,-16824
+    1263 00010360 ffffbdbe          .long   -16962,-17100,-17238,-17376,-17514,-17651,-17789,-17927
+    1264 00010460 ffffb970          .long   -18064,-18202,-18339,-18476,-18613,-18750,-18887,-19024
+    1265 00010560 ffffb527          .long   -19161,-19298,-19434,-19571,-19707,-19843,-19980,-20116
+    1266 00010660 ffffb0e4          .long   -20252,-20388,-20523,-20659,-20795,-20930,-21066,-21201
+    1267 00010760 ffffaca8          .long   -21336,-21472,-21607,-21742,-21876,-22011,-22146,-22280
+    1268 00010860 ffffa871          .long   -22415,-22549,-22683,-22817,-22951,-23085,-23219,-23352
+    1269 00010960 ffffa442          .long   -23486,-23619,-23753,-23886,-24019,-24152,-24285,-24418
+    1270 00010a60 ffffa01a          .long   -24550,-24683,-24815,-24947,-25080,-25212,-25343,-25475
+    1271 00010b60 ffff9bf9          .long   -25607,-25739,-25870,-26001,-26132,-26263,-26394,-26525
+    1272 00010c60 ffff97e0          .long   -26656,-26786,-26917,-27047,-27177,-27307,-27437,-27567
+    1273 00010d60 ffff93cf          .long   -27697,-27826,-27956,-28085,-28214,-28343,-28472,-28601
+    1274 00010e60 ffff8fc7          .long   -28729,-28858,-28986,-29114,-29242,-29370,-29498,-29625
+    1275 00010f60 ffff8bc7          .long   -29753,-29880,-30007,-30134,-30261,-30388,-30515,-30641
+    1276 00011060 ffff87d1          .long   -30767,-30893,-31019,-31145,-31271,-31397,-31522,-31647
+    1277 00011160 ffff83e4          .long   -31772,-31897,-32022,-32147,-32271,-32396,-32520,-32644
+    1278 00011260 ffff8000          .long   -32768,-32892,-33015,-33139,-33262,-33385,-33508,-33631
+    1279 00011360 ffff7c26          .long   -33754,-33876,-33998,-34120,-34242,-34364,-34486,-34607
+    1280 00011460 ffff7857          .long   -34729,-34850,-34971,-35092,-35212,-35333,-35453,-35573
+    1281 00011560 ffff7493          .long   -35693,-35813,-35933,-36052,-36172,-36291,-36410,-36529
+    1282 00011660 ffff70d9          .long   -36647,-36766,-36884,-37002,-37120,-37238,-37355,-37473
+    1283 00011760 ffff6d2a          .long   -37590,-37707,-37824,-37940,-38057,-38173,-38289,-38405
+    1284 00011860 ffff6987          .long   -38521,-38637,-38752,-38867,-38982,-39097,-39212,-39326
+    1285 00011960 ffff65ef          .long   -39441,-39555,-39669,-39782,-39896,-40009,-40122,-40235
+    1286 00011a60 ffff6264          .long   -40348,-40461,-40573,-40685,-40797,-40909,-41021,-41132
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   27
+
+    1287 00011b60 ffff5ee5          .long   -41243,-41354,-41465,-41576,-41686,-41796,-41906,-42016
+    1288 00011c60 ffff5b72          .long   -42126,-42235,-42344,-42453,-42562,-42671,-42779,-42887
+    1289 00011d60 ffff580d          .long   -42995,-43103,-43211,-43318,-43425,-43532,-43639,-43746
+    1290 00011e60 ffff54b4          .long   -43852,-43958,-44064,-44170,-44275,-44381,-44486,-44591
+    1291 00011f60 ffff5169          .long   -44695,-44800,-44904,-45008,-45112,-45216,-45319,-45422
+    1292 00012060 ffff4e2b          .long   -45525,-45628,-45730,-45833,-45935,-46037,-46138,-46240
+    1293 00012160 ffff4afb          .long   -46341,-46442,-46543,-46643,-46744,-46844,-46944,-47043
+    1294 00012260 ffff47d9          .long   -47143,-47242,-47341,-47440,-47538,-47636,-47735,-47832
+    1295 00012360 ffff44c6          .long   -47930,-48027,-48125,-48222,-48318,-48415,-48511,-48607
+    1296 00012460 ffff41c1          .long   -48703,-48798,-48894,-48989,-49084,-49178,-49273,-49367
+    1297 00012560 ffff3ecb          .long   -49461,-49554,-49648,-49741,-49834,-49927,-50019,-50111
+    1298 00012660 ffff3be5          .long   -50203,-50295,-50387,-50478,-50569,-50660,-50751,-50841
+    1299 00012760 ffff390d          .long   -50931,-51021,-51110,-51200,-51289,-51378,-51467,-51555
+    1300 00012860 ffff3645          .long   -51643,-51731,-51819,-51906,-51993,-52080,-52167,-52253
+    1301 00012960 ffff338d          .long   -52339,-52425,-52511,-52596,-52682,-52766,-52851,-52936
+    1302 00012a60 ffff30e4          .long   -53020,-53104,-53187,-53271,-53354,-53437,-53519,-53602
+    1303 00012b60 ffff2e4c          .long   -53684,-53766,-53847,-53929,-54010,-54091,-54171,-54252
+    1304 00012c60 ffff2bc4          .long   -54332,-54412,-54491,-54571,-54650,-54728,-54807,-54885
+    1305 00012d60 ffff294d          .long   -54963,-55041,-55118,-55196,-55272,-55349,-55426,-55502
+    1306 00012e60 ffff26e6          .long   -55578,-55653,-55729,-55804,-55879,-55953,-56028,-56102
+    1307 00012f60 ffff2491          .long   -56175,-56249,-56322,-56395,-56468,-56540,-56612,-56684
+    1308 00013060 ffff224c          .long   -56756,-56827,-56898,-56969,-57040,-57110,-57180,-57250
+    1309 00013160 ffff2019          .long   -57319,-57388,-57457,-57526,-57594,-57662,-57730,-57798
+    1310 00013260 ffff1df7          .long   -57865,-57932,-57999,-58065,-58131,-58197,-58263,-58328
+    1311 00013360 ffff1be7          .long   -58393,-58458,-58522,-58586,-58650,-58714,-58777,-58841
+    1312 00013460 ffff19e9          .long   -58903,-58966,-59028,-59090,-59152,-59213,-59274,-59335
+    1313 00013560 ffff17fc          .long   -59396,-59456,-59516,-59576,-59635,-59694,-59753,-59812
+    1314 00013660 ffff1622          .long   -59870,-59928,-59986,-60043,-60100,-60157,-60214,-60270
+    1315 00013760 ffff145a          .long   -60326,-60382,-60437,-60493,-60547,-60602,-60656,-60710
+    1316 00013860 ffff12a4          .long   -60764,-60817,-60870,-60923,-60976,-61028,-61080,-61132
+    1317 00013960 ffff1101          .long   -61183,-61234,-61285,-61336,-61386,-61436,-61485,-61535
+    1318 00013a60 ffff0f70          .long   -61584,-61632,-61681,-61729,-61777,-61825,-61872,-61919
+    1319 00013b60 ffff0df2          .long   -61966,-62012,-62058,-62104,-62149,-62195,-62239,-62284
+    1320 00013c60 ffff0c88          .long   -62328,-62372,-62416,-62460,-62503,-62546,-62588,-62630
+    1321 00013d60 ffff0b30          .long   -62672,-62714,-62755,-62796,-62837,-62878,-62918,-62958
+    1322 00013e60 ffff09eb          .long   -62997,-63037,-63075,-63114,-63152,-63191,-63228,-63266
+    1323 00013f60 ffff08b9          .long   -63303,-63340,-63376,-63413,-63449,-63484,-63520,-63555
+    1324 00014060 ffff079b          .long   -63589,-63624,-63658,-63692,-63725,-63758,-63791,-63824
+    1325 00014160 ffff0690          .long   -63856,-63888,-63920,-63951,-63983,-64013,-64044,-64074
+    1326 00014260 ffff0598          .long   -64104,-64133,-64163,-64192,-64220,-64249,-64277,-64304
+    1327 00014360 ffff04b4          .long   -64332,-64359,-64386,-64412,-64439,-64464,-64490,-64515
+    1328 00014460 ffff03e4          .long   -64540,-64565,-64589,-64613,-64637,-64661,-64684,-64707
+    1329 00014560 ffff0327          .long   -64729,-64751,-64773,-64795,-64816,-64837,-64858,-64878
+    1330 00014660 ffff027e          .long   -64898,-64918,-64937,-64957,-64975,-64994,-65012,-65030
+    1331 00014760 ffff01e8          .long   -65048,-65065,-65082,-65098,-65115,-65131,-65146,-65162
+    1332 00014860 ffff0167          .long   -65177,-65192,-65206,-65220,-65234,-65248,-65261,-65274
+    1333 00014960 ffff00f9          .long   -65287,-65299,-65311,-65323,-65334,-65345,-65356,-65366
+    1334 00014a60 ffff00a0          .long   -65376,-65386,-65396,-65405,-65414,-65422,-65431,-65439
+    1335 00014b60 ffff005a          .long   -65446,-65454,-65461,-65467,-65474,-65480,-65485,-65491
+    1336 00014c60 ffff0028          .long   -65496,-65501,-65505,-65510,-65514,-65517,-65520,-65523
+    1337 00014d60 ffff000a          .long   -65526,-65528,-65530,-65532,-65534,-65535,-65535,-65536
+    1338 00014e60 ffff0000          .long   -65536,-65536,-65535,-65535,-65534,-65532,-65530,-65528
+    1339 00014f60 ffff000a          .long   -65526,-65523,-65520,-65517,-65514,-65510,-65505,-65501
+    1340 00015060 ffff0028          .long   -65496,-65491,-65485,-65480,-65474,-65467,-65461,-65454
+    1341 00015160 ffff005a          .long   -65446,-65439,-65431,-65422,-65414,-65405,-65396,-65386
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   28
+
+    1342 00015260 ffff00a0          .long   -65376,-65366,-65356,-65345,-65334,-65323,-65311,-65299
+    1343 00015360 ffff00f9          .long   -65287,-65274,-65261,-65248,-65234,-65220,-65206,-65192
+    1344 00015460 ffff0167          .long   -65177,-65162,-65146,-65131,-65115,-65098,-65082,-65065
+    1345 00015560 ffff01e8          .long   -65048,-65030,-65012,-64994,-64975,-64957,-64937,-64918
+    1346 00015660 ffff027e          .long   -64898,-64878,-64858,-64837,-64816,-64795,-64773,-64751
+    1347 00015760 ffff0327          .long   -64729,-64707,-64684,-64661,-64637,-64613,-64589,-64565
+    1348 00015860 ffff03e4          .long   -64540,-64515,-64490,-64464,-64439,-64412,-64386,-64359
+    1349 00015960 ffff04b4          .long   -64332,-64304,-64277,-64249,-64220,-64192,-64163,-64133
+    1350 00015a60 ffff0598          .long   -64104,-64074,-64044,-64013,-63983,-63951,-63920,-63888
+    1351 00015b60 ffff0690          .long   -63856,-63824,-63791,-63758,-63725,-63692,-63658,-63624
+    1352 00015c60 ffff079b          .long   -63589,-63555,-63520,-63484,-63449,-63413,-63376,-63340
+    1353 00015d60 ffff08b9          .long   -63303,-63266,-63228,-63191,-63152,-63114,-63075,-63037
+    1354 00015e60 ffff09eb          .long   -62997,-62958,-62918,-62878,-62837,-62796,-62755,-62714
+    1355 00015f60 ffff0b30          .long   -62672,-62630,-62588,-62546,-62503,-62460,-62416,-62372
+    1356 00016060 ffff0c88          .long   -62328,-62284,-62239,-62195,-62149,-62104,-62058,-62012
+    1357 00016160 ffff0df2          .long   -61966,-61919,-61872,-61825,-61777,-61729,-61681,-61632
+    1358 00016260 ffff0f70          .long   -61584,-61535,-61485,-61436,-61386,-61336,-61285,-61234
+    1359 00016360 ffff1101          .long   -61183,-61132,-61080,-61028,-60976,-60923,-60870,-60817
+    1360 00016460 ffff12a4          .long   -60764,-60710,-60656,-60602,-60547,-60493,-60437,-60382
+    1361 00016560 ffff145a          .long   -60326,-60270,-60214,-60157,-60100,-60043,-59986,-59928
+    1362 00016660 ffff1622          .long   -59870,-59812,-59753,-59694,-59635,-59576,-59516,-59456
+    1363 00016760 ffff17fc          .long   -59396,-59335,-59274,-59213,-59152,-59090,-59028,-58966
+    1364 00016860 ffff19e9          .long   -58903,-58841,-58777,-58714,-58650,-58586,-58522,-58458
+    1365 00016960 ffff1be7          .long   -58393,-58328,-58263,-58197,-58131,-58065,-57999,-57932
+    1366 00016a60 ffff1df7          .long   -57865,-57798,-57730,-57662,-57594,-57526,-57457,-57388
+    1367 00016b60 ffff2019          .long   -57319,-57250,-57180,-57110,-57040,-56969,-56898,-56827
+    1368 00016c60 ffff224c          .long   -56756,-56684,-56612,-56540,-56468,-56395,-56322,-56249
+    1369 00016d60 ffff2491          .long   -56175,-56102,-56028,-55953,-55879,-55804,-55729,-55653
+    1370 00016e60 ffff26e6          .long   -55578,-55502,-55426,-55349,-55272,-55196,-55118,-55041
+    1371 00016f60 ffff294d          .long   -54963,-54885,-54807,-54728,-54650,-54571,-54491,-54412
+    1372 00017060 ffff2bc4          .long   -54332,-54252,-54171,-54091,-54010,-53929,-53847,-53766
+    1373 00017160 ffff2e4c          .long   -53684,-53602,-53519,-53437,-53354,-53271,-53187,-53104
+    1374 00017260 ffff30e4          .long   -53020,-52936,-52851,-52766,-52682,-52596,-52511,-52425
+    1375 00017360 ffff338d          .long   -52339,-52253,-52167,-52080,-51993,-51906,-51819,-51731
+    1376 00017460 ffff3645          .long   -51643,-51555,-51467,-51378,-51289,-51200,-51110,-51021
+    1377 00017560 ffff390d          .long   -50931,-50841,-50751,-50660,-50569,-50478,-50387,-50295
+    1378 00017660 ffff3be5          .long   -50203,-50111,-50019,-49927,-49834,-49741,-49648,-49554
+    1379 00017760 ffff3ecb          .long   -49461,-49367,-49273,-49178,-49084,-48989,-48894,-48798
+    1380 00017860 ffff41c1          .long   -48703,-48607,-48511,-48415,-48318,-48221,-48125,-48027
+    1381 00017960 ffff44c6          .long   -47930,-47832,-47735,-47636,-47538,-47440,-47341,-47242
+    1382 00017a60 ffff47d9          .long   -47143,-47043,-46944,-46844,-46744,-46643,-46543,-46442
+    1383 00017b60 ffff4afb          .long   -46341,-46240,-46138,-46037,-45935,-45833,-45730,-45628
+    1384 00017c60 ffff4e2b          .long   -45525,-45422,-45319,-45216,-45112,-45008,-44904,-44800
+    1385 00017d60 ffff5169          .long   -44695,-44591,-44486,-44381,-44275,-44170,-44064,-43958
+    1386 00017e60 ffff54b4          .long   -43852,-43746,-43639,-43532,-43425,-43318,-43211,-43103
+    1387 00017f60 ffff580d          .long   -42995,-42887,-42779,-42671,-42562,-42453,-42344,-42235
+    1388 00018060 ffff5b72          .long   -42126,-42016,-41906,-41796,-41686,-41576,-41465,-41354
+    1389 00018160 ffff5ee5          .long   -41243,-41132,-41021,-40909,-40797,-40685,-40573,-40461
+    1390 00018260 ffff6264          .long   -40348,-40235,-40122,-40009,-39896,-39782,-39669,-39555
+    1391 00018360 ffff65ef          .long   -39441,-39326,-39212,-39097,-38982,-38867,-38752,-38637
+    1392 00018460 ffff6987          .long   -38521,-38405,-38289,-38173,-38057,-37940,-37824,-37707
+    1393 00018560 ffff6d2a          .long   -37590,-37473,-37355,-37238,-37120,-37002,-36884,-36766
+    1394 00018660 ffff70d9          .long   -36647,-36529,-36410,-36291,-36172,-36052,-35933,-35813
+    1395 00018760 ffff7493          .long   -35693,-35573,-35453,-35333,-35212,-35092,-34971,-34850
+    1396 00018860 ffff7857          .long   -34729,-34607,-34486,-34364,-34242,-34120,-33998,-33876
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   29
+
+    1397 00018960 ffff7c26          .long   -33754,-33631,-33508,-33385,-33262,-33139,-33015,-32892
+    1398 00018a60 ffff8000          .long   -32768,-32644,-32520,-32396,-32271,-32147,-32022,-31897
+    1399 00018b60 ffff83e4          .long   -31772,-31647,-31522,-31397,-31271,-31145,-31019,-30893
+    1400 00018c60 ffff87d1          .long   -30767,-30641,-30515,-30388,-30261,-30134,-30007,-29880
+    1401 00018d60 ffff8bc7          .long   -29753,-29625,-29498,-29370,-29242,-29114,-28986,-28858
+    1402 00018e60 ffff8fc7          .long   -28729,-28601,-28472,-28343,-28214,-28085,-27956,-27826
+    1403 00018f60 ffff93cf          .long   -27697,-27567,-27437,-27307,-27177,-27047,-26917,-26786
+    1404 00019060 ffff97e0          .long   -26656,-26525,-26394,-26263,-26132,-26001,-25870,-25738
+    1405 00019160 ffff9bf9          .long   -25607,-25475,-25344,-25212,-25080,-24947,-24815,-24683
+    1406 00019260 ffffa01a          .long   -24550,-24418,-24285,-24152,-24019,-23886,-23753,-23619
+    1407 00019360 ffffa442          .long   -23486,-23352,-23219,-23085,-22951,-22817,-22683,-22549
+    1408 00019460 ffffa871          .long   -22415,-22280,-22146,-22011,-21876,-21742,-21607,-21472
+    1409 00019560 ffffaca8          .long   -21336,-21201,-21066,-20930,-20795,-20659,-20524,-20388
+    1410 00019660 ffffb0e4          .long   -20252,-20116,-19980,-19843,-19707,-19571,-19434,-19298
+    1411 00019760 ffffb527          .long   -19161,-19024,-18887,-18750,-18613,-18476,-18339,-18202
+    1412 00019860 ffffb970          .long   -18064,-17927,-17789,-17651,-17514,-17376,-17238,-17100
+    1413 00019960 ffffbdbe          .long   -16962,-16824,-16686,-16547,-16409,-16270,-16132,-15993
+    1414 00019a60 ffffc211          .long   -15855,-15716,-15577,-15438,-15299,-15160,-15021,-14882
+    1415 00019b60 ffffc66a          .long   -14742,-14603,-14464,-14324,-14185,-14045,-13905,-13766
+    1416 00019c60 ffffcac6          .long   -13626,-13486,-13346,-13206,-13066,-12926,-12785,-12645
+    1417 00019d60 ffffcf27          .long   -12505,-12364,-12224,-12084,-11943,-11802,-11662,-11521
+    1418 00019e60 ffffd38c          .long   -11380,-11239,-11098,-10958,-10817,-10676,-10534,-10393
+    1419 00019f60 ffffd7f4          .long   -10252,-10111,-9970,-9828,-9687,-9545,-9404,-9262
+    1420 0001a060 ffffdc5f          .long   -9121,-8979,-8838,-8696,-8554,-8412,-8271,-8129
+    1421 0001a160 ffffe0cd          .long   -7987,-7845,-7703,-7561,-7419,-7277,-7135,-6993
+    1422 0001a260 ffffe53e          .long   -6850,-6708,-6566,-6424,-6281,-6139,-5997,-5854
+    1423 0001a360 ffffe9b0          .long   -5712,-5569,-5427,-5284,-5142,-4999,-4857,-4714
+    1424 0001a460 ffffee24          .long   -4572,-4429,-4286,-4144,-4001,-3858,-3715,-3573
+    1425 0001a560 fffff29a          .long   -3430,-3287,-3144,-3001,-2859,-2716,-2573,-2430
+    1426 0001a660 fffff711          .long   -2287,-2144,-2001,-1858,-1716,-1573,-1430,-1287
+    1427 0001a760 fffffb88          .long   -1144,-1001,-858,-715,-572,-429,-286,-143
+    1428 0001a860           end_of_sin_here
+    1429 0001a860 00000000          .long   0,143,286,429,572,715,858,1001
+    1430 0001a960 00000478          .long   1144,1287,1430,1573,1716,1858,2001,2144
+    1431 0001aa60 000008ef          .long   2287,2430,2573,2716,2859,3001,3144,3287
+    1432 0001ab60 00000d66          .long   3430,3573,3715,3858,4001,4144,4286,4429
+    1433 0001ac60 000011dc          .long   4572,4714,4857,4999,5142,5284,5427,5569
+    1434 0001ad60 00001650          .long   5712,5854,5997,6139,6281,6424,6566,6708
+    1435 0001ae60 00001ac2          .long   6850,6993,7135,7277,7419,7561,7703,7845
+    1436 0001af60 00001f33          .long   7987,8129,8271,8412,8554,8696,8838,8979
+    1437 0001b060 000023a1          .long   9121,9262,9404,9545,9687,9828,9970,10111
+    1438 0001b160 0000280c          .long   10252,10393,10534,10676,10817,10958,11098,11239
+    1439 0001b260 00002c74          .long   11380,11521,11662,11802,11943,12084,12224,12364
+    1440 0001b360 000030d9          .long   12505,12645,12785,12926,13066,13206,13346,13486
+    1441 0001b460 0000353a          .long   13626,13766,13905,14045,14185,14324,14464,14603
+    1442 0001b560 00003996          .long   14742,14882,15021,15160,15299,15438,15577,15716
+    1443 0001b660 00003def          .long   15855,15993,16132,16270,16409,16547,16686,16824
+    1444 0001b760 00004242          .long   16962,17100,17238,17376,17514,17651,17789,17927
+    1445 0001b860 00004690          .long   18064,18202,18339,18476,18613,18750,18887,19024
+    1446 0001b960 00004ad9          .long   19161,19298,19434,19571,19707,19843,19980,20116
+    1447 0001ba60 00004f1c          .long   20252,20388,20524,20659,20795,20930,21066,21201
+    1448 0001bb60 00005358          .long   21336,21472,21607,21742,21876,22011,22146,22280
+    1449 0001bc60 0000578f          .long   22415,22549,22683,22817,22951,23085,23219,23352
+    1450 0001bd60 00005bbe          .long   23486,23619,23753,23886,24019,24152,24285,24418
+    1451 0001be60 00005fe6          .long   24550,24683,24815,24947,25080,25212,25343,25475
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   30
+
+    1452 0001bf60 00006407          .long   25607,25739,25870,26001,26132,26263,26394,26525
+    1453 0001c060 00006820          .long   26656,26786,26917,27047,27177,27307,27437,27567
+    1454 0001c160 00006c31          .long   27697,27826,27956,28085,28214,28343,28472,28601
+    1455 0001c260 00007039          .long   28729,28858,28986,29114,29242,29370,29498,29625
+    1456 0001c360 00007439          .long   29753,29880,30007,30134,30261,30388,30515,30641
+    1457 0001c460 0000782f          .long   30767,30893,31019,31145,31271,31397,31522,31647
+    1458 0001c560 00007c1c          .long   31772,31897,32022,32147,32271,32396,32520,32644
+    1459 0001c660 00008000          .long   32768,32892,33015,33139,33262,33385,33508,33631
+    1460 0001c760 000083da          .long   33754,33876,33998,34120,34242,34364,34486,34607
+    1461 0001c860 000087a9          .long   34729,34850,34971,35092,35212,35333,35453,35573
+    1462 0001c960 00008b6d          .long   35693,35813,35933,36052,36172,36291,36410,36529
+    1463 0001ca60 00008f27          .long   36647,36766,36884,37002,37120,37238,37355,37473
+    1464 0001cb60 000092d6          .long   37590,37707,37824,37940,38057,38173,38289,38405
+    1465 0001cc60 00009679          .long   38521,38637,38752,38867,38982,39097,39212,39326
+    1466 0001cd60 00009a11          .long   39441,39555,39669,39782,39896,40009,40122,40235
+    1467 0001ce60 00009d9c          .long   40348,40461,40573,40685,40797,40909,41021,41132
+    1468 0001cf60 0000a11b          .long   41243,41354,41465,41576,41686,41796,41906,42016
+    1469 0001d060 0000a48e          .long   42126,42235,42344,42453,42562,42671,42779,42887
+    1470 0001d160 0000a7f3          .long   42995,43103,43211,43318,43425,43532,43639,43746
+    1471 0001d260 0000ab4c          .long   43852,43958,44064,44170,44275,44381,44486,44591
+    1472 0001d360 0000ae97          .long   44695,44800,44904,45008,45112,45216,45319,45422
+    1473 0001d460 0000b1d5          .long   45525,45628,45730,45833,45935,46037,46138,46240
+    1474 0001d560 0000b505          .long   46341,46442,46543,46643,46744,46844,46944,47043
+    1475 0001d660 0000b827          .long   47143,47242,47341,47440,47538,47636,47735,47832
+    1476 0001d760 0000bb3a          .long   47930,48027,48125,48222,48318,48415,48511,48607
+    1477 0001d860 0000be3f          .long   48703,48798,48894,48989,49084,49178,49273,49367
+    1478 0001d960 0000c135          .long   49461,49554,49648,49741,49834,49927,50019,50111
+    1479 0001da60 0000c41b          .long   50203,50295,50387,50478,50569,50660,50751,50841
+    1480 0001db60 0000c6f3          .long   50931,51021,51111,51200,51289,51378,51467,51555
+    1481 0001dc60 0000c9bb          .long   51643,51731,51819,51906,51993,52080,52167,52253
+    1482 0001dd60 0000cc73          .long   52339,52425,52511,52596,52682,52766,52851,52936
+    1483 0001de60 0000cf1c          .long   53020,53104,53187,53271,53354,53437,53519,53602
+    1484 0001df60 0000d1b4          .long   53684,53766,53847,53929,54010,54091,54171,54252
+    1485 0001e060 0000d43c          .long   54332,54412,54491,54570,54650,54728,54807,54885
+    1486 0001e160 0000d6b3          .long   54963,55041,55118,55196,55273,55349,55426,55502
+    1487 0001e260 0000d91a          .long   55578,55653,55729,55804,55879,55953,56028,56102
+    1488 0001e360 0000db6f          .long   56175,56249,56322,56395,56468,56540,56612,56684
+    1489 0001e460 0000ddb4          .long   56756,56827,56898,56969,57040,57110,57180,57250
+    1490 0001e560 0000dfe7          .long   57319,57388,57457,57526,57594,57662,57730,57798
+    1491 0001e660 0000e209          .long   57865,57932,57999,58065,58131,58197,58263,58328
+    1492 0001e760 0000e419          .long   58393,58458,58522,58586,58650,58714,58777,58841
+    1493 0001e860 0000e617          .long   58903,58966,59028,59090,59152,59213,59274,59335
+    1494 0001e960 0000e804          .long   59396,59456,59516,59576,59635,59694,59753,59812
+    1495 0001ea60 0000e9de          .long   59870,59928,59986,60043,60100,60157,60214,60270
+    1496 0001eb60 0000eba6          .long   60326,60382,60437,60493,60547,60602,60656,60710
+    1497 0001ec60 0000ed5c          .long   60764,60817,60870,60923,60976,61028,61080,61132
+    1498 0001ed60 0000eeff          .long   61183,61234,61285,61336,61386,61436,61485,61535
+    1499 0001ee60 0000f090          .long   61584,61632,61681,61729,61777,61825,61872,61919
+    1500 0001ef60 0000f20e          .long   61966,62012,62058,62104,62149,62195,62239,62284
+    1501 0001f060 0000f378          .long   62328,62372,62416,62460,62503,62546,62588,62630
+    1502 0001f160 0000f4d0          .long   62672,62714,62755,62796,62837,62878,62918,62958
+    1503 0001f260 0000f615          .long   62997,63037,63075,63114,63152,63191,63228,63266
+    1504 0001f360 0000f747          .long   63303,63340,63376,63413,63449,63484,63520,63555
+    1505 0001f460 0000f865          .long   63589,63624,63658,63692,63725,63758,63791,63824
+    1506 0001f560 0000f970          .long   63856,63888,63920,63951,63983,64013,64044,64074
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   31
+
+    1507 0001f660 0000fa68          .long   64104,64133,64163,64192,64220,64249,64277,64304
+    1508 0001f760 0000fb4c          .long   64332,64359,64386,64412,64439,64464,64490,64515
+    1509 0001f860 0000fc1c          .long   64540,64565,64589,64613,64637,64661,64684,64707
+    1510 0001f960 0000fcd9          .long   64729,64751,64773,64795,64816,64837,64858,64878
+    1511 0001fa60 0000fd82          .long   64898,64918,64937,64957,64975,64994,65012,65030
+    1512 0001fb60 0000fe18          .long   65048,65065,65082,65098,65115,65131,65146,65162
+    1513 0001fc60 0000fe99          .long   65177,65192,65206,65220,65234,65248,65261,65274
+    1514 0001fd60 0000ff07          .long   65287,65299,65311,65323,65334,65345,65356,65366
+    1515 0001fe60 0000ff60          .long   65376,65386,65396,65405,65414,65422,65431,65439
+    1516 0001ff60 0000ffa6          .long   65446,65454,65461,65467,65474,65480,65485,65491
+    1517 00020060 0000ffd8          .long   65496,65501,65505,65510,65514,65517,65520,65523
+    1518 00020160 0000fff6          .long   65526,65528,65530,65532,65534,65535,65535,65536
+    1519 00020260           end_of_cos_here                 ;what follows is extra at end of table
+    1520 00020260 00010000          .long   65536,65536,65535,65535,65534,65532,65530,65528
+    1521 00020360 0000fff6          .long   65526,65523,65520,65517,65514,65510,65505,65501
+    1522 00020460 0000ffd8          .long   65496,65491,65485,65480,65474,65467,65461,65454
+    1523 00020560 0000ffa6          .long   65446,65439,65431,65422,65414,65405,65396,65386
+    1524 00020660 0000ff60          .long   65376,65366,65356,65345,65334,65323,65311,65299
+    1525 00020760 0000ff07          .long   65287,65274,65261,65248,65234,65220,65206,65192
+    1526 00020860 0000fe99          .long   65177,65162,65146,65131,65115,65098,65082,65065
+    1527 00020960 0000fe18          .long   65048,65030,65012,64994,64975,64957,64937,64918
+    1528 00020a60 0000fd82          .long   64898,64878,64858,64837,64816,64795,64773,64751
+    1529 00020b60 0000fcd9          .long   64729,64707,64684,64661,64637,64613,64589,64565
+    1530 00020c60 0000fc1c          .long   64540,64515,64490,64464,64439,64412,64386,64359
+    1531 00020d60 0000fb4c          .long   64332,64304,64277,64249,64220,64192,64163,64133
+    1532 00020e60 0000fa68          .long   64104,64074,64044,64013,63983,63951,63920,63888
+    1533 00020f60 0000f970          .long   63856,63824,63791,63758,63725,63692,63658,63624
+    1534 00021060 0000f865          .long   63589,63555,63520,63484,63449,63413,63376,63340
+    1535 00021160 0000f747          .long   63303,63266,63228,63191,63152,63114,63075,63037
+    1536 00021260 0000f615          .long   62997,62958,62918,62878,62837,62796,62755,62714
+    1537 00021360 0000f4d0          .long   62672,62630,62588,62546,62503,62460,62416,62372
+    1538 00021460 0000f378          .long   62328,62284,62239,62195,62149,62104,62058,62012
+    1539 00021560 0000f20e          .long   61966,61919,61872,61825,61777,61729,61681,61632
+    1540 00021660 0000f090          .long   61584,61535,61485,61436,61386,61336,61285,61234
+    1541 00021760 0000eeff          .long   61183,61132,61080,61028,60976,60923,60870,60817
+    1542 00021860 0000ed5c          .long   60764,60710,60656,60602,60547,60493,60437,60382
+    1543 00021960 0000eba6          .long   60326,60270,60214,60157,60100,60043,59986,59928
+    1544 00021a60 0000e9de          .long   59870,59812,59753,59694,59635,59576,59516,59456
+    1545 00021b60 0000e804          .long   59396,59335,59274,59213,59152,59090,59028,58966
+    1546 00021c60 0000e617          .long   58903,58841,58777,58714,58650,58586,58522,58458
+    1547 00021d60 0000e419          .long   58393,58328,58263,58197,58131,58065,57999,57932
+    1548 00021e60 0000e209          .long   57865,57798,57730,57662,57594,57526,57457,57388
+    1549 00021f60 0000dfe7          .long   57319,57250,57180,57110,57040,56969,56898,56827
+    1550 00022060 0000ddb4          .long   56756,56684,56612,56540,56468,56395,56322,56249
+    1551 00022160 0000db6f          .long   56175,56102,56028,55953,55879,55804,55729,55653
+    1552 00022260 0000d91a          .long   55578,55502,55426,55349,55273,55196,55118,55041
+    1553 00022360 0000d6b3          .long   54963,54885,54807,54728,54650,54570,54491,54412
+    1554 00022460 0000d43c          .long   54332,54252,54171,54091,54010,53929,53847,53766
+    1555 00022560 0000d1b4          .long   53684,53602,53519,53437,53354,53271,53187,53104
+    1556 00022660 0000cf1c          .long   53020,52936,52851,52766,52682,52596,52511,52425
+    1557 00022760 0000cc73          .long   52339,52253,52167,52080,51993,51906,51819,51731
+    1558 00022860 0000c9bb          .long   51643,51555,51467,51378,51289,51200,51111,51021
+    1559 00022960 0000c6f3          .long   50931,50841,50751,50660,50569,50478,50387,50295
+    1560                    
+    1561                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   32
+
+    1562                    ;1024 entries - square root of multiples of 32.
+    1563 00022a60           sqroot_tab
+    1564 00022a60       00          .byte   0,6,8,10,11,13,14,15,16,17,18,19,20,20,21,22
+    1565 00022ae0       17          .byte   23,23,24,25,25,26,27,27,28,28,29,29,30,30,31,31
+    1566 00022b60       20          .byte   32,32,33,33,34,34,35,35,36,36,37,37,38,38,38,39
+    1567 00022be0       27          .byte   39,40,40,40,41,41,42,42,42,43,43,43,44,44,45,45
+    1568 00022c60       2d          .byte   45,46,46,46,47,47,47,48,48,48,49,49,49,50,50,50
+    1569 00022ce0       33          .byte   51,51,51,52,52,52,52,53,53,53,54,54,54,55,55,55
+    1570 00022d60       37          .byte   55,56,56,56,57,57,57,57,58,58,58,59,59,59,59,60
+    1571 00022de0       3c          .byte   60,60,60,61,61,61,61,62,62,62,62,63,63,63,63,64
+    1572 00022e60       40          .byte   64,64,64,65,65,65,65,66,66,66,66,67,67,67,67,68
+    1573 00022ee0       44          .byte   68,68,68,69,69,69,69,70,70,70,70,70,71,71,71,71
+    1574 00022f60       48          .byte   72,72,72,72,72,73,73,73,73,74,74,74,74,74,75,75
+    1575 00022fe0       4b          .byte   75,75,75,76,76,76,76,77,77,77,77,77,78,78,78,78
+    1576 00023060       4e          .byte   78,79,79,79,79,79,80,80,80,80,80,81,81,81,81,81
+    1577 000230e0       52          .byte   82,82,82,82,82,83,83,83,83,83,84,84,84,84,84,84
+    1578 00023160       55          .byte   85,85,85,85,85,86,86,86,86,86,87,87,87,87,87,87
+    1579 000231e0       58          .byte   88,88,88,88,88,89,89,89,89,89,89,90,90,90,90,90
+    1580 00023260       5b          .byte   91,91,91,91,91,91,92,92,92,92,92,92,93,93,93,93
+    1581 000232e0       5d          .byte   93,93,94,94,94,94,94,94,95,95,95,95,95,95,96,96
+    1582 00023360       60          .byte   96,96,96,96,97,97,97,97,97,97,98,98,98,98,98,98
+    1583 000233e0       63          .byte   99,99,99,99,99,99,100,100,100,100,100,100,101,101,101,101
+    1584 00023460       65          .byte   101,101,102,102,102,102,102,102,102,103,103,103,103,103,103,104
+    1585 000234e0       68          .byte   104,104,104,104,104,104,105,105,105,105,105,105,106,106,106,106
+    1586 00023560       6a          .byte   106,106,106,107,107,107,107,107,107,107,108,108,108,108,108,108
+    1587 000235e0       6d          .byte   109,109,109,109,109,109,109,110,110,110,110,110,110,110,111,111
+    1588 00023660       6f          .byte   111,111,111,111,111,112,112,112,112,112,112,112,113,113,113,113
+    1589 000236e0       71          .byte   113,113,113,114,114,114,114,114,114,114,115,115,115,115,115,115
+    1590 00023760       73          .byte   115,116,116,116,116,116,116,116,116,117,117,117,117,117,117,117
+    1591 000237e0       76          .byte   118,118,118,118,118,118,118,119,119,119,119,119,119,119,119,120
+    1592 00023860       78          .byte   120,120,120,120,120,120,121,121,121,121,121,121,121,121,122,122
+    1593 000238e0       7a          .byte   122,122,122,122,122,123,123,123,123,123,123,123,123,124,124,124
+    1594 00023960       7c          .byte   124,124,124,124,124,125,125,125,125,125,125,125,125,126,126,126
+    1595 000239e0       7e          .byte   126,126,126,126,126,127,127,127,127,127,127,127,127,128,128,128
+    1596 00023a60       80          .byte   128,128,128,128,128,129,129,129,129,129,129,129,129,130,130,130
+    1597 00023ae0       82          .byte   130,130,130,130,130,131,131,131,131,131,131,131,131,132,132,132
+    1598 00023b60       84          .byte   132,132,132,132,132,133,133,133,133,133,133,133,133,134,134,134
+    1599 00023be0       86          .byte   134,134,134,134,134,134,135,135,135,135,135,135,135,135,136,136
+    1600 00023c60       88          .byte   136,136,136,136,136,136,136,137,137,137,137,137,137,137,137,138
+    1601 00023ce0       8a          .byte   138,138,138,138,138,138,138,138,139,139,139,139,139,139,139,139
+    1602 00023d60       8b          .byte   139,140,140,140,140,140,140,140,140,141,141,141,141,141,141,141
+    1603 00023de0       8d          .byte   141,141,142,142,142,142,142,142,142,142,142,143,143,143,143,143
+    1604 00023e60       8f          .byte   143,143,143,143,144,144,144,144,144,144,144,144,144,145,145,145
+    1605 00023ee0       91          .byte   145,145,145,145,145,145,146,146,146,146,146,146,146,146,146,147
+    1606 00023f60       93          .byte   147,147,147,147,147,147,147,147,148,148,148,148,148,148,148,148
+    1607 00023fe0       94          .byte   148,148,149,149,149,149,149,149,149,149,149,150,150,150,150,150
+    1608 00024060       96          .byte   150,150,150,150,151,151,151,151,151,151,151,151,151,151,152,152
+    1609 000240e0       98          .byte   152,152,152,152,152,152,152,153,153,153,153,153,153,153,153,153
+    1610 00024160       99          .byte   153,154,154,154,154,154,154,154,154,154,155,155,155,155,155,155
+    1611 000241e0       9b          .byte   155,155,155,155,156,156,156,156,156,156,156,156,156,156,157,157
+    1612 00024260       9d          .byte   157,157,157,157,157,157,157,157,158,158,158,158,158,158,158,158
+    1613 000242e0       9e          .byte   158,158,159,159,159,159,159,159,159,159,159,159,160,160,160,160
+    1614 00024360       a0          .byte   160,160,160,160,160,160,161,161,161,161,161,161,161,161,161,161
+    1615 000243e0       a2          .byte   162,162,162,162,162,162,162,162,162,162,163,163,163,163,163,163
+    1616 00024460       a3          .byte   163,163,163,163,164,164,164,164,164,164,164,164,164,164,165,165
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:29 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   33
+
+    1617 000244e0       a5          .byte   165,165,165,165,165,165,165,165,166,166,166,166,166,166,166,166
+    1618 00024560       a6          .byte   166,166,166,167,167,167,167,167,167,167,167,167,167,168,168,168
+    1619 000245e0       a8          .byte   168,168,168,168,168,168,168,168,169,169,169,169,169,169,169,169
+    1620 00024660       a9          .byte   169,169,170,170,170,170,170,170,170,170,170,170,170,171,171,171
+    1621 000246e0       ab          .byte   171,171,171,171,171,171,171,171,172,172,172,172,172,172,172,172
+    1622 00024760       ac          .byte   172,172,173,173,173,173,173,173,173,173,173,173,173,174,174,174
+    1623 000247e0       ae          .byte   174,174,174,174,174,174,174,174,175,175,175,175,175,175,175,175
+    1624 00024860       af          .byte   175,175,175,176,176,176,176,176,176,176,176,176,176,176,177,177
+    1625 000248e0       b1          .byte   177,177,177,177,177,177,177,177,177,178,178,178,178,178,178,178
+    1626 00024960       b2          .byte   178,178,178,178,179,179,179,179,179,179,179,179,179,179,179,180
+    1627 000249e0       b4          .byte   180,180,180,180,180,180,180,180,180,180,180,181,181,181,181,181
+    1628                    
+
+ No Errors,  No Warnings

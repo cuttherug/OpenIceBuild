@@ -1,0 +1,2298 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HH.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                            .INCLUDE        "HH.INC"
+      11                            .INCLUDE        "HHSTRING.H"
+      12                            .INCLUDE        "IMGTBL.GLO"
+      13                            .include        "hh.e"
+      14                            .include        "hhram.g"
+      15                            .include        "hhd.g"
+      16                            .include        "hhcmos.g"
+      17                            .include        "hhproc.g"
+      18                            .include        "hhmenu.g"
+      19                            .include        "hhutil.g"
+      20                            .include        "hhcoin.g"
+      21                            .include        "hhdutl.g"
+      22                            .include        "hhsnd.g"
+      23                            .include        "hhdtst.g"
+      24                            .include        "hhpall.g"
+      25                            .include        "hhmisc.g"
+      26                            .include        "hhc.g"
+      27                            .include        "hha.g"
+      28                            .include        "hhattrct.g"
+      29                            .include        "hhcx.g"
+      30                            .include        "hhpic.g"
+      31                            .include        "hhgame.g"
+      32                    
+      33                    ; end of include files
+      34                            .if XUNIT=1
+      35                            .ref    code_start, code_end, code_dest
+      36                            .ref    vector_start, vector_end, vector_dest
+      37                            .endif
+      38                    
+      39                            .IF DEBUG
+      40                            .ref    CPUCHK1,CPUCHK2,CPUCHK3,CPUCHK4,CPUCHK5
+      41                            .ref    CLIPTIM,SCALETIM,VELTIM,PROCTIM
+      42                    
+      43                            .REF    WAVEDMABOG, WAVECPUBOG, NOVELADD
+      44                    
+      45                            .ENDIF
+      46                    
+      47 00000000                   .BSS    EXECLED,16
+      48 00000010                   .BSS    IRQLED,16
+      49 00000020                   .BSS    DIPSW,16        ;RAM FAKE FOR NON-EXISTANT DIP SWITCHES
+      50 00000030                   .BSS    SWITCH_ESCAPE,16 ;SWITCH ESCAPE FLAG USED BY SLEEP_SWITCHX
+      51 00000040                   .BSS    SWITCH_SPOKEN,16 ;SWITCH SPEAK FLAG
+      52 00000050                   .BSS    DMASKIPBOG,16   ;Flag to skip BOG calculator for one frame
+      53                    
+      54 00000000                   .TEXT
+      55                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56 00000000       4f          .STRING "OOPPEENN  IICCEE  "
+      57 00000090       43          .STRING "CCOOPPYYRRIIGGHHTT  ((cc))  "
+      58 00000170       31          .STRING "11999955  MMIIDDWWAAYY  "
+      59 00000230       4d          .STRING "MMAANNUUFFAACCTTUURRIINNGG  "
+      60 00000310       43          .STRING "CCOOMMPPAANNYY..  "
+      61 000003a0                   .EVEN
+      62                    
+      63                    **************************************************************************
+      64                    *                                                                        *
+      65                    *       POWERUP                                                          *
+      66                    *                                                                        *
+      67                    *       This section of code is Loaded and Executed from the Image       *
+      68                    *       ROM area.  Not only will it handle power-on diagnostics,         *
+      69                    *       but it will also copy the program into RAM space.                *
+      70                    *                                                                        *
+      71                    *       The 020 will have to be initialized properly and once            *
+      72                    *       the copying is done, the DMA must get priority over the          *
+      73                    *       image ROM.                                                       *
+      74                    *                                                                        *
+      75                    **************************************************************************
+      76 000003a0           POWERUP
+      77 000003a0     0360          DINT
+      78 000003b0     0570          SETF    16,1,0                  ;WORD SIGN EXTEND
+      79 000003c0     0760          SETF    32,1,1                  ;LONG WORD
+      80                    
+      81 000003d0     09ef          MOVI    STCKST,SP,L
+         000003e0 013f73e0  
+      82                    
+      83                    ;MJL Start
+      84 00000400     09c0          movi    VMUX_INIT,a0
+         00000410     0000  
+      85 00000420     0580          move    a0,@VMUX_CONTROL,W
+         00000430 01800000  
+      86                    ;MJL End
+      87 00000450     09c0          movi    SYSCINIT,a0
+         00000460     2880  
+      88 00000470     0580          move    a0,@SYSCTRL,W
+         00000480 01b00000  
+      89                    
+      90 000004a0     0d3f          CALLR   INIT_DMACONFIG          ;INITIALIZE DMACONFIG REGISTER
+         000004b0     0149  
+      91                    *INIT COLOR RAM
+      92 000004c0     5600          CLR     A0
+      93 000004d0     0780          MOVE    A0,@DMAGOREG,L          ; XUNIT
+         000004e0 01a00000  
+      94 00000500     0780          MOVE    A0,@DMAGOREG,L          ; XUNIT  OFF DMA
+         00000510 01a00000  
+      95 00000530     0580          MOVE    A0,@CMAPSEL             ;CLEAR COLOR MAP SELECT
+         00000540 01a00080  
+      96                    
+      97 00000560     0d5f          CALLA   SCRCLR
+         00000570 00000000! 
+      98                    
+      99                    *
+     100                    * Manual sound board reset.  Yes, you will get the dongs. OH, NO YOU WON'T!
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     101                    *
+     102                    
+     103 00000590     09c0          movi    SNDRSTBIT|IORSTBIT,a0
+         000005a0     0030  
+     104 000005b0     0580          move    a0,@COIN_COUNTERS,W
+         000005c0 01860010  
+     105 000005e0                   MSECWT  110             ;Wait for sound board to catch it
+     106 00000610     09c0          movi    IORSTBIT,a0
+         00000620     0020  
+     107 00000630     0580          move    a0,@COIN_COUNTERS,W
+         00000640 01860010  
+     108                    
+     109                    ;MJL Start
+     110 00000660     05a0          move    @SOUNDIRQ,a0            ; read watchdog status
+         00000670 01860040  
+     111 00000690     1ee0          btst    8,a0                    ; Is this reset from a watchdog ?
+     112 000006a0     cb0a          jrnz    initp50                 ; br = no
+     113 000006b0                   AUDIT   AUD_DOG                 ;CLICK A WATCH DOG RESET
+     114 00000700     184e          MOVK    2,A14
+     115 00000710     015e          getpc   B14                     ;Show where we are
+     116 00000720     0d5f          CALLA   DUMP_IT
+         00000730 00000000! 
+     117                    
+     118 00000750           initp50
+     119 00000750     0580          move    a0,@WDOG_BONE           ; Kill the dog fer yucks
+         00000760 01860030  
+     120 00000780     0d5f          calla   InitPIC                 ; Initialize the PIC and the I/O system
+         00000790 00000000! 
+     121 000007b0     0580          move    a0,@WDOG_BONE           ; Kill the dog fer yucks
+         000007c0 01860030  
+     122 000007e0     c080          jauc    POWERTST                ; Go off and run the power up tests
+         000007f0 00000000! 
+     123 00000810           POWERRET
+     124                    ;       move    a0,@WDOG_BONE           ; Kill the dog fer yucks
+     125                    ;       calla   InitPIC                 ; Reinitialize the PIC and I/O system
+     126                    ;
+     127                    ;       movi    SYSCINIT,a0
+     128                    ;       move    a0,@SYSCTRL,W
+     129                    ;
+     130                    ;       move    a0,@WDOG_BONE           ; Kill the dog fer yucks
+     131                    
+     132                    
+     133                    *
+     134                    *NOW THAT THE POWER ON TESTS ARE DONE, WE CAN INITIALIZE AGAIN, FOR REAL!
+     135 00000810           SETUP
+     136 00000810           WARMSET
+     137 00000810     0360          DINT
+     138 00000820     0570          SETF    16,1,0  ;WORD SIGN EXTEND
+     139 00000830     0760          SETF    32,1,1  ;LONG WORD
+     140                    
+     141                    ;       move    @SYSCTRL,a0,W
+     142                    ;       ori     ROMWRINTDIS|CLR_WRROMINT,a0
+     143                    ;       move    a0,@SYSCTRL,W
+     144                    
+     145                            .if     XUNIT=0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     146 00000840     09c0          movi    VMUX_INIT,a0
+         00000850     0000  
+     147 00000860     0580          move    a0,@VMUX_CONTROL,W
+         00000870 01800000  
+     148                            .endif
+     149                    
+     150 00000890     09ef          MOVI    STCKST,SP,L
+         000008a0 013f73e0  
+     151 000008c0     0d3f          CALLR   CLSCRACH                ;CLEAR SCRATCHPAD
+         000008d0     0256  
+     152 000008e0     09c0          MOVI    SYSCINIT,A0             ;
+         000008f0     2880  
+     153                    
+     154                            .if     XUNIT=1
+     155                            MOVE    A0,@SYSCOPY             ; GET EVERYBODY HAPPY
+     156                            MOVE    A0,@SYSCTRL0,L          ; XUNIT
+     157                            srl     8,a0                    ; XUNIT
+     158                            move    a0,@SYSCTRL1,L          ; XUNIT
+     159                            .else
+     160 00000900     0580          move    a0,@SYSCTRL,W
+         00000910 01b00000  
+     161                            .endif
+     162                    
+     163                    ;       CALLA   LAMPS_OFF               ;TURN LAMPS OFF
+     164                    
+     165 00000930     0d3f          CALLR   DIPINIT
+         00000940     0116  
+     166                    ;MJL Start
+     167 00000950     0d5f          calla   InitPIC
+         00000960 00000000! 
+     168                    ;MJL End
+     169 00000980     c080          JAUC    POWERCMOS               ;VERIFY CMOS AND PRINT OPENING MESSAGE
+         00000990 00000000! 
+     170 000009b0           PCMOSRET
+     171 000009b0     0d3f          CALLR   MAIN_INIT       ;DO NORMAL INITIALIZATIONS
+         000009c0     00a5  
+     172                    ;MJL Start
+     173                    ; These are stored in these reggies to protect them from mem clear
+     174 000009d0     0795          move    b5,@_serial_number,L
+         000009e0 00000000! 
+     175 00000a00     0796          move    b6,@_man_date,L
+         00000a10 00000000! 
+     176                    ;MJL End
+     177 00000a30     0d5f          CALLA   TIMEINIT        ;WHY MUST WE DO THIS?
+         00000a40 00000000! 
+     178                    
+     179 00000a60     0d60          EINT                    ;ENABLE INTERRUPTS AND WE'RE OFF
+     180 00000a70                   DISPON                  ;ENABLE THE DISPLAY SYSTEM
+     181                    
+     182 00000ab0     0d5f          CALLA   CKDIAG          ;ARE ANY OF THE DIAG SWITCHES CLOSED?
+         00000ac0 00000000! 
+     183 00000ae0     ca0a          JRZ     MAIN_GO         ;BR = NO
+     184 00000af0                   CREATE  PID_DIAG,DIAG   ;FIRE OFF THE DIAG PROCESS
+     185 00000b80     c00a          JRUC    EXEC_LP         ;AND THEN DISPATCH IT.
+     186 00000b90           MAIN_GO
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     187 00000b90     5600          CLR     A0
+     188 00000ba0     0580          MOVE    A0,@COINFLAG,W  ; NOT ON COIN PAGE YET
+         00000bb0 00000000! 
+     189 00000bd0     0d5f          calla   cx_powerup
+         00000be0 00000000! 
+     190 00000c00     0d5f          CALLA   ATSTRT          ;START ATTRACT MODE
+         00000c10 00001d00' 
+     191                    
+     192                    **************************************************************************
+     193                    *                                                                        *
+     194                    *               START OF EXECUTIVE LOOP                                  *
+     195                    *                                                                        *
+     196                    **************************************************************************
+     197 00000c30           EXEC_LP
+     198 00000c30     0d5f          CALLA   PRCDSP          ;DISPATCH PROCESSES
+         00000c40 00000000! 
+     199 00000c60     4dad          MOVE    A13,A13         ;DID PROCESS EXECUTE CORRECTLY?
+     200 00000c70     ca03          JRZ     EXEC_POK        ;BR = YES
+     201 00000c80                   LOCKUP                  ;REPORT THE SITUATION
+     202 00000cb0           EXEC_POK
+     203                    *
+     204                    *UNSTACK THE VALID SWITCH CLOSURES AND ACTIVATE PROCESSES
+     205                    *
+     206 00000cb0     09ed          MOVI    ACTIVE,A13,L
+         00000cc0 00000000! 
+     207 00000ce0     07a3          MOVE    @SWSTACK,A3,L
+         00000cf0 00000000! 
+     208 00000d10           EXEC_UNSTKLP
+     209 00000d10     0b63          CMPI    SWSTST,A3,L     ;STACK AT START?
+         00000d20 ffffffff! 
+     210 00000d40     ca16          JREQ    EXEC_UNSTKX     ;YES, EXIT
+     211 00000d50     07a0          MOVE    @FREE,A0,L
+         00000d60 00000000! 
+     212 00000d80     ca12          JRZ     EXEC_UNSTKX     ;NO PROCESSES LEFT, TRY NEXT TIME AROUND
+     213 00000d90     9460          MOVE    *A3+,A0,W       ;GET ENTRY
+     214 00000da0     0783          MOVE    A3,@SWSTACK,L   ;UPDATE STACK
+         00000db0 00000000! 
+     215 00000dd0     4c02          MOVE    A0,A2
+     216 00000de0     4002          ADD     A0,A2
+     217 00000df0     4002          ADD     A0,A2           ;MULT BY 3
+     218 00000e00     2482          SLL     4,A2            ;ADJUST FOR WORD SIZE (16)
+     219 00000e10     0b22          ADDI    SWTAB,A2
+         00000e20 00005bd0' 
+     220 00000e40     9441          MOVE    *A2+,A1         ;GET PID
+     221 00000e50     9647          MOVE    *A2+,A7,L       ;GET STARTING ADDR
+     222 00000e60     caea          JREQ    EXEC_UNSTKLP    ;NULL ENTRY
+     223 00000e70           EXEC_SWITCH_CREATE
+     224 00000e70     0d5f          CALLA   GETPRC
+         00000e80 00000000! 
+     225 00000ea0     c0e6          JRUC    EXEC_UNSTKLP
+     226 00000eb0           EXEC_UNSTKX
+     227 00000eb0     0d5f          CALLA   RANDOM          ;RESEED THE RANDOM NUMBER GENERATOR
+         00000ec0 00000000! 
+     228                    
+     229 00000ee0     0d5f          calla   sound_exec
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+         00000ef0 00000000! 
+     230                    
+     231 00000f10     05a0          MOVE    @EXECLED,A0,W
+         00000f20 00000000- 
+     232 00000f40     1020          INC     A0
+     233 00000f50     0580          MOVE    A0,@EXECLED,W
+         00000f60 00000000- 
+     234 00000f80     0b40          CMPI    5,A0
+         00000f90     fffa  
+     235 00000fa0     c4c8          JRLT    EXEC_LP         ;BR = NOT TIME TO BLINK THE EXEC LED
+     236                    
+     237 00000fb0     5600          CLR     A0
+     238 00000fc0     0580          MOVE    A0,@EXECLED,W
+         00000fd0 00000000- 
+     239                    
+     240 00000ff0     01e0          PUSHST
+     241 00001000     0360          DINT
+     242                    *
+     243                    *DO SOME SYSCTRL STUFF WHILE INTERRUPTS ARE OFF
+     244                    *
+     245                    
+     246                            .if     XUNIT=1
+     247                            MOVE    @SYSCOPY,A0     ;BLINK L.E.D. TO ACK OPERATION
+     248                            XORI    LED_ON<<8,A0    ; XUNIT
+     249                            MOVE    A0,@SYSCOPY     ; XUNIT
+     250                            srl     8,a0            ; XUNIT
+     251                            MOVE    A0,@SYSCTRL1,L  ; XUNIT
+     252                            .else
+     253 00001010     05a0          MOVE    @SYSCTRL,A0,W
+         00001020 01b00000  
+     254 00001040     0bc0          xori    LED_ON,a0
+         00001050 00000400  
+     255                    ;       move    a0,@SYSCOPY
+     256 00001070     0580          move    a0,@SYSCTRL,W
+         00001080 01b00000  
+     257                            .endif
+     258                    
+     259 000010a0     01c0          POPST
+     260                    
+     261 000010b0     0d3f          CALLR   StCpuLft
+         000010c0     0001  
+     262 000010d0     c0b5          JRUC    EXEC_LP
+     263                    
+     264                    
+     265                    **************************************************************************
+     266                    *                                                                        *
+     267                    *                       END OF EXECUTIVE LOOP                            *
+     268                    *                                                                        *
+     269                    **************************************************************************
+     270                    
+     271                    **************************************************************************
+     272                    *                                                                        *
+     273                    * StCpuLft - ROUTINE TO CALCULATE CPU TIME LEFT                          *
+     274                    *                                                                        *
+     275                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     276 000010e0           StCpuLft
+     277 000010e0     05a0          move    @TIMER,A0,W
+         000010f0 00000000! 
+     278 00001110     ca04          jrz     NoBog
+     279 00001120     09c1          movi    EOSINT,a1
+         00001130     0112  
+     280 00001140     5621          clr     A1
+     281 00001150     c00d          jruc    GotTime
+     282 00001160     09c1  NoBog   movi    EOSINT,A1
+         00001170     0112  
+     283 00001180     05a0          move    @VCOUNT,A0
+         00001190 c00001d0  
+     284                    ;MJL
+     285 000011b0     ce25          jrn     StCpuLft_aBoRt
+     286                    ;MJL END
+     287 000011c0     4401          sub     A0,A1
+     288 000011d0     ce23          JRN     StCpuLft_aBoRt  ;BR = Something is strange with the value
+     289                    
+     290                            .if     bog_line
+     291                            move    a0,@bog_cpu
+     292                            .endif
+     293                    
+     294 000011e0     09e0          movi    1000*10000H/EOSINT,A0
+         000011f0 0003a64e  
+     295 00001210     5e01          mpyu    A0,A1
+     296 00001220     2e01          srl     16,A1
+     297 00001230     0581  GotTime move    A1,@CPULEFT,W
+         00001240 00000000! 
+     298 00001260     05a0          MOVE    @CPULOW,A0,W
+         00001270 00000000! 
+     299 00001290     4801          CMP     A0,A1
+     300 000012a0     c503          JRGE    NO_NEWLOW
+     301 000012b0     0581          MOVE    A1,@CPULOW,W
+         000012c0 00000000! 
+     302 000012e0           NO_NEWLOW
+     303 000012e0     05a0          MOVE    @CPUHI,A0,W
+         000012f0 00000000! 
+     304 00001310     4801          CMP     A0,A1
+     305 00001320     c603          JRLE    NO_NEWHI
+     306 00001330     0581          MOVE    A1,@CPUHI,W
+         00001340 00000000! 
+     307 00001360           NO_NEWHI
+     308 00001360     2fa1          srl     3,A1
+     309 00001370     05a0          move    @CPUAVG,A0,W
+         00001380 00000000! 
+     310 000013a0     4c02          move    A0,A2
+     311 000013b0     2fa2          srl     3,A2
+     312 000013c0     4440          sub     A2,A0
+     313 000013d0     4001          add     A0,A1
+     314 000013e0     0581          move    A1,@CPUAVG,W
+         000013f0 00000000! 
+     315 00001410           StCpuLft_aBoRt
+     316 00001410     0960          rets
+     317                    
+     318                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     319                    **************************************************************************
+     320                    *                                                                        *
+     321                    * MAIN_INIT - CUMBERSOME SYSTEM INITIALIZATION STUFF, USED TO BRING      *
+     322                    *               UP THE SYSTEM COLD.                                      *
+     323                    *           RAM MUST BE O.K., STACK POINTER VALID AND FIELDS SET.        *
+     324                    * RETURNS                                                                *
+     325                    *       A13 = PROCESS ACTIVE LIST                                        *
+     326                    *                                                                        *
+     327                    **************************************************************************
+     328 00001420           MAIN_INIT
+     329 00001420                   PUSH    A0
+     330                    
+     331 00001430     09c0          MOVI    INAMODE,A0
+         00001440     0030  
+     332 00001450     0580          MOVE    A0,@GAME_STATE,W
+         00001460 00000000! 
+     333 00001480     09e0          MOVI    0FFFFH,A0
+         00001490 0000ffff  
+     334 000014b0     0580          MOVE    A0,@SOUND_COPY,W        ;INITIALIZE THE SOUND PORT COPY
+         000014c0 00000000! 
+     335 000014e0     0d3f          CALLR   INITIO                  ;INITIALIZE THE I/O REGS
+         000014f0     0445  
+     336 00001500     0d3f          CALLR   INIT_DMACONFIG          ;INITIALIZE DMACONFIG REGISTER
+         00001510     0043  
+     337                    *SET UP TI PIXEL PROCESSING REGS
+     338 00001520     0d5f          CALLA   SETPPROC
+         00001530 00000000! 
+     339                    *INIT COLOR RAM
+     340 00001550     5600          CLR     A0
+     341 00001560     0780          MOVE    A0,@DMAGOREG,L          ; XUNIT
+         00001570 01a00000  
+     342 00001590     0780          MOVE    A0,@DMAGOREG,L          ; XUNIT  OFF DMA
+         000015a0 01a00000  
+     343 000015c0     0580          MOVE    A0,@CMAPSEL             ;CLEAR COLOR MAP SELECT
+         000015d0 01a00080  
+     344 000015f0     0580          MOVE    A0,@IRQLED
+         00001600 00000010- 
+     345 00001620     0580          MOVE    A0,@EXECLED
+         00001630 00000000- 
+     346                    *CLEAR THE SCREEN
+     347 00001650     0d5f          CALLA   SCRCLR
+         00001660 00000000! 
+     348                    
+     349                    *INITIALIZE RANDOM SEED
+     350 00001680     09e0          MOVI    81261A8CH,A0
+         00001690 81261a8c  
+     351 000016b0     0780          MOVE    A0,@RAND,L
+         000016c0 00000000! 
+     352                    *ENABLE DISPLAY INTERRUPT
+     353                            .if     WRITE_TO_ROM_INT
+     354 000016e0     09c0          MOVI    DIE|X2E,A0
+         000016f0     0404  
+     355                            .else
+     356                            MOVI    DIE,A0
+     357                            .endif
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     358 00001700     0580          MOVE    A0,@INTENB              ;enable display interrupts
+         00001710 c0000110  
+     359                    
+     360                            .if     XUNIT=1
+     361                    *Initialize the System interrupt register
+     362                            MOVIM   LINT2_INTS,@INT_REG,L
+     363                            .endif
+     364                    
+     365                    *INITIALIZE SWITCH STACK
+     366 00001730     09e0          MOVI    SWSTST,A0
+         00001740 00000000! 
+     367 00001760     0780          MOVE    A0,@SWSTACK,L
+         00001770 00000000! 
+     368                    *INITIALIZE SYSTEM CONTROL REGISTER
+     369 00001790     09c0          MOVI    SYSCINIT,A0
+         000017a0     2880  
+     370                    
+     371                            .if     XUNIT=1
+     372                            MOVE    A0,@SYSCOPY             ;KEEP A COPY IN RAM
+     373                            MOVE    A0,@SYSCTRL0,L          ; XUNIT
+     374                            srl     8,a0                    ; XUNIT
+     375                            MOVE    A0,@SYSCTRL1,L          ; XUNIT
+     376                            .else
+     377 000017b0     0580          move    a0,@SYSCTRL,W
+         000017c0 01b00000  
+     378                            .endif
+     379                    
+     380                    *INITIALIZE DIP SWITCH OPTIONS
+     381 000017e0     0d3f          CALLR   DIPINIT
+         000017f0     002b  
+     382                    *INITIALIZE PROCESS AND DISPLAY LISTS AND START THE SYSTEM
+     383 00001800     0d5f          CALLA   PINIT           ;INIT PROCESS LIST
+         00001810 00000000! 
+     384 00001830     0d5f          CALLA   OINIT           ;DO THIS FIRST FOR THE DMA'S SAKE
+         00001840 00000000! 
+     385 00001860     0d5f          CALLA   MYOINIT         ;INITIALIZE THE OBJECT LIST
+         00001870 00000000! 
+     386 00001890     0d5f          CALLA   CLEAR_PAGE2     ;Clear video bit map page 2
+         000018a0 00000000! 
+     387 000018c0     0d5f          CALLA   CLEAR_PAGE3     ;Clear video bit map page 3
+         000018d0 00000000! 
+     388                    *RESET THE SOUND BOARD - Must be called after the process system is init'd
+     389                    
+     390                            .if     DEBUG
+     391                            CALLA   QSNDRST
+     392                            .else
+     393 000018f0     0d5f          CALLA   SNDRES
+         00001900 00000000! 
+     394                            .endif
+     395                    
+     396 00001920                   PULL    A0
+     397 00001940     0960          RETS
+     398                    
+     399                    **************************************************************************
+     400                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     401                    * INIT_DMACONFIG - INITIALIZE THE DMACONFIG                              *
+     402                    *                                                                        *
+     403                    * CALL DIS UPON POWER UP                                                 *
+     404                    *                                                                        *
+     405                    **************************************************************************
+     406 00001950           INIT_DMACONFIG
+     407 00001950                   MOVIM   DMACF4,@DMACONFIG,L     ;ADJUST WINDOW RIGHT/LEFT BORDER
+     408 000019b0     09ee          movi    [511,0],a14
+         000019c0 01ff0000  
+     409 000019e0     078e          move    a14,@DMAWINDOW,L
+         000019f0 01a000c0  
+     410 00001a10     09ee          MOVI    DMAWIN|DMACF4,A14
+         00001a20 00300000  
+     411 00001a40     078e          MOVE    A14,@DMACFIGCOPY,L
+         00001a50 00000000! 
+     412 00001a70     078e          MOVE    A14,@DMACONFIG,L        ;LEAVE CONFIG'D FOR TOP/BOT ADJUSTMENT
+         00001a80 01a000e0  
+     413 00001aa0     0960          RETS
+     414                    
+     415                    **************************************************************************
+     416                    *                                                                        *
+     417                    * DIPINIT - INITIALIZE OPTIONS VIA DIP SWITCH SETTINGS                   *
+     418                    *                                                                        *
+     419                    **************************************************************************
+     420 00001ab0           DIPINIT
+     421 00001ab0     098f          MMTM    SP,A0,A1
+         00001ac0     c000  
+     422 00001ad0     0d5f          CALLA   READ_DIP                ;LOAD UP THE CURRENT DIP SWITCH BITS
+         00001ae0 00000000! 
+     423 00001b00     4c01          MOVE    A0,A1                   ;STORE FOR MULTIPLE USES
+     424 00001b10     0b80          ANDI    DPPLAYERS,A0            ;AQUIRE THE NUMBER OF PLAYERS
+         00001b20 ffffefff  
+     425 00001b40     2ee0          SRL     SR_DPPLAYERS-3,A0       ; WBD
+     426 00001b50     0b20          ADDI    PLNUM,A0
+         00001b60 00001bf0' 
+     427 00001b80     8e00          MOVB    *A0,A0
+     428 00001b90     0580          MOVE    A0,@NPLAYERS,W
+         00001ba0 00000000! 
+     429 00001bc0     09af          MMFM    SP,A0,A1
+         00001bd0     0003  
+     430 00001be0     0960          RETS
+     431                    
+     432 00001bf0       04  PLNUM   .BYTE   4,2                     ; WBD
+     433 00001c00                   .EVEN
+     434                    
+     435                    **************************************************************************
+     436                    *                                                                        *
+     437                    * ATSTRT - START THE ATTRACT MODE PROCESS                                *
+     438                    *                                                                        *
+     439                    **************************************************************************
+     440 00001c00           ATSTRT_CREDITS_NOCPJ
+     441 00001c00     098f          MMTM    SP,A0,A1,A7
+         00001c10     c100  
+     442 00001c20     1860          movk    3,a0
+     443 00001c30     c00f          jruc    atgo1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     444 00001c40           ATSTRT_CREDITS
+     445 00001c40     098f          MMTM    SP,A0,A1,A7
+         00001c50     c100  
+     446 00001c60     1840          movk    2,a0
+     447 00001c70     05ae          move    @COINFLAG,a14,W
+         00001c80 00000000! 
+     448 00001ca0     cb2b          jrnz    atgocln         ;we are on credit page, do a clean go with no wipeout
+     449 00001cb0     c007          jruc    atgo1
+     450 00001cc0           ATSTRT_TOPTEN
+     451 00001cc0     098f          MMTM    SP,A0,A1,A7
+         00001cd0     c100  
+     452 00001ce0     1820          movk    1,a0
+     453 00001cf0     c003          jruc    atgo1
+     454 00001d00           ATSTRT
+     455 00001d00     098f          MMTM    SP,A0,A1,A7
+         00001d10     c100  
+     456 00001d20     5600          clr     a0
+     457 00001d30     098f  atgo1   mmtm    sp,a0
+         00001d40     8000  
+     458 00001d50     05ae          MOVE    @in_at_game,A14,W
+         00001d60 00000000! 
+     459 00001d80     ca19          jrz     noqu
+     460 00001d90     0d5f          calla   kill_all_sound
+         00001da0 00000000! 
+     461                    
+     462 00001dc0     09af          mmfm    sp,a0
+         00001dd0     0001  
+     463 00001de0     0b40          cmpi    2,a0
+         00001df0     fffd  
+     464 00001e00     098f          mmtm    sp,a0
+         00001e10     8000  
+     465 00001e20     cb0f          jrnz    atgor
+     466 00001e30     05a0          move    @SOUNDSUP,a0,W
+         00001e40 00000000! 
+     467 00001e60     57ce          clr     a14
+     468 00001e70     058e          move    a14,@SOUNDSUP,W
+         00001e80 00000000! 
+     469 00001ea0     09c4          movi    S_CREDIT,a4
+         00001eb0     010c  
+     470 00001ec0     0d5f          calla   do_sound
+         00001ed0 00000000! 
+     471 00001ef0     0580          move    a0,@SOUNDSUP,W
+         00001f00 00000000! 
+     472 00001f20           atgor
+     473 00001f20     0d5f  noqu    calla   MY_WIPEOUT
+         00001f30 00000000! 
+     474 00001f50     c00f          jruc    atgoc
+     475 00001f60     098f  atgocln mmtm    sp,a0
+         00001f70     8000  
+     476 00001f80     05a1          move    @COINFLAG,a1,W
+         00001f90 00000000! 
+     477 00001fb0     098f          mmtm    sp,a1
+         00001fc0     4000  
+     478 00001fd0     0d5f          calla   my_wipeout_novideo_noprocess    ;we should kill everything but indes, and the credit fla
+         00001fe0 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     479 00002000     09af          mmfm    sp,a1
+         00002010     0002  
+     480 00002020     0581          move    a1,@COINFLAG,W
+         00002030 00000000! 
+     481 00002050     09af  atgoc   mmfm    sp,a0
+         00002060     0001  
+     482 00002070     0580          move    a0,@amode_starting_point
+         00002080 00000000! 
+     483 000020a0     5621          CLR     A1
+     484 000020b0     0781          MOVE    A1,@WAVEIRQS,L          ;RESET FOR TIMING IN ATTRACT MODE
+         000020c0 00000000! 
+     485 000020e0     0b40          cmpi    3,a0
+         000020f0     fffc  
+     486 00002100     ca04          jrz     nocpj
+     487 00002110     1861          MOVK    3,A1
+     488 00002120     0581          MOVE    A1,@CREDIT_PAGE_JUMPS,W ;NUMBER OF JUMPS LEFT TO CREDIT PAGE
+         00002130 00000000! 
+     489 00002150     09c1  nocpj   MOVI    INAMODE,A1
+         00002160     0030  
+     490 00002170     0581          MOVE    A1,@GAME_STATE,W
+         00002180 00000000! 
+     491 000021a0                   MOVKM   1,@GAMERASE,W           ;AUTO-ERASE FULL
+     492 000021e0                   C_A_K   PID_ATTRACT_MODE,ATTRACT_MODE
+     493 00002260     09af          MMFM    SP,A0,A1,A7
+         00002270     0083  
+     494 00002280           DUMRETS
+     495 00002280           DUMCOL
+     496 00002280     0960          RETS
+     497                    
+     498                    **************************************************************************
+     499                    *                                                                        *
+     500                    * WIPEOUT - WIPES THE SYSTEM CLEAR OF ALL OTHER PROCESSES, OBJECTS       *
+     501                    *         AND COORDINATES.                                               *
+     502                    *         IT RETURNS WITH THE DISPLAY SYSTEM AND AUTO-ERASE SHUT OFF,    *
+     503                    *         COLOR RAM CLEARED, AND THE BIT MAP WIPED CLEAN.                *
+     504                    *         THIS IS NICE TO USE WHEN SWITCHING BETWEEN STUFF.              *
+     505                    * NOTE: TRASHES A14                                                      *
+     506                    *                                                                        *
+     507                    **************************************************************************
+     508 00002290           WIPEOUT
+     509 00002290     098f          MMTM    SP,A0,A1,A7
+         000022a0     c100  
+     510                    
+     511                    ;       CALLA   LAMPS_OFF
+     512                    
+     513 000022b0     5600          CLR     A0
+     514 000022c0     0580          MOVE    A0,@PAGE,W
+         000022d0 00000000! 
+     515 000022f0     0580          MOVE    A0,@COINFLAG,W          ;NOT ON COIN PAGE YET
+         00002300 00000000! 
+     516 00002320     0580          MOVE    A0,@NOPGFLIP,W          ;ALLOW PAGE FLIPPING
+         00002330 00000000! 
+     517 00002350     0580          MOVE    A0,@SWITCH_SPOKEN,W     ;SWITCH SPEAK FLAG
+         00002360 00000040- 
+     518 00002380     0d3f          CALLR   KILL_DESTRUCTIBLES
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+         00002390     0086  
+     519 000023a0     5600          CLR     A0
+     520 000023b0     0580          MOVE    A0,@GAMERASE,W
+         000023c0 00000000! 
+     521 000023e0     0580          MOVE    A0,@DISPLAYON,W         ;TURN THE DISPLAY PROCESSOR OFF
+         000023f0 00000000! 
+     522 00002410     0580          MOVE    A0,@in_at_game,W
+         00002420 00000000! 
+     523 00002440     0580          move    a0,@octopus_count,W
+         00002450 00000000! 
+     524 00002470     0d5f          CALLA   CLRDMAQ                 ;RESET THE Q
+         00002480 00000000! 
+     525 000024a0     0d5f          CALLA   DMAWAIT                 ;WAIT ON DMA TO FINISH
+         000024b0 00000000! 
+     526 000024d0     01e0          PUSHST
+     527 000024e0     0360          DINT
+     528 000024f0     0d5f          CALLA   CLRSWPRC
+         00002500 00002cf0' 
+     529 00002520     0d5f          CALLA   MYOINIT                 ;RE-INIT THE OBJECT LIST
+         00002530 00000000! 
+     530 00002550     0d3f          CALLR   SYSINITL
+         00002560     00a9  
+     531 00002570     0d5f          CALLA   CLR_SCRN                ;WIPE OUT THE BIT MAP
+         00002580 00000000! 
+     532                    
+     533 000025a0     05a1          MOVE    @INTPEND,A1,W           ;CLEAR INTERRUPT PENDING
+         000025b0 c0000120  
+     534 000025d0     0b81          ANDNI   DIE,A1
+         000025e0 00000400  
+     535 00002600     0581          MOVE    A1,@INTPEND,W
+         00002610 c0000120  
+     536 00002630     01c0          POPST
+     537                    
+     538                    ;ALREADY DONE IN MYOINIT!
+     539                    ;       CALLA   IAUTOE                  ;INITIALIZE THE AUTO ERASE AREA
+     540                    
+     541 00002640     5600          CLR     A0
+     542 00002650     0580          MOVE    A0,@IRQSKYE,W           ;CLR THE AUTO-ERASE COLOR
+         00002660 00000000! 
+     543 00002680     05ae          MOVE    @SUPRESS_PAGE_FLIP,A14,W
+         00002690 00000000! 
+     544 000026b0     cb05          JRNZ    WO_NO_PF
+     545                    
+     546                            .if     XUNIT=1
+     547                            MOVI    DPYSTRT0,A0
+     548                            MOVE    A0,@DPYST,L             ;XUNIT RESET DISPLAY START POINT
+     549                            .else
+     550                    ;       movi    0fffch,a0
+     551 000026c0     09c0          movi    0ch,a0
+         000026d0     000c  
+     552 000026e0     0580          move    a0,@DPYSTRT,W
+         000026f0 c0000090  
+     553                            .endif
+     554                    
+     555 00002710           WO_NO_PF
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     556 00002710     09af          MMFM    SP,A0,A1,A7
+         00002720     0083  
+     557 00002730     0960          RETS
+     558                    
+     559                    **************************************************************************
+     560                    *                                                                        *
+     561                    * WIPEOUT_NOVIDEO                                                        *
+     562                    *                                                                        *
+     563                    * same as WIPEOUT, but don't touch the video screen                      *
+     564                    *                                                                        *
+     565                    **************************************************************************
+     566 00002740           WIPEOUT_NOVIDEO_NOPROCESS
+     567 00002740     098f          MMTM    SP,A0,A1,A7
+         00002750     c100  
+     568 00002760     5600          CLR     A0
+     569 00002770     0580          MOVE    A0,@COINFLAG,W          ;NOT ON COIN PAGE YET
+         00002780 00000000! 
+     570 000027a0     0580          MOVE    A0,@SWITCH_SPOKEN,W     ;SWITCH SPEAK FLAG
+         000027b0 00000040- 
+     571 000027d0     0580          move    a0,@octopus_count,W
+         000027e0 00000000! 
+     572 00002800     01e0          PUSHST
+     573 00002810     0360          DINT
+     574 00002820     0d5f          CALLA   CLRSWPRC
+         00002830 00002cf0' 
+     575 00002850     0d3f          CALLR   SYSINITL
+         00002860     0079  
+     576 00002870     01c0          POPST
+     577 00002880     09af          MMFM    SP,A0,A1,A7
+         00002890     0083  
+     578 000028a0     0960          RETS
+     579                    
+     580 000028b0           WIPEOUT_NOVIDEO
+     581 000028b0     098f          MMTM    SP,A0,A1,A7
+         000028c0     c100  
+     582                    
+     583                    ;       CALLA   LAMPS_OFF
+     584                    
+     585 000028d0     5600          CLR     A0
+     586 000028e0     0580          MOVE    A0,@PAGE,W
+         000028f0 00000000! 
+     587 00002910     0580          MOVE    A0,@COINFLAG,W          ;NOT ON COIN PAGE YET
+         00002920 00000000! 
+     588 00002940     0580          MOVE    A0,@NOPGFLIP,W          ;ALLOW PAGE FLIPPING
+         00002950 00000000! 
+     589 00002970     0580          MOVE    A0,@SWITCH_SPOKEN,W     ;SWITCH SPEAK FLAG
+         00002980 00000040- 
+     590 000029a0     0d3f          CALLR   KILL_DESTRUCTIBLES
+         000029b0     0024  
+     591 000029c0     5600          CLR     A0
+     592 000029d0     0580          MOVE    A0,@GAMERASE,W
+         000029e0 00000000! 
+     593 00002a00     0580          MOVE    A0,@DISPLAYON,W         ;TURN THE DISPLAY PROCESSOR OFF
+         00002a10 00000000! 
+     594 00002a30     0580          move    a0,@octopus_count,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+         00002a40 00000000! 
+     595 00002a60     0d5f          CALLA   CLRDMAQ                 ;RESET THE Q
+         00002a70 00000000! 
+     596 00002a90     0d5f          CALLA   DMAWAIT                 ;WAIT ON DMA TO FINISH
+         00002aa0 00000000! 
+     597 00002ac0     01e0          PUSHST
+     598 00002ad0     0360          DINT
+     599 00002ae0     0d5f          CALLA   CLRSWPRC
+         00002af0 00002cf0' 
+     600                    ;       CALLA   MYOINIT                 ;RE-INIT THE OBJECT LIST
+     601 00002b10     0d3f          CALLR   SYSINITL
+         00002b20     004d  
+     602 00002b30     05a1          MOVE    @INTPEND,A1,W           ;CLEAR INTERRUPT PENDING
+         00002b40 c0000120  
+     603 00002b60     0b81          ANDNI   DIE,A1
+         00002b70 00000400  
+     604 00002b90     0581          MOVE    A1,@INTPEND,W
+         00002ba0 c0000120  
+     605 00002bc0     01c0          POPST
+     606                    ;       CALLA   CLR_SCRN                ;WIPE OUT THE BIT MAP
+     607                    ;       CALLA   IAUTOE                  ;INITIALIZE THE AUTO ERASE AREA
+     608                    ;       CLR     A0
+     609                    ;       MOVE    A0,@IRQSKYE,W           ;CLR THE AUTO-ERASE COLOR
+     610                    ;       MOVE    @SUPRESS_PAGE_FLIP,A14,W
+     611                    ;       JRNZ    WO_NO_PF
+     612                    ;
+     613                    ;       .if     XUNIT=1
+     614                    ;       MOVI    DPYSTRT0,A0
+     615                    ;       MOVE    A0,@DPYST,L             ;XUNIT RESET DISPLAY START POINT
+     616                    ;       .else
+     617                    ;;      movi    0fffch,a0
+     618                    ;       movi    0ch,a0
+     619                    ;       move    a0,@DPYSTRT,W
+     620                    ;       .endif
+     621                    ;
+     622 00002bd0     09af          MMFM    SP,A0,A1,A7
+         00002be0     0083  
+     623 00002bf0     0960          RETS
+     624                    
+     625                    **************************************************************************
+     626                    *                                                                        *
+     627                    * KILL_DESTRUCTIBLES - KILL ALL OF THE DESTRUCTIBLE PROCESSES CURRENTLY  *
+     628                    *                    ACTIVE.                                             *
+     629                    *                                                                        *
+     630                    **************************************************************************
+     631 00002c00           KILL_DESTRUCTIBLES
+     632 00002c00     098f          MMTM    SP,A0,A1,A7
+         00002c10     c100  
+     633 00002c20     5600          CLR     A0
+     634 00002c30     09e1          MOVI    M_INDESTRUCT,A1
+         00002c40 00008000  
+     635 00002c60     0d5f          CALLA   KILALL                  ;KILL ALL BUT THE INDESTRUCTIBLES
+         00002c70 00000000! 
+     636                    ;       CALLA   COLOR_START             ;RE-START THE COLOR PROCESSES
+     637 00002c90     09af          MMFM    SP,A0,A1,A7
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+         00002ca0     0083  
+     638 00002cb0     0960          RETS
+     639                    
+     640              0008  FREEZE_SW .EQU  8
+     641              0009  FREEZE_DIP .EQU 9
+     642                    **************************************************************************
+     643                    *                                                                        *
+     644                    * FREEZE_ABSOLUTE - PROCESS TO FREEZE THE GAME ACTION WHEN THE FREEZE BU *
+     645                    *        GOES FROM OFF TO ON. GAME RESUMES WHEN THE BUTTON IS RELEASED.  *
+     646                    *                                                                        *
+     647                    **************************************************************************
+     648 00002cc0           FREEZE_ABSOLUTE
+     649 00002cc0     c080          jauc    SUCIDE
+         00002cd0 00000000! 
+     650                    
+     651                    **************************************************************************
+     652                    *                                                                        *
+     653                    * CLRSWPRC - MAKE ALL SWITCH TRIGGERED PROCESSES DUMDIE ENTRIES          *
+     654                    * NOTE: CALL WHEN INTERRUPTS ARE TURNED OFF                              *
+     655                    *                                                                        *
+     656                    **************************************************************************
+     657 00002cf0           CLRSWPRC
+     658 00002cf0     098f          MMTM    SP,A0,A1,A3
+         00002d00     d000  
+     659 00002d10     09c1          MOVI    63,A1           ;USE SWTAB ENTRY 40 FOR DUMDIE PROC
+         00002d20     003f  
+     660 00002d30     07a3          MOVE    @SWSTACK,A3,L
+         00002d40 00000000! 
+     661 00002d60     0b63  CLRSTKL CMPI    SWSTST,A3,L     ;STACK AT START?
+         00002d70 ffffffff! 
+     662 00002d90     ca07          JREQ    CLRSTKX         ;YES, EXIT
+     663 00002da0     9460          MOVE    *A3+,A0,W
+     664 00002db0     0b40          CMPI    63,A0
+         00002dc0     ffc0  
+     665 00002dd0     c2f8          JRLS    CLRSTKL         ;THIS ENTRY IS A REAL SWITCH
+     666 00002de0     b023          MOVE    A1,*A3(-10H),W  ;STORE THE DUMDIE CALL
+         00002df0     fff0  
+     667 00002e00     c0f5          JRUC    CLRSTKL
+     668 00002e10           CLRSTKX
+     669 00002e10     09af          MMFM    SP,A0,A1,A3
+         00002e20     000b  
+     670 00002e30     0960          RETS
+     671                    
+     672                    **************************************************************************
+     673                    *                                                                        *
+     674                    *       CLSCRACH                                                         *
+     675                    *                                                                        *
+     676                    *       Clear all of scratch pad RAM.                                    *
+     677                    *                                                                        *
+     678                    *       NOTE: A0,A1,A2 and A3 are trashed.                               *
+     679                    *             This is very destructive. Make sure you setup              *
+     680                    *               all relevant variables after calling this.               *
+     681                    *                                                                        *
+     682                    **************************************************************************
+     683 00002e40           CLSCRACH
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     684 00002e40                   PULL    A3
+     685                    *CLEAR SCRATCHPAD RAM
+     686 00002e60     5600          CLR     A0
+     687 00002e70     09e1          MOVI    SCRATCH,A1,L
+         00002e80 01000000  
+     688 00002ea0     09e2          MOVI    (SCRATCH_END-SCRATCH)/32,A2,L   ;CLEAR LONGS
+         00002eb0 0001fba0  
+     689 00002ed0     9201  SCTLP   MOVE    A0,*A1+,L
+     690 00002ee0     3c42          DSJS    A2,SCTLP
+     691 00002ef0     0163          JUMP    A3
+     692                    
+     693                    **************************************************************************
+     694                    *                                                                        *
+     695                    * SYSTEM ROUTINES AND PROCESSES                                          *
+     696                    *                                                                        *
+     697                    **************************************************************************
+     698                    *GAME RAM INITIALIZATION
+     699 00002f00           GRAMINIT
+     700 00002f00     098f          MMTM    SP,A0,A1,A2
+         00002f10     e000  
+     701 00002f20     09e1          MOVI    GRAMSTRT,A1
+         00002f30 00000000! 
+     702 00002f50     09e2          MOVI    GRAMEND,A2
+         00002f60 00000000! 
+     703 00002f80     0300          JRUC    RAMINIT
+     704 00002f90     5600  RAMINIT CLR     A0
+     705 00002fa0     9001  RAMLOOP MOVE    A0,*A1+,W       ;16 BITS AT A TIME, NO EXTRANEOUS CLEARS
+     706 00002fb0     4841          CMP     A2,A1           ;DONE?
+     707 00002fc0     c8fd          JRLO    RAMLOOP         ;NO!
+     708 00002fd0     09af          MMFM    SP,A0,A1,A2
+         00002fe0     0007  
+     709 00002ff0     0960          RETS
+     710                    
+     711                    **************************************************************************
+     712                    *                                                                        *
+     713                    * SYSINITL - INITIALIZE LOW BYTE OF SYSTEM CONTROL REGISTER              *
+     714                    *                                                                        *
+     715                    **************************************************************************
+     716 00003000           SYSINITL
+     717 00003000                   PUSH    A0
+     718 00003010     09c0          MOVI    SYSCINIT,A0
+         00003020     2880  
+     719                    
+     720                            .if     XUNIT=1
+     721                            MOVE    A0,@SYSCOPY             ;RE-INITIALIZE SYSTEM CONTROL REG
+     722                            MOVE    A0,@SYSCTRL0,L          ; XUNIT
+     723                            srl     8,a0                    ; XUNIT
+     724                            MOVE    A0,@SYSCTRL1,L          ; XUNIT
+     725                            MOVI    700H,A0
+     726                            MOVE    A0,@SECCHIP,L           ; WHAT TO DO BOUT THIS ???XUNIT???
+     727                            MOVE    A0,@SECCHIP,L
+     728                            .else
+     729 00003030     0580          move    a0,@SYSCTRL,W
+         00003040 01b00000  
+     730                            .endif
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     731                    
+     732 00003060                   PULL    A0
+     733 00003080     0960          RETS
+     734                    
+     735                    **************************************************************************
+     736                    *                                                                        *
+     737                    * IAUTOE - ROUTINE TO INITIALIZE THE TWO AUTO-ERASE LINES TO THEIR       *
+     738                    *               DEFAULT COLOR.                                           *
+     739                    *                                                                        *
+     740                    **************************************************************************
+     741 00003090           IAUTOE
+     742 00003090                   PUSH    A0
+     743 000030a0     09e0          movi    ERASECOL,A0             ;color 63, pal 0
+         000030b0 3f3f3f3f  
+     744 000030d0     0580          move    A0,@NewAECol
+         000030e0 00000000! 
+     745 00003100     1420          dec     A0
+     746 00003110     0580          move    A0,@OldAECol
+         00003120 00000000! 
+     747 00003140                   PULLQ   A0
+     748 00003150     0960          rets
+     749                    
+     750                    **************************************************************************
+     751                    *                                                                        *
+     752                    * SRT_CLR - ROUTINE TO CLEAR SCREEN BEFORE NEXT PLOT                     *
+     753                    * NOTE: TRASHES MANY A AND B FILE REGISTERS                              *
+     754                    *       DON'T EXPLICITLY USE B11 - B13 UNLESS DMA INTERRUPT IS OFF.      *
+     755                    *                                                                        *
+     756                    **************************************************************************
+     757 00003160           SRT_CLR
+     758                    *       color to clear to stored in Lines 510 and 511
+     759 00003160     05a0          MOVE    @SKIPDISP,A0,W
+         00003170 00000000! 
+     760 00003190     cb12          JRNZ    SRT_CLRX
+     761                    
+     762 000031a0     05a0          MOVE    @NOAUTOE,A0,W
+         000031b0 00000000! 
+     763 000031d0     cb0e          JRNE    SRT_CLRX                ;DON'T ERASE
+     764                    
+     765 000031e0     09d2          movi    255,B2                  ;GET AUTO ERASE LINE
+         000031f0     00ff  
+     766 00003200     05b9          MOVE    @GAMERASE,B9,W          ;GET THE CURRENT AUTO-ERASE SCHEME
+         00003210 00000000! 
+     767 00003230     ca08          JREQ    SRT_CLRX                ;BR = AUTO-ERASE IS OFF
+     768                    
+     769 00003240     24d9          SLL     6,B9
+     770 00003250     0b39          ADDI    GAMERASE_TAB,B9
+         00003260 000036e0' 
+     771 00003280     9738          MOVE    *B9+,B8,L               ;GET THE SIZE
+     772 00003290     8737          MOVE    *B9,B7,L                ;GET THE SIZE
+     773                    
+     774 000032a0     0d3f          callr   SRT_CORE
+         000032b0     0001  
+     775 000032c0           SRT_CLRX
+     776 000032c0     0960          rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+     777                    *
+     778                    *       B2 = VLINE where erase color is found
+     779                    *       B8 = START VLINE
+     780                    *       B7 = [num_lines : 1]
+     781                    *
+     782 000032d0           SRT_CORE
+     783 000032d0     2598          sll     12,b8           ;convert start line to linear
+     784 000032e0     05ac          move    @CONVDP,A12,W
+         000032f0 c0000140  
+     785 00003310     1a59          movk    012H,B9
+     786 00003320     0599          move    B9,@CONVDP              ;Move to CONVDP io register
+         00003330 c0000140  
+     787                    
+     788                    * Set SRT=1.  This converts pixel accesses to VRAM SR transfer cycles.
+     789                    
+     790 00003350     05ba          MOVE    @DPYCTL,B10,W           ;Copy display control reg.
+         00003360 c0000080  
+     791 00003380     4f5d          move    B10,A13                 ; save in A file
+     792 00003390     0b9a          ANDNI   SRE+ENV,B10             ;Turn off screen refresh
+         000033a0 00009000  
+     793 000033c0     0bba          ORI     CST,B10                 ; XUNIT Enable SR transfers
+         000033d0 00000800  
+     794 000033f0     09c0          MOVI    (4096*MICRO_SECOND)/4,A0        ;MAX WAIT FOR 400X256 DMA
+         00003400     1800  
+     795 00003410           SrtDmaWt
+     796 00003410     07ae          MOVE    @DMAGOREG,A14,L         ;DMA STILL BUSY?
+         00003420 01a00000  
+     797 00003440     cf0b          JRNN    SRT_DMA_READY           ;BR = NO, READY
+     798 00003450     3ca0          DSJS    A0,SrtDmaWt
+     799                    
+     800 00003460     57ce          CLR     A14
+     801 00003470     078e          MOVE    A14,@DMAGOREG,L
+         00003480 01a00000  
+     802 000034a0     078e          MOVE    A14,@DMAGOREG,L         ;DMA off for sure
+         000034b0 01a00000  
+     803                    
+     804 000034d0     0d5f          CALLA   CLRDMAQ
+         000034e0 00000000! 
+     805                    
+     806 00003500           SRT_DMA_READY
+     807                    
+     808                    *
+     809                    *WARNING! KEEP INTERRUPTS OFF UNTIL AFTER THE FILL INSTRUCTION
+     810                    *       ASYNCHRONOUS BREAKS MAY CAUSE DMA INTERRUPT TO OCCUR
+     811                    *       DURING FILL INSTRUCTION TRASHING THE B REGISTERS THAT
+     812                    *       DETERMINE FILL RESTART AFTER INTERRUPT.
+     813                    *       WHEN DEBUGGING THIS CAUSES SPURIOUS ILLEGAL OPCODES AND TRASHING
+     814                    *       OF CODE SPACE.
+     815                    *
+     816 00003500     01e0          PUSHST
+     817 00003510     0360          DINT
+     818 00003520     059a          MOVE    B10,@DPYCTL,0           ;Load new display control
+         00003530 c0000080  
+     819 00003550     09d3          movi    SCRN_PTCH*2,B3          ;Get Screen Pitch
+         00003560     2000  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+     820                    
+     821                    * Load frame buffer for 1st line into VRAM shift registers.
+     822 00003570     5694          CLR     B4                      ;Origin at start of memory
+     823 00003580     25b2          sll     13,b2           ; change line number into address
+     824                    
+     825                            .if     XUNIT=1
+     826                            MOVK    1,A14
+     827                            MOVE    A14,@SECCHIP,L  ;Hack for Steve and his bogus VRAMs
+     828                            .endif
+     829                    
+     830 00003590     fa52          PIXT    *B2,B2          ;Load VRAM shift registers
+     831                    
+     832                    * Transfer contents of VRAM shift registers to rest of frame buffer.
+     833 000035a0     07b4          move    @PAGEADDR,B4,L
+         000035b0 00000000! 
+     834 000035d0     5652          clr     B2
+     835 000035e0     ec54          movx    b2,b4           ; clear out X
+     836 000035f0     2f94          SRL     4,B4            ; convert from XY to linear
+     837 00003600     4114          ADD     B8,B4
+     838 00003610     099f          MMTM    SP,B11,B12,B13
+         00003620     001c  
+     839 00003630     0fe0          FILL     XY                             ;200 SR-to-memory transfers
+     840 00003640     09bf          MMFM    SP,B11,B12,B13
+         00003650     3800  
+     841 00003660     01c0          POPST
+     842                    *END OF INTERRUPT DISABLE
+     843                    
+     844                    * Restore previous contents of registers.
+     845 00003670     058c          move    A12,@CONVDP,W
+         00003680 c0000140  
+     846 000036a0     058d          MOVE    A13,@DPYCTL,W           ;Copy display control reg.
+         000036b0 c0000080  
+     847 000036d0     0960          rets
+     848                    
+     849                    **************************************************************************
+     850                    *                                                                        *
+     851                    *                       TABLE OF SCREEN ERASE PARAMS                     *
+     852                    *       ENTRY:                                                           *
+     853                    *       .LONG   OFFSET TO START ERASE CLEAR                              *
+     854                    *       .LONG   LENGTH OF ERASE DOMAIN                                   *
+     855                    *                                                                        *
+     856                    **************************************************************************
+     857                    ERA_ENT .macro  TOP,BOTTOM
+     858                            .LONG   :TOP:*1000h
+     859                            .LONG   [((:BOTTOM:)-(:TOP:)+1)>01H,1]
+     860                            .endm
+     861                    
+     862 000036e0           GAMERASE_TAB
+     863 000036e0                   ERA_ENT SCRTOP,SCRBOT
+     864 00003720                   ERA_ENT SCRTOP,SCRBOT
+     865                    
+     866                    **************************************************************************
+     867                    
+     868                    *CALLED AT VERTICAL BLANK WHEN IT IS KNOWN THAT THE DMA IS FINISHED.
+     869                    * IT WILL SWAP THE PLOT AND VIEWED PAGES, REPLACES SwapPgA AND SwapPgB.
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+     870 00003760           SWAP_PAGES
+     871 00003760     05a0          MOVE    @SUPRESS_PAGE_FLIP,A0,W ;Totally blow off all page changing?
+         00003770 00000000! 
+     872 00003790     cb2a          JRNZ    SWAP_PageAX             ;BR = Yes
+     873                    
+     874 000037a0     05a0          MOVE    @NOPGFLIP,A0,W
+         000037b0 00000000! 
+     875 000037d0     ca06          JRZ     SWAP_ME
+     876                    
+     877                            .if     XUNIT=1
+     878                    *NO PAGE FLIPPING, JUST STICK IT ON PAGE 0
+     879                            clr     A0              ;PLOT ON PAGE 0 now
+     880                            movi    PAGE0ADR,A1
+     881                            movi    DPYSTRT0,A2     ;DISPLAY PAGE 0 now
+     882                            JRUC    SWAP_SetPgAd
+     883                    
+     884                    SWAP_ME
+     885                            MOVE    @SKIPDISP,A0,W
+     886                            jrnz    SWAP_PageAX
+     887                    
+     888                            ;**** PAGE 1 starts on the 256th line of the video ram
+     889                            movk    1,A0            ;Assume Page 1
+     890                            movi    PAGE1ADR,A1
+     891                            movi    DPYSTRT0,A2     ;DISPLAY PAGE 0
+     892                    
+     893                            move    @PAGE,A14,W
+     894                            jrz     SWAP_SetPgAd
+     895                    
+     896                            ;**** PAGE 0 starts on the 0th line of the video ram
+     897                            clr     A0              ;PLOT ON PAGE 0 now
+     898                            movi    PAGE0ADR,A1
+     899                            movi    DPYSTRT1,A2     ;DISPLAY PAGE 1 now
+     900                    
+     901                    SWAP_SetPgAd
+     902                            move    A1,@PAGEADDR,L
+     903                            move    A0,@PAGE,W
+     904                    ;XUNIT  move    a2,@DPYADR              ;Override DPYSTRT
+     905                            move    a2,@DPYST,L     ; XUNIT Stuff our new DPYST to be cool
+     906                            MOVE    A2,@DPYNX,L     ; XUNIT Override DPYST and take effect immeadiately
+     907                    
+     908                            .else
+     909                    
+     910                    *NO PAGE FLIPPING, JUST STICK IT ON PAGE 0
+     911 000037e0     5600          clr     A0              ;PLOT ON PAGE 0 now
+     912 000037f0     09c1          movi    PAGE0ADR,a1
+         00003800     0038  
+     913                    ;       movi    0fffch,a2
+     914 00003810     09c2          movi    0ch,a2
+         00003820     000c  
+     915 00003830     c014          JRUC    SWAP_SetPgAd
+     916                    
+     917 00003840           SWAP_ME
+     918 00003840     05a0          MOVE    @SKIPDISP,A0,W
+         00003850 00000000! 
+     919 00003870     cb1c          jrnz    SWAP_PageAX
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+     920                    
+     921                            ;**** PAGE 1 starts on the 256th line of the video ram
+     922 00003880     1820          movk    1,A0            ;Assume Page 1
+     923 00003890     09e1          movi    PAGE1ADR,a1
+         000038a0 00fe0038  
+     924                    ;       movi    0fffch,a2       ;Display page 0
+     925 000038c0     09c2          movi    0ch,a2  ;Display page 0
+         000038d0     000c  
+     926                    
+     927 000038e0     05ae          move    @PAGE,A14,W
+         000038f0 00000000! 
+     928 00003910     ca06          jrz     SWAP_SetPgAd
+     929                    
+     930                            ;**** PAGE 0 starts on the 0th line of the video ram
+     931 00003920     5600          clr     A0              ;PLOT ON PAGE 0 now
+     932 00003930     09c1          movi    PAGE0ADR,a1
+         00003940     0038  
+     933                    ;       movi    0f01ch,a2       ;Display Page 1
+     934 00003950     09e2          movi    0f02ch,a2       ;Display Page 1
+         00003960 0000f02c  
+     935                    
+     936 00003980           SWAP_SetPgAd
+     937 00003980     0781          move    A1,@PAGEADDR,L
+         00003990 00000000! 
+     938 000039b0     0580          move    A0,@PAGE,W
+         000039c0 00000000! 
+     939 000039e0     0582          move    a2,@DPYADR,W            ;Override DPYSTRT
+         000039f0 c00001e0  
+     940 00003a10     0582          move    a2,@DPYSTRT,W
+         00003a20 c0000090  
+     941                    
+     942                            .endif
+     943                    
+     944 00003a40           SWAP_PageAX
+     945 00003a40     0960          rets
+     946                    
+     947                    **************************************************************************
+     948                    
+     949              0001  ENABLE_DIRQ2    EQU     1       ;ALLOW UPDATING OF AUTO-ERASE COLOR
+     950                    
+     951                    **************************************************************************
+     952                    *                                                                        *
+     953                    * DIRQ - DISPLAY IRQ, USES THE VALUE STORED @DPYINT TO DETERMINE         *
+     954                    *        WHICH INTERRUPT WE HAVE RECEIVED.                               *
+     955                    *                                                                        *
+     956                    **************************************************************************
+     957 00003a50           DIRQ
+     958                            .if     XUNIT=1
+     959                            MMTM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14
+     960                            MMTM    SP,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B14
+     961                            .else
+     962 00003a50     098f          MMTM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14
+         00003a60     fffe  
+     963 00003a70     099f          MMTM    SP,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B14
+         00003a80     ffe2  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+     964                            .endif
+     965                    
+     966                    ;       .if     XUNIT=1
+     967                    ;       MMTM    SP,A0,A1
+     968                    ;       .else
+     969                    ;       MMTM    SP,A0,A1,a2,a3
+     970                    ;       .endif
+     971                    
+     972 00003a90     0541          SETF    1,0,0
+     973 00003aa0     5621          CLR     A1
+     974 00003ab0     0581          MOVE    A1,@INTPEND+DIP ;CLEAR STUPID INTERRUPT PENDING
+         00003ac0 c000012a  
+     975 00003ae0     0581          MOVE    A1,@INTENB+DIP  ;DISABLE DISPLAY INTERRUPT
+         00003af0 c000011a  
+     976                    *REMOVED OLD WAY OF CLEARING THOSE BITS
+     977 00003b10     0570          SETF    16,1,0          ;WORD SIGN EXTEND
+     978                    
+     979 00003b20     0d60          EINT                    ;ENABLE OTHER INTERRUPTS
+     980                    
+     981                            .IF NOTFINAL
+     982 00003b30     b7e0          MOVE    *SP(20H+40H),A0,L
+         00003b40     0060  
+     983 00003b50     0780          MOVE    A0,@INTADDR,L
+         00003b60 00000000! 
+     984                            .ENDIF
+     985                    
+     986                            .IF DEBUG
+     987                            GETPC   A1
+     988                            MOVE    *A1,A0,W
+     989                            SRL     2,A0
+     990                            SLL     2,A0
+     991                            CMPI    0F0H,A0
+     992                            JREQ    $
+     993                            .ENDIF
+     994                    
+     995 00003b80     05a0          move    @DPYINT,A0,W
+         00003b90 c00000a0  
+     996                    
+     997                            .if     ENABLE_DIRQ2
+     998 00003bb0     0b40          cmpi    EOSINT,A0       ;is this DIRQ or DIRQ2?
+         00003bc0     feed  
+     999 00003bd0     cb00          jrne    DIRQ2
+         00003be0     013d  
+    1000                            .endif
+    1001 00003bf0     05a0          MOVE    @DIAG_DFLAG,A0,W        ;SPECIAL DIRQ FOR GSP DIAGS?
+         00003c00 00000000! 
+    1002 00003c20     cb00          JRNZ    DIAG_DIRQ               ;BR = YES
+         00003c30     0123  
+    1003                    
+    1004                    **************************************************************************
+    1005                    *                                                                        *
+    1006                    *       END OF SCREEN INTERRUPT. DISPLAY PROCESSING, SWITCHES, COINS     *
+    1007                    *       COLORS, ETC.                                                     *
+    1008                    *                                                                        *
+    1009                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+    1010                            .if     XUNIT=0
+    1011 00003c40     05a3          move    @DPYCTL,a3,W            ;>Shift register read to restart DMA
+         00003c50 c0000080  
+    1012 00003c70     09c0          movi    06810h,a0
+         00003c80     6810  
+    1013 00003c90     0580          move    a0,@DPYCTL,W
+         00003ca0 c0000080  
+    1014 00003cc0     09e2          movi    (510*01000h),a2         ;*Autoerase lines
+         00003cd0 001fe000  
+    1015 00003cf0     fa42          pixt    *a2,a2                  ;Mem to shift reg xfer
+    1016 00003d00     0583          move    a3,@DPYCTL,W            ;Restore
+         00003d10 c0000080  
+    1017                            .endif
+    1018                    
+    1019                    ;       .if     XUNIT=1
+    1020                    ;       MMTM    SP,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14
+    1021                    ;       MMTM    SP,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B14
+    1022                    ;       .else
+    1023                    ;       MMTM    SP,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14
+    1024                    ;       MMTM    SP,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B14
+    1025                    ;       .endif
+    1026                    
+    1027 00003d30     05ae          MOVE    @GAME_STATE,A14,W
+         00003d40 00000000! 
+    1028 00003d60     0b4e          CMPI    INDIAG,A14
+         00003d70     ffbf  
+    1029 00003d80     ca26          JREQ    DIRQ_CKMP2              ;BR=IN DIAGNOSTICS, B13 INVALID!
+    1030                    
+    1031                    *CODE TO HANDLE OVERLOAD SITUATIONS WHICH
+    1032                    *WILL RESULT IN A FRAME RATE REDUCTION
+    1033 00003d90     4db0          MOVE    B13,B0
+    1034 00003da0     4990          CMP     B12,B0          ;IS THE DMA Q EMPTY?
+    1035 00003db0     c617          JRLE    DIRQ_CKMP       ;BR = Yes
+    1036                    
+    1037                    *
+    1038                    *DMA appears to be overloaded here. Use this hook to do some stuff
+    1039                    *       during DEBUG mode only.
+    1040                    *
+    1041                            .if     DEBUG
+    1042                            INCM    @WAVEDMABOG,L   ;Chalk this audit
+    1043                            .endif
+    1044                    
+    1045 00003dc0                   MOVKM   1,@DMASKIPBOG,W         ;Skip the bog check next time
+    1046                    
+    1047                            .if     XUNIT=1
+    1048                            MOVE    @INTENB,A1,W
+    1049                            BTST    B_X1E,A1
+    1050                            JRZ     DIRQ_OVERLOAD           ;BR = DMA not running
+    1051                            .endif
+    1052                    
+    1053 00003e00     09c1          MOVI    (4096*MICRO_SECOND)/4,A1        ;MAX WAIT FOR 400X256 DMA
+         00003e10     1800  
+    1054 00003e20           DIRQ_DQWAIT
+    1055 00003e20     49b0          CMP     B13,B0          ;DMA Q CHANGE?
+    1056 00003e30     cb24          JRNE    DIRQ_OVERLOAD   ;BR = YES, WE'RE OK
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+    1057 00003e40     3c61          DSJS    A1,DIRQ_DQWAIT
+    1058                    
+    1059 00003e50                   LOCKUP                  ;DMA Q IS FROZEN?
+    1060                    
+    1061 00003e80     57ce          CLR     A14
+    1062 00003e90     078e          MOVE    A14,@DMAGOREG,L
+         00003ea0 01a00000  
+    1063 00003ec0     078e          MOVE    A14,@DMAGOREG,L         ;DMA off for sure
+         00003ed0 01a00000  
+    1064                    
+    1065 00003ef0     0d5f          CALLA   CLRDMAQ
+         00003f00 00000000! 
+    1066 00003f20     c015          JRUC    DIRQ_OVERLOAD
+    1067 00003f30           DIRQ_CKMP
+    1068 00003f30     05ae          MOVE    @DMASKIPBOG,A14,W       ;Should we skip the DMA bog checker?
+         00003f40 00000050- 
+    1069 00003f60     ca08          JREQ    DIRQ_CKMP2              ;BR = No
+    1070 00003f70     57ce          CLR     A14
+    1071 00003f80     058e          MOVE    A14,@DMASKIPBOG,W       ;We use this stuff to skip the bog
+         00003f90 00000050- 
+    1072 00003fb0     03ee          NOT     A14                     ;calculator because of massive DMA
+    1073 00003fc0     058e          MOVE    A14,@DMATMP,W           ;overload.
+         00003fd0 00000000! 
+    1074 00003ff0           DIRQ_CKMP2
+    1075 00003ff0     05a1          MOVE    @TIMER,A1,W     ;Are the processes done?
+         00004000 00000000! 
+    1076 00004020     ca37          JRZ     DIRQ_OK         ;BR = Yes
+    1077                    *
+    1078                    *CPU appears to be overloaded here.
+    1079                    *
+    1080                            .if     DEBUG
+    1081                            INCM    @WAVECPUBOG,L   ;Chalk this audit
+    1082                            .endif
+    1083                    
+    1084 00004030     07ae          MOVE    @WAVEIRQS,A14,L
+         00004040 00000000! 
+    1085 00004060     1fee          BTST    0,A14
+    1086 00004070     ca32          JRZ     DIRQ_OK
+    1087                    
+    1088                    **************************************************************************
+    1089                    * COMMENT THE FOLLOWING JUMP TO SEE THE EFFECT OF CPU BOG ON THE DISPLAY.*
+    1090                    ;       JRUC    DIRQ_OK
+    1091                    **************************************************************************
+    1092                    
+    1093                    *Any overload will get you here.
+    1094 00004080           DIRQ_OVERLOAD
+    1095                            .if     DEBUG
+    1096                            MOVE    @NOVELADD,A14,W
+    1097                            JRNZ    DIRQ_60HZ               ;BR=WE LOCKED UP!
+    1098                            .endif
+    1099                    
+    1100 00004080     07a0          move    @SCROLLX,a0,L
+         00004090 00000000! 
+    1101 000040b0     0380          abs     a0
+    1102 000040c0     0b60          cmpi    [10,0],a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+         000040d0 fff5ffff  
+    1103 000040f0     c229          jrls    ssc1
+    1104 00004100     0d5f          CALLA   VELADD          ;Always do the Velocity add
+         00004110 00000000! 
+    1105                            .if     freeze_ok
+    1106 00004130     05ae          move    @game_frozen,a14,W
+         00004140 00000000! 
+    1107 00004160     cb22          jrnz    ssc1
+    1108                            .endif
+    1109 00004170     07a0          move    @SCROLLX,A0,L           ;ADJUST WORLD COORS FOR SCROLL
+         00004180 00000000! 
+    1110 000041a0     07a1          move    @WORLDX,A1,L
+         000041b0 00000000! 
+    1111 000041d0     4001          add     A0,A1
+    1112 000041e0     0b61          cmpi    [585,0],a1              ;we in no way will go past our edge
+         000041f0 fdb6ffff  
+    1113 00004210     c603          jrle    dioo1
+    1114 00004220     09e1          movi    [585,0],a1
+         00004230 02490000  
+    1115 00004250     0b61  dioo1   cmpi    [-585,0],a1
+         00004260 0248ffff  
+    1116 00004280     c503          jrge    dioo2
+    1117 00004290     09e1          movi    [-585,0],a1
+         000042a0 fdb70000  
+    1118 000042c0     0781  dioo2   move    A1,@WORLDX,L
+         000042d0 00000000! 
+    1119 000042f0     07a0          move    @SCROLLY,A0,L
+         00004300 00000000! 
+    1120 00004320     07a1          move    @WORLDY,A1,L
+         00004330 00000000! 
+    1121 00004350     4001          add     A0,A1
+    1122 00004360     0781          move    A1,@WORLDY,L
+         00004370 00000000! 
+    1123 00004390     c026  ssc1    JRUC    DIRQ_60HZ       ;Skip the display processor for some headroom
+    1124                    
+    1125                    *
+    1126                    *No overload detected here. Do things normally
+    1127                    *
+    1128 000043a0           DIRQ_OK
+    1129 000043a0     0d3f          CALLR   SWAP_PAGES
+         000043b0     ff3a  
+    1130 000043c0     0d3f          callr   SRT_CLR
+         000043d0     fed8  
+    1131                    
+    1132 000043e0     05ae          MOVE    @GAME_STATE,A14,W
+         000043f0 00000000! 
+    1133 00004410     0b4e          CMPI    INDIAG,A14
+         00004420     ffbf  
+    1134 00004430     cb0a          JRNE    D_PALTRANS                      ;BR=NOT IN DIAGNOSTICS
+    1135                    *
+    1136                    *UPDATE NORMAL CYCLING COLOR RAM
+    1137 00004440     09e0          MOVI    COLRTEMP+COLROFFST,A0   ;GET NEW COLORS
+         00004450 00000090! 
+    1138                    
+    1139                            .if     XUNIT=1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   27
+
+    1140                            MOVI    CYCOLORS+(COLROFFST*2),A1       ;GET ADDRESS OF CYCLE COLORS
+    1141                            .else
+    1142 00004470     09e1          MOVI    CYCOLORS+COLROFFST,A1           ;GET ADDRESS OF CYCLE COLORS
+         00004480 01880390  
+    1143                            .endif
+    1144                    
+    1145 000044a0     18c6          MOVK    COLRCNT,A6
+    1146 000044b0     940e  COLORUP MOVE    *A0+,a14
+    1147                    
+    1148                            .if     XUNIT=1
+    1149                            move    a14,*A1+,L
+    1150                            .else
+    1151 000044c0     91c1          move    a14,*a1+,W
+    1152                            .endif
+    1153                    
+    1154 000044d0     3c66          DSJS    A6,COLORUP
+    1155 000044e0           D_PALTRANS
+    1156 000044e0     05c0          MOVE    @IRQSKYE,@ERASELOC,W    ;MOVE IN THE CORRECT COLOR
+         000044f0 00000000! 
+         00004510 018803f0  
+    1157 00004530     0d5f          CALLA   PALTRANS                ;XFER NEW PALETTES IF NECESSARY
+         00004540 00000000! 
+    1158 00004560                   INCM    @WAVEDISPS,W    ;CLICK THE WAVE DISPLAY PROC CALLS
+    1159 000045d0     0d5f          CALLA   DISPLAY         ;GOT TO MAKE THE DONUTS
+         000045e0 00000000! 
+    1160                    
+    1161                    *
+    1162                    *Everything from here to the end of the IRQ code must
+    1163                    *       be executed every tick.
+    1164                    *
+    1165 00004600           DIRQ_60HZ
+    1166 00004600     0d5f          calla   speech_irq
+         00004610 00000000! 
+    1167 00004630     05a1          move    @DMATMP,a1              ;Let's see where the DMA ended
+         00004640 00000000! 
+    1168 00004660     ce1d          jrn     not_qued                ;BR = Do not do a timing check now
+    1169 00004670     05ae          MOVE    @DMASKIPBOG,A14         ;Is this an overload read?
+         00004680 00000050- 
+    1170 000046a0     ca02          JRZ     DIRQ_DMA_NORM           ;BR = No
+    1171 000046b0     5600          clr     a0                      ;Force no time left
+    1172 000046c0     c004          jruc    DIRQ_DMA_COMPUTE
+    1173 000046d0           DIRQ_DMA_NORM
+    1174 000046d0     09c0          movi    EOSINT,A0
+         000046e0     0112  
+    1175 000046f0     4420          sub     A1,A0
+    1176 00004700     ce13          JRN     not_qued                ;BR = Something is strange with the value
+    1177 00004710           DIRQ_DMA_COMPUTE
+    1178 00004710     09e1          movi    1000*10000H/EOSINT,A1
+         00004720 0003a64e  
+    1179 00004740     5e01          mpyu    A0,A1
+    1180 00004750     2e01          srl     16,A1                   ;DMA time left is on a scale of
+    1181 00004760     0581          move    a1,@DMALFT              ;0 to 1000 for this frame.
+         00004770 00000000! 
+    1182 00004790     2fa1          srl     3,A1
+    1183 000047a0     05a0          move    @DMAAVG,A0,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   28
+
+         000047b0 00000000! 
+    1184 000047d0     4c02          move    A0,A2
+    1185 000047e0     2fa2          srl     3,A2
+    1186 000047f0     4440          sub     A2,A0
+    1187 00004800     4001          add     A0,A1
+    1188 00004810     0581          move    A1,@DMAAVG,W            ;Average value to make it useful
+         00004820 00000000! 
+    1189                    
+    1190 00004840           not_qued
+    1191 00004840     57ce          CLR     A14
+    1192 00004850     03ee          NOT     A14
+    1193 00004860     058e          move    a14,@DMATMP
+         00004870 00000000! 
+    1194 00004890     05a1          MOVE    @TIMER,A1               ;HIT PROCESS TIMER
+         000048a0 00000000! 
+    1195 000048c0     1021          INC     A1
+    1196 000048d0     0581          MOVE    A1,@TIMER
+         000048e0 00000000! 
+    1197                            .IF DEBUG
+    1198                            .ELSE
+    1199 00004900     0b41          CMPI    200,A1
+         00004910     ff37  
+    1200 00004920     c803          JRLO    NO_IRQDOG               ;NOTHING IS HUNG
+    1201 00004930     0360          DINT
+    1202 00004940     c000          JRUC    $                       ;HANG AND LET THE DOG BITE.
+         00004950     fffe  
+    1203 00004960           NO_IRQDOG
+    1204                            .ENDIF
+    1205 00004960     0d5f          CALLA   COININT         ;HANDLE SOME COINS!
+         00004970 00000000! 
+    1206 00004990     0d3f          CALLR   SWSCAN          ;SCAN SWITCHES TO TRIGGER PROCS.
+         000049a0     00a2  
+    1207                    
+    1208                            .if     freeze_ok
+    1209 000049b0     05ae          move    @game_frozen,a14,W
+         000049c0 00000000! 
+    1210 000049e0     ca05          jrz     noskp
+    1211 000049f0     102e          inc     a14
+    1212 00004a00     058e          move    a14,@game_frozen,W
+         00004a10 00000000! 
+    1213 00004a30     c007          jruc    IRQ_SKIP_WI
+    1214                            .endif
+    1215                    
+    1216 00004a40           noskp   INCM    @WAVEIRQS,L     ;CLICK THE WAVE DIRQ COUNT
+    1217 00004ab0           IRQ_SKIP_WI
+    1218 00004ab0     0360          DINT
+    1219 00004ac0     0541          SETF    1,0,0
+    1220 00004ad0     1820          MOVK    1,A0
+    1221 00004ae0     0580          MOVE    A0,@INTENB+DIP  ;ENABLE DISPLAY INTERRUPT
+         00004af0 c000011a  
+    1222 00004b10     0570          SETF    16,1,0
+    1223 00004b20     05a0          MOVE    @IRQLED,A0,W
+         00004b30 00000010- 
+    1224 00004b50     1020          INC     A0
+    1225 00004b60     0580          MOVE    A0,@IRQLED,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   29
+
+         00004b70 00000010- 
+    1226 00004b90     0b40          CMPI    8,A0
+         00004ba0     fff7  
+    1227 00004bb0     c410          JRLT    DIRQX
+    1228                    *
+    1229                    *DO EVERYTHING FROM HERE TO DIRQX EVERY 8 TICKS
+    1230                    *
+    1231 00004bc0     5600          CLR     A0
+    1232 00004bd0     0580          MOVE    A0,@IRQLED,W
+         00004be0 00000010- 
+    1233                    
+    1234                            .if     XUNIT=1
+    1235                            MOVE    @SYSCOPY,A0
+    1236                            XORI    LED_ON<<8,A0
+    1237                            MOVE    A0,@SYSCOPY     ; XUNIT
+    1238                            srl     8,a0            ; XUNIT
+    1239                            MOVE    A0,@SYSCTRL1,L  ; XUNIT
+    1240                            .else
+    1241 00004c00     05a0          MOVE    @SYSCTRL,A0,W
+         00004c10 01b00000  
+    1242 00004c30     0bc0          xori    LED_ON,a0
+         00004c40 00000400  
+    1243                    ;       move    a0,@SYSCOPY
+    1244 00004c60     0580          move    a0,@SYSCTRL,W
+         00004c70 01b00000  
+    1245                            .endif
+    1246                    
+    1247 00004c90     0580          MOVE    a0,@WDOG_BONE   ; XUNIT THROW ROVER A BONE
+         00004ca0 01860030  
+    1248                    DIRQX   .IF NOTFINAL
+    1249 00004cc0     07c0          move    @INTADDR,@LASTINT,L
+         00004cd0 00000000! 
+         00004cf0 00000000! 
+    1250 00004d10     5600          clr     A0
+    1251 00004d20     0780          move    A0,@INTADDR,L
+         00004d30 00000000! 
+    1252                            .ENDIF
+    1253                    
+    1254                            .if     ENABLE_DIRQ2
+    1255                    *
+    1256                    *CHECK IF AUTO-ERASE COLORS HAVE CHANGED, IF SO
+    1257                    *CREATE A NEW INTERRUPT TO STORE DATA
+    1258                    *
+    1259 00004d50     07a0          move    @NewAECol,A0,L
+         00004d60 00000000! 
+    1260 00004d80     07a1          move    @OldAECol,A1,L
+         00004d90 00000000! 
+    1261 00004db0     4801          cmp     A0,A1
+    1262 00004dc0     ca05          jrz     SkAEInt
+    1263                    
+    1264 00004dd0           SetAEInt
+    1265 00004dd0     09c0          movi    DIRQ2INT,A0     ;STUFF DPYINT FOR DIRQ2 (CHANGE AUTOERASE COL)
+         00004de0     010a  
+    1266 00004df0     0580          move    A0,@DPYINT,W
+         00004e00 c00000a0  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   30
+
+    1267                            .endif
+    1268 00004e20           SkAEInt
+    1269 00004e20     09bf          MMFM    SP,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B14
+         00004e30     47ff  
+    1270 00004e40     09af          MMFM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14
+         00004e50     7fff  
+    1271                    
+    1272 00004e60     0940          RETI
+    1273                    
+    1274                    **************************************************************************
+    1275                    *                                                                        *
+    1276                    * SPECIAL DISPLAY INTERRUPT FOR DIAGNOSTIC TEST THAT DO ALL DRAWING      *
+    1277                    * WITH THE DMA(i.e. SWITCH TEST, DIPSWITCH TEST, etc.)                   *
+    1278                    * FEEDS WATCHDOG AND INCS TIMER                                          *
+    1279                    *                                                                        *
+    1280                    **************************************************************************
+    1281 00004e70           DIAG_DIRQ
+    1282 00004e70     0580          MOVE    A0,@WDOG_BONE   ; XUNIT THROW ROVER A BONE
+         00004e80 01860030  
+    1283 00004ea0     05a0          MOVE    @TIMER,A0       ;HIT PROCESS TIMER
+         00004eb0 00000000! 
+    1284 00004ed0     1020          INC     A0
+    1285 00004ee0     0580          MOVE    A0,@TIMER
+         00004ef0 00000000! 
+    1286 00004f10     0360          DINT
+    1287 00004f20     0541          SETF    1,0,0
+    1288 00004f30     1820          MOVK    1,A0
+    1289 00004f40     0580          MOVE    A0,@INTENB+DIP  ;ENABLE DISPLAY INTERRUPT
+         00004f50 c000011a  
+    1290                    ;       .if     XUNIT=1
+    1291                    ;       mmfm    SP,A0,A1
+    1292                    ;       .else
+    1293                    ;       mmfm    SP,A0,A1,a2,a3
+    1294                    ;       .endif
+    1295                    
+    1296 00004f70     09bf          MMFM    SP,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B14
+         00004f80     47ff  
+    1297 00004f90     09af          MMFM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14
+         00004fa0     7fff  
+    1298                    
+    1299 00004fb0     0940          RETI
+    1300                    
+    1301                    **************************************************************************
+    1302                    *                                                                        *
+    1303                    * DIRQ2 - USED TO CHANGE THE COLOR OF THE AUTO-ERASE LINES. IF THE DMA   *
+    1304                    *       IS NOT CURRENTLY BUSY. IF IT IS, WE'LL TRY NEXT SCREEN.          *
+    1305                    *                                                                        *
+    1306                    **************************************************************************
+    1307 00004fc0     09c0  DIRQ2   movi    EOSINT,A0       ;STUFF DPYINT FOR NEXT INTERRUPT
+         00004fd0     0112  
+    1308 00004fe0     0580          move    A0,@DPYINT,W
+         00004ff0 c00000a0  
+    1309 00005010     499d          cmp     B12,B13         ;Is Q Non-Empty?
+    1310 00005020     c72f          jrgt    DIRQ2X
+    1311 00005030     07a0          MOVE    @DMAGOREG,A0,L  ; XUNIT DMA BUSY?
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   31
+
+         00005040 01a00000  
+    1312 00005060     ce2b          JRN     DIRQ2X
+    1313                    
+    1314                            ;*** SET UP DMA TRANSFER TO RESTUFF AUTOERASE COLOR ***
+    1315 00005070     05a1          move    @NewAECol,A1,W
+         00005080 00000000! 
+    1316 000050a0     05a0          move    @OldAECol,A0,W
+         000050b0 00000000! 
+    1317 000050d0     4801          cmp     A0,A1
+    1318 000050e0     ca23          jreq    SkSetAE
+    1319 000050f0     0581          move    A1,@OldAECol,W
+         00005100 00000000! 
+    1320                            ;*** STUFF CORRECT COLOR IN AUTOERASE LINES ***
+    1321 00005120     09e1          movi    DMAREGS,A1
+         00005130 01a000c0  
+    1322 00005150     09e0          MOVI    01FF01FEH,A0
+         00005160 01ff01fe  
+    1323 00005180     8201          MOVE    A0,*A1,L        ;WINDOW BOTTOM - TOP
+    1324 00005190     09e0          MOVI    01000100H,A0
+         000051a0 01000100  
+    1325 000051c0     a201          MOVE    A0,-*A1,L       ;Y-SCALE:X-SCALE
+    1326 000051d0     05a0          move    @OldAECol,A0
+         000051e0 00000000! 
+    1327 00005200     2600          sll     16,a0
+    1328 00005210     a201          MOVE    A0,-*A1,L       ;CONST:PALETTE
+    1329 00005220     09e0          movi    [2,SCRWIDTH],A0
+         00005230 00020190  
+    1330 00005250     a201          MOVE    A0,-*A1,L       ;VSIZE:HSIZE
+    1331 00005260     09e0          movi    [510,CENTER_XSHIFT],A0
+         00005270 01fe0038  
+    1332                    
+    1333 00005290     a201          move    A0,-*A1,L       ;DESTINATION Y:X
+    1334 000052a0     09e0          movi    IROM,A0         ; XUNIT
+         000052b0 02000000  
+    1335 000052d0     a201          MOVE    A0,-*A1,L       ;IMAGE SAG
+    1336 000052e0     09e0          movi    DMACAL<<16,A0
+         000052f0 800c0000  
+    1337 00005310     a201          MOVE    A0,-*A1,L               ;STUFF THE CONTROL:OFFSET
+    1338 00005320           SkSetAE
+    1339                    
+    1340 00005320           DIRQ2X
+    1341 00005320     0360          DINT
+    1342 00005330     0541          SETF    1,0,0
+    1343 00005340     1820          MOVK    1,A0
+    1344 00005350     0580          MOVE    A0,@INTENB+DIP  ;ENABLE DISPLAY INTERRUPT
+         00005360 c000011a  
+    1345                    ;       .if     XUNIT=1
+    1346                    ;       mmfm    SP,A0,A1
+    1347                    ;       .else
+    1348                    ;       mmfm    SP,A0,A1,a2,a3
+    1349                    ;       .endif
+    1350                    
+    1351 00005380     09bf          MMFM    SP,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B14
+         00005390     47ff  
+    1352 000053a0     09af          MMFM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   32
+
+         000053b0     7fff  
+    1353                    
+    1354 000053c0     0940          RETI
+    1355                    *
+    1356                    *SWITCHES SCANNED HERE WILL ACTIVATE THE PROCESSES IN THE SWITCH PROCESS
+    1357                    *TABLE.
+    1358                    *BASHES A0,A1,A2 & A3 SO BEWARE!
+    1359 000053d0           SWSCAN
+    1360                    
+    1361 000053d0     05a0          move    @SWITCH,a0      ; XUNIT ST
+         000053e0 01860000  
+    1362 00005400     05ae          move    @SWITCH2,a14
+         00005410 01860010  
+    1363 00005430     260e          sll     16,a14
+    1364 00005440     efc0          movy    a14,a0          ; XUNIT END
+    1365 00005450     07a1          MOVE    @SWTEMP1,A1,L   ;PREVIOUS STATE T=N-1
+         00005460 00000000! 
+    1366 00005480     07a2          MOVE    @SWTEMP2,A2,L   ;PREVIOUS PREVIOUS T=N-2
+         00005490 00000000! 
+    1367 000054b0     0781          MOVE    A1,@SWTEMP2,L   ;NEW PREVIOUS PREVIOUS
+         000054c0 00000000! 
+    1368 000054e0     0780          MOVE    A0,@SWTEMP1,L   ;NEW PREVIOUS
+         000054f0 00000000! 
+    1369                    
+    1370                            .if     freeze_ok
+    1371 00005510     05ae          move    @game_frozen,a14,W
+         00005520 00000000! 
+    1372 00005540     cb15          jrnz    skip_sw1
+    1373                    
+    1374                            .endif
+    1375                    
+    1376                    ;       MOVE    @SWLOGIC,A14,L  ;GET PREVIOUS LOGICAL STATE
+    1377                    ;       ANDN    A0,A14          ;UPDATE SWITCH STATES
+    1378                    
+    1379 00005550     5022          AND     A1,A2
+    1380 00005560     5202          ANDN    A0,A2           ;LOOK FOR 110
+    1381 00005570     ca12          JREQ    SWITCH2_CHECK   ;NO SWITCHES
+    1382                    
+    1383                    ;       OR      A2,A14          ;ADD NEW SWITCH STATES
+    1384                    
+    1385 00005580     07a3          MOVE    @SWSTACK,A3,L   ;SWITCH ACTIVATION STACK
+         00005590 00000000! 
+    1386 000055b0           SWSCLP                          ;FIND BIT SET
+    1387 000055b0     0b63          CMPI    SWSTMN,A3       ;SWITCH STACK OVERFLOW?
+         000055c0 ffffffff! 
+    1388 000055e0     ca08          JREQ    SWSCX1          ;YEP, QUIT
+    1389 000055f0     6a40          LMO     A2,A0           ;1'S COMP LEFTMOST BIT
+    1390 00005600     6802          RL      A0,A2           ;GET RID OF BIT
+    1391 00005610     2422          SLL     1,A2
+    1392 00005620     1be1          MOVK    31,A1           ;CALC TRUE BIT #
+    1393 00005630     4401          SUB     A0,A1
+    1394 00005640     a023          MOVE    A1,-*A3         ;PUSH SWITCH NUMBER ON STACK (0-15)
+    1395 00005650     6822          RL      A1,A2           ;RESTORE SWITCH WORD WITHOUT BIT
+    1396 00005660     cbf4          JRNE    SWSCLP
+    1397 00005670           SWSCX1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   33
+
+    1398 00005670     0783          MOVE    A3,@SWSTACK,L   ;RESTORE SWITCH STACK
+         00005680 00000000! 
+    1399                    *
+    1400 000056a0           SWITCH2_CHECK
+    1401                    
+    1402                    ;       MOVE    A14,@SWLOGIC,L  ;SAVE CURRENT LOGICAL STATE
+    1403                    
+    1404 000056a0           skip_sw1
+    1405 000056a0     05a0          move    @COINS,a0
+         000056b0 01860030  
+    1406 000056d0     05ae          move    @DIPSWITCH,a14
+         000056e0 01860020  
+    1407 00005700     260e          sll     16,a14
+    1408 00005710     efc0          movy    a14,a0          ; XUNIT END
+    1409 00005720     07a1          MOVE    @SW2TEMP1,A1,L  ;PREVIOUS STATE T=N-1
+         00005730 00000000! 
+    1410 00005750     07a2          MOVE    @SW2TEMP2,A2,L  ;PREVIOUS PREVIOUS T=N-2
+         00005760 00000000! 
+    1411 00005780     0781          MOVE    A1,@SW2TEMP2,L  ;NEW PREVIOUS PREVIOUS
+         00005790 00000000! 
+    1412 000057b0     0780          MOVE    A0,@SW2TEMP1,L  ;NEW PREVIOUS
+         000057c0 00000000! 
+    1413 000057e0     5022          AND     A1,A2
+    1414 000057f0     5202          ANDN    A0,A2           ;LOOK FOR 110
+    1415 00005800     ca13          JREQ    SWSCX           ;NO SWITCHES
+    1416 00005810     07a3          MOVE    @SWSTACK,A3,L   ;SWITCH ACTIVATION STACK
+         00005820 00000000! 
+    1417 00005840           SW2SCLP                         ;FIND BIT SET
+    1418 00005840     0b63          CMPI    SWSTMN,A3       ;SWITCH STACK OVERFLOW?
+         00005850 ffffffff! 
+    1419 00005870     ca09          JREQ    SW2SCX1         ;YEP, QUIT
+    1420 00005880     6a40          LMO     A2,A0           ;1'S COMP LEFTMOST BIT
+    1421 00005890     6802          RL      A0,A2           ;GET RID OF BIT
+    1422 000058a0     2422          SLL     1,A2
+    1423 000058b0     09c1          MOVI    63,A1
+         000058c0     003f  
+    1424 000058d0     4401          SUB     A0,A1
+    1425 000058e0     a023          MOVE    A1,-*A3         ;PUSH SWITCH NUMBER ON STACK (0-15)
+    1426 000058f0     6822          RL      A1,A2           ;RESTORE SWITCH WORD WITHOUT BIT
+    1427 00005900     cbf3          JRNE    SW2SCLP
+    1428 00005910           SW2SCX1
+    1429 00005910     0783          MOVE    A3,@SWSTACK,L   ;RESTORE SWITCH STACK
+         00005920 00000000! 
+    1430 00005940           SWSCX
+    1431 00005940     0960          RETS
+    1432                    
+    1433                    **************************************************************************
+    1434                    *                                                                        *
+    1435                    * INITIO - INITIALIZE THE GSP I/O REGISTERS                              *
+    1436                    *                                                                        *
+    1437                    **************************************************************************
+    1438 00005950           INITIO
+    1439 00005950     099f          MMTM    SP,B0,B2,B7
+         00005960     a100  
+    1440 00005970     09f0          MOVI    INITDATA,B0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   34
+
+         00005980 000067d0' 
+    1441 000059a0     09f7          MOVI    IDATALEN,B7
+         000059b0 000001c0  
+    1442                    
+    1443                            .if XUNIT=1
+    1444                            MOVI    VESYNC,B2
+    1445                            BLMOVE  1,1                             ;TRANSFER I/O REGS
+    1446                            movi    DPYSTRT0,a14    ; XUNIT
+    1447                            move    a14,@DPYST,L    ; XUNIT
+    1448                            .else
+    1449 000059d0     09f2          movi    HESYNC,b2
+         000059e0 c0000000  
+    1450 00005a00     2f77          srl     5,b7
+    1451 00005a10           _ior_move
+    1452 00005a10     9a12          move    *b0+,*b2+,L
+    1453 00005a20     3c57          dsjs    b7,_ior_move
+    1454                    ;       movi    0fffch,a14
+    1455 00005a30     09ce          movi    0ch,a14
+         00005a40     000c  
+    1456 00005a50     058e          move    a14,@DPYSTRT,W
+         00005a60 c0000090  
+    1457                            .endif
+    1458                    
+    1459 00005a80     09bf          MMFM    SP,B0,B2,B7
+         00005a90     0085  
+    1460 00005aa0     0960          RETS
+    1461                    
+    1462                    *
+    1463                    *DUMMY FOR THE SWITCHES
+    1464 00005ab0     c080  DUMDIE  JAUC    SUCIDE          ;NOTHING PROCESS
+         00005ac0 00000000! 
+    1465                    
+    1466                    **************************************************************************
+    1467                    *                                                                        *
+    1468                    * BADTRAP - COME HERE WHEN A TRAP IS HIT THAT IS NOT DEFINED AND LOG IT. *
+    1469                    *                                                                        *
+    1470                    **************************************************************************
+    1471 00005ae0           BADTRAP
+    1472 00005ae0     09ce          MOVI    1,A14
+         00005af0     0001  
+    1473 00005b00     b7fe          move    *SP(20h),B14,L  ;Send the return address, we know its bad
+         00005b10     0020  
+    1474 00005b20     0d5f          CALLA   DUMP_IT
+         00005b30 00000000! 
+    1475 00005b50                   AUDIT   AUD_BADTRAP     ;CLICK A SOFTWARE TRAP
+    1476 00005ba0     0360          DINT
+    1477 00005bb0     c000          JRUC    $       ;LET THE WATCH DOG CATCH US
+         00005bc0     fffe  
+    1478                    
+    1479                    **************************************************************************
+    1480                    *                                                                        *
+    1481                    *       Switch process activation table                                  *
+    1482                    *       Used in conjunction with the IRQ switch scanner.                 *
+    1483                    *                                                                        *
+    1484                    *            .WORD  PROCESS ID                                           *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   35
+
+    1485                    *            .LONG  STARTING ADDR                                        *
+    1486                    *                                                                        *
+    1487                    **************************************************************************
+    1488 00005bd0           SWTAB
+    1489                    *
+    1490                    *Players 1 and 2 start here, read at location SWITCH
+    1491                    *
+    1492 00005bd0                   WL      0,0                     ;SW  0 -- (JAMMA P1 Up)
+    1493 00005c00                   WL      0,0                     ;SW  1 -- (JAMMA P1 Down)
+    1494 00005c30                   WL      0,0                     ;SW  2 -- (JAMMA P1 Left)
+    1495 00005c60                   WL      0,0                     ;SW  3 -- (JAMMA P1 Right)
+    1496 00005c90                   WL      PID_IND,SW_4            ;SW  4 -- (JAMMA P1 A)
+    1497 00005cc0                   WL      PID_IND,SW_5            ;SW  5 -- (JAMMA P1 B)
+    1498 00005cf0                   WL      PID_IND,SW_6            ;SW  6 -- (JAMMA P1 C)
+    1499 00005d20                   WL      PID_IND,SW_7            ;SW  7 -- (JAMMA P1 D)
+    1500 00005d50                   WL      0,0                     ;SW  8 -- (JAMMA P2 Up)
+    1501 00005d80                   WL      0,0                     ;SW  9 -- (JAMMA P2 Down)
+    1502 00005db0                   WL      0,0                     ;SW 10 -- (JAMMA P2 Left)
+    1503 00005de0                   WL      0,0                     ;SW 11 -- (JAMMA P2 Right)
+    1504 00005e10                   WL      PID_IND,SW_12           ;SW 12 -- (JAMMA P2 A)
+    1505 00005e40                   WL      PID_IND,SW_13           ;SW 13 -- (JAMMA P2 B)
+    1506 00005e70                   WL      PID_IND,SW_14           ;SW 14 -- (JAMMA P2 C)
+    1507 00005ea0                   WL      PID_IND,SW_15           ;SW 15 -- (JAMMA P2 D)
+    1508                    *
+    1509                    *Players 3 and 4 start here, read at location SWITCH2
+    1510                    *
+    1511 00005ed0                   WL      0,0                     ;SW 16 -- (JAMMA P3 Up)
+    1512 00005f00                   WL      0,0                     ;SW 17 -- (JAMMA P3 Down)
+    1513 00005f30                   WL      0,0                     ;SW 18 -- (JAMMA P3 Left)
+    1514 00005f60                   WL      0,0                     ;SW 19 -- (JAMMA P3 Right)
+    1515 00005f90                   WL      PID_IND,SW_20           ;SW 20 -- (JAMMA P3 A)
+    1516 00005fc0                   WL      PID_IND,SW_21           ;SW 21 -- (JAMMA P3 B)
+    1517 00005ff0                   WL      PID_IND,SW_22           ;SW 22 -- (JAMMA P3 C)
+    1518 00006020                   WL      PID_IND,SW_23           ;SW 23 -- (JAMMA P3 D)
+    1519 00006050                   WL      0,0                     ;SW 24 -- (JAMMA P4 Up)
+    1520 00006080                   WL      0,0                     ;SW 25 -- (JAMMA P4 Down)
+    1521 000060b0                   WL      0,0                     ;SW 26 -- (JAMMA P4 Left)
+    1522 000060e0                   WL      0,0                     ;SW 27 -- (JAMMA P4 Right)
+    1523 00006110                   WL      PID_IND,SW_28           ;SW 28 -- (JAMMA P4 A)
+    1524 00006140                   WL      PID_IND,SW_29           ;SW 29 -- (JAMMA P4 B)
+    1525 00006170                   WL      PID_IND,SW_30           ;SW 30 -- (JAMMA P4 C)
+    1526 000061a0                   WL      PID_IND,SW_31           ;SW 31 -- (JAMMA P4 D)
+    1527                    *
+    1528                    *Coins and misc start here, read at location COINS
+    1529                    *
+    1530 000061d0                   WL      PID_LC,LCOIN            ;SW 32 -- Left Coin
+    1531 00006200                   WL      PID_RC,RCOIN            ;SW 33 -- Right Coin
+    1532 00006230                   WL      PID_IND,SW_34           ;SW 34 -- Player 1 Start
+    1533 00006260                   WL      PID_SLAM,SLAM           ;SW 35 -- SLAM!
+    1534                    
+    1535 00006290                   WL      PID_DIAG,DIAG           ;SW 36 -- Diagnostics
+    1536 000062c0                   WL      PID_IND,SW_37           ;SW 37 -- Player 2 Start
+    1537 000062f0                   WL      PID_LC,SCOIN            ;SW 38 -- Service Credit
+    1538 00006320                   WL      PID_CC,CCOIN            ;SW 39 -- Center Coin
+    1539                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   36
+
+    1540 00006350                   WL      PID_XC,XCOIN            ;SW 40 -- Fourth Coin
+    1541 00006380                   WL      PID_IND,SW_41           ;SW 41 -- Player 3 Start
+    1542 000063b0                   WL      PID_IND,SW_42           ;SW 42 -- Player 4 Start
+    1543 000063e0                   WL      PID_VOLUME,SWITCH_VOLUME_DOWN ;SW 43 -- Volume Down
+    1544                    
+    1545 00006410                   WL      PID_VOLUME,SWITCH_VOLUME_UP   ;SW 44 -- Volume Up
+    1546 00006440                   WL      0,0                     ;SW 45 -- COIN DOOR INTERLOCK
+    1547 00006470                   WL      PID_INDW,FREEZE_ABSOLUTE ;SW 46 -- Freeze Switch
+    1548 000064a0                   WL      PID_XC,DBVCOIN          ;SW 47 -- Bill acceptor
+    1549                    *
+    1550                    *DIP switches start here, read at location DIPSWITCH
+    1551                    *
+    1552 000064d0                   WL      0,0                     ;SW 48 -- SWITCH 48     UJ2-8
+    1553 00006500                   WL      0,0                     ;SW 49 -- SWITCH 49     UJ2-7
+    1554 00006530                   WL      0,0                     ;SW 50 -- SWITCH 50     UJ2-6
+    1555 00006560                   WL      0,0                     ;SW 51 -- SWITCH 51     UJ2-5
+    1556 00006590                   WL      0,0                     ;SW 52 -- SWITCH 52     UJ2-4
+    1557 000065c0                   WL      0,0                     ;SW 53 -- SWITCH 53     UJ2-3
+    1558 000065f0                   WL      0,0                     ;SW 54 -- SWITCH 54     UJ2-2
+    1559 00006620                   WL      0,0                     ;SW 55 -- SWITCH 55     UJ2-1
+    1560 00006650                   WL      0,0                     ;SW 56 -- SWITCH 56     UJ1-8
+    1561 00006680                   WL      0,0                     ;SW 57 -- SWITCH 57     UJ1-7
+    1562 000066b0                   WL      0,0                     ;SW 58 -- SWITCH 58     UJ1-6
+    1563 000066e0                   WL      0,0                     ;SW 59 -- SWITCH 59     UJ1-5
+    1564 00006710                   WL      0,0                     ;SW 60 -- SWITCH 60     UJ1-4
+    1565 00006740                   WL      0,0                     ;SW 61 -- SWITCH 61     UJ1-3
+    1566 00006770                   WL      PID_INDW,FREEZE_ABSOLUTE ;SW 62 -- VIDEO FREEZE UJ1-2
+    1567 000067a0                   WL      PID_DIAG,DIAG           ;SW 63 -- TEST SWITCH   UJ1-1
+    1568                    
+    1569                    * VIDEO CONTROL REGISTERS INITIAL VALUES
+    1570                            .if XUNIT=1
+    1571                            .sect   "COLDSTRT"
+    1572                    
+    1573                    INITDATA
+    1574                            .WORD   0003H*2                 ;0C0000000H -- vesync
+    1575                            .WORD   0002BH                  ;0C0000010H -- hesync
+    1576                            .WORD   ENDVBLNK                ;0C0000020H -- VEBLNK
+    1577                            .WORD   00065H                  ;0C0000030H -- heblnk
+    1578                            .WORD   0100H+(ENDVBLNK-2)      ;0C0000040H -- VSBLNK
+    1579                            .WORD   001f5H                  ;0C0000050H -- hsblnk
+    1580                            .WORD   0120H                   ;0C0000060H -- vtotal
+    1581                            .WORD   001f9H                  ;0C0000070H -- htotal
+    1582                    
+    1583                            .WORD   0D007H                  ;0C0000080H -- DPYCTL
+    1584                            .WORD   0                       ;0C0000090H -- dpystrt
+    1585                            .WORD   EOSINT                  ;0C00000A0H -- dpyint * INITIALLY HALF SCREEN
+    1586                            .WORD   INI_CTRL                ;0C00000B0H -- control
+    1587                            .WORD   04h                     ;0C00000C0H -- hstdata
+    1588                            .WORD   00h                     ;0C00000D0H -- hstadrl
+    1589                            .WORD   00h                     ;0C00000E0H -- hstadrh
+    1590                            .WORD   00h                     ;0C00000F0H -- hstctll
+    1591                            .WORD   00h                     ;0C0000100H -- hstctlh
+    1592                            .WORD   00h                     ;0C0000110H -- intenbl
+    1593                            .WORD   00h                     ;0C0000120H -- intpend
+    1594                            .WORD   00h                     ;0C0000130H -- convsp
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   37
+
+    1595                            .WORD   CONV_PTCH               ;0C0000140H -- convdp
+    1596                            .WORD   PXSIZE                  ;0C0000150H -- psize
+    1597                            .WORD   00h                     ;0C0000160H -- pmaskl
+    1598                            .WORD   00h                     ;0C0000170H -- pmaskh
+    1599                            .WORD   00h                     ;0C0000180H -- CONVMP
+    1600                            .WORD   INI_CTRL                ;0C0000190H -- CONTROL
+    1601                            .WORD   01108h                  ;0C00001A0H -- CONFIG
+    1602                    
+    1603                            .WORD   00h                     ;0C00001B0H -- DPYTAP
+    1604                            .WORD   04h                     ;0C00001C0H -- VCOUNT
+    1605                            .WORD   00h                     ;0C00001D0H -- HCOUNT
+    1606                            .WORD   00h                     ;0C00001E0H -- DPYADR
+    1607                            .WORD   00h                     ;0C00001F0H -- REFADR
+    1608                    
+    1609                            .WORD   00h                     ;0C0000200H -- REG200
+    1610                            .WORD   00h                     ;0C0000210H -- REG210
+    1611                            .WORD   00h                     ;0C0000220H -- REG220
+    1612                            .WORD   00h                     ;0C0000230H -- REG230
+    1613                            .WORD   1000h                   ;0C0000240H -- DINC
+    1614                            .WORD   00h                     ;0C0000250H -- REG250
+    1615                            .WORD   00h                     ;0C0000260H -- REG260
+    1616                    
+    1617                            .WORD   01D5h                   ;0C0000270H -- HESERR
+    1618                    
+    1619                            .else
+    1620                    
+    1621 000067d0           INITDATA
+    1622 000067d0     002b          .word   02bh            ;0C0000000H -- HESYNC
+    1623 000067e0     0065          .word   065h    ;HEBLNKINIT     ;0C0000010H -- HEBLNK
+    1624 000067f0     01f5          .word   01f5h           ;0C0000020H -- HSBLNK
+    1625 00006800     01f9          .word   01f9h           ;0C0000030H -- HTOTAL
+    1626 00006810     0003          .word   3               ;0C0000040H -- VESYNC
+    1627 00006820     0014          .word   20              ;0C0000050H -- VEBLNK
+    1628 00006830     0112          .word   274             ;0C0000060H -- VSBLNK   ;254 lines
+    1629 00006840     0120          .word   288             ;0C0000070H -- VTOTAL
+    1630 00006850     f010          .word   0f010h          ;0C0000080H -- DPYCTL   ENV|NIL|DXV|SRE|010H
+    1631 00006860     fffc          .word   0fffch  ;000c   ;0C0000090H -- DPYSTRT
+    1632                    ;       .word   0FFF0H          ;0C0000090H -- DPYSTRT
+    1633 00006870     0112          .word   EOSINT          ;0C00000A0H -- DPYINT
+    1634 00006880     002c          .word   2ch             ;0C00000B0H -- CONTROL
+    1635 00006890     0000          .word   0               ;0C00000C0H -- HSTDATA
+    1636 000068a0     0000          .word   0               ;0C00000D0H -- HSTADRL
+    1637 000068b0     0000          .word   0               ;0C00000E0H -- HSTADRH
+    1638 000068c0     0000          .word   0               ;0C00000F0H -- HSTCTLL
+    1639 000068d0     0000          .word   0               ;0C0000100H -- HSTCTLH
+    1640 000068e0     0000          .word   0               ;0C0000110H -- INTENBL
+    1641 000068f0     0000          .word   0               ;0C0000120H -- INTPEND
+    1642 00006900     0000          .word   0               ;0C0000130H -- CONVSP
+    1643 00006910     0000          .word   0               ;0C0000140H -- CONVDP
+    1644 00006920     0008          .word   PXSIZE          ;0C0000150H -- PSIZE
+    1645 00006930     0000          .word   0               ;0C0000160H -- PMASK
+    1646 00006940     0000          .word   0               ;0C0000170H -- RESERVED
+    1647 00006950     0000          .word   0               ;0C0000180H -- RESERVED
+    1648 00006960     0000          .word   0               ;0C0000190H -- RESERVED
+    1649 00006970     0000          .word   0               ;0C00001A0H -- RESERVED
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   38
+
+    1650 00006980     001c          .word   28              ;0C00001B0H -- DPYTAP
+    1651                    
+    1652                            .endif
+    1653                    
+    1654                    
+    1655              01c0  IDATALEN        EQU     $-INITDATA      ;Bit length of I/O init table
+    1656                    
+    1657                    *
+    1658                    *INITIALIZE ALL 32 TRAP VECTORS
+    1659                    *
+    1660 00000000                   .SECT   "VECTORS"
+    1661                    
+    1662                            .if     XUNIT=1
+    1663                    ;       .LONG   BADTRAP         ;TRAP 31
+    1664                    ;       .LONG   BADTRAP         ;TRAP 30        ILLOP --- Illegal Opcode
+    1665                    ;       .LONG   BADTRAP         ;TRAP 29
+    1666                    ;       .LONG   BADTRAP         ;TRAP 28
+    1667                    ;       .LONG   BADTRAP         ;TRAP 27
+    1668                    ;       .LONG   BADTRAP         ;TRAP 26
+    1669                    ;       .LONG   BADTRAP         ;TRAP 25
+    1670                    ;       .LONG   BADTRAP         ;TRAP 24
+    1671                    ;       .LONG   BADTRAP         ;TRAP 23
+    1672                    ;       .LONG   BADTRAP         ;TRAP 22
+    1673                    ;       .LONG   BADTRAP         ;TRAP 21
+    1674                    ;       .LONG   BADTRAP         ;TRAP 20
+    1675                    ;       .LONG   BADTRAP         ;TRAP 19
+    1676                    ;       .LONG   BADTRAP         ;TRAP 18
+    1677                    ;       .LONG   BADTRAP         ;TRAP 17
+    1678                    ;       .LONG   BADTRAP         ;TRAP 16
+    1679                            .else
+    1680 00000000 00005ae0'         .LONG   BADTRAP         ;TRAP 31
+    1681 00000020 00005ae0'         .LONG   BADTRAP         ;TRAP 30        ILLOP --- Illegal Opcode
+    1682 00000040 00005ae0'         .LONG   BADTRAP         ;TRAP 29
+    1683 00000060 00005ae0'         .LONG   BADTRAP         ;TRAP 28
+    1684 00000080 00005ae0'         .LONG   BADTRAP         ;TRAP 27
+    1685 000000a0 00005ae0'         .LONG   BADTRAP         ;TRAP 26
+    1686 000000c0 00005ae0'         .LONG   BADTRAP         ;TRAP 25
+    1687 000000e0 00005ae0'         .LONG   BADTRAP         ;TRAP 24
+    1688 00000100 00005ae0'         .LONG   BADTRAP         ;TRAP 23
+    1689 00000120 00005ae0'         .LONG   BADTRAP         ;TRAP 22
+    1690 00000140 00005ae0'         .LONG   BADTRAP         ;TRAP 21
+    1691 00000160 00005ae0'         .LONG   BADTRAP         ;TRAP 20
+    1692 00000180 00005ae0'         .LONG   BADTRAP         ;TRAP 19
+    1693 000001a0 00005ae0'         .LONG   BADTRAP         ;TRAP 18
+    1694 000001c0 00005ae0'         .LONG   BADTRAP         ;TRAP 17
+    1695 000001e0 00005ae0'         .LONG   BADTRAP         ;TRAP 16
+    1696                            .endif
+    1697                    
+    1698 00000200 00005ae0'         .LONG   BADTRAP         ;TRAP 15
+    1699 00000220 00005ae0'         .LONG   BADTRAP         ;TRAP 14
+    1700 00000240 00005ae0'         .LONG   BADTRAP         ;TRAP 13
+    1701 00000260 00005ae0'         .LONG   BADTRAP         ;TRAP 12
+    1702 00000280 00005ae0'         .LONG   BADTRAP         ;TRAP 11        WV --- Window Violation
+    1703 000002a0 00003a50'         .LONG   DIRQ            ;TRAP 10        DI --- Display Interrupt
+    1704 000002c0 00005ae0'         .LONG   BADTRAP         ;TRAP 9         HI --- Host Interrupt
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:39 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   39
+
+    1705 000002e0 00005ae0'         .LONG   BADTRAP         ;TRAP 8         NMI -- NonMaskable Interrupt
+    1706 00000300 00005ae0'         .LONG   BADTRAP         ;TRAP 7
+    1707 00000320 00005ae0'         .LONG   BADTRAP         ;TRAP 6
+    1708 00000340 00005ae0'         .LONG   BADTRAP         ;TRAP 5
+    1709 00000360 00005ae0'         .LONG   BADTRAP         ;TRAP 4
+    1710 00000380 00005ae0'         .LONG   BADTRAP         ;TRAP 3
+    1711 000003a0 00000000!         .LONG   LINT2_SERVICE   ;TRAP 2         INT2 --- External Interrupt 2
+    1712 000003c0 00000000!         .LONG   DMAINT          ;TRAP 1         INT1 --- External Interrupt 1
+    1713 000003e0 000003a0'         .LONG   POWERUP         ;TRAP 0         Reset
+    1714                    
+    1715                            .end
+
+ No Errors,  No Warnings

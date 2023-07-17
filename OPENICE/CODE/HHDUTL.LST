@@ -1,0 +1,755 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHDUTL.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    **************************************************************************
+       8                    *                                                                        *
+       9                    *       COPYRIGHT (C) 1994 MIDWAY MANUFACTURING COMPANY.                 *
+      10                    *                      ALL RIGHTS RESERVED.                              *
+      11                    *                                                                        *
+      12                    **************************************************************************
+      13                    
+      14                            .INCLUDE        "HH.INC"
+      15                            .INCLUDE        "HHSTRING.H"
+      16                            .INCLUDE        "IMGTBL.GLO"
+      17                            .include        "hhdutl.e"
+      18                            .include        "hhram.g"
+      19                            .include        "hhproc.g"
+      20                            .include        "hhsysfnt.g"
+      21                    
+      22                    ; end of include files
+      23                    
+      24                    
+      25 00000000                   .TEXT
+      26 00000000                   .EVEN
+      27                    
+      28                    **************************************************************************
+      29                    *                                                                        *
+      30                    * POINT: FUNCTION DISPLAYS A POINT OF ANY COLOR.                         *
+      31                    *                                                                        *
+      32                    *            ENTRY: A0 = XY SCREEN ADDRESS OF THE POINT                  *
+      33                    *                   A1 = COLOR VALUE                                     *
+      34                    *                   B6 = RETURN ADDRESS                                  *
+      35                    *                                                                        *
+      36                    *            USES:  A0, A1, B2, B3, B4, B6, B10                          *
+      37                    *                                                                        *
+      38                    **************************************************************************
+      39 00000000           POINT:
+      40 00000000     09d3          MOVI SCRN_PTCH, DPTCH
+         00000010     1000  
+      41 00000020     09d4          movi    OFFSETVAL,OFFSET
+         00000030     01c0  
+      42                    
+      43 00000040     6a7a          LMO  DPTCH, B10
+      44 00000050     059a          MOVE B10, @CONVDP
+         00000060 c0000140  
+      45                    
+      46 00000080     f020          PIXT A1, *A0.XY
+      47                    
+      48 00000090                   FRET B6
+      49                    
+      50                    **************************************************************************
+      51                    *                                                                        *
+      52                    * RECTANGLE: FUNCTION DISPLAYS A RECTANGLE OF ANY COLOR.                 *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      53                    *                                                                        *
+      54                    *            ENTRY: A0 = XY SCREEN ADDRESS OF UPPER LEFT CORNER          *
+      55                    *                   A1 = XY RECTANGLE DIMENSIONS                         *
+      56                    *                   A2 = COLOR VALUE                                     *
+      57                    *                                                                        *
+      58                    *                   B6 = RETURN ADDRESS                                  *
+      59                    *                                                                        *
+      60                    *            USES:  A0, A1, A2, B2, B3, B4, B6, B7, B9, B10              *
+      61                    *                                                                        *
+      62                    **************************************************************************
+      63                    
+      64 000000a0           RECTANGLE:
+      65                            .if XUNIT=1
+      66                    
+      67                    
+      68                            MOVE A0, DADDR
+      69                            MOVE A1, DYDX
+      70                            MOVI SCRN_PTCH, DPTCH
+      71                            MOVI OFFSETVAL, OFFSET
+      72                            LMO  DPTCH, B10
+      73                            MOVE B10, @CONVDP
+      74                            MOVE A2, COLOR1
+      75                            rpix    COLOR1
+      76                            FILL  XY
+      77                            FRET B6
+      78                    
+      79                            .else
+      80                    
+      81 000000a0     4e27          MOVE A1, DYDX
+      82 000000b0     09d3          MOVI SCRN_PTCH, DPTCH
+         000000c0     1000  
+      83 000000d0     09d4          MOVI OFFSETVAL, OFFSET
+         000000e0     01c0  
+      84 000000f0     6a7a          LMO  DPTCH, B10
+      85 00000100     059a          MOVE B10, @CONVDP
+         00000110 c0000140  
+      86 00000130     4e49          move    a2,COLOR1
+      87 00000140     4d32          move    COLOR1,DADDR    ;daddr is temp
+      88 00000150     2512          sll     8,DADDR
+      89 00000160     5459          or      DADDR,COLOR1
+      90 00000170     2512          sll     8,DADDR
+      91 00000180     5459          or      DADDR,COLOR1
+      92 00000190     2512          sll     8,DADDR
+      93 000001a0     5459          or      DADDR,COLOR1
+      94 000001b0     4e02          move    a0,DADDR
+      95 000001c0     0fe0          FILL  XY
+      96 000001d0                   FRET B6
+      97                    
+      98                            .endif
+      99                    
+     100                    **************************************************************************
+     101                    *                                                                        *
+     102                    * LINE: FUNCTION DRAWS HORIZONTAL OR VERTICAL LINES OF ANY COLOR.        *
+     103                    *                                                                        *
+     104                    *            ENTRY: A0 = BEGINNING XY SCREEN ADDRESS                     *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     105                    *                   A1 = ENDING XY SCREEN ADDRESS                        *
+     106                    *                   A2 = COLOR VALUE                                     *
+     107                    *                                                                        *
+     108                    *                   B6 = RETURN ADDRESS                                  *
+     109                    *                                                                        *
+     110                    *            USES:  A0, A1, A2, A3, A4, B3, B4, B6, B9, B10              *
+     111                    *                                                                        *
+     112                    **************************************************************************
+     113 000001e0           HVLINE:
+     114 000001e0     09d3          MOVI    SCRN_PTCH,DPTCH
+         000001f0     1000  
+     115 00000200     09d4          movi    OFFSETVAL,OFFSET
+         00000210     01c0  
+     116                    
+     117 00000220     6a7a          LMO     DPTCH,B10
+     118 00000230     059a          MOVE    B10,@CONVDP
+         00000240 c0000140  
+     119                    
+     120                            .if XUNIT=1
+     121                            MOVE    A2,COLOR1
+     122                            rpix    COLOR1
+     123                            .else
+     124 00000260     4c43          move    a2,a3
+     125 00000270     2503          sll     8,a3
+     126 00000280     5462          or      a3,a2
+     127 00000290     2503          sll     8,a3
+     128 000002a0     5462          or      a3,a2
+     129 000002b0     2503          sll     8,a3
+     130 000002c0     5462          or      a3,a2
+     131 000002d0     4e49          move    a2,COLOR1
+     132                            .endif
+     133                    
+     134 000002e0     1822          MOVK    1H,A2                   ;DRAV DX: ASSUME HORIZONTAL LINE
+     135                    
+     136 000002f0     4c03          MOVE    A0,A3                   ;DETERMINE (P2 > P1) OR (P2 < P1)
+     137 00000300     e863          CVXYL   A3,A3
+     138                    
+     139 00000310     4c24          MOVE    A1,A4
+     140 00000320     e884          CVXYL   A4,A4
+     141                    
+     142 00000330     4864          CMP     A3,A4                   ;IF (P2 < P1) ~(INCREMENT)
+     143 00000340     c102          JRP     $100
+     144                    
+     145 00000350     03a2          NEG     A2                      ;INCREMENT IS A SIGNED WORD
+     146 00000360     0522          ZEXT    A2,0
+     147                    
+     148 00000370           $100:
+     149 00000370     e401          CMPXY   A0,A1                   ;IF VERTICAL LINE
+     150 00000380     ca01          JRZ     $110                    ;DRAV DX -> DRAV DY
+     151 00000390     2602          SLL     16,A2
+     152                    
+     153 000003a0           $110:
+     154 000003a0     f640          DRAV    A2,A0                   ;DRAW LINE
+     155 000003b0     e401          CMPXY   A0,A1
+     156 000003c0     cffd          JRNN    $110
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     157 000003d0     cbfc          JRNZ    $110
+     158                    
+     159 000003e0                   FRET    B6
+     160                    
+     161                    
+     162                            .if XUNIT=1
+     163                            .sect   "COLDSTRT"
+     164                            .endif
+     165                    **************************************************************************
+     166                    *                                                                        *
+     167                    * STRING: FUNCTION DISPLAYS AN ASCIZ STRING OF ANY COLOR EITHER VERTICAL *
+     168                    *         OR HORIZONTALLY.                                               *
+     169                    *                                                                        *
+     170                    *            ENTRY: A0 = STARTING STRING ADDRESS                         *
+     171                    *                   A1 = XY SCREEN ADDRESS                               *
+     172                    *                   A2 = DIRECTION                                       *
+     173                    *                   A3 = COLOR                                           *
+     174                    *                                                                        *
+     175                    *                   B6 = RETURN ADDRESS                                  *
+     176                    *                                                                        *
+     177                    *            USES: A0 - A6, B0 - B4, B6 - B14                            *
+     178                    *                                                                        *
+     179                    **************************************************************************
+     180 000003f0           STRING:
+     181 000003f0     09d3          MOVI    SCRN_PTCH,DPTCH
+         00000400     1000  
+     182 00000410     09d4          MOVI    OFFSETVAL,OFFSET
+         00000420     01c0  
+     183                    
+     184 00000430     6a7a          LMO     DPTCH,B10
+     185 00000440     059a          MOVE    B10,@CONVDP
+         00000450 c0000140  
+     186                    
+     187                            .if XUNIT=1
+     188                            MOVE    A3,COLOR1
+     189                            rpix    COLOR1
+     190                            .else
+     191 00000470     4c64          move    a3,a4
+     192 00000480     2504          sll     8,a4
+     193 00000490     5483          or      a4,a3
+     194 000004a0     2504          sll     8,a4
+     195 000004b0     5483          or      a4,a3
+     196 000004c0     2504          sll     8,a4
+     197 000004d0     5483          or      a4,a3
+     198 000004e0     4e69          move    a3,COLOR1
+     199                            .endif
+     200 000004f0     5718          CLR     COLOR0
+     201                    
+     202 00000500     0548          SETF    8,0,0
+     203                    
+     204 00000510           $200:
+     205 00000510     9404          MOVE    *A0+,A4                 ;GET CHARACTER
+     206 00000520     ca1f          JRZ     $230                    ;QUIT IFF NULL
+     207                    
+     208 00000530     1404          SUBK    32,A4                   ;GET POINTER TO CHARACTER HEADER
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     209 00000540     24a4          SLL     5,A4
+     210                    
+     211 00000550           STRING_NORMFONT
+     212 00000550     0b24          ADDI    SYSFONT,A4,L
+         00000560 00000000! 
+     213 00000580     8684          MOVE    *A4,A4,1
+     214 00000590     9685          MOVE    *A4+,A5,1               ;CHAR DIMENSIONS
+     215 000005a0     4e22          MOVE    A1,DADDR
+     216 000005b0           STRING_FONTSELD
+     217                    
+     218 000005b0     4ea7          MOVE    A5,DYDX
+     219                    
+     220 000005c0     56c6          CLR     A6                      ;A6 = CHAR WIDTH
+     221 000005d0     eca6          MOVX    A5,A6
+     222                    
+     223 000005e0     10e6          ADDK    7,A6                    ;ROUND UP WIDTH TO INTEGRAL NUMBER
+     224 000005f0     2fa6          SRL     3,A6                    ;OF BYTES = SOURCE PITCH
+     225 00000600     2466          SLL     3,A6
+     226 00000610     4ec1          MOVE    A6,SPTCH
+     227                    
+     228 00000620     8686          MOVE    *A4,A6,1                ;CHAR DATA
+     229 00000630     4ec0          MOVE    A6,SADDR
+     230                    
+     231 00000640     0fa0          PIXBLT  B,XY
+     232                    
+     233 00000650     56c6          CLR     A6
+     234 00000660     4c42          MOVE    A2,A2
+     235 00000670     ca06          JRZ     $210
+     236                    
+     237 00000680     eea6          MOVY    A5,A6                   ;A1 += (CHAR HEIGHT + SPACING)
+     238 00000690     2e06          SRL     16,A6                   ;DIRECTION = DOWN
+     239 000006a0     1026          ADDK    1H,A6
+     240 000006b0     2606          SLL     16,A6
+     241 000006c0     40c1          ADD     A6,A1
+     242 000006d0     c0e3          JRUC    $200
+     243                    
+     244 000006e0           $210:
+     245 000006e0     eca6          MOVX    A5,A6                   ;A1 += (CHAR WIDTH + SPACING)
+     246 000006f0     1046          ADDK    2H,A6                   ;DIRECTION = RIGHT
+     247 00000700     40c1          ADD     A6,A1
+     248 00000710     c0df          JRUC    $200
+     249                    
+     250 00000720           $230:
+     251 00000720     0570          SETF    16,1,0
+     252                    
+     253 00000730                   FRET    B6
+     254                    
+     255                    
+     256 00000740           STRINGCENTER:
+     257 00000740     0548          SETF    8, 0, 0
+     258 00000750     5621          CLR     A1
+     259 00000760     4c02          MOVE    A0,A2
+     260 00000770           SPLLOOP
+     261 00000770     9404          MOVE    *A0+, A4                ; GET THE CHAR
+     262 00000780     ca11          JRZ     SPLEND                  ; END OF STRING
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     263                    
+     264 00000790     1404          SUBK    32, A4                     ; GET POINTER TO CHARACTER HEADER
+     265 000007a0     24a4          SLL     5H, A4
+     266 000007b0     0b24          ADDI    SYSFONT, A4, L
+         000007c0 00000000! 
+     267 000007e0     8684          MOVE    *A4, A4, 1
+     268                    
+     269 000007f0     9685          MOVE    *A4+, A5, 1                ; CHAR DIMENSIONS
+     270 00000800     4ea7          MOVE    A5, DYDX
+     271                    
+     272 00000810     56c6          CLR     A6                         ; A6 = CHAR WIDTH
+     273 00000820     eca6          MOVX    A5, A6
+     274                    
+     275 00000830     10e6          ADDK    7, A6                      ; ROUND UP WIDTH TO INTEGRAL NUMBER
+     276 00000840     2fa6          SRL     3, A6                      ; OF BYTES = SOURCE PITCH
+     277 00000850     2466          SLL     3, A6
+     278                    
+     279 00000860     eca6          MOVX    A5, A6                      ; A1 += (CHAR WIDTH + SPACING)
+     280 00000870     1046          ADDK    2H, A6                      ; DIRECTION = RIGHT
+     281 00000880     40c1          ADD     A6, A1
+     282 00000890     c0ed          JRUC    SPLLOOP
+     283                    
+     284 000008a0           SPLEND
+     285 000008a0     0570          SETF    16, 1, 0
+     286 000008b0     4c40          MOVE    A2,A0                   ; RESTORE STRING ADDRESS
+     287 000008c0     2fe1          SRL     1,A1
+     288 000008d0     09c2          MOVI    SCREEN_WIDTH/2,A2
+         000008e0     00c8  
+     289 000008f0     4422          SUB     A1,A2
+     290 00000900     4c41          MOVE    A2,A1
+     291 00000910                   FRET    B6
+     292                    
+     293                    *SCRCLR - CLEAR ENTIRE BIT MAP
+     294                    *       USES:B2,B3,B4   CALL WITH B6
+     295 00000920           DSCRCLR
+     296 00000920     5652          CLR     B2
+     297 00000930     09f3          MOVI    SCREEN,B3,L
+         00000940 00000000  
+     298 00000960     09f4          MOVI    (SCRNE-SCREEN)/32,B4,L
+         00000970 00010000  
+     299 00000990     9253  SCRLP   MOVE    B2,*B3+,L
+     300 000009a0     3c54          DSJS    B4,SCRLP
+     301 000009b0                   FRET    B6
+     302                    
+     303                    **************************************************************************
+     304                    *                                                                        *
+     305                    * INITCOLR: INITIALIZE COLORS; ROUTINE LOADS PALETTE 0 WITH THE COLOR    *
+     306                    *           PALETTE USED BY DIAGNOSTIC TESTS.                            *
+     307                    *                                                                        *
+     308                    **************************************************************************
+     309                    
+     310 000009c0           INITCOLR:
+     311                    ;
+     312                    ;       KLUDGE TO LOAD SYSTEM PALETTE IN PALETTE SLOT 0
+     313                    ;
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     314 000009c0     09e0          MOVI    COLRAM,A0,L             ; PALETTE LOCATION
+         000009d0 01880000  
+     315 000009f0     09e1          MOVI    DIAGPAL,A1,L
+         00000a00 00000ab0' 
+     316 00000a20     9422          MOVE    *A1+,A2,W               ; LENGTH OF PALETTE
+     317 00000a30           LPLP1
+     318 00000a30     942e          MOVE    *A1+,a14,W
+     319                            .if     XUNIT=1
+     320                            move    a14,*A0+,L              ; XUNIT
+     321                            .else
+     322 00000a40     91c0          move    a14,*a0+,W
+     323                            .endif
+     324 00000a50     3c62          DSJS    A2,LPLP1                ; KEEP ON CHUGGIN, BABY
+     325                    
+     326 00000a60     57ce          CLR  A14
+     327 00000a70     058e          MOVE A14, @CMAPSEL
+         00000a80 01a00080  
+     328                    
+     329 00000aa0                   FRET B5
+     330                    
+     331 00000ab0           DIAGPAL
+     332 00000ab0     0019          .word   25
+     333 00000ac0     0000          .word   00H,07C00H,06739H,01FH,035ADH,077A0H,0741AH,03A0H
+     334 00000b40     0000          .word   00H,010H,07E3H,07FFFH,07DADH,06420H,02108H,03DEFH
+     335 00000bc0     4210          .word   04210H,05AD6H,05EF7H,0C0H,0120H,0982H,0221H,0782H
+     336 00000c40     47f1          .word   047F1H
+     337                    
+     338 00000c50                   .text
+     339                    
+     340                    **************************************************************************
+     341                    *                                                                        *
+     342                    * CIRCLE: FUNCTION DRAWS OUTLINE OR FILLED CIRCLES.                      *
+     343                    *                                                                        *
+     344                    *       ENTRY: A0 = radius                                               *
+     345                    *              A1 = center  (Y:X)                                        *
+     346                    *              A6 = <00:15> = color                                      *
+     347                    *              A6 = <15:31> = fill: 0=no fill, 1=fill                    *
+     348                    *                                                                        *
+     349                    *       USES:  A0 - A8, B0, B10                                          *
+     350                    *                                                                        *
+     351                    **************************************************************************
+     352                    
+     353 00000c50           CIRCLE:
+     354 00000c50     09d4          movi    OFFSETVAL,OFFSET
+         00000c60     01c0  
+     355 00000c70     09e7          movi  plot8,a7               ; assume no fill
+         00000c80 00000f20' 
+     356 00000ca0     1de6          btst  16,a6
+     357 00000cb0     ca03          jrz   CIRC0
+     358 00000cc0     09e7          movi  fill4,a7
+         00000cd0 000010a0' 
+     359 00000cf0           CIRC0:
+     360 00000cf0     09d3          movi  SCRN_PTCH,DPTCH        ; Restore screen pitch and convdp
+         00000d00     1000  
+     361 00000d10     09da          MOVI  13h,B10                ; THIS IS FASTER
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+         00000d20     0013  
+     362 00000d30     059a          MOVE  B10,@CONVDP
+         00000d40 c0000140  
+     363 00000d60     4ec9          move    a6,COLOR1
+     364 00000d70     09f7          movi  [1,0],DYDX                 ; Y width always 1
+         00000d80 00010000  
+     365                    
+     366 00000da0     5642          clr   a2                      ; x = 0
+     367 00000db0     4c03          move  a0,a3                   ; y = r
+     368 00000dc0     4c04          move  a0,a4
+     369 00000dd0     2424          sll   1,a4
+     370 00000de0     1464          subk  3,a4
+     371 00000df0     03a4          neg   a4                     ; d = 3 - 2*r
+     372 00000e00           cloop:
+     373 00000e00     4862          cmp   a3,a2                  ; if x > y, we are done
+     374 00000e10     c70f          jrgt  done
+     375                    
+     376 00000e20     4ee0          MOVE  A7, B0                 ; PLOT ROUTINE
+     377 00000e30     0130          EXGPC B0
+     378                    
+     379 00000e40     4c45          move  a2,a5                  ; x -> a5
+     380 00000e50     1c04          btst  31,a4
+     381 00000e60     ca03          jrz   dpos                   ; branch if d is positive
+     382                    
+     383                    ;             d negative
+     384                    
+     385 00000e70     2445          sll   2,a5                   ; 4*x -> a5
+     386 00000e80     10c5          addk  6,a5                   ; 4*x+6 -> a5
+     387 00000e90     c004          jruc  cont
+     388                    
+     389                    ;             d positive
+     390                    
+     391 00000ea0           dpos:
+     392                    
+     393 00000ea0     4465          sub   a3,a5                  ; x-y -> a5
+     394 00000eb0     2445          sll   2,a5                   ; 4*(x-y) -> a5
+     395 00000ec0     1145          addk  10,a5                  ; 4*(x-y)+10 -> a5
+     396 00000ed0     1423          subk  1,a3                   ; y = y - 1
+     397                    
+     398 00000ee0           cont:
+     399 00000ee0     40a4          add   a5,a4                  ; d = d + a5
+     400 00000ef0     1022          addk  1,a2                   ; x = x + 1
+     401 00000f00     c0ef          jruc  cloop
+     402                    
+     403 00000f10           done:
+     404 00000f10                   FRET B6
+     405                    
+     406 00000f20           plot8:
+     407 00000f20     4c65          move  a3,a5
+     408 00000f30     03a5          neg   a5                   ; -y into a5; +y in a3
+     409 00000f40     2605          sll   16,a5
+     410 00000f50     2603          sll   16,a3
+     411 00000f60     ec45          movx  a2,a5                ; a3 = (y:x)
+     412 00000f70     ec43          movx  a2,a3                ; a5 = (-y:x)
+     413                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     414 00000f80     1848          movk  2,a8
+     415 00000f90           put4:
+     416 00000f90     4c20          move  a1,a0                ; center (Y:X) in a0
+     417 00000fa0     e060          addxy a3,a0                ; (cx+x),(cy+y)
+     418 00000fb0     f0c0          pixt  a6,*a0.XY
+     419 00000fc0     4c20          move  a1,a0                ; center (Y:X) in a0
+     420 00000fd0     e0a0          addxy a5,a0                ; (cx+x),(cy-y)
+     421 00000fe0     f0c0          pixt  a6,*a0.XY
+     422 00000ff0     4c20          move  a1,a0                ; center (Y:X) in a0
+     423 00001000     e260          subxy a3,a0                ; (cx-x),(cy-y)
+     424 00001010     f0c0          pixt  a6,*a0.XY
+     425 00001020     4c20          move  a1,a0                ; center (Y:X) in a0
+     426 00001030     e2a0          subxy a5,a0                ; (cx-x),(cy+y)
+     427 00001040     f0c0          pixt  A6,*a0.XY
+     428 00001050     3203          rl    16,a3
+     429 00001060     3205          rl    16,a5                ; transpose x and y
+     430 00001070     3de8          dsj   a8,put4
+     431 00001080     2a03          sra   16,a3                ; restore y
+     432                    
+     433 00001090                   FRET B0
+     434                    
+     435 000010a0           fill4:
+     436 000010a0     4e4a          move  a2,b10               ; x
+     437 000010b0     243a          sll   1,b10                ; 2x
+     438 000010c0     ed57          movx  b10,DYDX             ; delta x = 2x
+     439 000010d0     4c65          move  a3,a5
+     440 000010e0     03a5          neg   a5                   ; -y into a5      +y in a3
+     441 000010f0     2605          sll   16,a5
+     442 00001100     2603          sll   16,a3
+     443 00001110     ec45          movx  a2,a5                ; a3 = (y:x)
+     444 00001120     ec43          movx  a2,a3                ; a5 = (-y:x)
+     445 00001130     1848          movk  2,a8
+     446 00001140           put2:
+     447 00001140     4c20          move  a1,a0
+     448 00001150     e2a0          subxy a5,a0
+     449 00001160     4e02          move  a0,DADDR
+     450 00001170     0fe0          fill  XY
+     451                    
+     452 00001180     4c20          move  a1,a0
+     453 00001190     e260          subxy a3,a0
+     454 000011a0     4e02          move  a0,DADDR
+     455 000011b0     0fe0          fill  XY
+     456 000011c0     3203          rl    16,a3                ; a3 = (x:y)
+     457 000011d0     3205          rl    16,a5                ; transpose x and y
+     458 000011e0     56c6          clr   a6
+     459 000011f0     e2a6          subxy a5,a6
+     460 00001200     4cc5          move  a6,a5                ; a5 = (-x:y)
+     461 00001210     4e6a          move  a3,b10               ; y
+     462 00001220     243a          sll   1,b10                ; 2y
+     463 00001230     ed57          movx  b10,DYDX             ; delta x = 2y
+     464 00001240     3e28          dsj   a8,put2
+     465 00001250     2a03          sra   16,a3                ; restore y
+     466                    
+     467 00001260                   FRET B0
+     468                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     469                    **************************************************************************
+     470                    *                                                                        *
+     471                    * ADV_BUTTON: FUNCTION READS THE STATE OF THE ADVANCE BUTTON.            *
+     472                    *                                                                        *
+     473                    *          ENTRY -- B6 = RETURN ADDRESS.                                 *
+     474                    *          EXIT  -- C  = SET IFF BUTTON PRESSED.                         *
+     475                    *          USES  -- B2                                                   *
+     476                    *                                                                        *
+     477                    **************************************************************************
+     478                    
+     479 00001270           ADV_BUTTON:
+     480                    
+     481                    ;       ===========================
+     482                    ;       | ENTRY WITH BUTTON DOWN  |
+     483                    ;       ===========================
+     484                    
+     485 00001270     05b2          MOVE @COINS, B2
+         00001280 01860030  
+     486 000012a0     1f72          BTST 04, B2
+     487 000012b0     cb07          JRNZ ADVANCE_FALSE
+     488                    
+     489                    ;        PAUSE ADV_UP_TIME, B2          ;ELIMINATE NOISE POSSIBILITY
+     490                    
+     491 000012c0     05b2          MOVE @COINS, B2
+         000012d0 01860030  
+     492 000012f0     1f72          BTST 04, B2
+     493 00001300     cb02          JRNZ ADVANCE_FALSE
+     494                    
+     495 00001310           ADVANCE_TRUE:
+     496                    
+     497 00001310     0de0          SETC
+     498 00001320                   FRET B6
+     499                    
+     500 00001330           ADVANCE_FALSE:
+     501                    
+     502 00001330     0320          CLRC
+     503 00001340                   FRET B6
+     504                    
+     505                    **************************************************************************
+     506                    *                                                                        *
+     507                    * ADV_BUTTON_2: FUNCTION READS THE STATE OF THE ADVANCE BUTTON. ROUTINE  *
+     508                    *               IDENTICAL TO ADV_BUTTON EXCEPT THAT IT MAY BE CALLED ONL *
+     509                    *               WITHIN THE ERROR LED ROUTINE.                            *
+     510                    *                                                                        *
+     511                    *               ENTRY -- B3 = RETURN ADDRESS.                            *
+     512                    *               EXIT  -- C  = SET IFF BUTTON PRESSED.                    *
+     513                    *               USES  -- B2                                              *
+     514                    *                                                                        *
+     515                    **************************************************************************
+     516                    
+     517 00001350           ADV_BUTTON_2
+     518                    
+     519 00001350     05b2          MOVE @COINS, B2
+         00001360 01860030  
+     520 00001380     1f72          BTST 04, B2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     521 00001390     cb07          JRNZ ADVANCE_FALSE_2
+     522                    
+     523                    ;        PAUSE ADV_UP_TIME, B2          ;ELIMINATE NOISE POSSIBILITY
+     524                    
+     525 000013a0     05b2          MOVE @COINS, B2
+         000013b0 01860030  
+     526 000013d0     1f72          BTST 04, B2
+     527 000013e0     cb02          JRNZ ADVANCE_FALSE_2
+     528                    
+     529 000013f0           ADVANCE_TRUE_2:
+     530                    
+     531 000013f0     0de0          SETC
+     532 00001400                   FRET B3
+     533                    
+     534 00001410           ADVANCE_FALSE_2:
+     535                    
+     536 00001410     0320          CLRC
+     537 00001420                   FRET B3
+     538                    
+     539                    **************************************************************************
+     540                    *                                                                        *
+     541                    * ADVANCE_WAIT: FUNCTION RETURNS WHEN THE ADVANCE BUTTON HAS GONE FROM   *
+     542                    *                       OFF TO ON, WITH DEBOUNCE.                        *
+     543                    *       USE THIS WHEN WAITING ON THE ADVANCE BUTTON TO CONTINUE.         *
+     544                    *          ENTRY -- B6 = RETURN ADDRESS.                                 *
+     545                    *          EXIT  -- C  = SET IFF BUTTON PRESSED.                         *
+     546                    *          USES  -- B2                                                   *
+     547                    *                                                                        *
+     548                    **************************************************************************
+     549 00001430           ADVANCE_WAIT:
+     550 00001430     05b2          MOVE    @COINS,B2
+         00001440 01860030  
+     551 00001460     1f72          BTST    04,B2
+     552 00001470     cafb          JRZ     ADVANCE_WAIT            ;BR = SWITCH IS DOWN
+     553                    ;       PAUSE   ADV_UP_TIME,B2          ;DEBOUNCE
+     554 00001480     05b2          MOVE    @COINS,B2
+         00001490 01860030  
+     555 000014b0     1f72          BTST    04,B2
+     556 000014c0     caf6          JRZ     ADVANCE_WAIT            ;BR = SPURIOUS SWITCH UP
+     557 000014d0           ADVW1
+     558 000014d0     05b2          MOVE    @COINS,B2
+         000014e0 01860030  
+     559 00001500     1f72          BTST    04,B2
+     560 00001510     cbfb          JRNZ    ADVW1                   ;BR = SWITCH IS UP
+     561                    ;       PAUSE   ADV_UP_TIME,B2          ;DEBOUNCE
+     562 00001520     05b2          MOVE    @COINS,B2
+         00001530 01860030  
+     563 00001550     1f72          BTST    04,B2
+     564 00001560     cbf6          JRNZ    ADVW1                   ;BR = SWITCH IS UP
+     565 00001570                   FRET    B6
+     566                    
+     567                    **************************************************************************
+     568                    *                                                                        *
+     569                    * DIAG_SRT_CLR - STRIPPED DOWN SRT_CLR FOR DIAGNOSTICS ONLY!             *
+     570                    *                WHEN THE DMA IS NOT RUNNING AND DIRQ IS                 *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     571                    *                TURNED ON WITH DIAG_DFLAG SET                           *
+     572                    * NOTE: TRASHES MANY A AND B FILE REGISTERS                              *
+     573                    *                                                                        *
+     574                    **************************************************************************
+     575 00001580           DIAG_SRT_CLR:
+     576 00001580                   CLRM    @TIMER,W
+     577 000015c0           DSC_VBLNK_WAIT
+     578 000015c0     05ae          MOVE    @TIMER,A14,W
+         000015d0 00000000! 
+     579 000015f0     cafc          JRZ     DSC_VBLNK_WAIT
+     580                    *       color to clear to stored in Lines 510 and 511
+     581 00001600     09d2          movi    255,B2                  ;GET AUTO ERASE LINE
+         00001610     00ff  
+     582 00001620     09d8          MOVI    SCRTOP*1000h,B8
+         00001630     0000  
+     583 00001640     09f7          MOVI    [((SCRBOT)-(SCRTOP)+1)>01H,1],B7
+         00001650 00010001  
+     584                    
+     585 00001670     2598          sll     12,b8                   ;CONVERT TO LINEAR
+     586 00001680     05ac          move    @CONVDP,A12,W
+         00001690 c0000140  
+     587 000016b0     1a59          movk    012H,B9
+     588 000016c0     0599          move    B9,@CONVDP              ;Move to CONVDP io register
+         000016d0 c0000140  
+     589                    
+     590                    * Set SRT=1.  This converts pixel accesses to VRAM SR transfer cycles.
+     591                    
+     592 000016f0     05ba          MOVE    @DPYCTL,B10,W           ;Copy display control reg.
+         00001700 c0000080  
+     593 00001720     4f5d          move    B10,A13                 ; save in A file
+     594 00001730     0b9a          ANDNI   SRE+ENV,B10             ;Turn off screen refresh
+         00001740 00009000  
+     595 00001760     0bba          ORI     CST,B10                 ; XUNIT Enable SR transfers
+         00001770 00000800  
+     596 00001790           SrtDmaWt:
+     597 00001790     07a0          move    @DMAGOREG,A0,L
+         000017a0 01a00000  
+     598 000017c0     cefc          jrn     SrtDmaWt
+     599                    
+     600                    *
+     601                    *WARNING! KEEP INTERRUPTS OFF UNTIL AFTER THE FILL INSTRUCTION
+     602                    *       ASYNCHRONOUS BREAKS MAY CAUSE DMA INTERRUPT TO OCCUR
+     603                    *       DURING FILL INSTRUCTION TRASHING THE B REGISTERS THAT
+     604                    *       DETERMINE FILL RESTART AFTER INTERRUPT.
+     605                    *       WHEN DEBUGGING THIS CAUSES SPURIOUS ILLEGAL OPCODES AND TRASHING
+     606                    *       OF CODE SPACE.
+     607                    *
+     608 000017d0     01e0          PUSHST
+     609 000017e0     0360          DINT
+     610 000017f0     059a          MOVE    B10,@DPYCTL,0           ;Load new display control
+         00001800 c0000080  
+     611                    
+     612                    ;       MOVE    @DPYCTL,B10,0           ;Read back to be safe!
+     613 00001820     09d3          movi    SCRN_PTCH*2,B3          ;Get Screen Pitch
+         00001830     2000  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:30 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     614                    
+     615                    * Load frame buffer for 1st line into VRAM shift registers.
+     616 00001840     5694          CLR     B4                      ;Origin at start of memory
+     617 00001850     25b2          sll     13,b2           ; change line number into address
+     618 00001860     fa52          PIXT    *B2,B2          ;Load VRAM shift registers
+     619                    
+     620                    * Transfer contents of VRAM shift registers to rest of frame buffer.
+     621 00001870     07b4          move    @PAGEADDR,B4,L
+         00001880 00000000! 
+     622                    
+     623 000018a0     2f94          SRL     4,B4
+     624                    
+     625 000018b0     4114          ADD     B8,B4
+     626 000018c0     5652          clr     B2
+     627 000018d0     099f          MMTM    SP,B11,B12,B13
+         000018e0     001c  
+     628 000018f0     0fe0          FILL     XY                             ;200 SR-to-memory transfers
+     629 00001900     09bf          MMFM    SP,B11,B12,B13
+         00001910     3800  
+     630 00001920     01c0          POPST
+     631                    *END OF INTERRUPT DISABLE
+     632                    
+     633 00001930     058c          move    A12,@CONVDP,W
+         00001940 c0000140  
+     634 00001960     058d          MOVE    A13,@DPYCTL,W           ;Copy display control reg.
+         00001970 c0000080  
+     635 00001990     0960          rets
+     636                    
+
+ No Errors,  No Warnings

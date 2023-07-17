@@ -1,0 +1,811 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHPALL.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    **************************************************************************
+       8                    *                                                                        *
+       9                    *       COPYRIGHT (C) 1994 MIDWAY MANUFACTURING COMPANY.                 *
+      10                    *                      ALL RIGHTS RESERVED.                              *
+      11                    *                                                                        *
+      12                    **************************************************************************
+      13                    
+      14                            .INCLUDE        "HH.INC"                ;System equates
+      15                            .include        "hhpall.e"
+      16                            .include        "hhutil.g"
+      17                            .include        "hhram.g"
+      18                            .include        "hhproc.g"
+      19                            .include        "hhmisc.g"
+      20                            .include        "hhd.g"
+      21                    
+      22                    ; end of include files
+      23                    
+      24                    *IN THIS MODULE
+      25                    
+      26                    *
+      27                    *PALETTE TRANSFER QUEUE EQUATES
+      28                    *
+      29              0040  PALQ_ENTRY_SIZE .EQU    32+16+16                ;SRC 32, DEST 16, # COLS 16
+      30              0040  PALQ_MAX_ENTRY  .EQU    64                      ;MAX NUMBER OF ENTRIES
+      31              1000  PALQ_SIZE       .EQU    PALQ_ENTRY_SIZE*PALQ_MAX_ENTRY
+      32              0012  MAX_TRANSFERS   .EQU    18      ;NUMBER OF TRANSFERS ALLOWED PER V-BLANK
+      33                    
+      34 00000000                   .BSS    MAX_PALXFERS,16                 ;MAXIMUM NUMBER OF TRANSFERS
+      35                    
+      36 00000010                   .BSS    PALTRANS_QUEUE,PALQ_SIZE        ;PALETTE TRANSFER QUEUE
+      37 00001010                   .BSS    PALTRANS_START,32               ;START PTR IN PALTRANS QUEUE
+      38 00001030                   .BSS    PALTRANS_END,32                 ;END PTR IN PALTRANS QUEUE
+      39 00001050                   .BSS    PALTRANS_COUNT,16
+      40 00001060                   .BSS    PALTRANS_FLAG,16
+      41 00001070                   .BSS    FREEPALCNT,16,1
+      42                    
+      43 00001080                   .bss    WHITE_FLAG,16           ;zero means blackout is black
+      44 00001090                   .BSS    BLACKPAL,16*256
+      45 00002090                   .BSS    WHITEPAL,16*256
+      46                    ;       .BSS    FILLER,16                       ;SET BACKPAL FLAG
+      47                    
+      48 00000000                   .TEXT
+      49                    
+      50 00000000           build_whitepal
+      51                    ;       clr     a14
+      52                    ;       move    a14,@WHITE_FLAG,W
+      53                    ;       movi    WHITEPAL,a1
+      54                    ;       movi    64,a0
+      55                    ;       movi    07fff7fffh,a14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56                    ;bwp1   move    a14,*a1+,L
+      57                    ;       move    a14,*a1+,L
+      58                    ;       dsjs    a0,bwp1
+      59 00000000     0960          rets
+      60                    
+      61                    **************************************************************************
+      62                    *                                                                        *
+      63                    * RESET_MAX_PALXFERS                                                     *
+      64                    *                                                                        *
+      65                    **************************************************************************
+      66                    
+      67 00000010           RESET_MAX_PALXFERS
+      68 00000010     1a4e          MOVK    MAX_TRANSFERS,A14
+      69 00000020     058e          MOVE    A14,@MAX_PALXFERS,W
+         00000030 00000000- 
+      70 00000050     0960          RETS
+      71                    
+      72                    **************************************************************************
+      73                    *                                                                        *
+      74                    * CLR_0PALS - ROUTINE CLEAR THE PALID FIELD OF ANY PALETTE THAT HAS      *
+      75                    *           ZERO PEOPLE USING IT.                                        *
+      76                    *                                                                        *
+      77                    **************************************************************************
+      78 00000060           CLR_0PALS
+      79 00000060                   PUSH    A1
+      80 00000070     09de          MOVI    NUMPAL,B14
+         00000080     0080  
+      81 00000090     09e1          MOVI    PALRAM,A1
+         000000a0 00000000! 
+      82 000000c0     b42e  C0_LP   MOVE    *A1(PALCNT),A14,W       ;CHECK ALLOCATION COUNT.
+         000000d0     0020  
+      83 000000e0     cb02          JRNZ    C0_NXT                  ;BR = THIS ONE IS IN USE
+      84 000000f0     b3c1          MOVE    A14,*A1(PALID),L        ;CLEAR THE I.D.
+         00000100     0000  
+      85 00000110     0b01  C0_NXT  ADDI    PALRSIZ,A1
+         00000120     0040  
+      86 00000130     3d1e          DSJS    B14,C0_LP
+      87 00000140                   PULLQ   A1
+      88 00000150     0960          RETS
+      89                    
+      90                    **************************************************************************
+      91                    *                                                                        *
+      92                    * INC_PALCNT -INCREMENT THE PALETTE COUNT BY WAY OF THE PALETTE #        *
+      93                    * A5 = PALETTE NUMBER                                                    *
+      94                    *                                                                        *
+      95                    **************************************************************************
+      96 00000160           INC_PALCNT
+      97 00000160                   PUSH    A5
+      98 00000170     2705          SLL     24,A5
+      99 00000180     2d05          SRL     24,A5           ;MASK OFF ANY NON-SENSE
+     100 00000190     24c5          sll     6,a5            ; since PALRSIZ = 40h
+     101                    ************************************************************************
+     102                    *   IF PALRSIZ IS NOT A POWER OF TWO, REPLACE THE ABOVE LINE WITH...
+     103                    *       MOVI    PALRSIZ,A14     ; old way
+     104                    *       MPYU    A14,A5
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     105                    ************************************************************************
+     106 000001a0     0b25          ADDI    PALRAM,A5
+         000001b0 00000000! 
+     107 000001d0                   INCM    *A5(PALCNT),W           ;INCREMENT THAT PALETTE COUNT
+     108 00000220                   PULLQ   A5
+     109 00000230     0960          RETS
+     110                    
+     111                    **************************************************************************
+     112                    *                                                                        *
+     113                    * A_CHANGE_PAL - ANIM FUNC TO CHANGE THE PALETTE TO THE GIVEN            *
+     114                    * A8 = PTR TO OBJECT                                                     *
+     115                    * AARG+,L = PTR TO PALETTE I.D.                                  *
+     116                    * NOTE: ANIM FUNCS DO NOT PUSH REGISTERS!                                *
+     117                    *                                                                        *
+     118                    **************************************************************************
+     119 00000240           A_CHANGE_PAL
+     120 00000240     0d5f          CALLA   GETAFARG_LONG
+         00000250 00000000! 
+     121 00000270     0d3f          CALLR   CHANGE_PAL
+         00000280     0016  
+     122 00000290     0960          RETS
+     123                    
+     124                    **************************************************************************
+     125                    *                                                                        *
+     126                    * GET_PALID - ROUTINE TO RETURN THE I.D. OF AN ALLOCATED PALETTE.        *
+     127                    * A0 = CURRENT PALETTE NUMBER                                            *
+     128                    * RETURNS:                                                               *
+     129                    * A0 = PALETTE I.D.                                                      *
+     130                    *                                                                        *
+     131                    **************************************************************************
+     132 000002a0           GET_PALID
+     133                    ;       PUSH    A1
+     134 000002a0     2700          SLL     24,A0           ;MASK OFF GARBAGE
+     135 000002b0     2d00          SRL     24,A0
+     136 000002c0     0b40          CMPI    NUMPAL,A0       ;ERROR...PALETTE NUMBER ERRONEOUS
+         000002d0     ff7f  
+     137 000002e0     c803          JRLO    GPID_1
+     138 000002f0                   LOCKUP
+     139 00000320     09c1  GPID_1  MOVI    PALRSIZ,A1
+         00000330     0040  
+     140 00000340     5e01          MPYU    A0,A1
+     141 00000350     0b21          ADDI    PALRAM,A1
+         00000360 00000000! 
+     142 00000380     8620          MOVE    *A1,A0,L
+     143 00000390     24c0          sll     6,a0            ; since PALRSIZ = 40h
+     144 000003a0     0b20          ADDI    PALRAM,A0
+         000003b0 00000000! 
+     145 000003d0     8600          MOVE    *A0,A0,L
+     146                    ************************************************************************
+     147                    *   IF PALRSIZ IS NOT A POWER OF TWO, REPLACE THE ABOVE 3 LINES WITH...
+     148                    *       MOVI    PALRSIZ,A1      ; old way
+     149                    *       MPYU    A0,A1
+     150                    *       ADDI    PALRAM,A1
+     151                    *       MOVE    *A1,A0,L
+     152                    ************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     153                    ;       PULL    A1
+     154 000003e0     0960          RETS
+     155                    
+     156                    **************************************************************************
+     157                    *                                                                        *
+     158                    * CHANGE_PAL - CHANGE AN OBJECTS CURRENT PALETTE TO A NEW ONE.           *
+     159                    *               DELETES THE OBJECTS OLD PALETTE.                         *
+     160                    *               IF NO NEW PALETTES ARE AVAILABLE, THEN PALETTE           *
+     161                    *               0 IS STUFFED.                                            *
+     162                    * A0 = I.D. OF NEW PALETTE                                               *
+     163                    * A8 = OBJECT                                                            *
+     164                    * RETURNS:                                                               *
+     165                    *        Z = FAILURE ALLOCATING NEW PALETTE                              *
+     166                    *               A0 = 0                                                   *
+     167                    *       NZ = PALETTE CHANGE SUCCESSFUL.                                  *
+     168                    *               A0 = NEW PALETTE NUMBER                                  *
+     169                    *                                                                        *
+     170                    **************************************************************************
+     171 000003f0           CHANGE_PAL
+     172 000003f0     0d3f          CALLR   DELETE_PAL              ;DELETE OLD
+         00000400     001b  
+     173 00000410     0d5f          CALLA   GETFPAL                 ;GET A COLOR MAP ASSIGNMENT
+         00000420 00000b20' 
+     174 00000440     cb08          JRNZ    CP_SUCCESS              ;BR = USE IT
+     175 00000450     b500          MOVE    *A8(OPAL),A0,W          ;GET THE OLD PALETTE
+         00000460     0280  
+     176 00000470     0d5f          CALLA   GET_PALID
+         00000480 000002a0' 
+     177 000004a0     0d5f          CALLA   GETFPAL                 ;RESTORE OLD ASSIGNMENT
+         000004b0 00000b20' 
+     178 000004d0           CP_SUCCESS
+     179 000004d0     b008          MOVE    A0,*A8(OPAL),W          ;STORE THE NEW PALETTE
+         000004e0     0280  
+     180 000004f0     0960          RETS
+     181                    
+     182                    **************************************************************************
+     183                    *                                                                        *
+     184                    * CHANGE_PAL_MULTI - CHANGE THE PALETTE OF A MULTI-PART OBJECT           *
+     185                    *                  FROM THE GIVEN OBJECT ON DOWN.                        *
+     186                    * A0 = PTR TO NEW PALETTE                                                *
+     187                    * A8 = PTR TO PART                                                       *
+     188                    *                                                                        *
+     189                    **************************************************************************
+     190 00000500           CHANGE_PAL_MULTI
+     191 00000500     098f          MMTM    SP,A1,A8
+         00000510     4080  
+     192 00000520     4c01          MOVE    A0,A1
+     193 00000530     0d3f  CPM_LP  CALLR   CHANGE_PAL
+         00000540     ffea  
+     194 00000550     4c20          MOVE    A1,A0                   ;RESTORE PALETTE I.D.
+     195 00000560     b708          MOVE    *A8(OPARTS),A8,L
+         00000570     00c0  
+     196 00000580     cbfa          JRNZ    CPM_LP
+     197 00000590     09af  CPM_X   MMFM    SP,A1,A8
+         000005a0     0102  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     198 000005b0     0960          RETS
+     199                    
+     200                    **************************************************************************
+     201                    *                                                                        *
+     202                    * DELETE_PAL - DELETE AN OBJECTS PALETTE                                 *
+     203                    * A8 = PTR TO OBJECT                                                     *
+     204                    *                                                                        *
+     205                    **************************************************************************
+     206 000005c0           DELETE_PAL
+     207 000005c0                   PUSH    A0
+     208 000005d0     b500          MOVE    *A8(OPAL),A0,W  ; save extra push and pop of a0
+         000005e0     0280  
+     209 000005f0     0d3f          CALLR   FREEPAL         ; and extra call
+         00000600     009d  
+     210 00000610                   PULL    A0
+     211 00000630     0960          RETS
+     212                    
+     213                    **************************************************************************
+     214                    *                                                                        *
+     215                    * DELPAL - DELETE AN OBJECTS PALETTE                                     *
+     216                    * A0 = PTR TO OBJECT                                                     *
+     217                    *                                                                        *
+     218                    **************************************************************************
+     219 00000640           DELPAL
+     220 00000640                   PUSH    A0
+     221 00000650     b400          MOVE    *A0(OPAL),A0,W
+         00000660     0280  
+     222 00000670     0d3f          CALLR   FREEPAL
+         00000680     0095  
+     223 00000690                   PULLQ   a0
+     224 000006a0     0960          RETS
+     225                    
+     226                    **************************************************************************
+     227                    *                                                                        *
+     228                    * FINDPAL - FIND THE COLOR MAP # TO WHICH THE GIVEN PALETTE IS ASSIGNED. *
+     229                    * A0 = 32 BIT PALETTE ADDRESS                                            *
+     230                    * RETURNS:                                                               *
+     231                    * Z BIT SET = PALETTE NOT FOUND ---> A0 = 0                              *
+     232                    * Z BIT CLR = PALETTE FOUND ---> A0 = PALETTE #(CORRECT FORMAT FOR DMA)  *
+     233                    *                                                                        *
+     234                    **************************************************************************
+     235 000006b0           FINDPAL
+     236 000006b0     098f          MMTM    SP,A1,A2,A3
+         000006c0     7000  
+     237 000006d0     09c3          MOVI    NUMPAL,A3
+         000006e0     0080  
+     238 000006f0     09e1          MOVI    PALRAM,A1
+         00000700 00000000! 
+     239 00000720           FINDPAL0
+     240 00000720     8622          MOVE    *A1,A2,L        ;GET PALETTE ID
+     241 00000730     4802          CMP     A0,A2
+     242 00000740     ca05          JREQ    FINDPAL1        ;FOUND
+     243 00000750     0b01          ADDI    PALRSIZ,A1
+         00000760     0040  
+     244 00000770     3cc3          DSJS    A3,FINDPAL0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     245 00000780     5600          CLR     A0              ;SET Z BIT ---> FAILURE
+     246 00000790     c007          JRUC    FINDPALX
+     247 000007a0           FINDPAL1
+     248 000007a0     0be3          SUBI    NUMPAL,A3       ;COMPUTE PALETTE #
+         000007b0     ff7f  
+     249 000007c0     03a3          NEG     A3
+     250 000007d0     4c60          MOVE    A3,A0           ;RETURN PALETTE #
+     251 000007e0     2503          SLL     8,A3
+     252 000007f0     4060          ADD     A3,A0           ;DOUBLE IT UP FOR LOFFREDO BRAIN DAMAGE
+     253 00000800     1023          INC     A3              ;CLR Z BIT ---> SUCCESS
+     254 00000810           FINDPALX
+     255 00000810     09af          MMFM    SP,A1,A2,A3
+         00000820     000e  
+     256 00000830     0960          RETS
+     257                    
+     258                    
+     259                    **************************************************************************
+     260                    *                                                                        *
+     261                    * INIT_PAL - GET A PALETTE FOR USE. THIS IS THE NEW VERSION.             *
+     262                    * A1 = POINTER TO IMAGE HEADER                                           *
+     263                    * RETURNS:                                                               *
+     264                    *        Z = FAILURE                                                     *
+     265                    *               A0 = 0                                                   *
+     266                    *       NZ = SUCCESS                                                     *
+     267                    *               A0 = PALETTE NUMBER                                      *
+     268                    *                                                                        *
+     269                    **************************************************************************
+     270 00000840           INIT_PAL
+     271 00000840     b620          MOVE    *A1(ICMAP),A0,L         ;GET THE PALETTE NAME
+         00000850     0070  
+     272 00000860     c02b          JRUC    GETFPAL                 ;GET A PALETTE
+     273                    
+     274                    *
+     275                    *CLEAR OUT PALETTE ALLOCATION RAM
+     276                    *
+     277 00000870           CLRPAL
+     278 00000870     098f          MMTM    SP,A0,A1,A2
+         00000880     e000  
+     279 00000890     09c0          movi    NUMPAL,A0
+         000008a0     0080  
+     280 000008b0     0580          move    A0,@FREEPALCNT,W
+         000008c0 00001070- 
+     281 000008e0     09e0          MOVI    FPALRAM,A0,L            ;GET ADDRESS OF RAM
+         000008f0 00000000! 
+     282 00000910     09c2          MOVI    PALRSIZ*NUMPAL/16,A2    ;GET # OF WORDS
+         00000920     0200  
+     283 00000930     5621          CLR     A1
+     284 00000940     9020  CLRPALP MOVE    A1,*A0+,W
+     285 00000950     3c42          DSJS    A2,CLRPALP
+     286 00000960     0581          MOVE    A1,@PALTRANS_COUNT,W    ;NOTHING IN QUEUE
+         00000970 00001050- 
+     287 00000990     09e0          MOVI    PALTRANS_QUEUE,A0
+         000009a0 00000010- 
+     288 000009c0     0780          MOVE    A0,@PALTRANS_START,L    ;EMPTY QUEUE (START = END = QSTART)
+         000009d0 00001010- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     289 000009f0     0780          MOVE    A0,@PALTRANS_END,L
+         00000a00 00001030- 
+     290                    
+     291 00000a20                   BLACKOFF
+     292                    
+     293 00000a60     09af          MMFM    SP,A0,A1,A2
+         00000a70     0007  
+     294 00000a80     0960          RETS
+     295                    *
+     296                    *CLEAR ONLY FOREGROUND PALETTES
+     297 00000a90           CLRFPAL
+     298 00000a90     098f          MMTM    SP,A0,A1,A2
+         00000aa0     e000  
+     299 00000ab0     09e0          MOVI    FPALRAM,A0,L            ;GET ADDRESS OF RAM
+         00000ac0 00000000! 
+     300 00000ae0     09c2          MOVI    PALRSIZ*NMFPAL/16,A2    ;GET # OF WORDS
+         00000af0     0200  
+     301 00000b00     5621          CLR     A1
+     302 00000b10     c0e2          JRUC    CLRPALP
+     303                    *
+     304                    
+     305                    **************************************************************************
+     306                    *                                                                        *
+     307                    * GETFPAL - ALLOCATE A FOREGROUND PALETTE, IF THERE ARE NO FOREGROUND    *
+     308                    *         PALETTES LEFT, THEN IT WILL ATTEMPT TO ALLOCATE A              *
+     309                    *         BACKGROUND PALETTE.                                            *
+     310                    * A0 = PALETTE ID (ADDRESS OF COLOR DATA)                                *
+     311                    * RETURNS:                                                               *
+     312                    *        Z = FAILURE, NO PALETTES FREE                                   *
+     313                    *               A0 = 0                                                   *
+     314                    *       NZ = PALETTE ALLOCATED                                           *
+     315                    *               A0 = COLOR MAP (0000 - 0F0F)                             *
+     316                    *                                                                        *
+     317                    **************************************************************************
+     318 00000b20           GETFPAL
+     319 00000b20     098f          MMTM    SP,A1,A2,A3
+         00000b30     7000  
+     320                    ;mdp    CMPI    ROM,A0
+     321                    ;mdp    JRHS    GETFPAL_OK
+     322                    ;mdp    LOCKUP
+     323                    ;mdp    CLR     A0
+     324                    ;mdp    JRUC    GETPLX
+     325                    ;mdpGET_SPARE_PAL                       ; skip check to see if already loaded
+     326                    ;mdp    MMTM    SP,A1,A2,A3     ;
+     327                    ;mdp    JRUC    GETSPARE        ;
+     328                    
+     329 00000b40           GETFPAL_OK
+     330                    *CHECK IF PALETTE ALREADY EXISTS
+     331 00000b40     09c3          MOVI    NUMPAL,A3
+         00000b50     0080  
+     332 00000b60     09e1          MOVI    PALRAM,A1
+         00000b70 00000000! 
+     333 00000b90     8622  GETPL0  MOVE    *A1,A2,L        ;GET PALETTE ID
+     334 00000ba0     4802          CMP     A0,A2
+     335 00000bb0     ca34          JREQ    GETPL3          ;ALREADY IN COLOR RAM
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     336 00000bc0     0b01          ADDI    PALRSIZ,A1
+         00000bd0     0040  
+     337 00000be0     3cc3          DSJS    A3,GETPL0
+     338                    
+     339 00000bf0           GETSPARE
+     340                    *CHECK FOR A SPARE PALETTE
+     341 00000bf0     09e1          MOVI    FPALRAM,A1
+         00000c00 00000000! 
+     342 00000c20     09c3          MOVI    NMFPAL,A3       ;CHECK ALL PALETTES
+         00000c30     0080  
+     343 00000c40     b422  GETPL1  MOVE    *A1(PALCNT),A2,W
+         00000c50     0020  
+     344 00000c60     cb08          JRNE    CKNXTFPAL               ;PALETTE NOT EMPTY
+     345                            ;CHECK TIME WHEN FREED, CAN'T REALLOCATE ON SAME TIK
+     346 00000c70     b422          MOVE    *A1(PALTIME),A2,W
+         00000c80     0030  
+     347 00000c90     ca0a          JRZ     GTFPL2
+     348 00000ca0     05ae          MOVE    @WAVEDISPS,A14,W        ;ENOUGH TIME ELAPSED?
+         00000cb0 00000000! 
+     349 00000cd0     484e          CMP     A2,A14
+     350 00000ce0     cb05          JRNE    GTFPL2          ;PALETTE OK TO GRAB
+     351 00000cf0           CKNXTFPAL
+     352 00000cf0     0b01          ADDI    PALRSIZ,A1
+         00000d00     0040  
+     353 00000d10     3dc3          DSJS    A3,GETPL1
+     354 00000d20     5600          CLR     A0              ;NO PALETTES DEFAULT 0 AND
+     355 00000d30     c027          JRUC    GETPLX          ;SPLIT
+     356                    *SETUP YOUR NEW PALETTE
+     357 00000d40           GTFPL2  DECM    @FREEPALCNT,W
+     358 00000db0     098f          MMTM    SP,A0,A1,A2
+         00000dc0     e000  
+     359 00000dd0     4c61          MOVE    A3,A1           ;PALETTE #
+     360 00000de0     0be1          SUBI    NUMPAL,A1       ;COMPUTE PALETTE #
+         00000df0     ff7f  
+     361 00000e00     03a1          NEG     A1
+     362 00000e10     2501          SLL     8,A1            ;X 256
+     363 00000e20     9402          MOVE    *A0+,A2,W       ;GET # COLORS IN PALETTE
+     364                    
+     365 00000e30     05ae          MOVE    @BLACKOUT,A14,W
+         00000e40 00000000! 
+     366 00000e60     ca03          JRZ     GP_NOBO         ;BR=DON'T USE BLACKPAL
+     367 00000e70     09e0          MOVI    BLACKPAL,A0
+         00000e80 00001090- 
+     368                    ;       move    @WHITE_FLAG,a14,W
+     369                    ;       jrz     GP_NOBO
+     370                    ;       movi    WHITEPAL,a0
+     371 00000ea0           GP_NOBO
+     372 00000ea0     0d3f          CALLR   PALSET          ;SETUP PALETTE TRANSFER
+         00000eb0     005e  
+     373 00000ec0     09af          MMFM    SP,A0,A1,A2
+         00000ed0     0007  
+     374 00000ee0     ca0c          JREQ    GETPLX          ;FAILED TO GET TRANSFER
+     375 00000ef0     8201          MOVE    A0,*A1,L        ;STUFF PALETTE I.D.
+     376 00000f00     0be3  GETPL3  SUBI    NUMPAL,A3       ;COMPUTE PALETTE #
+         00000f10     ff7f  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     377 00000f20     03a3          NEG     A3
+     378 00000f30     4c60          MOVE    A3,A0           ;RETURN PALETTE #
+     379 00000f40     2503          SLL     8,A3
+     380 00000f50     4060          ADD     A3,A0                   ;DOUBLE IT UP FOR LOFREDO BRAIN DAMAGE
+     381 00000f60     b422          MOVE    *A1(PALCNT),A2,W        ;INCREMENT COUNT
+         00000f70     0020  
+     382 00000f80     1022          ADDK    1,A2                    ;SET NE FOR SUCCESS
+     383 00000f90     b041          MOVE    A2,*A1(PALCNT),W
+         00000fa0     0020  
+     384 00000fb0     09af  GETPLX  MMFM    SP,A1,A2,A3
+         00000fc0     000e  
+     385 00000fd0     0960          RETS
+     386                    *
+     387                    *FREE A PALETTE
+     388                    *A0=PALETTE # (0-NUMPAL) TO FREE
+     389                    *
+     390 00000fe0           FREEPAL
+     391 00000fe0     098f          MMTM    SP,A0,A1
+         00000ff0     c000  
+     392 00001000     2700          SLL     24,A0           ;MASK OFF GARBAGE
+     393 00001010     2d00          SRL     24,A0
+     394 00001020     0b40          CMPI    NUMPAL,A0       ;ERROR...PALETTE NUMBER ERRONEOUS
+         00001030     ff7f  
+     395 00001040     c803          JRLO    FREEPAL1
+     396 00001050                   LOCKUP
+     397                    
+     398 00001080           FREEPAL1
+     399 00001080     4c01          move    a0,a1
+     400 00001090     24c1          sll     6,a1            ; since PALRSIZ=40h
+     401                    ************************************************************************
+     402                    *   IF PALRSIZ IS NOT A POWER OF TWO, REPLACE THE ABOVE LINE WITH...
+     403                    *       MOVI    PALRSIZ,A1      ; old way
+     404                    *       MPYU    A0,A1
+     405                    ************************************************************************
+     406 000010a0     0b21          ADDI    PALRAM,A1
+         000010b0 00000000! 
+     407 000010d0     b420          MOVE    *A1(PALCNT),A0,W
+         000010e0     0020  
+     408 000010f0     1420          DEC     A0                      ;DECREMENT ITS COUNT
+     409 00001100     cf03          JRNN    FREEPAL2
+     410 00001110                   LOCKUP
+     411 00001140           FREEPAL2
+     412 00001140     b001          MOVE    A0,*A1(PALCNT),W
+         00001150     0020  
+     413 00001160     c10c          JRP     SkPalFree
+     414 00001170                   INCM    @FREEPALCNT,W
+     415                            ;RECORD TIME WHEN FREED, CAN'T REALLOCATE ON SAME TIK
+     416 000011e0     05a0          MOVE    @WAVEDISPS,A0,W         ;CLOCK IT BOYEEE!
+         000011f0 00000000! 
+     417 00001210     b001          MOVE    A0,*A1(PALTIME),W
+         00001220     0030  
+     418 00001230           SkPalFree
+     419 00001230     09af  FREPLX  MMFM    SP,A0,A1
+         00001240     0003  
+     420 00001250     0960          RETS
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     421                    
+     422                    *
+     423                    *UNGETPAL - Clears out a palettes allocation count
+     424                    *A0=PALETTE # (0-NUMPAL) TO UNALLOCATE
+     425                    *
+     426 00001260           UNGETPAL
+     427 00001260     098f          MMTM    SP,A0,A1
+         00001270     c000  
+     428 00001280     2700          SLL     24,A0           ;MASK OFF GARBAGE
+     429 00001290     2d00          SRL     24,A0
+     430 000012a0     0b40          CMPI    NUMPAL,A0       ;ERROR...PALETTE NUMBER ERRONEOUS
+         000012b0     ff7f  
+     431 000012c0     c803          JRLO    UNGPAL1
+     432 000012d0                   LOCKUP
+     433                    
+     434 00001300     4c01  UNGPAL1 move    a0,a1
+     435 00001310     24c1          sll     6,a1            ; since PALRSIZ=40h
+     436                    ************************************************************************
+     437                    *   IF PALRSIZ IS NOT A POWER OF TWO, REPLACE THE ABOVE 2 LINES WITH...
+     438                    *       MOVI    PALRSIZ,A1      ; old way
+     439                    *       MPYU    A0,A1
+     440                    ************************************************************************
+     441 00001320     0b21          ADDI    PALRAM,A1
+         00001330 00000000! 
+     442 00001350     b42e          MOVE    *A1(PALCNT),A14,W
+         00001360     0020  
+     443 00001370     ca0f          JRZ     UNGPALX
+     444 00001380                   INCM    @FREEPALCNT,W
+     445 000013f0     5600          clr     A0
+     446 00001400     b001          MOVE    A0,*A1(PALCNT),W
+         00001410     0020  
+     447                            ;RECORD TIME WHEN FREED, CAN'T REALLOCATE ON SAME TIK
+     448 00001420     05a0          MOVE    @WAVEDISPS,A0,W         ;CLOCK'N TIME WITH FLAVOR
+         00001430 00000000! 
+     449 00001450     b001          MOVE    A0,*A1(PALTIME),W
+         00001460     0030  
+     450 00001470     09af  UNGPALX MMFM    SP,A0,A1
+         00001480     0003  
+     451 00001490     0960          RETS
+     452                    
+     453                    **************************************************************************
+     454                    *                                                                        *
+     455                    * PALSET - SETUP PALETTE TRANSFER FOR THE NEXT VERTICAL BLANK            *
+     456                    * A0 = ADDRESS OF PALETTE COLOR DATA                                     *
+     457                    * A1 = BIT 8-15 DESTINATION PALETTE | BIT 0-7 START COLOR                *
+     458                    * A2 = 16 BIT COLOUR COUNT                                               *
+     459                    * RETURNS:                                                               *
+     460                    *       NZ = FOR COMPATIBILTY                                            *
+     461                    *                                                                        *
+     462                    * NOTE: THIS NOW USES THE JAMIE CIRCULAR QUEUE METHOD                    *
+     463                    *                                                                        *
+     464                    **************************************************************************
+     465 000014a0           PALSET
+     466                            .if     DEBUG
+     467                            CMPI    01000000H,A0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     468                            JRLO    $
+     469                            CMPI    256,A2
+     470                            JRGT    $
+     471                            MOVE    A2,A2
+     472                            JRZ     $
+     473                            JRN     $
+     474                            .endif
+     475                    
+     476 000014a0                   PUSH    A3
+     477 000014b0     1823          MOVK    1,A3
+     478 000014c0     0583          MOVE    A3,@PALTRANS_FLAG,W     ;YES WE ARE FUCKING WITH THIS QUEUE
+         000014d0 00001060- 
+     479 000014f0     05ae          MOVE    @PALTRANS_COUNT,A14,W
+         00001500 00001050- 
+     480 00001520     0b4e          CMPI    PALQ_MAX_ENTRY,A14      ;DOES OUR QUEUE RUNNETH OVER?
+         00001530     ffbf  
+     481 00001540     c91c          JRHS    PS_OVERFLOW             ;BR = YES
+     482 00001550     102e          INC     A14
+     483 00001560     058e          MOVE    A14,@PALTRANS_COUNT,W
+         00001570 00001050- 
+     484 00001590     07a3          MOVE    @PALTRANS_END,A3,L
+         000015a0 00001030- 
+     485 000015c0     9203          MOVE    A0,*A3+,L               ;PAL SOURCE ADDRESS
+     486 000015d0     9023          MOVE    A1,*A3+,W               ;PAL DEST ADDRESS
+     487 000015e0     9043          MOVE    A2,*A3+,W               ;NUMBER COLOURS
+     488 000015f0     0b63          CMPI    PALTRANS_QUEUE+PALQ_SIZE,A3     ;IF PTR RUNS OFF END OF
+         00001600 ffffefef- 
+     489 00001620     c403          JRLT    NO_WRAP                         ;QUEUE THEN WRAP AROUND
+     490 00001630     09e3          MOVI    PALTRANS_QUEUE,A3               ;TO THE START
+         00001640 00000010- 
+     491 00001660     0783  NO_WRAP MOVE    A3,@PALTRANS_END,L
+         00001670 00001030- 
+     492                    
+     493 00001690           PS_FINIS
+     494 00001690     57ce          CLR     A14
+     495 000016a0     058e          MOVE    A14,@PALTRANS_FLAG,W    ;WE STOPPED FUCKING WITH THIS QUEUE
+         000016b0 00001060- 
+     496 000016d0     4c63          MOVE    A3,A3                   ;MAKE SURE WE'RE NON-ZERO
+     497 000016e0                   PULL    A3
+     498 00001700     0960          RETS
+     499                    
+     500 00001710           PS_OVERFLOW
+     501 00001710     5663          CLR     A3                      ;MAKE SURE WE RETURN FAILURE
+     502 00001720     c0f6          JRUC    PS_FINIS
+     503                    
+     504                    **************************************************************************
+     505                    *                                                                        *
+     506                    * PALTRANS - ROUTINE TO TRANSFER ANY QUEUED PALETTES TO COLOR RAM.       *
+     507                    *          CALLED DURING VBLANK.                                         *
+     508                    *          ONLY ALLOWED TO TRANSFER "MAX_TRANFERS" PALETTES AT A TIME.   *
+     509                    * NOTE: TRASHES   : A0-A7                                                *
+     510                    * INTERNAL REGISTER USAGE:                                               *
+     511                    * A0 = Q_START                                                           *
+     512                    * A1 = Q_COUNT                                                           *
+     513                    * A2 = SRC                                                               *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     514                    * A3 = DEST                                                              *
+     515                    * A4 = COL_COUNT                                                         *
+     516                    * A5 = COLOR_BASELTRANS                                                  *
+     517                    * A6 = TEMP                                                              *
+     518                    * A7 = TRANSFER COUNT                                                    *
+     519                    *                                                                        *
+     520                    **************************************************************************
+     521 00001730           PALTRANS
+     522 00001730     05a0          MOVE    @PALTRANS_FLAG,A0,W     ;IS THE QUEUE IN FLUX?
+         00001740 00001060- 
+     523 00001760     cb4b          JRNZ    PT_QUEUE_EMPTY          ;BR = YES, DON'T FUCK AROUND
+     524 00001770     05a1          MOVE    @PALTRANS_COUNT,A1,W    ;GET THE COUNT
+         00001780 00001050- 
+     525 000017a0     ca47          JREQ    PT_QUEUE_EMPTY
+     526 000017b0     07a0          MOVE    @PALTRANS_START,A0,L    ;QUEUE START POS
+         000017c0 00001010- 
+     527                    ;       MOVE    @PALTRANS_END,A1,L      ;QUEUE END POS
+     528                    ;       CMP     A0,A1                   ;START = END ?
+     529                    ;       JREQ    PT_QUEUE_EMPTY
+     530                    
+     531                    ;       MOVK    MAX_TRANSFERS,A7        ;MAXIMUM TRANSFERS THIS V-BLANK
+     532 000017e0     05a7          MOVE    @MAX_PALXFERS,A7,W      ;MAXIMUM TRANSFERS THIS V-BLANK
+         000017f0 00000000- 
+     533                    
+     534 00001810     09e5          MOVI    COLRAM,A5               ;BASE ADDRESS OF COLOR RAM
+         00001820 01880000  
+     535                    
+     536 00001840           PT_NEXT_PAL
+     537 00001840     9602          MOVE    *A0+,A2,L       ;PALETTE SOURCE ADDRESS
+     538 00001850     9403          MOVE    *A0+,A3,W       ;PALETTE DESTINATION ADDRESS
+     539 00001860     9404          MOVE    *A0+,A4,W       ;NUMBER OF COLORS IN PALETTE
+     540 00001870     0523          ZEXT    A3
+     541                            .if     XUNIT=1
+     542                            SLL     5,A3            ; XUNIT
+     543                            .else
+     544 00001880     2483          sll     4,a3
+     545                            .endif
+     546 00001890     40a3          ADD     A5,A3           ; + COLOR RAM BASE ADDRESS
+     547 000018a0     2fe4          SRL     1,A4            ;/2
+     548 000018b0     c902          JRNC    PT_NO_1
+     549 000018c0     944e          MOVE    *A2+,A14,W      ; XUNIT
+     550                            .if     XUNIT=1
+     551                            move    a14,*A3+,L      ; XUNIT  DO 1 COLOR
+     552                    PT_NO_1 SRL     1,A4            ;/4
+     553                            JRNC    PT_NO_2
+     554                            MOVE    *A2+,a14,L      ; XUNIT
+     555                            move    a14,*A3+,L      ; XUNIT DO 2 COLORS
+     556                            srl     16,a14          ; XUNIT
+     557                            move    a14,*A3+,L      ; XUNIT
+     558                    PT_NO_2 SRL     1,A4            ;/8
+     559                            JRNC    PT_NO_4
+     560                            MOVE    *A2+,A14,L      ; XUNIT
+     561                            move    a14,*A3+,L      ; XUNIT DO 4 COLORS
+     562                            srl     16,a14          ; XUNIT
+     563                            move    a14,*a3+,L      ; XUNIT
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     564                            MOVE    *A2+,A14,L      ; XUNIT
+     565                            move    a14,*A3+,L      ; XUNIT
+     566                            srl     16,a14          ; XUNIT
+     567                            move    a14,*a3+,L      ; XUNIT
+     568                            move    a4,a4           ; XUNIT
+     569                    PT_NO_4 JRZ     PT_PAL_DONE     ;COUNT = 0 ?
+     570                    PT_XFER_LOOP
+     571                            MOVE    *A2+,A14,L      ; XUNIT
+     572                            move    a14,*A3+,L      ; XUNIT DO 8 COLORS
+     573                            srl     16,a14          ; XUNIT
+     574                            move    a14,*a3+,L      ; XUNIT
+     575                            MOVE    *A2+,A14,L      ; XUNIT
+     576                            move    a14,*A3+,L      ; XUNIT
+     577                            srl     16,a14          ; XUNIT
+     578                            move    a14,*a3+,L      ; XUNIT
+     579                            MOVE    *A2+,A14,L      ; XUNIT
+     580                            move    a14,*A3+,L      ; XUNIT
+     581                            srl     16,a14          ; XUNIT
+     582                            move    a14,*a3+,L      ; XUNIT
+     583                            MOVE    *A2+,A14,L      ; XUNIT
+     584                            move    a14,*A3+,L      ; XUNIT
+     585                            srl     16,a14          ; XUNIT
+     586                            move    a14,*a3+,L      ; XUNIT
+     587                            .else
+     588 000018d0     91c3          move    a14,*A3+,W      ; WWFUNIT  DO 1 COLOR
+     589 000018e0     2fe4  PT_NO_1 SRL     1,A4            ;/4
+     590 000018f0     c904          JRNC    PT_NO_2
+     591 00001900     964e          MOVE    *A2+,a14,L      ; WWFUNIT
+     592 00001910     91c3          move    a14,*A3+,W      ; WWFUNIT DO 2 COLORS
+     593 00001920     2e0e          srl     16,a14          ; WWFUNIT
+     594 00001930     91c3          move    a14,*A3+,W      ; WWFUNIT
+     595 00001940     2fe4  PT_NO_2 SRL     1,A4            ;/8
+     596 00001950     c909          JRNC    PT_NO_4
+     597 00001960     964e          MOVE    *A2+,A14,L      ; WWFUNIT
+     598 00001970     91c3          move    a14,*A3+,W      ; WWFUNIT DO 4 COLORS
+     599 00001980     2e0e          srl     16,a14          ; WWFUNIT
+     600 00001990     91c3          move    a14,*a3+,W      ; WWFUNIT
+     601 000019a0     964e          MOVE    *A2+,A14,L      ; WWFUNIT
+     602 000019b0     91c3          move    a14,*A3+,W      ; WWFUNIT
+     603 000019c0     2e0e          srl     16,a14          ; WWFUNIT
+     604 000019d0     91c3          move    a14,*a3+,W      ; WWFUNIT
+     605 000019e0     4c84          move    a4,a4           ; WWFUNIT
+     606 000019f0     ca11  PT_NO_4 JRZ     PT_PAL_DONE     ;COUNT = 0 ?
+     607 00001a00           PT_XFER_LOOP
+     608 00001a00     964e          MOVE    *A2+,A14,L      ; WWFUNIT
+     609 00001a10     91c3          move    a14,*A3+,W      ; WWFUNIT DO 8 COLORS
+     610 00001a20     2e0e          srl     16,a14          ; WWFUNIT
+     611 00001a30     91c3          move    a14,*a3+,W      ; WWFUNIT
+     612 00001a40     964e          MOVE    *A2+,A14,L      ; WWFUNIT
+     613 00001a50     91c3          move    a14,*A3+,W      ; WWFUNIT
+     614 00001a60     2e0e          srl     16,a14          ; WWFUNIT
+     615 00001a70     91c3          move    a14,*a3+,W      ; WWFUNIT
+     616 00001a80     964e          MOVE    *A2+,A14,L      ; WWFUNIT
+     617 00001a90     91c3          move    a14,*A3+,W      ; WWFUNIT
+     618 00001aa0     2e0e          srl     16,a14          ; WWFUNIT
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     619 00001ab0     91c3          move    a14,*a3+,W      ; WWFUNIT
+     620 00001ac0     964e          MOVE    *A2+,A14,L      ; WWFUNIT
+     621 00001ad0     91c3          move    a14,*A3+,W      ; WWFUNIT
+     622 00001ae0     2e0e          srl     16,a14          ; WWFUNIT
+     623 00001af0     91c3          move    a14,*a3+,W      ; WWFUNIT
+     624                            .endif
+     625 00001b00     3e24          DSJS    A4,PT_XFER_LOOP
+     626 00001b10           PT_PAL_DONE
+     627 00001b10     0b60          CMPI    PALTRANS_QUEUE+PALQ_SIZE,A0     ;IF PTR RUNS OFF END OF
+         00001b20 ffffefef- 
+     628 00001b40     c403          JRLT    PT_NO_WRAP                      ;QUEUE THEN WRAP AROUND
+     629 00001b50     09e0          MOVI    PALTRANS_QUEUE,A0               ;TO THE START
+         00001b60 00000010- 
+     630 00001b80           PT_NO_WRAP
+     631 00001b80     1421          DEC     A1                      ;HAVE WE DONE ALL TRANSFERS?
+     632 00001b90     ca02          JRZ     PT_DONE                 ;BR = YES
+     633 00001ba0     0d87          DSJ     A7,PT_NEXT_PAL          ;DO NEXT IF WE DIDN'T MAX OUT FOR VBLK
+         00001bb0     ffc8  
+     634 00001bc0     0581  PT_DONE MOVE    A1,@PALTRANS_COUNT,W    ;SAVE THE COUNTER
+         00001bd0 00001050- 
+     635 00001bf0     0780          MOVE    A0,@PALTRANS_START,L    ;SAVE QUEUE START POS
+         00001c00 00001010- 
+     636 00001c20           PT_QUEUE_EMPTY
+     637 00001c20     0960          RETS
+
+ No Errors,  No Warnings

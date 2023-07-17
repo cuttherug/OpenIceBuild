@@ -1,0 +1,1087 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHFADE.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    **************************************************************************
+       8                    *                                                                        *
+       9                    *       COPYRIGHT (C) 1994 MIDWAY MANUFACTURING COMPANY.                 *
+      10                    *                      ALL RIGHTS RESERVED.                              *
+      11                    *                                                                        *
+      12                    **************************************************************************
+      13                    
+      14                            .INCLUDE        "HH.INC"                ;SYSTEM STUFF
+      15                            .INCLUDE        "IMGTBL.GLO"    ;PALETTES FOR YOU
+      16                            .include        "hhfade.e"
+      17                            .include        "hhproc.g"
+      18                            .include        "hhpall.g"
+      19                            .include        "hhram.g"
+      20                            .include        "hhtext.g"
+      21                    
+      22                    ; end of include files
+      23                    
+      24 00000000                   .TEXT
+      25 00000000                   .EVEN
+      26                    
+      27                    
+      28                    **************************************************************************
+      29                    *                                                                        *
+      30                    * FADE_WAIT - WAIT FOR ALL FADE PROCESSES TO COMPLETE                    *
+      31                    *                                                                        *
+      32                    * PASS:                                                                  *
+      33                    * NUTIN'                                                                 *
+      34                    * RETURN:                                                                *
+      35                    * NUTIN'                                                                 *
+      36                    *                                                                        *
+      37                    * NOTE: CALL WITH JSRP!                                                  *
+      38                    *                                                                        *
+      39                    **************************************************************************
+      40                    
+      41 00000000           FADE_WAIT
+      42 00000000                   SLEEP   1
+      43                    
+      44 00000040     09c0          MOVI    PID_PFADE,A0
+         00000050     2d00  
+      45 00000060     09c1          MOVI    07FFFH,A1
+         00000070     7fff  
+      46 00000080     0d5f          CALLA   EXISTP
+         00000090 00000000! 
+      47                    
+      48 000000b0     cbf4          JRNZ    FADE_WAIT               ;BR=WAIT SOME MORE
+      49 000000c0                   RETP
+      50                    
+      51                    **************************************************************************
+      52                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      53                    * DONTFADE - A LIST OF COMMON PALETTES NOT TO FADE                       *
+      54                    *                                                                        *
+      55                    **************************************************************************
+      56                    
+      57 000000f0           DONTFADE
+      58 000000f0 00000000          .LONG   0
+      59                    
+      60                    **************************************************************************
+      61                    *                                                                        *
+      62                    *       FADEALL                                                          *
+      63                    *                                                                        *
+      64                    *       FADE EVERYTHING USING A GIVEN FADE ENTRY                         *
+      65                    *                                                                        *
+      66                    *       ENTRY                                                            *
+      67                    *               A0      LIST OF PALETTES                                 *
+      68                    *               A11     FADE MULT TABLE                                  *
+      69                    *                                                                        *
+      70                    *       EXIT                                                             *
+      71                    *               NOTHING                                                  *
+      72                    *                                                                        *
+      73                    *       CALL                                                             *
+      74                    *               CALL                                                     *
+      75                    *                                                                        *
+      76                    **************************************************************************
+      77                    
+      78 00000110           FADEALL:
+      79 00000110     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000120     e3f0  
+      80 00000130     574a          CLR     A10
+      81 00000140     c000          JRUC    Fader
+         00000150     0107  
+      82                    
+      83                    **************************************************************************
+      84                    *                                                                        *
+      85                    *       FADEBLAK                                                         *
+      86                    *                                                                        *
+      87                    *       FADE A LIST OF PALETTES TO BLACK, WITHIN ONE TICK                *
+      88                    *                                                                        *
+      89                    *       ENTRY                                                            *
+      90                    *               A0      PTR TO NULL TERMINATED LIST **NOT** TO FADE      *
+      91                    *                                                                        *
+      92                    *       EXIT                                                             *
+      93                    *               NOTHING                                                  *
+      94                    *                                                                        *
+      95                    **************************************************************************
+      96 00000160           FADEBLAK:
+      97 00000160     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000170     e3f0  
+      98 00000180     574a          CLR     A10
+      99 00000190     09eb          movi    FadeBlak,A11
+         000001a0 000026d0' 
+     100 000001c0     c000          jruc    Fader
+         000001d0     00ff  
+     101                    
+     102                    *FADE IN THE TEXT PALETTE ONLY TO BLACK
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     103 000001e0           FADEBLAK_TEXT
+     104 000001e0     098f          MMTM    SP,A0,A10,A11
+         000001f0     8030  
+     105 00000200     09e0          MOVI    TEXTPAL,A0
+         00000210 00000000! 
+     106 00000230     09eb          movi    FadeBlak,A11
+         00000240 000026d0' 
+     107 00000260     574a          CLR     A10
+     108 00000270     0d3f          CALLR   FADE_ONLY
+         00000280     013d  
+     109 00000290     09af          MMFM    SP,A0,A10,A11
+         000002a0     0c01  
+     110 000002b0     0960          RETS
+     111                    
+     112                    *FADE A SINGLE PALETTE TO BLACK (FAST)
+     113                    *A0 = PALETTE I.D.
+     114 000002c0           FADEBLAK_PAL
+     115 000002c0     098f          MMTM    SP,A10,A11
+         000002d0     0030  
+     116 000002e0     574a          CLR     A10
+     117 000002f0     09eb          movi    FadeBlak,A11
+         00000300 000026d0' 
+     118 00000320     0d3f          CALLR   FADE_ONLY
+         00000330     0132  
+     119 00000340     09af          MMFM    SP,A10,A11
+         00000350     0c00  
+     120 00000360     0960          RETS
+     121                    
+     122                    **************************************************************************
+     123                    *                                                                        *
+     124                    *       FADEFULL                                                         *
+     125                    *                                                                        *
+     126                    *       BRING A LIST OF PALETTES TO FULL BRIGHTNESS, WITHIN ONE TICK     *
+     127                    *                                                                        *
+     128                    *       ENTRY                                                            *
+     129                    *               A0      PTR TO NULL TERMINATED LIST **NOT** TO FADE      *
+     130                    *                                                                        *
+     131                    *       EXIT                                                             *
+     132                    *               NOTHING                                                  *
+     133                    *                                                                        *
+     134                    **************************************************************************
+     135 00000370           FADEFULL:
+     136 00000370     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000380     e3f0  
+     137 00000390     574a          CLR     A10
+     138 000003a0     09eb          movi    FadeFull,A11
+         000003b0 00002730' 
+     139 000003d0     c000          jruc    Fader
+         000003e0     00de  
+     140                    
+     141                    *BRING TO WHITE
+     142 000003f0           GOWHITE:
+     143 000003f0     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000400     e3f0  
+     144 00000410     182a          MOVK    M_FADE_WHITE,A10
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     145 00000420     09eb          movi    WHITELIST,A11
+         00000430 00003410' 
+     146 00000450     c000          jruc    Fader
+         00000460     00d6  
+     147                    
+     148                    *BRING TO NORMAL
+     149 00000470           GONORMAL:
+     150 00000470     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000480     e3f0  
+     151 00000490     182a          MOVK    M_FADE_WHITE,A10
+     152 000004a0     09eb          movi    NORMLIST,A11
+         000004b0 00003470' 
+     153 000004d0     c000          jruc    Fader
+         000004e0     00ce  
+     154                    
+     155                    
+     156                    *BRING THE TEXT PALETTE ONLY TO FULL
+     157 000004f0           FADEFULL_TEXT
+     158 000004f0     098f          MMTM    SP,A0,A10,A11
+         00000500     8030  
+     159 00000510     09e0          MOVI    TEXTPAL,A0
+         00000520 00000000! 
+     160 00000540     574a          CLR     A10
+     161 00000550     09eb          movi    FadeFull,A11
+         00000560 00002730' 
+     162 00000580     0d3f          CALLR   FADE_ONLY
+         00000590     010c  
+     163 000005a0     09af          MMFM    SP,A0,A10,A11
+         000005b0     0c01  
+     164 000005c0     0960          RETS
+     165                    
+     166                    **************************************************************************
+     167                    *                                                                        *
+     168                    *       FADEIN                                                           *
+     169                    *                                                                        *
+     170                    *       FADE A LIST OF PALETTES FROM BLACK TO THEIR CURRENT COLORS       *
+     171                    *                                                                        *
+     172                    *       ENTRY                                                            *
+     173                    *               A0      PTR TO NULL TERMINATED LIST **NOT** TO FADE      *
+     174                    *                                                                        *
+     175                    *       EXIT                                                             *
+     176                    *               NOTHING                                                  *
+     177                    *                                                                        *
+     178                    **************************************************************************
+     179 000005d0           FADEIN:
+     180 000005d0     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         000005e0     e3f0  
+     181 000005f0     574a          CLR     A10
+     182 00000600     09eb          movi    FadeIn,A11
+         00000610 000027f0' 
+     183 00000630     c000          jruc    Fader
+         00000640     00b8  
+     184                    
+     185 00000650           FADEIN2:
+     186 00000650     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+         00000660     e3f0  
+     187 00000670     574a          CLR     A10
+     188 00000680     09eb          movi    FadeIn2,A11
+         00000690 000031f0' 
+     189 000006b0     c000          jruc    Fader
+         000006c0     00b0  
+     190                    
+     191 000006d0           FADEINRED:
+     192 000006d0     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         000006e0     e3f0  
+     193 000006f0     184a          MOVK    M_DONT_FADE_RED,A10
+     194 00000700     09eb          movi    FadeIn2,A11
+         00000710 000031f0' 
+     195 00000730     c000          jruc    Fader
+         00000740     00a8  
+     196                    
+     197                    *A10 = FADE MODE
+     198 00000750           FADEIN_ALLBUT1
+     199 00000750     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000760     e3f0  
+     200 00000770     09eb          movi    FadeIn2,A11
+         00000780 000031f0' 
+     201 000007a0     c000          jruc    Fader
+         000007b0     00a1  
+     202                    
+     203                    
+     204                    *FADE IN A SINGLE OBJECT's PALETTE
+     205                    * a8 = object
+     206                    * a0 = PALETTE ID (long)
+     207                    * a11 = Fade Table
+     208 000007c0           FADE_ONE
+     209 000007c0     098f          MMTM    SP,a8,a9,A10
+         000007d0     00e0  
+     210 000007e0     b509          move    *a8(OPAL),a9
+         000007f0     0280  
+     211 00000800     2709          sll     24,a9
+     212 00000810     2d09          srl     24,a9           ; leave 8 bits
+     213 00000820     4c08          move    a0,a8
+     214 00000830     574a          CLR     A10
+     215 00000840                   CREATE  PID_PFADE,FADEPROC
+     216 000008c0     09af          MMFM    SP,a8,a9,A10
+         000008d0     0700  
+     217 000008e0     0960          RETS
+     218                    
+     219                    
+     220                    *FADE IN A SINGLE PALETTE AT "NORMAL" SPEED
+     221                    *A0 = PTR TO PALETTE
+     222 000008f0           FADEIN_PAL
+     223 000008f0     098f          MMTM    SP,A10,A11
+         00000900     0030  
+     224 00000910     574a          CLR     A10
+     225 00000920     09eb          movi    FadeIn,A11
+         00000930 000027f0' 
+     226 00000950     0d3f          CALLR   FADE_ONLY
+         00000960     00cf  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     227 00000970     09af          MMFM    SP,A10,A11
+         00000980     0c00  
+     228 00000990     0960          RETS
+     229                    
+     230                    *FAST VERSION OF FADEIN
+     231                    *A0 = PTR TO TABLE OF PALETTES NOT TO FADE
+     232 000009a0           FADEINF:
+     233 000009a0     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         000009b0     e3f0  
+     234 000009c0     574a          CLR     A10
+     235 000009d0     09eb          movi    FadeInF,A11
+         000009e0 00002750' 
+     236 00000a00     c07c          jruc    Fader
+     237                    
+     238                    *SLOW VERSION OF FADEIN
+     239                    *A0 = PTR TO TABLE OF PALETTES NOT TO FADE
+     240 00000a10           FADEINS:
+     241 00000a10     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000a20     e3f0  
+     242 00000a30     574a          CLR     A10
+     243 00000a40     09eb          movi    FadeInS,A11
+         00000a50 00002920' 
+     244 00000a70     c075          jruc    Fader
+     245                    
+     246 00000a80           FADEIN_TEXTSLW
+     247 00000a80     098f          MMTM    SP,A0,A11
+         00000a90     8010  
+     248 00000aa0     09eb          movi    FadeInS,A11
+         00000ab0 00002920' 
+     249 00000ad0     c005          jruc    FDTXTHK
+     250                    
+     251                    *FADE IN THE TEXT PALETTE ONLY
+     252 00000ae0           FADEIN_TEXT
+     253 00000ae0     098f          MMTM    SP,A0,A10,A11
+         00000af0     8030  
+     254 00000b00     09eb          movi    FadeIn,A11
+         00000b10 000027f0' 
+     255 00000b30           FDTXTHK:
+     256 00000b30     09e0          MOVI    TEXTPAL,A0
+         00000b40 00000000! 
+     257 00000b60     574a          CLR     A10
+     258 00000b70     0d3f          CALLR   FADE_ONLY
+         00000b80     00ad  
+     259 00000b90     09af          MMFM    SP,A0,A10,A11
+         00000ba0     0c01  
+     260 00000bb0     0960          RETS
+     261                    
+     262                    **************************************************************************
+     263                    *                                                                        *
+     264                    *       FADE_HALF2FULL                                                   *
+     265                    *                                                                        *
+     266                    *       FADE A LIST OF PALETTES FROM HALF TO FULL BRIGHTNESS             *
+     267                    *                                                                        *
+     268                    *       ENTRY                                                            *
+     269                    *               A0      PTR TO NULL TERMINATED LIST **NOT** TO FADE      *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     270                    *                                                                        *
+     271                    *       EXIT                                                             *
+     272                    *               NOTHING                                                  *
+     273                    *                                                                        *
+     274                    **************************************************************************
+     275 00000bc0           FADE_HALF2FULL:
+     276 00000bc0     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000bd0     e3f0  
+     277 00000be0     574a          CLR     A10
+     278 00000bf0     09eb          movi    FadeHalf2Full,A11
+         00000c00 00002b50' 
+     279 00000c20     c05a          jruc    Fader
+     280                    
+     281 00000c30           FADE_HALF2FULLf
+     282 00000c30     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000c40     e3f0  
+     283 00000c50     574a          CLR     A10
+     284 00000c60     09eb          movi    FadeHalf2Fullf,A11
+         00000c70 00002bf0' 
+     285 00000c90     c053          jruc    Fader
+     286                    
+     287 00000ca0           FROZE_FADE_HALF2FULL
+     288 00000ca0     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000cb0     e3f0  
+     289 00000cc0     574a          CLR     A10
+     290                    ;       movi    FadeHalf2FullfF,A11
+     291 00000cd0     09eb          MOVI    FadeFull,A11
+         00000ce0 00002730' 
+     292 00000d00     c070          jruc    FROZE_Fader
+     293                    
+     294                    **************************************************************************
+     295                    *                                                                        *
+     296                    *       FADE_HALF2BLAK                                                   *
+     297                    *                                                                        *
+     298                    *       FADE A LIST OF PALETTES FROM HALF BRIGHTNESS TO BLACK            *
+     299                    *                                                                        *
+     300                    *       ENTRY                                                            *
+     301                    *               A0      PTR TO NULL TERMINATED LIST **NOT** TO FADE      *
+     302                    *                                                                        *
+     303                    *       EXIT                                                             *
+     304                    *               NOTHING                                                  *
+     305                    *                                                                        *
+     306                    **************************************************************************
+     307 00000d10           FADE_HALF2BLAK:
+     308 00000d10     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000d20     e3f0  
+     309 00000d30     574a          CLR     A10
+     310 00000d40     09eb          movi    FadeHalf2Blak,A11
+         00000d50 00002c70' 
+     311 00000d70     c045          jruc    Fader
+     312                    
+     313                    **************************************************************************
+     314                    *                                                                        *
+     315                    *       FADEOUT                                                          *
+     316                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     317                    *       FADE A LIST OF PALETTES DOWN TO BLACK                            *
+     318                    *                                                                        *
+     319                    *       ENTRY                                                            *
+     320                    *               A0      PTR TO NULL TERMINATED LIST **NOT** TO FADE      *
+     321                    *                                                                        *
+     322                    *       EXIT                                                             *
+     323                    *               NOTHING                                                  *
+     324                    *                                                                        *
+     325                    **************************************************************************
+     326 00000d80           FADEOUT:
+     327 00000d80     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000d90     e3f0  
+     328 00000da0     574a          CLR     A10
+     329 00000db0     09eb          movi    FadeOut,A11
+         00000dc0 00002d10' 
+     330 00000de0     c03e          JRUC    Fader
+     331 00000df0           FADEOUTRED:
+     332 00000df0     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000e00     e3f0  
+     333 00000e10     184a          MOVK    M_DONT_FADE_RED,A10
+     334 00000e20     09eb          movi    FadeOut2,A11
+         00000e30 00003300' 
+     335 00000e50     c037          JRUC    Fader
+     336                    
+     337                    *A10 = FADE MODE
+     338 00000e60           FADEOUT_ALLBUT1:
+     339 00000e60     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000e70     e3f0  
+     340 00000e80     09eb          movi    FadeOut2,A11
+         00000e90 00003300' 
+     341 00000eb0     c031          JRUC    Fader
+     342                    
+     343                    *FAST VERSION OF FADEOUT
+     344                    *A0 = PTR TO TABLE OF PALETTES NOT TO FADE
+     345 00000ec0           FADEOUTF:
+     346 00000ec0     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000ed0     e3f0  
+     347 00000ee0     574a          CLR     A10
+     348 00000ef0     09eb          movi    FadeOutF,A11
+         00000f00 00002e20' 
+     349 00000f20     c02a          jruc    Fader
+     350                    
+     351                    *SLOW VERSION OF FADEOUT
+     352                    *A0 = PTR TO TABLE OF PALETTES NOT TO FADE
+     353 00000f30           FADEOUTS:
+     354 00000f30     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00000f40     e3f0  
+     355 00000f50     574a          CLR     A10
+     356 00000f60     09eb          movi    FadeOutS,A11
+         00000f70 00002ec0' 
+     357 00000f90     c023          jruc    Fader
+     358                    
+     359                    *FADE OUT THE TEXT PALETTE ONLY
+     360 00000fa0           FADEOUT_TEXT
+     361 00000fa0     098f          MMTM    SP,A0,A10,A11
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+         00000fb0     8030  
+     362 00000fc0     09e0          MOVI    TEXTPAL,A0
+         00000fd0 00000000! 
+     363 00000ff0     09eb          movi    FadeOutF,A11
+         00001000 00002e20' 
+     364 00001020     574a          CLR     A10
+     365 00001030     0d3f          CALLR   FADE_ONLY
+         00001040     0061  
+     366 00001050     09af          MMFM    SP,A0,A10,A11
+         00001060     0c01  
+     367 00001070     0960          RETS
+     368                    
+     369                    **************************************************************************
+     370                    *                                                                        *
+     371                    *       FADE_FULL2HALF                                                   *
+     372                    *                                                                        *
+     373                    *       FADE A LIST OF PALETTES DOWN TO HALF BRIGHT                      *
+     374                    *                                                                        *
+     375                    *       ENTRY                                                            *
+     376                    *               A0      PTR TO NULL TERMINATED LIST **NOT** TO FADE      *
+     377                    *                                                                        *
+     378                    *       EXIT                                                             *
+     379                    *               NOTHING                                                  *
+     380                    *                                                                        *
+     381                    **************************************************************************
+     382 00001080           FADE_FULL2HALF:
+     383 00001080     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00001090     e3f0  
+     384 000010a0     574a          CLR     A10
+     385 000010b0     09eb          movi    FadeFull2Half,A11
+         000010c0 000030e0' 
+     386 000010e0     c00e          JRUC    Fader
+     387                    
+     388 000010f0           FADE_FULL2HALFf
+     389 000010f0     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00001100     e3f0  
+     390 00001110     574a          CLR     A10
+     391 00001120     09eb          movi    FadeFull2Halff,A11
+         00001130 00003170' 
+     392 00001150     c007          JRUC    Fader
+     393                    
+     394 00001160           FROZE_FADE_FULL2HALF
+     395 00001160     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00001170     e3f0  
+     396 00001180     574a          CLR     A10
+     397                    ;       movi    FadeFull2HalffF,A11
+     398 00001190     09eb          MOVI    FadeSlight,A11
+         000011a0 00002710' 
+     399 000011c0     c024          JRUC    FROZE_Fader
+     400                    
+     401                    **************************************************************************
+     402                    *                                                                        *
+     403                    * Fader - CREATE THE FADER PROCESS                                       *
+     404                    *                                                                        *
+     405                    * A10 = FADE MODE                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     406                    *                                                                        *
+     407                    **************************************************************************
+     408                    
+     409 000011d0           Fader:
+     410 000011d0     4c06          move    A0,A6
+     411                    
+     412                    ;* WALK EUGENES PALETTE TABLE, START PROC TO FADE EACH PALETTE *
+     413 000011e0     5729          clr     A9              ;palette slot
+     414 000011f0     1429          dec     A9
+     415 00001200     09e2          movi    PALRAM-PALRSIZ,A2       ;base of eugenes palette table
+         00001210 ffffffc0! 
+     416 00001230           PalLp:
+     417 00001230     0b02          addi    PALRSIZ,A2
+         00001240     0040  
+     418 00001250     1029          inc     A9
+     419 00001260     0b49          cmpi    NUMPAL,A9
+         00001270     ff7f  
+     420 00001280     c515          jrge    PalLpX
+     421                    
+     422 00001290     b441          move    *A2(PALCNT),A1,W        ;is palette allocated?
+         000012a0     0020  
+     423 000012b0     caf7          jrz     PalLp
+     424 000012c0     b648          move    *A2(PALID),A8,L         ;Ptr to palette
+         000012d0     0000  
+     425                    ;*** SKIP FADING PALS IN LIST POINTED TO BY A6
+     426 000012e0     4cc7          move    A6,A7
+     427 000012f0     ca05          jrz     SkFPalX
+     428 00001300           SkPalLp:
+     429 00001300     96e1          move    *A7+,A1,L
+     430 00001310     ca03          jrz     SkFPalX
+     431 00001320     4828          cmp     A1,A8
+     432 00001330     caef          jreq    PalLp
+     433 00001340     c0fb          jruc    SkPalLp
+     434 00001350           SkFPalX:
+     435 00001350                   CREATE  PID_PFADE,FADEPROC
+     436 000013d0     c0e5          jruc    PalLp
+     437 000013e0           PalLpX:
+     438                    
+     439 000013e0     09af          mmfm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         000013f0     0fc7  
+     440 00001400     0960          rets
+     441                    
+     442 00001410           FROZE_Fader:
+     443 00001410     4c06          move    A0,A6
+     444                    
+     445                    ;* WALK EUGENES PALETTE TABLE, START PROC TO FADE EACH PALETTE *
+     446 00001420     5729          clr     A9              ;palette slot
+     447 00001430     1429          dec     A9
+     448 00001440     09e2          movi    PALRAM-PALRSIZ,A2       ;base of eugenes palette table
+         00001450 ffffffc0! 
+     449 00001470           FPalLp:
+     450 00001470     0b02          addi    PALRSIZ,A2
+         00001480     0040  
+     451 00001490     1029          inc     A9
+     452 000014a0     0b49          cmpi    NUMPAL,A9
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+         000014b0     ff7f  
+     453 000014c0     c516          jrge    FPalLpX
+     454                    
+     455 000014d0     b441          move    *A2(PALCNT),A1,W        ;is palette allocated?
+         000014e0     0020  
+     456 000014f0     caf7          jrz     FPalLp
+     457 00001500     b648          move    *A2(PALID),A8,L         ;Ptr to palette
+         00001510     0000  
+     458                    ;*** SKIP FADING PALS IN LIST POINTED TO BY A6
+     459 00001520     4cc7          move    A6,A7
+     460 00001530     ca05          jrz     FSkFPalX
+     461 00001540           FSkPalLp:
+     462 00001540     96e1          move    *A7+,A1,L
+     463 00001550     ca03          jrz     FSkFPalX
+     464 00001560     4828          cmp     A1,A8
+     465 00001570     caef          jreq    FPalLp
+     466 00001580     c0fb          jruc    FSkPalLp
+     467 00001590           FSkFPalX:
+     468 00001590                   CREATE  PID_FROZEN_PFADE,FADEPROC
+     469 00001620     c0e4          jruc    FPalLp
+     470 00001630           FPalLpX:
+     471                    
+     472 00001630     09af          mmfm    SP,A0,A1,A2,A6,A7,A8,A9,A10,A11
+         00001640     0fc7  
+     473 00001650     0960          rets
+     474                    
+     475                    
+     476                    **************************************************************************
+     477                    *                                                                        *
+     478                    *       FADE_ONLY                                                        *
+     479                    *                                                                        *
+     480                    *       FADE ONLY A CERTAIN PALETTE                                      *
+     481                    *                                                                        *
+     482                    *       ENTRY                                                            *
+     483                    *               A0      PALETTE TO BE FADED                              *
+     484                    *               A10     FADE MODE                                        *
+     485                    *               A11     MULTIPLIER TABLE FOR PALETTES                    *
+     486                    *                                                                        *
+     487                    *       EXIT                                                             *
+     488                    *               NOTHING                                                  *
+     489                    *                                                                        *
+     490                    *       CALL                                                             *
+     491                    *               CALLA                                                    *
+     492                    *                                                                        *
+     493                    **************************************************************************
+     494                    
+     495 00001660           FADE_ONLY:
+     496 00001660     098f          mmtm    SP,A0,A1,A2,A6,A7,A8,A9,A11
+         00001670     e3d0  
+     497 00001680     4c06          move    A0,A6
+     498                    
+     499                    ;* WALK EUGENES PALETTE TABLE, START PROC TO FADE EACH PALETTE *
+     500                    
+     501 00001690     5729          clr     A9              ;palette slot
+     502 000016a0     1429          dec     A9
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     503 000016b0     09e2          movi    PALRAM-PALRSIZ,A2       ;base of eugenes palette table
+         000016c0 ffffffc0! 
+     504 000016e0           FOPalLp:
+     505 000016e0     0b02          addi    PALRSIZ,A2
+         000016f0     0040  
+     506 00001700     1029          inc     A9
+     507 00001710     0b49          cmpi    NUMPAL,A9
+         00001720     ff7f  
+     508 00001730     c510          jrge    FOPalLpX
+     509                    
+     510 00001740     b441          move    *A2(PALCNT),A1,W        ;is palette allocated?
+         00001750     0020  
+     511 00001760     caf7          jrz     FOPalLp
+     512 00001770     b648          move    *A2(PALID),A8,L         ;Ptr to palette
+         00001780     0000  
+     513 00001790     48c8          CMP     A6,A8
+     514 000017a0     cbf3          JRNZ    FOPalLp                 ; BR = NOT THE ONE FOR ME
+     515 000017b0                   CREATE  PID_PFADE,FADEPROC
+     516 00001830     c0ea          jruc    FOPalLp
+     517 00001840           FOPalLpX:
+     518 00001840     09af          mmfm    SP,A0,A1,A2,A6,A7,A8,A9,A11
+         00001850     0bc7  
+     519 00001860     0960          rets
+     520                    
+     521                    **************************************************************************
+     522                    *                                                                        *
+     523                    *       FADE_256...                                                      *
+     524                    *                                                                        *
+     525                    *       FADE Four consecutive palettes (used by movie process)           *
+     526                    *       ENTRY                                                            *
+     527                    *               A0      LAST PALETTE SLOT NUMBER                         *
+     528                    *               A1      Fade Table to use                                *
+     529                    *                                                                        *
+     530                    *       EXIT                                                             *
+     531                    *               NOTHING                                                  *
+     532                    *                                                                        *
+     533                    **************************************************************************
+     534 00001870           FADE_256_BLAK:
+     535 00001870     09e1          movi    FadeBlak,a1
+         00001880 000026d0' 
+     536 000018a0     c007          jruc    FADE_256
+     537                    
+     538 000018b0           FADE_256_IN:
+     539 000018b0     09e1          movi    FadeIn,a1
+         000018c0 000027f0' 
+     540 000018e0     c003          jruc    FADE_256
+     541                    
+     542 000018f0           FADE_256_OUT:
+     543 000018f0     09e1          movi    FadeOutS,a1
+         00001900 00002ec0' 
+     544                    
+     545 00001920           FADE_256:
+     546 00001920     098f          mmtm    SP,A0,A1,A2,A3,a4,A7,a8,a9,A10,a11
+         00001930     f9f0  
+     547 00001940     4c2b          move    a1,a11
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     548 00001950     4c09          move    a0,a9
+     549                    
+     550 00001960     4d23          move    a9,a3
+     551 00001970     24c3          sll     6,a3            ; since PALRSIZ = 40h
+     552                    ************************************************************************
+     553                    *   IF PALRSIZ IS NOT A POWER OF TWO, REPLACE THE ABOVE LINE WITH...
+     554                    *       MOVI    PALRSIZ,A3      ; old way
+     555                    *       MPYU    A9,A3
+     556                    ************************************************************************
+     557 00001980     0b23          addi    PALRAM+PALRSIZ,A3
+         00001990 00000040! 
+     558 000019b0     1884          movk    4,a4
+     559 000019c0           f256olp:
+     560 000019c0     0be3          subi    PALRSIZ,a3
+         000019d0     ffbf  
+     561 000019e0     b462          move    *A3(PALCNT),A2,W        ;is palette allocated?
+         000019f0     0020  
+     562 00001a00     cafb          jrz     f256olp
+     563 00001a10     b668          move    *A3(PALID),A8,L         ;Ptr to palette
+         00001a20     0000  
+     564 00001a30     574a          CLR     A10
+     565 00001a40                   CREATE  PID_PFADE,FADEPROC
+     566 00001ac0     1429          dec     a9
+     567 00001ad0     3e44          dsjs    a4,f256olp
+     568                    
+     569 00001ae0     09af          mmfm    SP,A0,A1,A2,A3,a4,A7,a8,a9,A10,a11
+         00001af0     0f9f  
+     570 00001b00     0960          rets
+     571                    
+     572                    
+     573                    **************************************************************************
+     574                    *                                                                        *
+     575                    *       FADE_64...                                                       *
+     576                    *                                                                        *
+     577                    *       FADE one palette (used by movie process)                         *
+     578                    *       ENTRY                                                            *
+     579                    *               A0      PALETTE SLOT NUMBER                              *
+     580                    *               A1      Fade Table to use                                *
+     581                    *                                                                        *
+     582                    *       EXIT                                                             *
+     583                    *               NOTHING                                                  *
+     584                    *                                                                        *
+     585                    **************************************************************************
+     586 00001b10           FADE_64_IN:
+     587 00001b10     09e1          movi    FadeIn,a1
+         00001b20 000027f0' 
+     588 00001b40     c003          jruc    FADE_64
+     589                    
+     590 00001b50           FADE_64_BLAK:
+     591 00001b50     09e1          movi    FadeBlak,a1
+         00001b60 000026d0' 
+     592 00001b80           FADE_64:
+     593 00001b80     098f          mmtm    SP,A0,A1,A2,A3,a4,A7,a8,a9,A10,a11
+         00001b90     f9f0  
+     594                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     595 00001ba0     4c2b          move    a1,a11
+     596 00001bb0     24c3          sll     6,a3            ; since PALRSIZ = 40h
+     597                    ************************************************************************
+     598                    *   IF PALRSIZ IS NOT A POWER OF TWO, REPLACE THE ABOVE LINE WITH...
+     599                    *       MOVI    PALRSIZ,A3      ; old way
+     600                    *       MPYU    A0,A3
+     601                    ************************************************************************
+     602 00001bc0     0b23          addi    PALRAM,A3
+         00001bd0 00000000! 
+     603 00001bf0     b462          move    *A3(PALCNT),A2,W        ;is palette allocated?
+         00001c00     0020  
+     604 00001c10     ca0b          jrz     FADE_64_X
+     605 00001c20     b668          move    *A3(PALID),A8,L         ;Ptr to palette
+         00001c30     0000  
+     606 00001c40     574a          CLR     A10
+     607 00001c50                   CREATE  PID_PFADE,FADEPROC
+     608 00001cd0           FADE_64_X:
+     609 00001cd0     09af          mmfm    SP,A0,A1,A2,A3,a4,A7,a8,a9,A10,a11
+         00001ce0     0f9f  
+     610 00001cf0     0960          rets
+     611                    
+     612                    **************************************************************************
+     613                    *                                                                        *
+     614                    *       FADEPROC                                                         *
+     615                    *                                                                        *
+     616                    *       PROCESS TO ACTUALLY FADE A PALETTE                               *
+     617                    *                                                                        *
+     618                    *       ENTRY                                                            *
+     619                    *               A8      PTR TO PALETTE SOURCE DATA TO BE FADED           *
+     620                    *               A9      PALETTE SLOT OF PALETTE                          *
+     621                    *               A10     FADE MODE                                        *
+     622                    *               A11     FADE MULTIPLIER TABLE                            *
+     623                    *                                                                        *
+     624                    *       EXIT                                                             *
+     625                    *               NOTHING                                                  *
+     626                    *                                                                        *
+     627                    * BIG NOTE: MAKE SURE PALETTE I.D. STAYS IN A8 DURING ALL SLEEPS.        *
+     628                    *         ROUTINE KILL_FADE WILL RELY ON THIS INFORMATION!!!!            *
+     629                    *                                                                        *
+     630                    **************************************************************************
+     631 00001d00           FADEPROC:
+     632                    *REMOVED .YUNIT STUFF
+     633 00001d00     2709          sll     24,A9
+     634 00001d10     2e09          srl     16,A9           ;B8-15 DEST PAL | B0-7 START COLOR
+     635 00001d20           FadePLp:
+     636                            ;**** SET UP FADED PAL IN PROCESS DATA SPACE ****
+     637 00001d20     9562          move    *A11+,A2,W      ;A2 - Color Multiplier
+     638 00001d30     ce1d          jrn     FadePrcX
+     639 00001d40     4da0          move    A13,A0
+     640 00001d50     0b00          addi    PDATA+010h,A0   ;A0 - Dest Ram for Pal
+         00001d60     0110  
+     641 00001d70     4d01          move    A8,A1           ;A1 - Src for Pal
+     642 00001d80     0d3f          callr   FadePal
+         00001d90     001e  
+     643                            ;**** GET FADED PALETTE XFERRED TO PALRAM ****
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     644 00001da0           FadeP_Retry
+     645 00001da0     4d21          move    A9,A1           ;B8-15 DEST PAL | B0-7 START COLOR
+     646 00001db0     4da0          move    A13,A0
+     647 00001dc0     0b00          addi    PDATA+010h,A0   ;SRC FOR XFER
+         00001dd0     0110  
+     648 00001de0     9402          move    *A0+,A2,W       ;GET # COLORS IN PALETTE
+     649 00001df0     0d5f          calla   PALSET          ;SETUP PALETTE TRANSFER
+         00001e00 00000000! 
+     650 00001e20     cb07          jrnz    FadeP_Set       ;BR = Transfer was setup correctly
+     651                    
+     652 00001e30                   SLOOP   1,FadeP_Retry   ;We failed to get the Xfer, try again
+     653                    
+     654 00001ea0           FadeP_Set
+     655 00001ea0                   SLOOP   1,FadePLp
+     656                    
+     657 00001f10           FadePrcX:
+     658 00001f10                   SLEEP   1               ;give last xfer a chance to go
+     659 00001f50                   DIE
+     660                    
+     661                    **************************************************************************
+     662                    *                                                                        *
+     663                    *       FADEPAL                                                          *
+     664                    *                                                                        *
+     665                    *       APPLY THE COLOR MULTIPLIER AND DO ONE ITERATION ON THE PALETTE   *
+     666                    *                                                                        *
+     667                    *       ENTRY                                                            *
+     668                    *               A0      DESTINATION RAM FOR PALETTE                      *
+     669                    *               A1      SOURCE FOR PALETTE                               *
+     670                    *               A2      COLOR MULTIPLIER                                 *
+     671                    *               A10     FADE MODE                                        *
+     672                    *                                                                        *
+     673                    *       EXIT                                                             *
+     674                    *               NOTHING                                                  *
+     675                    *                                                                        *
+     676                    *       NOTE:   EACH COLOR IN PALETTE WILL BE MULTIPLIED BY A2 THEN      *
+     677                    *               DIVIDED BY 128                                           *
+     678                    *                                                                        *
+     679                    **************************************************************************
+     680 00001f80           FadePal:
+     681 00001f80     098f          mmtm    SP,A8,A9,A10,A11
+         00001f90     00f0  
+     682 00001fa0     4f40          MOVE    A10,B0
+     683 00001fb0     01e0          pushst
+     684 00001fc0     0748          setf    8,0,1
+     685                    
+     686 00001fd0     942e          move    *A1+,A14,W
+     687 00001fe0     91c0          move    A14,*A0+,W
+     688 00001ff0     26ee          sll     23,A14          ;top bits of field are flags
+     689 00002000     2d2e          srl     23,A14          ;       only 9 bits needed for # colors
+     690                    
+     691 00002010     09c4          movi    07C00h,A4       ;A4 - Pre Mult Mask for 5 bits of red
+         00002020     7c00  
+     692 00002030     09c6          movi    003E0h,A6       ;A6 - Pre Mult Mask for 5 bits of green
+         00002040     03e0  
+     693 00002050     09c8          movi    0001Fh,A8       ;A8 - Pre Mult Mask for 5 bits of blue
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+         00002060     001f  
+     694 00002070     4c89          move    A4,A9
+     695 00002080     4cca          move    A6,A10
+     696 00002090     4d0b          move    A8,A11
+     697 000020a0     1ff0          BTST    B_FADE_WHITE,B0
+     698 000020b0     cb03          JRNZ    FadeLp          ;BR=WHITE MODE
+     699 000020c0     24e9          sll     7,A9            ; A9 - Post Mult Max for 5 bits of red
+     700 000020d0     24ea          sll     7,A10           ;A10 - Post Mult Max for 5 bits of green
+     701 000020e0     24eb          sll     7,A11           ;A11 - Post Mult Max for 5 bits of blue
+     702                    
+     703 000020f0           FadeLp:
+     704 000020f0     9423          move    *A1+,A3,W       ;A3 - RED
+     705 00002100     4c65          move    A3,A5           ;A5 - GREEN
+     706 00002110     4c67          move    A3,A7           ;A7 - BLUE
+     707 00002120     5083          and     A4,A3
+     708 00002130     cb04          JRNZ    RED_GOOD                ;BR=RED EXISTS
+     709 00002140     1ff0          BTST    B_FADE_WHITE,B0
+     710 00002150     ca02          JRZ     RED_GOOD                ;BR=NOT WHITE MODE
+     711 00002160     09c3          MOVI    0400h,A3                ;SET RED TO 1
+         00002170     0400  
+     712 00002180           RED_GOOD
+     713 00002180     50c5          and     A6,A5
+     714 00002190     cb03          JRNZ    GREEN_GOOD              ;BR=GREEN EXISTS
+     715 000021a0     1ff0          BTST    B_FADE_WHITE,B0
+     716 000021b0     ca01          JRZ     GREEN_GOOD              ;BR=NOT WHITE MODE
+     717 000021c0     1805          MOVK    020h,A5                 ;SET GREEN TO 1
+     718 000021d0           GREEN_GOOD
+     719 000021d0     5107          and     A8,A7
+     720 000021e0     cb03          JRNZ    BLUE_GOOD               ;BR=BLUE EXISTS
+     721 000021f0     1ff0          BTST    B_FADE_WHITE,B0
+     722 00002200     ca01          JRZ     BLUE_GOOD               ;BR=NOT WHITE MODE
+     723 00002210     1827          MOVK    01h,A7                  ;SET BLUE TO 1
+     724 00002220           BLUE_GOOD
+     725 00002220     1fd0          BTST    B_DONT_FADE_RED,B0
+     726 00002230     ca02          JRZ     DO_RED                  ;BR = FADE RED
+     727 00002240     24e3          SLL     7,A3                    ;RED ONLY MODE, SKIP RED ADJUSTMENT
+     728 00002250     c001          JRUC    NO_RED
+     729 00002260           DO_RED
+     730 00002260     5e43          mpyu    A2,A3
+     731 00002270           NO_RED
+     732 00002270     1fb0          BTST    B_DONT_FADE_GREEN,B0
+     733 00002280     ca02          JRZ     DO_GREEN                ;BR = FADE GREEN
+     734 00002290     24e5          SLL     7,A5                    ;GREEN ONLY MODE, SKIP GREEN ADJUSTMENT
+     735 000022a0     c001          JRUC    NO_GREEN
+     736 000022b0           DO_GREEN
+     737 000022b0     5e45          mpyu    A2,A5
+     738 000022c0           NO_GREEN
+     739 000022c0     1f90          BTST    B_DONT_FADE_BLUE,B0
+     740 000022d0     ca02          JRZ     DO_BLUE                 ;BR = FADE BLUE
+     741 000022e0     24e7          SLL     7,A7                    ;BLUE ONLY MODE, SKIP BLUE ADJUSTMENT
+     742 000022f0     c001          JRUC    NO_BLUE
+     743 00002300           DO_BLUE
+     744 00002300     5e47          mpyu    A2,A7
+     745 00002310           NO_BLUE
+     746 00002310     4923          cmp     A9,A3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     747 00002320     c601          jrle    RedOk                   ;BR=BELOW LIMIT
+     748 00002330     4d23          move    A9,A3
+     749 00002340           RedOk:
+     750 00002340     4945          cmp     A10,A5
+     751 00002350     c601          jrle    GreenOk                 ;BR=BELOW LIMIT
+     752 00002360     4d45          move    A10,A5
+     753 00002370           GreenOk:
+     754 00002370     4967          cmp     A11,A7
+     755 00002380     c601          jrle    BlueOk                  ;BR=BELOW LIMIT
+     756 00002390     4d67          move    A11,A7
+     757 000023a0           BlueOk:
+     758 000023a0     5123          and     A9,A3
+     759 000023b0     5145          and     A10,A5
+     760                    
+     761 000023c0     54a3          or      A5,A3
+     762 000023d0     54e3          or      A7,A3
+     763 000023e0     1ff0          BTST    B_FADE_WHITE,B0
+     764 000023f0     cb01          JRNZ    NO_SHIFTING             ;BR=WHITE MODE
+     765 00002400     2f23          srl     7,A3
+     766 00002410           NO_SHIFTING
+     767 00002410     9060          move    A3,*A0+,W
+     768 00002420     0d8e          DSJ     A14,FadeLp
+         00002430     ffcb  
+     769                    
+     770 00002440     01c0          popst
+     771 00002450     09af          mmfm    SP,A8,A9,A10,A11
+         00002460     0f00  
+     772 00002470     0960          rets
+     773                    
+     774                    
+     775                    *
+     776                    *KILL JUST THE TEXT PALETTE FADER
+     777                    *
+     778 00002480           KILLFADE_TEXT
+     779 00002480                   PUSH    A1
+     780 00002490     09e1          MOVI    TEXTPAL,A1
+         000024a0 00000000! 
+     781 000024c0     0d3f          CALLR   KILLFADE
+         000024d0     0002  
+     782 000024e0                   PULLQ   A1
+     783 000024f0     0960          RETS
+     784                    
+     785                    **************************************************************************
+     786                    *                                                                        *
+     787                    * KILLFADE - ROUTINE TO FIND A FADE PROCESS FOR A SPECIFIC PALETTE       *
+     788                    *          AND KILL IT.                                                  *
+     789                    * A1 = PALETTE I.D. (PTR TO SOURCE DATA)                                 *
+     790                    *                                                                        *
+     791                    **************************************************************************
+     792 00002500           KILLFADE
+     793 00002500     098f          MMTM    SP,A0,A2,A4,A8
+         00002510     a880  
+     794 00002520     09e2          MOVI    ACTIVE,A2
+         00002530 00000000! 
+     795 00002550     09c4          MOVI    PID_PFADE,A4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+         00002560     2d00  
+     796 00002570           KF_LP
+     797 00002570     8642          MOVE    *A2,A2,L        ;GET NEXT
+     798 00002580     ca11          JREQ    KF_X            ;ALL DONE
+     799 00002590           KF_LP_LP
+     800 00002590     b44e          MOVE    *A2(PROCID),A14
+         000025a0     0020  
+     801 000025b0     052e          ZEXT    A14
+     802 000025c0     488e          CMP     A4,A14          ;IS THIS A FADE PROCESS?
+     803 000025d0     cbf9          JRNE    KF_LP           ;BR = NO
+     804 000025e0     4c40          MOVE    A2,A0
+     805 000025f0     0d5f          CALLA   GETA8
+         00002600 00000000! 
+     806 00002620     4901          CMP     A8,A1           ;IS IT THE CORRECT FADE PROCESS?
+     807 00002630     cbf3          JRNE    KF_LP           ;BR = NO
+     808 00002640     8642          MOVE    *A2,A2,L        ;GET NEXT BEFORE KILL
+     809 00002650     0d5f          CALLA   KILL
+         00002660 00000000! 
+     810 00002680     4c42          MOVE    A2,A2           ;IS THERE ANOTHER?
+     811 00002690     cbef          JRNZ    KF_LP_LP        ;BR = YES
+     812 000026a0           KF_X
+     813 000026a0     09af          MMFM    SP,A0,A2,A4,A8
+         000026b0     0115  
+     814 000026c0     0960          RETS
+     815                    
+     816                    *
+     817                    *FADE TABLES
+     818                    *
+     819 000026d0     0000  FadeBlak        .word   0,0FFFFh
+     820 000026f0     0040  FadeHalf        .word   64,0FFFFh
+     821 00002710     0060  FadeSlight      .word   96,0ffffh
+     822 00002730     0080  FadeFull        .WORD   128,0FFFFh
+     823 00002750     0008  FadeInF         .word   8,24,40,56,72,88,104,120,128,0FFFFh
+     824 000027f0     0000  FadeIn          .word   0,0,8,16,24,32,40,48,56,64,72,80,88,96,104,112,120,128,0FFFFh
+     825 00002920     0000  FadeInS         .word   0,0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64,68,72,76
+     826 00002a70     0050                  .word   80,84,88,92,96,100,104,108,112,116,120,124,128,0FFFFh
+     827 00002b50     0040  FadeHalf2Full   .word   64,72,80,88,96,104,112,120,128,0FFFFh
+     828 00002bf0     0050  FadeHalf2Fullf  .word   80,96,112,128,0FFFFh
+     829 00002c40     0060  FadeHalf2FullfF .word   96,128,0FFFFh
+     830 00002c70     0040  FadeHalf2Blak   .WORD   64,56,48,40,32,24,16,8,0,0FFFFh
+     831                    
+     832 00002d10     0078  FadeOut         .word   120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,0,0FFFFh
+     833 00002e20     0078  FadeOutF        .word   120,104,88,72,56,40,24,8,0,0FFFFh
+     834 00002ec0     0080  FadeOutS        .word   128,124,120,116,112,108,104,100,96,92,88,84,80,76,72
+     835 00002fb0     0044                  .word   68,64,60,56,52,48,44,40,36,32,28,24,20,16,12,8,4,0,0FFFFh
+     836 000030e0     0078  FadeFull2Half   .word   120,112,104,96,88,80,72,64,0FFFFh
+     837 00003170     0070  FadeFull2Halff  .word   112,96,80,64,0FFFFh
+     838 000031c0     0060  FadeFull2HalffF .word   96,64,0FFFFh
+     839                    ;FadeIn2        .word   0,2,4,8,16,32,64,128,0FFFFh
+     840 000031f0     0008  FadeIn2         .word   8,16,24,32,40,48,56,64,72,80,88,96,104,112,120,128,0FFFFh
+     841 00003300     0078  FadeOut2        .word   120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,0,0FFFFh
+     842                    
+     843 00003410     0002  WHITELIST       .WORD   2,4,8,16,32,0FFFFh
+     844 00003470     0010  NORMLIST        .WORD   16,8,4,2,1,0FFFFh
+     845                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:36 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+
+ No Errors,  No Warnings

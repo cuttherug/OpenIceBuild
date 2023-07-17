@@ -1,0 +1,2265 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHPICK2.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                            .INCLUDE        "HH.INC"
+      11                            .INCLUDE        "HHPICK.H"
+      12                            .INCLUDE        "HHSTRING.H"
+      13                            .INCLUDE        "IMGTBL.GLO"
+      14                            .INCLUDE        "HHPICK2.TBL"
+      15                            .include        "hhpick2.e"
+      16                            .include        "hhd.g"
+      17                            .include        "hhpall.g"
+      18                            .include        "hhcx.g"
+      19                            .include        "hhram.g"
+      20                            .include        "hhtext.g"
+      21                            .include        "hhproc.g"
+      22                            .include        "hhstable.g"
+      23                            .include        "hhc.g"
+      24                            .include        "hhplayer.g"
+      25                            .include        "hhcoin.g"
+      26                            .include        "hhgame.g"
+      27                            .include        "hhcmos.g"
+      28                            .include        "hhpick.g"
+      29                            .include        "hhfade.g"
+      30                            .include        "hhspeech.g"
+      31                    
+      32                    ; end of include files
+      33                    
+      34 00000000                   .text
+      35                    
+      36                    **************************************************************************
+      37                    *                                                                        *
+      38                    * SUBSTITUTION_PAGE - CHANGE TEAM LINE UP                                *
+      39                    *                                                                        *
+      40                    * PASS:                                                                  *
+      41                    * NUTIN'                                                                 *
+      42                    *                                                                        *
+      43                    * RETURN:                                                                *
+      44                    * NUTIN'                                                                 *
+      45                    *                                                                        *
+      46                    **************************************************************************
+      47                    
+      48 00000000           SUBSTITUTION_PAGE
+      49 00000000     09ce          MOVI    INSUBST,A14
+         00000010     0080  
+      50 00000020     058e          MOVE    A14,@GAME_STATE,W
+         00000030 00000000! 
+      51                    
+      52 00000050     07ee          MOVB    @LOCKED_CHAR_BITS,A14
+         00000060 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      53 00000080     0b4e          CMPI    01111B,A14
+         00000090     fff0  
+      54 000000a0     ca00          JREQ    SP_ABORT                                ;BR=ALL LOCKED
+         000000b0     00c5  
+      55                    
+      56 000000c0     0d5f          CALLA   MY_WIPEOUT
+         000000d0 00000000! 
+      57                    
+      58 000000f0     09e0          MOVI    FONTGRYP,A0
+         00000100 00000000! 
+      59 00000120     0d5f          CALLA   GETFPAL
+         00000130 00000000! 
+      60 00000150     09e0          MOVI    REDTXT3P,A0
+         00000160 00000000! 
+      61 00000180     0d5f          CALLA   GETFPAL
+         00000190 00000000! 
+      62 000001b0     09e0          MOVI    ORGTXT1P,A0
+         000001c0 00000000! 
+      63 000001e0     0d5f          CALLA   GETFPAL
+         000001f0 00000000! 
+      64                    
+      65 00000210     09e9          MOVI    [241,201],A9
+         00000220 00f100c9  
+      66 00000240     574a          CLR     A10
+      67 00000250                   CREATE  PID_CREDIT,DISPLAY_CREDIT_PROC
+      68                    
+      69 000002d0     09f0          MOVI    METAL_ICE_INIT,B0
+         000002e0 00000000! 
+      70 00000300     0d5f          CALLA   MULTIMAKE
+         00000310 00000000! 
+      71                    
+      72 00000330     09e8          MOVI    SUB_MESS,A8
+         00000340 00002730' 
+      73 00000360                   JSRP    LM_PRINTF
+      74                    
+      75 000003d0     05a1          MOVE    @period,A1,W                            ;GET LAST PERIOD
+         000003e0 00000000! 
+      76 00000400     0d5f          CALLA   get_period_players
+         00000410 00000000! 
+      77 00000430     4c01          MOVE    A0,A1
+      78                    
+      79 00000440     07ee          MOVB    @LOCKED_CHAR_BITS,A14
+         00000450 00000000! 
+      80 00000470     09c0          MOVI    150,A0                                  ;CPU SUBST ONLY WAIT
+         00000480     0096  
+      81                    
+      82 00000490     0b4e          CMPI    011B,A14
+         000004a0     fffc  
+      83 000004b0     cb03          JRNE    SP_CHECK_RIGHT                          ;BR=LEFT TEAM NOT LOCKED
+      84 000004c0     0b41          CMPI    011B,A1
+         000004d0     fffc  
+      85 000004e0     ca1b          JREQ    SP_SKIP                                 ;BR=LEFT TEAM ONLY
+      86 000004f0           SP_CHECK_RIGHT
+      87 000004f0     0b4e          CMPI    01100B,A14
+         00000500     fff3  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+      88 00000510     cb03          JRNE    SP_INSTR                                ;BR=RGHT TEAM NOT LOCKED
+      89 00000520     0b41          CMPI    01100B,A1
+         00000530     fff3  
+      90 00000540     ca15          JREQ    SP_SKIP                                 ;BR=RGHT TEAM ONLY
+      91                    
+      92 00000550           SP_INSTR
+      93 00000550     09e8          MOVI    SUB_PRESS_TURBO_MESS,A8
+         00000560 00002860' 
+      94 00000580                   JSRP    LM_PRINTF
+      95                    
+      96 000005f0     09e8          MOVI    SUB_PRESS_SHOOT_MESS,A8
+         00000600 000029c0' 
+      97 00000620                   JSRP    LM_PRINTF
+      98                    
+      99 00000690     5600          CLR     A0                                      ;PLAYER SUBST ALLOWED
+     100 000006a0           SP_SKIP
+     101 000006a0     b00d          MOVE    A0,*A13(PDATA),W                        ;SET CPU SUBST WAIT
+         000006b0     0100  
+     102                    
+     103 000006c0     0d5f          CALLA   INITIAL_GRAPHICS_1
+         000006d0 00000000! 
+     104                    
+     105 000006f0     0d5f          CALLA   INITIAL_GRAPHICS_2
+         00000700 00000000! 
+     106                    
+     107 00000720     05a9          MOVE    @team1,A9,W
+         00000730 00000000! 
+     108 00000750     2549          SLL     10,A9
+     109 00000760     0b29          ADDI    team_data,A9
+         00000770 00000000! 
+     110 00000790     09ea          MOVI    TEAM_SELECT_LEFT_POS_TABLE,A10
+         000007a0 00000000! 
+     111 000007c0     576b          CLR     A11                                     ;LEFT TEAM
+     112 000007d0     0d3f          CALLR   SET_TEAM_AND_LOGO
+         000007e0     0055  
+     113 000007f0                   CREATE  PID_SUB_SEL,SUBSTITUTION_SWAP_PROC
+     114                    
+     115 00000870     05a9          MOVE    @team2,A9,W
+         00000880 00000000! 
+     116 000008a0     2549          SLL     10,A9
+     117 000008b0     0b29          ADDI    team_data,A9
+         000008c0 00000000! 
+     118 000008e0     09ea          MOVI    TEAM_SELECT_RGHT_POS_TABLE,A10
+         000008f0 00000000! 
+     119 00000910     184b          MOVK    2,A11                                   ;RIGHT TEAM
+     120 00000920     0d3f          CALLR   SET_TEAM_AND_LOGO
+         00000930     0040  
+     121 00000940                   CREATE  PID_SUB_SEL,SUBSTITUTION_SWAP_PROC
+     122                    
+     123 000009c0     57ce          CLR     A14
+     124 000009d0     078e          MOVE    A14,@TIMER_DIGIT_OBJ,L                  ;NO TIMER DIGIT EXISTING
+         000009e0 00000000! 
+     125 00000a00     058e          MOVE    A14,@TIMES_UP,W                         ;RESET TIME'S UP FLAG
+         00000a10 00000000! 
+     126                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     127 00000a30     09cb          MOVI    60*5,A11
+         00000a40     012c  
+     128 00000a50                   CREATE  PID_TIMER,SELECT_TIMER_PROC
+     129                    
+     130 00000ad0           SP_WAIT
+     131 00000ad0                   SLEEP   1
+     132 00000b10     09c0          MOVI    PID_SUB_SEL,A0
+         00000b20     090c  
+     133 00000b30     0d5f          CALLA   EXISTP_ALL
+         00000b40 00000000! 
+     134 00000b60     cbf6          JRNZ    SP_WAIT 
+     135                    
+     136 00000b70     09c0          MOVI    PID_TIMER,A0                            ;DELETE PROCESS
+         00000b80     0909  
+     137 00000b90     0d5f          CALLA   KILLPROC_ALL
+         00000ba0 00000000! 
+     138                    
+     139 00000bc0     07a0          MOVE    @TIMER_DIGIT_OBJ,A0,L
+         00000bd0 00000000! 
+     140 00000bf0     ca03          JRZ     SP_DONE                                 ;BR=TIMER DONE
+     141 00000c00     0d5f          CALLA   DELOBJ                                  ;DELETE DIGIT
+         00000c10 00000000! 
+     142                    
+     143 00000c30           SP_DONE
+     144 00000c30                   SLEEP   30
+     145                    
+     146 00000c70     b5a8          MOVE    *A13(PDATA),A8,W
+         00000c80     0100  
+     147 00000c90     ca07          JRZ     SP_ABORT                                ;BR=NO CPU SUBST WAIT
+     148 00000ca0                   JSRP    button_wait
+     149 00000d10           SP_ABORT
+     150 00000d10                   RETP
+     151                    
+     152                    
+     153                    
+     154                    **************************************************************************
+     155                    *                                                                        *
+     156                    * SET_TEAM_AND_LOGO                                                      *
+     157                    *                                                                        *
+     158                    * PASS:                                                                  *
+     159                    * A9  = TEAM DATA BLOCK ADDRESS                                          *
+     160                    * A10 = POSITION TABLE                                                   *
+     161                    *                                                                        *
+     162                    * RETURN:                                                                *
+     163                    * NUTIN'                                                                 *
+     164                    *                                                                        *
+     165                    **************************************************************************
+     166                    
+     167 00000d40           SET_TEAM_AND_LOGO
+     168 00000d40     09f0          MOVI    TEAM_NAME_INIT,B0
+         00000d50 00000000! 
+     169 00000d70     0d5f          CALLA   EASYMAKE
+         00000d80 00000000! 
+     170 00000da0     9741          MOVE    *A10+,A1,L
+     171 00000db0     5642          CLR     A2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     172 00000dc0     0d5f          CALLA   SET_SCRNOBJ
+         00000dd0 00000000! 
+     173 00000df0     0d5f          CALLA   INSERT_OBJ
+         00000e00 00000000! 
+     174 00000e20     b504          MOVE    *A8(OCTRL),A4,W
+         00000e30     01f0  
+     175 00000e40     b721          MOVE    *A9(TD_TEAMNAME_IMG),A1,L
+         00000e50     0240  
+     176 00000e60     0d5f          CALLA   ANI
+         00000e70 00000000! 
+     177                    
+     178 00000e90     09f0          MOVI    LOGO_INIT,B0
+         00000ea0 00000000! 
+     179 00000ec0     0d5f          CALLA   EASYMAKE
+         00000ed0 00000000! 
+     180 00000ef0     9741          MOVE    *A10+,A1,L
+     181 00000f00     1862          MOVK    3,A2
+     182 00000f10     0d5f          CALLA   SET_SCRNOBJ
+         00000f20 00000000! 
+     183 00000f40     0d5f          CALLA   INSERT_OBJ
+         00000f50 00000000! 
+     184 00000f70     b504          MOVE    *A8(OCTRL),A4,W
+         00000f80     01f0  
+     185 00000f90     b721          MOVE    *A9(TD_TEAMLOGO_IMG),A1,L
+         00000fa0     0260  
+     186 00000fb0     0d5f          CALLA   ANI
+         00000fc0 00000000! 
+     187 00000fe0     b620          MOVE    *A1(ICMAP),A0,L
+         00000ff0     0070  
+     188 00001000     0d5f          CALLA   CHANGE_PAL
+         00001010 00000000! 
+     189                    
+     190 00001030     0960          RETS
+     191                    
+     192                    **************************************************************************
+     193                    *                                                                        *
+     194                    * SUBSTITUTION_SWAP_PROC                                                 *
+     195                    *                                                                        *
+     196                    * PASS:                                                                  *
+     197                    * A9  = TEAM DATA BLOCK ADDRESS                                          *
+     198                    * A10 = POSITION TABLE OFFSET TO LEFT MUG ENTRY                          *
+     199                    * A11 = TEAM (0 = LEFT, 2 = RIGHT)                                       *
+     200                    *                                                                        *
+     201                    **************************************************************************
+     202                    
+     203 00001040           SUBSTITUTION_SWAP_PROC
+     204 00001040                   PUSH    A11
+     205 00001050     0d5f          CALLA   SETUP_PLAYERS
+         00001060 00000000! 
+     206 00001080                   PULLQ   A11
+     207                    
+     208 00001090     09ea          MOVI    TEAM1_SWAP,A10
+         000010a0 00000000! 
+     209 000010c0     4d6b          MOVE    A11,A11
+     210 000010d0     ca03          JRZ     SSP_GET_SWAP
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     211 000010e0     09ea          MOVI    TEAM2_SWAP,A10
+         000010f0 00000000! 
+     212 00001110           SSP_GET_SWAP
+     213 00001110     b94d          MOVE    *A10(0),*A13(PSWAP),W
+         00001120     0000  
+         00001130     0240  
+     214                    
+     215 00001140     05a1          MOVE    @period,A1,W                    ;GET LAST PERIOD
+         00001150 00000000! 
+     216 00001170     0d5f          CALLA   get_period_players
+         00001180 00000000! 
+     217                    
+     218 000011a0     03ab          NEG     A11
+     219                    
+     220 000011b0     07ee          MOVB    @LOCKED_CHAR_BITS,A14
+         000011c0 00000000! 
+     221 000011e0     676e          SRL     A11,A14
+     222 000011f0     0b8e          ANDI    011B,A14
+         00001200 fffffffc  
+     223 00001220     146e          SUBK    011B,A14
+     224 00001230     ca2a          JRZ     SSP_FIX_AND_DIE                 ;BR=BOTH LOCKED
+     225                    
+     226 00001240     6760          SRL     A11,A0
+     227 00001250     0b80          ANDI    011B,A0
+         00001260 fffffffc  
+     228 00001280     cb45          JRNZ    SSP_ALLOW                       ;BR=ACTIVE PLAYERS ON TEAM
+     229                    
+     230 00001290     098f          MMTM    SP,A9,A10,A11
+         000012a0     0070  
+     231                    
+     232 000012b0     09e9          MOVI    [95,99],A9                      ;[Y,X] SCREEN ADDRESS
+         000012c0 005f0063  
+     233 000012e0     4d6b          MOVE    A11,A11
+     234 000012f0     ca02          JRZ     SSP_CPU_MESS                    ;BR=LEFT SIDE
+     235 00001300     0b09          ADDI    200,A9                          ;OFFSET TO RIGHT SIDE
+         00001310     00c8  
+     236 00001320           SSP_CPU_MESS
+     237 00001320     09d1          MOVI    OID_TEXT,B1                     ;[SOUND,OID]
+         00001330     0480  
+     238 00001340     5600          CLR     A0                              ;NO SLEEP TIL
+     239 00001350     09e1          MOVI    STRCNCONV,A1                    ;ROUTINE
+         00001360 00000000! 
+     240 00001380     09c5          MOVI    HFPAL,A5                        ;[COLOR,PALETTE]
+         00001390     0202  
+     241 000013a0     09e8          MOVI    CPU_SUB_STR,A8                  ;POINTER TO STRING
+         000013b0 00002b30' 
+     242 000013d0     574a          CLR     A10                             ;[Y,X] SPACING
+     243 000013e0     09eb          MOVI    H10FONT,A11                     ;FONT
+         000013f0 00000000! 
+     244 00001410                   JSRP    PRINTF
+     245                    
+     246 00001480     09af          MMFM    SP,A9,A10,A11
+         00001490     0e00  
+     247                    
+     248 000014a0     57ce          CLR     A14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     249 000014b0     142e          DEC     A14
+     250 000014c0     b1cd          MOVE    A14,*A13(PSWAP),W               ;FLAG RANDOM SWAP                       
+         000014d0     0240  
+     251                    
+     252 000014e0           SSP_FIX_AND_DIE
+     253 000014e0     4d22          MOVE    A9,A2
+     254 000014f0     4d69          MOVE    A11,A9
+     255 00001500     0389          ABS     A9
+     256 00001510                   PUSH    A10
+     257 00001520     07ee          MOVB    @LOCKED_CHAR_BITS,A14
+         00001530 00000000! 
+     258 00001550     0bae          ORI     010000B,A14                             ;SET LOCK OVERRIDE BIT
+         00001560 00000010  
+     259 00001580     05ee          MOVB    A14,@LOCKED_CHAR_BITS
+         00001590 00000000! 
+     260 000015b0     0d5f          CALLA   UP_UPDATE_PLAYERS
+         000015c0 00000000! 
+     261 000015e0     07ee          MOVB    @LOCKED_CHAR_BITS,A14
+         000015f0 00000000! 
+     262 00001610     0b8e          ANDI    01111B,A14                              ;CLR LOCK OVERRIDE BIT
+         00001620 fffffff0  
+     263 00001640     05ee          MOVB    A14,@LOCKED_CHAR_BITS
+         00001650 00000000! 
+     264 00001670                   PULLQ   A10
+     265                    
+     266 00001680     b9aa          MOVE    *A13(PSWAP),*A10(0),W
+         00001690     0240  
+         000016a0     0000  
+     267                    
+     268 000016b0     c080          JAUC    SUCIDE
+         000016c0 00000000! 
+     269                    
+     270 000016e0           SSP_ALLOW
+     271 000016e0     0b40          CMPI    011B,A0
+         000016f0     fffc  
+     272 00001700     cb09          JRNE    SSP_GET_PLAYER_NUMBER           ;BR=BOTH NOT ACTIVE
+     273                    
+     274 00001710     07ee          MOVB    @TEAM_SELECT_BITS,A14
+         00001720 00000000! 
+     275 00001740     676e          SRL     A11,A14
+     276 00001750     0b8e          ANDI    011B,A14
+         00001760 fffffffc  
+     277 00001780     ca01          JRZ     SSP_GET_PLAYER_NUMBER           ;BR=NO TEAM SELECT PLAYER
+     278 00001790     4dc0          MOVE    A14,A0
+     279 000017a0           SSP_GET_PLAYER_NUMBER
+     280 000017a0                   PUSH    A9
+     281                    
+     282 000017b0     4d69          MOVE    A11,A9
+     283 000017c0     0389          ABS     A9
+     284 000017d0     1fc0          BTST    1,A0
+     285 000017e0     ca01          JRZ     SSP_MAKE_ARROW                  ;BR=PLAYER 1 OR 3
+     286 000017f0     1029          INC     A9                              ;BR=PLAYER 2 OR 4
+     287                    
+     288 00001800           SSP_MAKE_ARROW
+     289 00001800     09f0          MOVI    ARROW_PTR_INIT,B0               ;CREATE ARROW POINTER
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+         00001810 00000000! 
+     290 00001830     0d5f          CALLA   EASYMAKE
+         00001840 00000000! 
+     291 00001860     0d5f          CALLA   PULL_ANIM
+         00001870 00000000! 
+     292                    
+     293 00001890     4d20          MOVE    A9,A0
+     294 000018a0                   KITN    4
+     295 000018e0     ca03          JREQ    SSP_GET_ARROW_IMG                       ;BR=4 PLAYER KIT
+     296 000018f0     4c00          MOVE    A0,A0
+     297 00001900     ca01          JRZ     SSP_GET_ARROW_IMG                       ;BR=PLAYER 1
+     298 00001910     1820          MOVK    1,A0                                    ;PLAYER 2
+     299 00001920           SSP_GET_ARROW_IMG
+     300 00001920     24a0          SLL     5,A0
+     301 00001930     0b20          ADDI    ARROW_IMG_TABLE,A0
+         00001940 00000000! 
+     302 00001960     8600          MOVE    *A0,A0,L
+     303 00001970     b208          MOVE    A0,*A8(OIMG),L
+         00001980     02c0  
+     304 00001990     ba08          MOVE    *A0(ISAG),*A8(OSAG),L
+         000019a0     0030  
+         000019b0     0200  
+     305 000019c0     b600          MOVE    *A0(ICMAP),A0,L
+         000019d0     0070  
+     306 000019e0                   KITN    4
+     307 00001a20     ca05          JREQ    SSP_SET_PAL                             ;BR=4 PLAYER KIT
+     308 00001a30     4d29          MOVE    A9,A9
+     309 00001a40     ca03          JRZ     SSP_SET_PAL                             ;BR=PLAYER 1
+     310 00001a50     09e0          MOVI    arrg_pal,A0                             ;PLAYER 2
+         00001a60 00000000! 
+     311 00001a80           SSP_SET_PAL
+     312 00001a80     0d5f          CALLA   CHANGE_PAL
+         00001a90 00000000! 
+     313                    
+     314 00001ab0     4d21          MOVE    A9,A1
+     315 00001ac0     2481          SLL     4,A1
+     316 00001ad0     0b21          ADDI    INFOBOX_CENTER_XPOS_TABLE,A1
+         00001ae0 00000000! 
+     317 00001b00     8421          MOVE    *A1,A1,W
+     318 00001b10     0b21          ADDI    [111,0],A1
+         00001b20 006f0000  
+     319 00001b40     5642          CLR     A2
+     320 00001b50     0d5f          CALLA   SET_SCRNOBJ
+         00001b60 00000000! 
+     321                    
+     322 00001b80     0d5f          CALLA   INSERT_OBJ
+         00001b90 00000000! 
+     323                    
+     324 00001bb0     4d2b          MOVE    A9,A11                                  ;PLAYER NUMBER - 1
+     325 00001bc0                   PULLQ   A2                                      ;TEAM DATA ADDRESS
+     326                    
+     327 00001bd0     098f          MMTM    SP,A2,A10,A11
+         00001be0     2030  
+     328 00001bf0     07ee          MOVB    @LOCKED_CHAR_BITS,A14
+         00001c00 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     329 00001c20     0bae          ORI     010000B,A14                             ;SET LOCK OVERRIDE BIT
+         00001c30 00000010  
+     330 00001c50     05ee          MOVB    A14,@LOCKED_CHAR_BITS
+         00001c60 00000000! 
+     331 00001c80     0d5f          CALLA   UP_UPDATE_PLAYERS
+         00001c90 00000000! 
+     332 00001cb0     07ee          MOVB    @LOCKED_CHAR_BITS,A14
+         00001cc0 00000000! 
+     333 00001ce0     0b8e          ANDI    01111B,A14                              ;CLR LOCK OVERRIDE BIT
+         00001cf0 fffffff0  
+     334 00001d10     05ee          MOVB    A14,@LOCKED_CHAR_BITS
+         00001d20 00000000! 
+     335 00001d40     09af          MMFM    SP,A2,A10,A11
+         00001d50     0c04  
+     336                    
+     337 00001d60                   PUSHP   A2
+     338 00001d70                   SLEEP   TEAM_SELECT_PRETIMEOUT          ;DELAY BEFORE SELECT OR SWAP
+     339 00001db0                   PULLPQ  A2
+     340                    
+     341 00001dc0                   KITN    4
+     342 00001e00     ca03          JREQ    SSP_MAKE_MASK                           ;BR=4 PLAYER KIT
+     343 00001e10     4d6b          MOVE    A11,A11
+     344 00001e20     ca01          JRZ     SSP_MAKE_MASK                           ;BR=PLAYER 1
+     345 00001e30     182b          MOVK    1,A11                                   ;PLAYER 2
+     346 00001e40           SSP_MAKE_MASK
+     347 00001e40     4d6e          MOVE    A11,A14                 
+     348 00001e50     246e          SLL     3,A14
+     349 00001e60     09c3          MOVI    M_SW_S|M_SW_T,A3
+         00001e70     0050  
+     350 00001e80     63c3          SLL     A14,A3                          ;"SELECTER" MASK
+     351                    
+     352 00001e90     05a1          MOVE    @period,A1,W                    ;GET LAST PERIOD
+         00001ea0 00000000! 
+     353 00001ec0     0d5f          CALLA   get_period_players
+         00001ed0 00000000! 
+     354                    
+     355 00001ef0     5684          CLR     A4                              ;DEFAULT NO TEAMMATE
+     356                    
+     357 00001f00                   KITN    2
+     358 00001f40     ca0a          JREQ    SSP_GET_FIRST_SWITCH            ;BR=2 PLAYER KIT
+     359                    
+     360 00001f50     4d6e          MOVE    A11,A14
+     361 00001f60     0bce          XORI    1,A14
+         00001f70 00000001  
+     362 00001f90     4bc0          BTST    A14,A0
+     363 00001fa0     ca04          JRZ     SSP_GET_FIRST_SWITCH            ;BR=NO TEAMMATE
+     364                    
+     365 00001fb0     246e          SLL     3,A14
+     366 00001fc0     09c4          MOVI    M_SW_T,A4
+         00001fd0     0040  
+     367 00001fe0     63c4          SLL     A14,A4                          ;TEAMMATE MASK
+     368                    
+     369 00001ff0           SSP_GET_FIRST_SWITCH
+     370 00001ff0     07a1          MOVE    @SWITCH,A1,L
+         00002000 01860000  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     371 00002020     03e1          NOT     A1
+     372 00002030     4c25          MOVE    A1,A5
+     373 00002040     5061          AND     A3,A1
+     374 00002050     5085          AND     A4,A5
+     375                    
+     376 00002060           SSP_LUPE
+     377 00002060     07a0          MOVE    @SWITCH,A0,L
+         00002070 01860000  
+     378 00002090     03e0          NOT     A0
+     379 000020a0     4c06          MOVE    A0,A6
+     380 000020b0     5060          AND     A3,A0
+     381 000020c0     cb0d          JRNZ    SSP_NEW_SWITCH                  ;BR=NO BUTTONS
+     382 000020d0     4c01          MOVE    A0,A1
+     383                    
+     384 000020e0           SSP_CHECK_TEAMMATE
+     385 000020e0     4c84          MOVE    A4,A4
+     386 000020f0     ca28          JRZ     SSP_NAP                         ;BR=TEAMMATE NOT ACTIVE
+     387 00002100     5086          AND     A4,A6
+     388 00002110     cb02          JRNZ    SSP_CHECK_TEAMMATE_TURBO        ;BR=TEAMMATE TURBO ON
+     389 00002120     4cc5          MOVE    A6,A5
+     390 00002130     c024          JRUC    SSP_NAP
+     391 00002140           SSP_CHECK_TEAMMATE_TURBO
+     392 00002140     4cce          MOVE    A6,A14
+     393 00002150     56ae          XOR     A5,A14
+     394 00002160     4cc5          MOVE    A6,A5
+     395                    
+     396 00002170     50ce          AND     A6,A14
+     397 00002180     ca1f          JRZ     SSP_NAP                         ;BR=TEAMMATE BUTTONS STUCK
+     398                    
+     399 00002190     c00f          JRUC    SSP_SWAP                        ;TEAMMATE SWAP
+     400                    
+     401 000021a0           SSP_NEW_SWITCH
+     402 000021a0     4c0e          MOVE    A0,A14
+     403 000021b0     562e          XOR     A1,A14
+     404 000021c0     4c01          MOVE    A0,A1
+     405                    
+     406 000021d0     500e          AND     A0,A14
+     407 000021e0     caef          JRZ     SSP_CHECK_TEAMMATE              ;BR=BUTTONS STUCK
+     408                    
+     409 000021f0     4d6e          MOVE    A11,A14
+     410 00002200     246e          SLL     3,A14
+     411 00002210     0b0e          ADDI    B_SW_S,A14
+         00002220     0004  
+     412 00002230     4bc0          BTST    A14,A0
+     413 00002240     cb1f          JRNZ    SSP_SELECTED                    ;BR=SELECTED
+     414                    
+     415 00002250     0b0e          ADDI    B_SW_T-B_SW_S,A14
+         00002260     0002  
+     416 00002270     4bc0          BTST    A14,A0
+     417 00002280     ca0f          JRZ     SSP_NAP                         ;BR=NO SWAP
+     418 00002290           SSP_SWAP
+     419 00002290     0d5f          CALLA   SWAP_SOUND
+         000022a0 00000000! 
+     420                    
+     421 000022c0     b5ae          MOVE    *A13(PSWAP),A14,W               ;NEXT SWAP
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+         000022d0     0240  
+     422 000022e0     102e          INC     A14
+     423 000022f0     b1cd          MOVE    A14,*A13(PSWAP),W
+         00002300     0240  
+     424                    
+     425 00002310     098f          MMTM    SP,A1,A2,A3,A4,A5,A9,A10,A11
+         00002320     7c70  
+     426 00002330     0d5f          CALLA   UP_UPDATE_PLAYERS
+         00002340 00000000! 
+     427 00002360     09af          MMFM    SP,A1,A2,A3,A4,A5,A9,A10,A11
+         00002370     0e3e  
+     428                    
+     429 00002380           SSP_NAP
+     430 00002380     098c          MMTM    A12,A1,A2,A3,A4,A5
+         00002390     7c00  
+     431 000023a0                   SLEEP   1
+     432 000023e0     09ac          MMFM    A12,A1,A2,A3,A4,A5
+         000023f0     003e  
+     433                    
+     434 00002400     05ae          MOVE    @TIMES_UP,A14,W
+         00002410 00000000! 
+     435 00002430     cac2          JRZ     SSP_LUPE                        ;BR=STILL GOT SOME
+     436                    
+     437                    ;       JRUC    SSP_LUPE
+     438                    
+     439 00002440           SSP_SELECTED
+     440 00002440     07a8          MOVE    @BLUE_MUG_BGND_OBJ,A8,L
+         00002450 00000000! 
+     441                    
+     442 00002470                   KITN    4
+     443 000024b0     ca03          JREQ    SSP_4P_SELECTED                 ;BR=4 PLAYER KIT
+     444 000024c0     4d6b          MOVE    A11,A11
+     445 000024d0     ca07          JRZ     SSP_SELECT_FLASH                ;BR=PLAYER 1
+     446 000024e0     c003          JRUC    SSP_RED_SELECTED                ;PLAYER 2
+     447                    
+     448 000024f0           SSP_4P_SELECTED
+     449 000024f0     0b4b          CMPI    2,A11
+         00002500     fffd  
+     450 00002510     c403          JRLT    SSP_SELECT_FLASH                ;BR=LEFT TEAM
+     451 00002520           SSP_RED_SELECTED
+     452 00002520     07a8          MOVE    @RED_MUG_BGND_OBJ,A8,L
+         00002530 00000000! 
+     453                    
+     454 00002550           SSP_SELECT_FLASH
+     455 00002550     0d5f          CALLA   PICK_SOUND
+         00002560 00000000! 
+     456                    
+     457 00002580     09ce          MOVI    0101H,A14
+         00002590     0101  
+     458 000025a0     b1c8          MOVE    A14,*A8(OCONST),W
+         000025b0     0290  
+     459 000025c0     18ae          MOVK    SELECT_FLASHES,A14
+     460 000025d0     adc8          MOVB    A14,*A8(ANIMLOOP)
+         000025e0     0370  
+     461 000025f0     09e1          MOVI    MUG_BGND_FLASH_ANIM,A1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+         00002600 00000000! 
+     462 00002620     0d5f          CALLA   STRT_ANIM
+         00002630 00000000! 
+     463                    
+     464 00002650     8540          MOVE    *A10,A0,W
+     465 00002660     b5a1          MOVE    *A13(PSWAP),A1,W
+         00002670     0240  
+     466 00002680     802a          MOVE    A1,*A10,W
+     467                    
+     468 00002690     4801          CMP     A0,A1
+     469 000026a0     ca80          JAEQ    SUCIDE                          ;BR=NO LINEUP CHANGE
+         000026b0 00000000! 
+     470                    
+     471 000026d0     0d5f          calla   spx_change_in_lineup
+         000026e0 00000000! 
+     472                    
+     473 00002700                   DIE
+     474                    
+     475 00002730           SUB_MESS
+     476 00002730                   MESS_MAC2 H18FONT,-1,0,199,10,HFPAL+0202H,STRCNCONV,OID_TEXT
+     477 000027f0       53          .STRING "SUBSTITUTIONS",0
+     478 00002860                   .EVEN
+     479                    
+     480 00002860           SUB_PRESS_TURBO_MESS
+     481 00002860                   MESS_MAC2 H18TFONT,-1,0,199,40,HFPAL,STRCNCONV,OID_TEXT
+     482 00002920       50          .STRING "PRESS TURBO TO SWAP",0
+     483 000029c0                   .EVEN
+     484                    
+     485 000029c0           SUB_PRESS_SHOOT_MESS
+     486 000029c0                   MESS_MAC2 H18TFONT,-1,0,199,65,HFPAL+0101H,STRCNCONV,OID_TEXT
+     487 00002a80       50          .STRING "PRESS SHOOT TO SELECT",0
+     488 00002b30                   .EVEN
+     489                    
+     490 00002b30           CPU_SUB_STR
+     491 00002b30       43          .STRING "CPU SUBSTITUTIONS",0
+     492 00002bc0                   .EVEN
+     493                    
+     494                    **************************************************************************
+     495                    *                                                                        *
+     496                    * BUYIN_TIMER_PROC                                                       *
+     497                    *                                                                        *
+     498                    * PASS:                                                                  *
+     499                    * A11 = INITIAL SLEEP                                                    *
+     500                    *                                                                        *
+     501                    **************************************************************************
+     502                    
+     503              0100  PPLAYERS        EQU     PDATA                   ;UHW ALLOWED PLAYERS
+     504                    
+     505 00002bc0           BUYIN_TIMER_PROC
+     506 00002bc0     05a1          MOVE    @period,A1,W                            ;LAST PERIOD
+         00002bd0 00000000! 
+     507 00002bf0     0d5f          CALLA   get_period_players
+         00002c00 00000000! 
+     508 00002c20     b00d          MOVE    A0,*A13(PPLAYERS),W
+         00002c30     0100  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     509                    
+     510 00002c40     4d6b          MOVE    A11,A11
+     511 00002c50     ca26          JRZ     BTP_GO                                  ;BR=NO INITIAL SLEEP
+     512                    
+     513 00002c60                   SLEEP   120
+     514                    
+     515 00002cb0           BTP_SLEEP_LUPE
+     516 00002cb0     05a1          MOVE    @period,A1,W
+         00002cc0 00000000! 
+     517 00002ce0     1021          INC     A1                                      ;NEXT PERIOD
+     518 00002cf0     0d5f          CALLA   get_period_players
+         00002d00 00000000! 
+     519 00002d20     24a0          SLL     5,A0
+     520                    
+     521 00002d30     09e2          MOVI    bw_tab,A2
+         00002d40 00000000! 
+     522 00002d60                   KITN    4
+     523 00002da0     ca03          JREQ    BTP_ADD_TABLE                           ;BR=4 PLAYER KIT
+     524 00002db0     09e2          MOVI    bw_tab_2P,A2                            ;2 PLAYER KIT
+         00002dc0 00000000! 
+     525 00002de0           BTP_ADD_TABLE
+     526 00002de0     4040          ADD     A2,A0
+     527                    
+     528 00002df0     8601          MOVE    *A0,A1,L
+     529 00002e00     07a0          MOVE    @SWITCH,A0,L
+         00002e10 01860000  
+     530 00002e30     03e0          NOT     A0
+     531 00002e40     5001          AND     A0,A1                                   ;MASK NEXT PERIOD PLYRS
+     532 00002e50     cb06          JRNZ    BTP_GO                                  ;BR=BUTTON DOWN
+     533 00002e60                   SLEEP   1
+     534 00002ea0     0d8b          DSJ     A11,BTP_SLEEP_LUPE
+         00002eb0     ffdf  
+     535                    
+     536 00002ec0           BTP_GO
+     537 00002ec0     09f0          MOVI    TIMER_DIGIT_INIT,B0
+         00002ed0 00000000! 
+     538 00002ef0     0d5f          CALLA   EASYMAKE
+         00002f00 00000000! 
+     539 00002f20     0788          MOVE    A8,@TIMER_DIGIT_OBJ,L                   ;TIMER DIGIT OBJECT
+         00002f30 00000000! 
+     540 00002f50     09ee          MOVI    TEXTZVAL-100,A14
+         00002f60 83ffff9c  
+     541 00002f80     b3c8          MOVE    A14,*A8(OZVAL),L
+         00002f90     0180  
+     542 00002fa0     0d5f          CALLA   INSERT_OBJ
+         00002fb0 00000000! 
+     543                    ;       MOVI    FONTGRYP,A0
+     544 00002fd0     09e0          MOVI    REDTXT3P,A0
+         00002fe0 00000000! 
+     545 00003000     0d5f          CALLA   CHANGE_PAL
+         00003010 00000000! 
+     546                    
+     547 00003030           BTP_RESTART
+     548 00003030     196b          MOVK    11,A11                                  ;MAX. START SWITCHES
+     549 00003040           BTP_SWITCH_RESTART
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     550 00003040     142b          DEC     A11
+     551 00003050     57ce          CLR     A14
+     552 00003060     058e          MOVE    A14,@STARTSW,W                          ;RESET START SWITCHES
+         00003070 00000000! 
+     553 00003090     09ea          MOVI    COUNTDOWN_TABLE,A10
+         000030a0 00000000! 
+     554 000030c0           BTP_LUPE
+     555 000030c0     9741          MOVE    *A10+,A1,L
+     556 000030d0     ca6d          JRZ     BTP_TIMES_UP                            ;BR=BING!
+     557                    
+     558 000030e0     09e4          MOVI    DMAWNZ,A4
+         000030f0 00008002  
+     559 00003110     0d5f          CALLA   ANI
+         00003120 00000000! 
+     560                    
+     561 00003140     09e1          MOVI    [126,199],A1
+         00003150 007e00c7  
+     562 00003170     b700          MOVE    *A8(OSIZE),A0,L
+         00003180     0260  
+     563 00003190     4c0e          MOVE    A0,A14
+     564 000031a0     2be0          SRA     1,A0                                    ;HALF Y-SIZE
+     565 000031b0     052e          ZEXT    A14,W
+     566 000031c0     2bee          SRA     1,A14                                   ;HALF X-SIZE
+     567 000031d0     edc0          MOVX    A14,A0
+     568 000031e0     e201          SUBXY   A0,A1                                   ;UPPER LEFT
+     569 000031f0     09e2          MOVI    TEXTZVAL-100,A2
+         00003200 83ffff9c  
+     570 00003220     0d5f          CALLA   SET_SCRNOBJ
+         00003230 00000000! 
+     571                    
+     572 00003250     0d5f          CALLA   TICK_SOUND
+         00003260 00000000! 
+     573                    
+     574 00003280     b5a9          MOVE    *A13(PPLAYERS),A9,W
+         00003290     0100  
+     575 000032a0     18a0          MOVK    5,A0
+     576 000032b0           BTP_ON_WAIT
+     577 000032b0                   PUSHP   A0
+     578 000032c0                   SLEEP   1
+     579 00003300                   PULLPQ  A0
+     580 00003310     05ae          MOVE    @NEWCRED,A14,W
+         00003320 00000000! 
+     581 00003340     cbce          JRNZ    BTP_RESTART                             ;BR=NEW CREDIT
+     582 00003350     0d5f          CALLA   CHECK_SWITCH_RESTART
+         00003360 00003890' 
+     583 00003380     cbcb          JRNZ    BTP_SWITCH_RESTART                      ;BR=RESTART
+     584 00003390     3de0          DSJ     A0,BTP_ON_WAIT
+     585                    
+     586 000033a0     098c          MMTM    A12,A8,A9
+         000033b0     00c0  
+     587 000033c0     09c8          MOVI    DIGIT_ON_TIME-5,A8
+         000033d0     002d  
+     588 000033e0     b5a9          MOVE    *A13(PPLAYERS),A9,W
+         000033f0     0100  
+     589 00003400                   JSRP    BUYIN_BUTTON_LEVEL_WAIT
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     590 00003470     09ac          MMFM    A12,A8,A9
+         00003480     0300  
+     591                    
+     592 00003490     0180          GETST   A0
+     593 000034a0     05ae          MOVE    @NEWCRED,A14,W
+         000034b0 00000000! 
+     594 000034d0     cbb5          JRNZ    BTP_RESTART                             ;BR=NEW CREDIT
+     595 000034e0     01a0          PUTST   A0
+     596 000034f0     cbb4          JRNZ    BTP_SWITCH_RESTART                      ;BR=RESTART
+     597                    
+     598 00003500     0d5f          CALLA   OBJ_OFF
+         00003510 00000000! 
+     599                    
+     600 00003530     b5a9          MOVE    *A13(PPLAYERS),A9,W
+         00003540     0100  
+     601 00003550     1840          MOVK    2,A0
+     602 00003560           BTP_OFF_WAIT
+     603 00003560                   PUSHP   A0
+     604 00003570                   SLEEP   1
+     605 000035b0                   PULLPQ  A0
+     606 000035c0     05ae          MOVE    @NEWCRED,A14,W
+         000035d0 00000000! 
+     607 000035f0     cba3          JRNZ    BTP_RESTART                             ;BR=NEW CREDIT
+     608 00003600     0d5f          CALLA   CHECK_SWITCH_RESTART
+         00003610 00003890' 
+     609 00003630     cba0          JRNZ    BTP_SWITCH_RESTART                      ;BR=RESTART
+     610 00003640     3de0          DSJ     A0,BTP_OFF_WAIT
+     611                    
+     612 00003650     098c          MMTM    A12,A8,A9
+         00003660     00c0  
+     613 00003670     1ae8          MOVK    DIGIT_OFF_TIME-2,A8
+     614 00003680     b5a9          MOVE    *A13(PPLAYERS),A9,W
+         00003690     0100  
+     615 000036a0                   JSRP    BUYIN_BUTTON_LEVEL_WAIT
+     616 00003710     09ac          MMFM    A12,A8,A9
+         00003720     0300  
+     617                    
+     618 00003730     0180          GETST   A0
+     619 00003740     05ae          MOVE    @NEWCRED,A14,W
+         00003750 00000000! 
+     620 00003770     cb8b          JRNZ    BTP_RESTART                             ;BR=NEW CREDIT
+     621 00003780     01a0          PUTST   A0
+     622 00003790     cb8a          JRNZ    BTP_SWITCH_RESTART                      ;BR=RESTART
+     623                    
+     624 000037a0     c091          JRUC    BTP_LUPE
+     625 000037b0           BTP_TIMES_UP
+     626 000037b0     0d5f          CALLA   DELETE_OBJ
+         000037c0 00000000! 
+     627                    
+     628 000037e0     57ce          CLR     A14
+     629 000037f0     078e          MOVE    A14,@TIMER_DIGIT_OBJ,L                  ;NO MORE TIMER OBJECT
+         00003800 00000000! 
+     630                    
+     631 00003820     182e          MOVK    1,A14
+     632 00003830     058e          MOVE    A14,@TIMES_UP,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+         00003840 00000000! 
+     633                    
+     634 00003860                   DIE
+     635                    
+     636                    **************************************************************************
+     637                    *                                                                        *
+     638                    * CHECK_SWITCH_RESTART                                                   *
+     639                    *                                                                        *
+     640                    * PASS:                                                                  *
+     641                    * A9  = LAST PERIOD PLAYERS ALLOWED TO ADVANCE TIMER                     *
+     642                    * A11 = NUMBER OF SWITCH RESTARTS LEFT                                   *
+     643                    * RETURN:                                                                *
+     644                    * Z FLAG = IF CLR, THEN "YES" ELSE "NO" (SET)                            *
+     645                    *                                                                        *
+     646                    **************************************************************************
+     647                    
+     648 00003890           CHECK_SWITCH_RESTART
+     649 00003890     05ae          MOVE    @STARTSW,A14,W
+         000038a0 00000000! 
+     650 000038c0     ca07          JRZ     CSR_DONE                                ;BR=NO START SWITCH,"NO"
+     651 000038d0     4d6b          MOVE    A11,A11
+     652 000038e0     ca05          JRZ     CSR_DONE                                ;BR=OUT OF RESTARTS,"NO"
+     653 000038f0     05a1          MOVE    @PLAYER_BITS,A1,W                       ;GET CURRENT PLAYERS
+         00003900 00000000! 
+     654 00003920     5521          OR      A9,A1                                   ;ADD ALLOWED PLAYERS
+     655 00003930     502e          AND     A1,A14
+     656 00003940           CSR_DONE
+     657 00003940     0960          RETS
+     658                    
+     659                    
+     660                    **************************************************************************
+     661                    *                                                                        *
+     662                    * BUYIN_BUTTON_LEVEL_WAIT                                                *
+     663                    *                                                                        *
+     664                    * PASS:                                                                  *
+     665                    * A9 = LAST PERIOD PLAYERS ALLOWED TO ADVANCE TIMER                      *
+     666                    * RETURN:                                                                *
+     667                    * Z FLAG = IF CLR, THEN "YES" ELSE "NO" (SET)                            *
+     668                    *                                                                        *
+     669                    **************************************************************************
+     670                    
+     671 00003950           BUYIN_BUTTON_LEVEL_WAIT
+     672                    
+     673                            .if     self_play
+     674                            RETP
+     675                            .endif
+     676                    
+     677 00003950           BBLW_LUPE
+     678 00003950     05a0          MOVE    @PLAYER_BITS,A0,W                       ;GET CURRENT PLAYERS
+         00003960 00000000! 
+     679 00003980     5520          OR      A9,A0                                   ;ADD ALLOWED PLAYERS
+     680 00003990     24a0          SLL     5,A0
+     681                    
+     682 000039a0     09e2          MOVI    bw_tab,A2
+         000039b0 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     683 000039d0                   KITN    4
+     684 00003a10     ca03          JREQ    BBLW_ADD_TABLE                          ;BR=4 PLAYER KIT
+     685 00003a20     09e2          MOVI    bw_tab_2P,A2                            ;2 PLAYER KIT
+         00003a30 00000000! 
+     686 00003a50           BBLW_ADD_TABLE
+     687 00003a50     4040          ADD     A2,A0
+     688                    
+     689 00003a60     8601          MOVE    *A0,A1,L
+     690 00003a70     07a0          MOVE    @SWITCH,A0,L
+         00003a80 01860000  
+     691 00003aa0     03e0          NOT     A0
+     692 00003ab0     5020          AND     A1,A0
+     693 00003ac0     cb0e          JRNZ    BBLW_ABORT                              ;BR=BUTTON DOWN
+     694 00003ad0                   SLEEP   1
+     695                    
+     696 00003b10     05ae          MOVE    @NEWCRED,A14,W
+         00003b20 00000000! 
+     697 00003b40     cb07          JRNZ    BBLW_DONE                               ;BR=NEW CREDIT
+     698 00003b50     0d5f          CALLA   CHECK_SWITCH_RESTART
+         00003b60 00003890' 
+     699 00003b80     cb03          JRNZ    BBLW_DONE                               ;BR=RESTART
+     700                    
+     701 00003b90     0d88          DSJ     A8,BBLW_LUPE
+         00003ba0     ffda  
+     702 00003bb0           BBLW_ABORT
+     703 00003bb0     57ce          CLR     A14                                     ;SET Z, DON'T RESTART
+     704 00003bc0           BBLW_DONE
+     705 00003bc0                   RETP
+     706                    
+     707                    **************************************************************************
+     708                    *                                                                        *
+     709                    * DO_BUY_IN - JUST GO!                                                   *
+     710                    *                                                                        *
+     711                    * PASS:                                                                  *
+     712                    * NUTIN'                                                                 *
+     713                    * RETURN:                                                                *
+     714                    * NUTIN'                                                                 *
+     715                    *                                                                        *
+     716                    **************************************************************************
+     717                    
+     718 00003bf0           DO_BUY_IN
+     719 00003bf0     09e0          MOVI    FONTGRYP,A0
+         00003c00 00000000! 
+     720 00003c20     0d5f          CALLA   GETFPAL
+         00003c30 00000000! 
+     721                    
+     722 00003c50     1881          MOVK    4,A1
+     723 00003c60     09e2          MOVI    PLAYER_PAL_TABLE2,A2
+         00003c70 000060f0' 
+     724 00003c90           DBI_PAL_LUPE
+     725 00003c90     9640          MOVE    *A2+,A0,L
+     726 00003ca0     0d5f          CALLA   GETFPAL
+         00003cb0 00000000! 
+     727 00003cd0     3ca1          DSJS    A1,DBI_PAL_LUPE
+     728                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     729 00003ce0     0d5f          CALLA   CENTER_ICE_BGND
+         00003cf0 00000000! 
+     730                    
+     731 00003d10     09f0          MOVI    SELECTFRAME_INIT,B0
+         00003d20 00000000! 
+     732 00003d40     0d5f          CALLA   MULTIMAKE
+         00003d50 00000000! 
+     733 00003d70     09e1          MOVI    [2,5],A1
+         00003d80 00020005  
+     734 00003da0     1822          MOVK    1,A2
+     735 00003db0     0d5f          CALLA   SET_SCRNOBJ
+         00003dc0 00000000! 
+     736 00003de0     0d5f          CALLA   INSERT_OBJ
+         00003df0 00000000! 
+     737 00003e10     09e0          MOVI    BLUFRMP,A0
+         00003e20 00000000! 
+     738 00003e40     0d5f          CALLA   CHANGE_PAL_MULTI
+         00003e50 00000000! 
+     739                    
+     740 00003e70     09f0          MOVI    SELECTFRAME_INIT,B0
+         00003e80 00000000! 
+     741 00003ea0     0d5f          CALLA   MULTIMAKE
+         00003eb0 00000000! 
+     742 00003ed0     09e1          MOVI    [2,200],A1                      ;UNFLIPPED POSITION
+         00003ee0 000200c8  
+     743                    ;       MOVK    M_FLIPH,A0
+     744                    ;       CALLA   SET_FLIP
+     745                    ;       MOVI    [2,394],A1
+     746 00003f00     1822          MOVK    1,A2
+     747 00003f10     0d5f          CALLA   SET_SCRNOBJ
+         00003f20 00000000! 
+     748 00003f40     0d5f          CALLA   INSERT_OBJ
+         00003f50 00000000! 
+     749 00003f70     09e0          MOVI    REDFRMP,A0
+         00003f80 00000000! 
+     750 00003fa0     0d5f          CALLA   CHANGE_PAL_MULTI
+         00003fb0 00000000! 
+     751                    
+     752 00003fd0     09f0          MOVI    INFOBOXES_INIT,B0
+         00003fe0 00000000! 
+     753 00004000     0d5f          CALLA   EASYMAKE
+         00004010 00000000! 
+     754 00004030     09e1          MOVI    [INFOBOX_Y,INFOBOX_XL],A1
+         00004040 006f000d  
+     755 00004060     5642          CLR     A2
+     756 00004070     0d5f          CALLA   SET_SCRNOBJ
+         00004080 00000000! 
+     757 000040a0     0d5f          CALLA   INSERT_OBJ
+         000040b0 00000000! 
+     758 000040d0     09e0          MOVI    BLUFRMP,A0
+         000040e0 00000000! 
+     759 00004100     0d5f          CALLA   CHANGE_PAL
+         00004110 00000000! 
+     760                    
+     761 00004130     09f0          MOVI    INFOBOXES_BGND_INIT,B0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+         00004140 00000000! 
+     762 00004160     0d5f          CALLA   EASYMAKE
+         00004170 00000000! 
+     763 00004190     09e1          MOVI    [INFOBOX_Y,INFOBOX_XL],A1
+         000041a0 006f000d  
+     764 000041c0     1822          MOVK    1,A2
+     765 000041d0     0d5f          CALLA   SET_SCRNOBJ
+         000041e0 00000000! 
+     766 00004200     0d5f          CALLA   INSERT_OBJ
+         00004210 00000000! 
+     767                    
+     768 00004230     09f0          MOVI    INFOBOXES_BGND_INIT,B0
+         00004240 00000000! 
+     769 00004260     0d5f          CALLA   EASYMAKE
+         00004270 00000000! 
+     770 00004290     09e1          MOVI    [INFOBOX_Y,INFOBOX_XL+80],A1
+         000042a0 006f005d  
+     771 000042c0     1822          MOVK    1,A2
+     772 000042d0     0d5f          CALLA   SET_SCRNOBJ
+         000042e0 00000000! 
+     773 00004300     0d5f          CALLA   INSERT_OBJ
+         00004310 00000000! 
+     774                    
+     775 00004330     09f0          MOVI    INFOBOXES_INIT,B0
+         00004340 00000000! 
+     776 00004360     0d5f          CALLA   EASYMAKE
+         00004370 00000000! 
+     777 00004390     09e1          MOVI    [INFOBOX_Y,INFOBOX_XR],A1
+         000043a0 006f00d0  
+     778 000043c0     5642          CLR     A2
+     779 000043d0     0d5f          CALLA   SET_SCRNOBJ
+         000043e0 00000000! 
+     780 00004400     0d5f          CALLA   INSERT_OBJ
+         00004410 00000000! 
+     781 00004430     09e0          MOVI    REDFRMP,A0
+         00004440 00000000! 
+     782 00004460     0d5f          CALLA   CHANGE_PAL
+         00004470 00000000! 
+     783                    
+     784 00004490     09f0          MOVI    INFOBOXES_BGND_INIT,B0
+         000044a0 00000000! 
+     785 000044c0     0d5f          CALLA   EASYMAKE
+         000044d0 00000000! 
+     786 000044f0     09e1          MOVI    [INFOBOX_Y,INFOBOX_XR],A1
+         00004500 006f00d0  
+     787 00004520     1822          MOVK    1,A2
+     788 00004530     0d5f          CALLA   SET_SCRNOBJ
+         00004540 00000000! 
+     789 00004560     0d5f          CALLA   INSERT_OBJ
+         00004570 00000000! 
+     790                    
+     791 00004590     09f0          MOVI    INFOBOXES_BGND_INIT,B0
+         000045a0 00000000! 
+     792 000045c0     0d5f          CALLA   EASYMAKE
+         000045d0 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+     793 000045f0     09e1          MOVI    [INFOBOX_Y,INFOBOX_XR+80],A1
+         00004600 006f0120  
+     794 00004620     1822          MOVK    1,A2
+     795 00004630     0d5f          CALLA   SET_SCRNOBJ
+         00004640 00000000! 
+     796 00004660     0d5f          CALLA   INSERT_OBJ
+         00004670 00000000! 
+     797                    
+     798 00004690     09f0          MOVI    PAIDBOX_INIT,B0
+         000046a0 00000000! 
+     799 000046c0     0d5f          CALLA   EASYMAKE
+         000046d0 00000000! 
+     800 000046f0     09e1          MOVI    [INFOBOX_Y+117,INFOBOX_XL+24],A1
+         00004700 00e40025  
+     801 00004720     09e2          MOVI    TEXTZVAL-3,A2
+         00004730 83fffffd  
+     802 00004750     0d5f          CALLA   SET_SCRNOBJ
+         00004760 00000000! 
+     803 00004780     0d5f          CALLA   INSERT_OBJ
+         00004790 00000000! 
+     804 000047b0     09e0          MOVI    BLUFRMP,A0
+         000047c0 00000000! 
+     805 000047e0     0d5f          CALLA   CHANGE_PAL
+         000047f0 00000000! 
+     806                    
+     807 00004810     09f0          MOVI    PAIDBOX_INIT,B0
+         00004820 00000000! 
+     808 00004840     0d5f          CALLA   EASYMAKE
+         00004850 00000000! 
+     809 00004870     09e1          MOVI    [INFOBOX_Y+117,INFOBOX_XR+104],A1
+         00004880 00e40138  
+     810 000048a0     09e2          MOVI    TEXTZVAL-3,A2
+         000048b0 83fffffd  
+     811 000048d0     0d5f          CALLA   SET_SCRNOBJ
+         000048e0 00000000! 
+     812 00004900     0d5f          CALLA   INSERT_OBJ
+         00004910 00000000! 
+     813 00004930     09e0          MOVI    REDFRMP,A0
+         00004940 00000000! 
+     814 00004960     0d5f          CALLA   CHANGE_PAL
+         00004970 00000000! 
+     815                    
+     816 00004990                   KITN    2
+     817 000049d0     ca30          JREQ    DBI_PROCS                       ;BR=2 PLAYER KIT
+     818                    
+     819 000049e0     09f0          MOVI    PAIDBOX_INIT,B0
+         000049f0 00000000! 
+     820 00004a10     0d5f          CALLA   EASYMAKE
+         00004a20 00000000! 
+     821 00004a40     09e1          MOVI    [INFOBOX_Y+117,INFOBOX_XL+104],A1
+         00004a50 00e40075  
+     822 00004a70     09e2          MOVI    TEXTZVAL-3,A2
+         00004a80 83fffffd  
+     823 00004aa0     0d5f          CALLA   SET_SCRNOBJ
+         00004ab0 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+     824 00004ad0     0d5f          CALLA   INSERT_OBJ
+         00004ae0 00000000! 
+     825 00004b00     09e0          MOVI    BLUFRMP,A0
+         00004b10 00000000! 
+     826 00004b30     0d5f          CALLA   CHANGE_PAL
+         00004b40 00000000! 
+     827                    
+     828 00004b60     09f0          MOVI    PAIDBOX_INIT,B0
+         00004b70 00000000! 
+     829 00004b90     0d5f          CALLA   EASYMAKE
+         00004ba0 00000000! 
+     830 00004bc0     09e1          MOVI    [INFOBOX_Y+117,INFOBOX_XR+24],A1
+         00004bd0 00e400e8  
+     831 00004bf0     09e2          MOVI    TEXTZVAL-3,A2
+         00004c00 83fffffd  
+     832 00004c20     0d5f          CALLA   SET_SCRNOBJ
+         00004c30 00000000! 
+     833 00004c50     0d5f          CALLA   INSERT_OBJ
+         00004c60 00000000! 
+     834 00004c80     09e0          MOVI    REDFRMP,A0
+         00004c90 00000000! 
+     835 00004cb0     0d5f          CALLA   CHANGE_PAL
+         00004cc0 00000000! 
+     836                    
+     837 00004ce0           DBI_PROCS
+     838                    ;       CREATE  PID_LAMP,INITIAL_LAMP_PROC
+     839                    
+     840 00004ce0     09e9          MOVI    [241,201],A9
+         00004cf0 00f100c9  
+     841 00004d10     574a          CLR     A10
+     842 00004d20                   CREATE  PID_CREDIT,DISPLAY_CREDIT_PROC
+     843                    
+     844 00004da0     5729          CLR     A9                              ;PLAYER NUMBER - 1
+     845                    
+     846                    ;       MOVE    @PLAYER_BITS,A10,W              ;GET CURRENT PLAYERS
+     847                    
+     848 00004db0     05a1          MOVE    @period,A1,W                    ;GET UNPAID PLAYERS
+         00004dc0 00000000! 
+     849 00004de0     1021          INC     A1
+     850 00004df0     0d5f          CALLA   get_period_players
+         00004e00 00000000! 
+     851 00004e20     4c0a          MOVE    A0,A10
+     852                    
+     853 00004e30     576b          CLR     A11
+     854 00004e40     1a80          MOVK    ADJFREPL,A0
+     855 00004e50     0d5f          CALLA   GET_ADJ                         ;CHECK FOR FREE PLAY
+         00004e60 00000000! 
+     856 00004e80     cb05          JRNZ    DBI_INFOBOX_MESS_LUPE           ;BR=FREE PLAY
+     857                    
+     858 00004e90     1960          MOVK    ADJCSTRT,A0
+     859 00004ea0     0d5f          CALLA   GET_ADJ                         ;GET NUMBER OF CREDITS TO START
+         00004eb0 00000000! 
+     860 00004ed0     4c0b          MOVE    A0,A11
+     861                    
+     862 00004ee0           DBI_INFOBOX_MESS_LUPE
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+     863 00004ee0     4b2a          BTST    A9,A10
+     864 00004ef0     cb2d          JRNZ    DBI_IML_ACTIVE                  ;BR=PLAYER NOT ACTIVE
+     865                    
+     866 00004f00     4d29          MOVE    A9,A9
+     867 00004f10     ca08          JRZ     DBI_GO_INFOBOX_MESS             ;BR=PLAYER 1
+     868 00004f20     0b49          CMPI    3,A9
+         00004f30     fffc  
+     869 00004f40     ca05          JREQ    DBI_GO_INFOBOX_MESS             ;BR=PLAYER 4(2)         
+     870                    
+     871 00004f50                   KITN    2
+     872 00004f90     ca2b          JREQ    DBI_IML_NEXT                    ;BR=2 PLAYER KIT
+     873 00004fa0           DBI_GO_INFOBOX_MESS
+     874                    
+     875 00004fa0     09f0          MOVI    INFOBOX_MESSAGE_INIT,B0
+         00004fb0 00000000! 
+     876 00004fd0     0d5f          CALLA   EASYMAKE
+         00004fe0 00000000! 
+     877                    
+     878 00005000     b128          MOVE    A9,*A8(ODATA),W                 ;PLAYER NUMBER - 1
+         00005010     04b0  
+     879 00005020     b168          MOVE    A11,*A8(ODATA+010H),W           ;NUMBER OF CREDITS TO START
+         00005030     04c0  
+     880                    
+     881 00005040     4d21          MOVE    A9,A1
+     882 00005050     2481          SLL     4,A1
+     883 00005060     0b21          ADDI    PLAYER_OID_TABLE,A1
+         00005070 00000000! 
+     884 00005090     b828          MOVE    *A1(0),*A8(OID),W
+         000050a0     0000  
+         000050b0     0430  
+     885                    
+     886 000050c0     4d21          MOVE    A9,A1
+     887 000050d0     2481          SLL     4,A1
+     888 000050e0     0b21          ADDI    INFOBOX_CENTER_XPOS_TABLE,A1
+         000050f0 00000000! 
+     889 00005110     8421          MOVE    *A1,A1,W
+     890 00005120     09ee          MOVI    [INFOBOX_Y+92,-30],A14
+         00005130 00cbffe2  
+     891 00005150     e1c1          ADDXY   A14,A1
+     892 00005160     5642          CLR     A2
+     893 00005170     0d5f          CALLA   SET_SCRNOBJ
+         00005180 00000000! 
+     894                    
+     895 000051a0     0d5f          CALLA   INSERT_OBJ
+         000051b0 00000000! 
+     896                    
+     897 000051d0           DBI_IML_ACTIVE
+     898 000051d0                   CREATE  PID_IND,PERIODS_PAID_PROC
+     899 00005250           DBI_IML_NEXT
+     900 00005250     1029          INC     A9
+     901 00005260     0b49          CMPI    4,A9
+         00005270     fffb  
+     902 00005280     cbc5          JRNE    DBI_INFOBOX_MESS_LUPE           ;BR=NOT DONE WITH PLAYERS
+     903                    
+     904 00005290     05a3          MOVE    @period,A3,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+         000052a0 00000000! 
+     905 000052c0     186b          MOVK    011B,A11                        ;LEFT TEAM MASK
+     906                    
+     907 000052d0     4c61          MOVE    A3,A1
+     908 000052e0     0d5f          CALLA   get_period_players              ;GET LAST PERIOD PLAYERS
+         000052f0 00000000! 
+     909 00005310     05aa          MOVE    @PLAYER_BITS,A10,W              ;GET CURRENT PLAYERS
+         00005320 00000000! 
+     910 00005340     540a          OR      A0,A10                          ;PUT 'EM TOGETHER
+     911                    
+     912 00005350     5729          CLR     A9                              ;PLAYER NUMBER - 1
+     913 00005360           DBI_JOININ_MESSAGE_LUPE
+     914 00005360     4d29          MOVE    A9,A9
+     915 00005370     ca08          JRZ     DBI_JML_CHECK_ACTIVE            ;BR=PLAYER 1
+     916 00005380     0b49          CMPI    3,A9
+         00005390     fffc  
+     917 000053a0     ca05          JREQ    DBI_JML_CHECK_ACTIVE            ;BR=PLAYER 4(2)         
+     918                    
+     919 000053b0                   KITN    2
+     920 000053f0     ca58          JREQ    DBI_JML_NEXT                    ;BR=2 PLAYER KIT
+     921                    
+     922 00005400           DBI_JML_CHECK_ACTIVE
+     923 00005400     4b2a          BTST    A9,A10
+     924 00005410     ca2d          JRZ     DBI_JML_NOT_ACTIVE              ;BR=PLAYER NOT ACTIVE
+     925                    
+     926 00005420     4d26          MOVE    A9,A6
+     927 00005430     1026          INC     A6
+     928 00005440     0b46          CMPI    3,A6
+         00005450     fffc  
+     929 00005460     c401          JRLT    DBI_JML_GET_PLAYER_BLOCK        ;BR=PLAYER 1 OR 2
+     930 00005470     1046          ADDK    2,A6
+     931 00005480           DBI_JML_GET_PLAYER_BLOCK
+     932 00005480                   GBLOCK  A6,A6
+     933                    
+     934 000054c0     b4ce          MOVE    *A6(POF_PERIODS_PAID),A14,W
+         000054d0     0900  
+     935 000054e0     4a6e          BTST    A3,A14
+     936 000054f0     ca03          JRZ     DBI_JML_CONTINUE                ;BR=NOT PAID
+     937 00005500     0d3f          CALLR   GET_READY_MESSAGE
+         00005510     00c9  
+     938 00005520     c045          JRUC    DBI_JML_NEXT
+     939                    
+     940 00005530           DBI_JML_CONTINUE
+     941 00005530     09f0          MOVI    CONT_MESSAGE_INIT,B0
+         00005540 00006950' 
+     942 00005560     0d5f          CALLA   EASYMAKE
+         00005570 00000000! 
+     943                    
+     944 00005590     b2c8          MOVE    A6,*A8(ODATA),L                 ;PLAYER BLOCK ADDRESS
+         000055a0     04b0  
+     945 000055b0     b128          MOVE    A9,*A8(ODATA+020H),W            ;PLAYER NUMBER - 1
+         000055c0     04d0  
+     946                    
+     947 000055d0     4d21          MOVE    A9,A1
+     948 000055e0     2481          SLL     4,A1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+     949 000055f0     0b21          ADDI    INITIAL_MESS_CENTER_XPOS_TABLE,A1
+         00005600 00000000! 
+     950 00005620     8421          MOVE    *A1,A1,W
+     951 00005630     09ee          MOVI    [102,1],A14
+         00005640 00660001  
+     952 00005660     e1c1          ADDXY   A14,A1
+     953 00005670     5642          CLR     A2
+     954 00005680     0d5f          CALLA   SET_SCRNOBJ
+         00005690 00000000! 
+     955 000056b0     0d5f          CALLA   INSERT_OBJ
+         000056c0 00000000! 
+     956                    
+     957 000056e0     c029          JRUC    DBI_JML_NEXT
+     958                    
+     959 000056f0           DBI_JML_NOT_ACTIVE
+     960 000056f0     09f0          MOVI    JOININ_MESSAGE_INIT,B0
+         00005700 00000000! 
+     961 00005720     0d5f          CALLA   EASYMAKE
+         00005730 00000000! 
+     962                    
+     963 00005750     182e          MOVK    1,A14
+     964 00005760     632e          SLL     A9,A14
+     965 00005770     b1c8          MOVE    A14,*A8(ODATA),W                ;PLAYER MASK
+         00005780     04b0  
+     966 00005790     b128          MOVE    A9,*A8(ODATA+10H),W             ;PLAYER NUMBER - 1
+         000057a0     04c0  
+     967                    
+     968 000057b0     4d21          MOVE    A9,A1
+     969 000057c0     2481          SLL     4,A1
+     970 000057d0     0b21          ADDI    INITIAL_MESS_CENTER_XPOS_TABLE,A1
+         000057e0 00000000! 
+     971 00005800     8421          MOVE    *A1,A1,W
+     972 00005810     09ee          MOVI    [100,-42],A14
+         00005820 0064ffd6  
+     973 00005840     e1c1          ADDXY   A14,A1
+     974 00005850     5642          CLR     A2
+     975 00005860     0d5f          CALLA   SET_SCRNOBJ
+         00005870 00000000! 
+     976                    
+     977 00005890     09e1          MOVI    CHALNEED_MESSAGE_ANIM,A1
+         000058a0 00000000! 
+     978                    
+     979 000058c0     4d4e          MOVE    A10,A14
+     980 000058d0     516e          AND     A11,A14
+     981 000058e0     ca03          JRZ     DBI_JML_ANIM                    ;BR=PUT UP CHALLENGER MESSAGE
+     982                    
+     983 000058f0     09e1          MOVI    TEAMNEED_MESSAGE_ANIM,A1
+         00005900 00000000! 
+     984 00005920           DBI_JML_ANIM
+     985 00005920     0d5f          CALLA   STRT_ANIM
+         00005930 00000000! 
+     986 00005950     0d5f          CALLA   INSERT_OBJ
+         00005960 00000000! 
+     987 00005980           DBI_JML_NEXT
+     988 00005980     1029          INC     A9
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+     989 00005990     0b49          CMPI    2,A9
+         000059a0     fffd  
+     990 000059b0     cb02          JRNE    DBI_JML_CHECK_LAST              ;BR=DON'T CHANGE TEAM MASK
+     991 000059c0     244b          SLL     2,A11                           ;SHIFT TO RIGHT TEAM MASK
+     992 000059d0     c098          JRUC    DBI_JOININ_MESSAGE_LUPE
+     993 000059e0           DBI_JML_CHECK_LAST
+     994 000059e0     0b49          CMPI    4,A9
+         000059f0     fffb  
+     995 00005a00     cb95          JRNE    DBI_JOININ_MESSAGE_LUPE         ;BR=NOT DONE WITH PLAYERS
+     996                    
+     997 00005a10     57ce          CLR     A14
+     998 00005a20     058e          MOVE    A14,@TIMES_UP,W                 ;RESET TIME'S UP FLAG
+         00005a30 00000000! 
+     999                    
+    1000 00005a50     05a1          MOVE    @period,A1,W                    ;LAST PERIOD
+         00005a60 00000000! 
+    1001 00005a80     0d5f          CALLA   get_period_players
+         00005a90 00000000! 
+    1002 00005ab0     4c09          MOVE    A0,A9
+    1003                    ;       MOVI    60*5,A11
+    1004 00005ac0     09cb          MOVI    60*3,A11
+         00005ad0     00b4  
+    1005                    
+    1006 00005ae0     0d5f          CALLA   COUNT_PLAYER_BITS
+         00005af0 00000000! 
+    1007 00005b10     142e          DEC     A14
+    1008 00005b20     ca03          JRZ     DBI_CHECK_NEXT_PERIOD           ;BR=ONLY ONE PLAYER ACTIVE
+    1009                    
+    1010 00005b30     0b41          CMPI    2,A1
+         00005b40     fffd  
+    1011 00005b50     cb09          JRNE    DBI_START_TIMER                 ;BR=NOT 3RD PERIOD BUY-IN
+    1012 00005b60           DBI_CHECK_NEXT_PERIOD
+    1013 00005b60     1021          INC     A1                              ;NEXT PERIOD
+    1014 00005b70     0d5f          CALLA   get_period_players
+         00005b80 00000000! 
+    1015 00005ba0     4c0e          MOVE    A0,A14
+    1016 00005bb0     512e          AND     A9,A14
+    1017 00005bc0     492e          CMP     A9,A14
+    1018 00005bd0     cb01          JRNE    DBI_START_TIMER                 ;BR=EVERYBODY FROM LAST PERIOD
+    1019                                                                    ;   NOT PAID UP FOR 3RD PERIOD
+    1020 00005be0           DBI_CLEAR_PRETIME
+    1021 00005be0     576b          CLR     A11                             ;SHORTEN TIME FOR PAID PLAYERS
+    1022 00005bf0           DBI_START_TIMER
+    1023 00005bf0                   C_A_K   PID_TIMER,BUYIN_TIMER_PROC
+    1024                    
+    1025 00005c70     05a8          MOVE    @period,A8,W                    ;NEXT PERIOD
+         00005c80 00000000! 
+    1026 00005ca0     1028          INC     A8
+    1027                    
+    1028 00005cb0     09c9          MOVI    01111B,A9
+         00005cc0     000f  
+    1029 00005cd0     05ae          MOVE    @NPLAYERS,A14,W
+         00005ce0 00000000! 
+    1030 00005d00     144e          SUBK    2,A14
+    1031 00005d10     cb02          JRNZ    DBI_TIMEOUT_LUPE                ;BR=4 PLAYER KIT
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+    1032 00005d20     09c9          MOVI    01001B,A9
+         00005d30     0009  
+    1033                    
+    1034 00005d40           DBI_TIMEOUT_LUPE
+    1035 00005d40                   SLEEP   1
+    1036                    
+    1037 00005d80     4d01          MOVE    A8,A1
+    1038 00005d90     0d5f          CALLA   get_period_players
+         00005da0 00000000! 
+    1039                    
+    1040 00005dc0     0d5f          CALLA   COUNT_PLAYER_BITS
+         00005dd0 00000000! 
+    1041 00005df0     142e          DEC     A14
+    1042 00005e00     ca02          JRZ     DBI_CHECK_TIMEOUT               ;BR=ONLY ONE PLAYER ACTIVE
+    1043                    
+    1044 00005e10     4920          CMP     A9,A0
+    1045 00005e20     ca0d          JREQ    DBI_DONE                        ;BR=ALL PAID
+    1046 00005e30           DBI_CHECK_TIMEOUT
+    1047 00005e30     05ae          MOVE    @TIMES_UP,A14,W
+         00005e40 00000000! 
+    1048 00005e60     caed          JRZ     DBI_TIMEOUT_LUPE                ;BR=NO TIME TO LOSE
+    1049                    
+    1050 00005e70     4d01          MOVE    A8,A1
+    1051 00005e80     0d5f          CALLA   get_period_players
+         00005e90 00000000! 
+    1052 00005eb0     4c00          MOVE    A0,A0
+    1053 00005ec0     cb03          JRNZ    DBI_DONE                        ;BR=SOMEBODY PAID
+    1054                    
+    1055 00005ed0                   RETP
+    1056 00005f00           DBI_DONE
+    1057 00005f00                   SLEEP   15
+    1058                    
+    1059 00005f40     09c0          MOVI    PID_COLOR,A0                    ;KILL JOIN IN CYCLES
+         00005f50     2cc0  
+    1060 00005f60     0d5f          CALLA   KILLPROC_ALL
+         00005f70 00000000! 
+    1061 00005f90     09ce          MOVI    99,A14
+         00005fa0     0063  
+    1062 00005fb0     058e          MOVE    A14,@MAX_PALXFERS,W
+         00005fc0 00000000! 
+    1063 00005fe0     5600          CLR     A0
+    1064 00005ff0     0d5f          CALLA   FADEOUTF                        ;FADE DOWN ALL PALETTES
+         00006000 00000000! 
+    1065 00006020                   JSRP    FADE_WAIT
+    1066 00006090     0d5f          CALLA   RESET_MAX_PALXFERS
+         000060a0 00000000! 
+    1067                    
+    1068 000060c0                   RETP
+    1069                    
+    1070 000060f0           PLAYER_PAL_TABLE2
+    1071 000060f0 00000000!         .LONG   PRPTXT3P,BLUTXT3P,GLDTXT1P,GRNTXT3P
+    1072                    
+    1073 00006170           PLAYER_PAL_NUM_TABLE2
+    1074 00006170     0303          .WORD   HFPAL+0101H,HFPAL+0202H,HFPAL+0303H,HFPAL+0404H
+    1075                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   27
+
+    1076                    **************************************************************************
+    1077                    *                                                                        *
+    1078                    * GET_READY_MESSAGE                                                      *
+    1079                    *                                                                        *
+    1080                    * PASS:                                                                  *
+    1081                    * A9 = PLAYER NUMBER - 1                                                 *
+    1082                    * RETURN:                                                                *
+    1083                    * NUTIN'                                                                 *
+    1084                    *                                                                        *
+    1085                    **************************************************************************
+    1086                    
+    1087 000061b0           GET_READY_MESSAGE
+    1088 000061b0     098f          MMTM    SP,A10,A11
+         000061c0     0030  
+    1089                    
+    1090 000061d0     09f0          MOVI    GET_READY_INIT,B0
+         000061e0 00006a40' 
+    1091 00006200     0d5f          CALLA   EASYMAKE
+         00006210 00000000! 
+    1092                    
+    1093 00006230     4d2a          MOVE    A9,A10
+    1094 00006240     248a          SLL     4,A10
+    1095 00006250     0b2a          ADDI    INITIAL_MESS_CENTER_XPOS_TABLE,A10
+         00006260 00000000! 
+    1096 00006280     854a          MOVE    *A10,A10,W
+    1097 00006290     09ee          MOVI    [55,0],A14
+         000062a0 00370000  
+    1098 000062c0     e1ca          ADDXY   A14,A10
+    1099 000062d0     4d41          MOVE    A10,A1
+    1100 000062e0     5642          CLR     A2
+    1101 000062f0     0d5f          CALLA   SET_SCRNOBJ
+         00006300 00000000! 
+    1102 00006320     0d5f          CALLA   INSERT_OBJ
+         00006330 00000000! 
+    1103                    
+    1104 00006350     4d2b          MOVE    A9,A11
+    1105 00006360     24ab          SLL     5,A11
+    1106 00006370     0b2b          ADDI    PLAYER_PAL_TABLE2,A11
+         00006380 000060f0' 
+    1107 000063a0     876b          MOVE    *A11,A11,L
+    1108 000063b0     4d60          MOVE    A11,A0
+    1109 000063c0     0d5f          CALLA   CHANGE_PAL
+         000063d0 00000000! 
+    1110                    
+    1111 000063f0     09f0          MOVI    SECOND_INIT,B0
+         00006400 00006aa0' 
+    1112 00006420     0d5f          CALLA   EASYMAKE
+         00006430 00000000! 
+    1113 00006450     4d60          MOVE    A11,A0
+    1114 00006460     0d5f          CALLA   CHANGE_PAL
+         00006470 00000000! 
+    1115                    
+    1116 00006490     4d41          MOVE    A10,A1
+    1117 000064a0     5642          CLR     A2
+    1118 000064b0     0d5f          CALLA   SET_SCRNOBJ
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   28
+
+         000064c0 00000000! 
+    1119 000064e0     0d5f          CALLA   INSERT_OBJ
+         000064f0 00000000! 
+    1120                    
+    1121 00006510     05a2          MOVE    @period,A2,W
+         00006520 00000000! 
+    1122 00006540     0b42          CMPI    1,A2
+         00006550     fffe  
+    1123 00006560     ca17          JREQ    GRM_PERIOD                      ;BR=2ND PERIOD BUY-IN
+    1124 00006570     0b42          CMPI    2,A2
+         00006580     fffd  
+    1125 00006590     cb0a          JRNE    GRM_OVERTIME                    ;BR=OVERTIME BUY-IN
+    1126                    
+    1127 000065a0     09e1          MOVI    THIRD18,A1                      ;3RD PERIOD BUY-IN
+         000065b0 00000120" 
+    1128 000065d0     09e4          MOVI    DMAWNZ,A4
+         000065e0 00008002  
+    1129 00006600     0d5f          CALLA   ANI
+         00006610 00000000! 
+    1130 00006630     c00a          JRUC    GRM_PERIOD
+    1131                    
+    1132 00006640           GRM_OVERTIME
+    1133 00006640     09e1          MOVI    OT18,A1
+         00006650 00000240" 
+    1134 00006670     09e4          MOVI    DMAWNZ,A4
+         00006680 00008002  
+    1135 000066a0     0d5f          CALLA   ANI
+         000066b0 00000000! 
+    1136 000066d0     c012          JRUC    GRM_DONE
+    1137                    
+    1138 000066e0           GRM_PERIOD
+    1139 000066e0     09f0          MOVI    PERIOD_INIT,B0
+         000066f0 00006b00' 
+    1140 00006710     0d5f          CALLA   EASYMAKE
+         00006720 00000000! 
+    1141 00006740     4d60          MOVE    A11,A0
+    1142 00006750     0d5f          CALLA   CHANGE_PAL
+         00006760 00000000! 
+    1143                    
+    1144 00006780     4d41          MOVE    A10,A1
+    1145 00006790     5642          CLR     A2
+    1146 000067a0     0d5f          CALLA   SET_SCRNOBJ
+         000067b0 00000000! 
+    1147 000067d0     0d5f          CALLA   INSERT_OBJ
+         000067e0 00000000! 
+    1148 00006800           GRM_DONE
+    1149                    
+    1150 00006800     0d3f          CALLR   PUT_INITIALS_IN_INFOBOX
+         00006810     01dc  
+    1151                    
+    1152 00006820     09af          MMFM    SP,A10,A11
+         00006830     0c00  
+    1153 00006840     0960          RETS
+    1154                    
+    1155                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   29
+
+    1156                    *                                                                        *
+    1157                    * A_CHECK_PERIOD_PAID                                                    *
+    1158                    *                                                                        *
+    1159                    * PASS:                                                                  *
+    1160                    * A8 = OBJECT                                                            *
+    1161                    *                                                                        *
+    1162                    **************************************************************************
+    1163                    
+    1164 00006850           A_CHECK_PERIOD_PAID
+    1165 00006850     b706          MOVE    *A8(ODATA),A6,L
+         00006860     04b0  
+    1166 00006870     05a0          MOVE    @period,A0,W
+         00006880 00000000! 
+    1167 000068a0     b4ce          MOVE    *A6(POF_PERIODS_PAID),A14,W
+         000068b0     0900  
+    1168 000068c0     4a0e          BTST    A0,A14
+    1169 000068d0     ca06          JRZ     ACPP_DONE                       ;BR=STILL NOT PAID
+    1170 000068e0     0d5f          CALLA   DELETE_OBJ                      ;BR=PERIOD PAID
+         000068f0 00000000! 
+    1171 00006910     b509          MOVE    *A8(ODATA+020H),A9,W            ;PLAYER NUMBER - 1
+         00006920     04d0  
+    1172 00006930     c087          JRUC    GET_READY_MESSAGE
+    1173 00006940           ACPP_DONE
+    1174 00006940     0960          RETS
+    1175                    
+    1176 00006950           CONT_MESSAGE_INIT
+    1177 00006950 00000000"         .long   CONT19
+    1178 00006970     8002          .word   DMAWNZ,M_SCRNOBJ|M_NOVEL|M_NOSCALE
+    1179 00006990     0104          .word   OM_OID|OM_ANIM
+    1180 000069a0     07ff          .word   OID_JUNK
+    1181 000069b0 000069d0'         .long   CONT_MESSAGE_ANIM
+    1182                    
+    1183 000069d0           CONT_MESSAGE_ANIM
+    1184 000069d0                   LWL     1,AFUNC|1,A_CHECK_PERIOD_PAID
+    1185 00006a20 00000000          .long   0
+    1186                    
+    1187 00006a40           GET_READY_INIT
+    1188 00006a40 000002d0"         .long   GETREADYFOR17
+    1189 00006a60     8002          .word   DMAWNZ,M_SCRNOBJ|M_NOVEL|M_NOSCALE
+    1190 00006a80     0100          .word   OM_OID
+    1191 00006a90     07ff          .word   OID_JUNK
+    1192                    
+    1193 00006aa0           SECOND_INIT
+    1194 00006aa0 000001b0"         .long   SECOND18
+    1195 00006ac0     8002          .word   DMAWNZ,M_SCRNOBJ|M_NOVEL|M_NOSCALE
+    1196 00006ae0     0100          .word   OM_OID
+    1197 00006af0     07ff          .word   OID_JUNK
+    1198                    
+    1199 00006b00           PERIOD_INIT
+    1200 00006b00 00000090"         .long   PERIOD17
+    1201 00006b20     8002          .word   DMAWNZ,M_SCRNOBJ|M_NOVEL|M_NOSCALE
+    1202 00006b40     0100          .word   OM_OID
+    1203 00006b50     07ff          .word   OID_JUNK
+    1204                    
+    1205                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   30
+
+    1206                    *                                                                        *
+    1207                    * DISPLAY_UPDATED_RECORDS                                                *
+    1208                    *                                                                        *
+    1209                    * PASS:                                                                  *
+    1210                    * NUTIN'                                                                 *
+    1211                    * RETURN:                                                                *
+    1212                    * NUTIN'                                                                 *
+    1213                    *                                                                        *
+    1214                    **************************************************************************
+    1215                    
+    1216 00006b60           DISPLAY_UPDATED_RECORDS
+    1217 00006b60     09e0          MOVI    FONTGRYP,A0
+         00006b70 00000000! 
+    1218 00006b90     0d5f          CALLA   GETFPAL
+         00006ba0 00000000! 
+    1219                    
+    1220 00006bc0     1881          MOVK    4,A1
+    1221 00006bd0     09e2          MOVI    PLAYER_PAL_TABLE2,A2
+         00006be0 000060f0' 
+    1222 00006c00           DUR_PAL_LUPE
+    1223 00006c00     9640          MOVE    *A2+,A0,L
+    1224 00006c10     0d5f          CALLA   GETFPAL
+         00006c20 00000000! 
+    1225 00006c40     3ca1          DSJS    A1,DUR_PAL_LUPE
+    1226                    
+    1227 00006c50     09e0          MOVI    REDTXT3P,A0
+         00006c60 00000000! 
+    1228 00006c80     0d5f          CALLA   GETFPAL
+         00006c90 00000000! 
+    1229 00006cb0     09e0          MOVI    ORGTXT1P,A0
+         00006cc0 00000000! 
+    1230 00006ce0     0d5f          CALLA   GETFPAL
+         00006cf0 00000000! 
+    1231                    
+    1232 00006d10     0d5f          CALLA   CENTER_ICE_BGND
+         00006d20 00000000! 
+    1233                    
+    1234 00006d40     09f0          MOVI    SELECTFRAME_INIT,B0
+         00006d50 00000000! 
+    1235 00006d70     0d5f          CALLA   MULTIMAKE
+         00006d80 00000000! 
+    1236 00006da0     09e1          MOVI    [2,5],A1
+         00006db0 00020005  
+    1237 00006dd0     1822          MOVK    1,A2
+    1238 00006de0     0d5f          CALLA   SET_SCRNOBJ
+         00006df0 00000000! 
+    1239 00006e10     0d5f          CALLA   INSERT_OBJ
+         00006e20 00000000! 
+    1240 00006e40     09e0          MOVI    BLUFRMP,A0
+         00006e50 00000000! 
+    1241 00006e70     0d5f          CALLA   CHANGE_PAL_MULTI
+         00006e80 00000000! 
+    1242                    
+    1243 00006ea0     09f0          MOVI    SELECTFRAME_INIT,B0
+         00006eb0 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   31
+
+    1244 00006ed0     0d5f          CALLA   MULTIMAKE
+         00006ee0 00000000! 
+    1245 00006f00     09e1          MOVI    [2,200],A1                      ;UNFLIPPED POSITION
+         00006f10 000200c8  
+    1246                    ;       MOVK    M_FLIPH,A0
+    1247                    ;       CALLA   SET_FLIP
+    1248                    ;       MOVI    [2,394],A1
+    1249 00006f30     1822          MOVK    1,A2
+    1250 00006f40     0d5f          CALLA   SET_SCRNOBJ
+         00006f50 00000000! 
+    1251 00006f70     0d5f          CALLA   INSERT_OBJ
+         00006f80 00000000! 
+    1252 00006fa0     09e0          MOVI    REDFRMP,A0
+         00006fb0 00000000! 
+    1253 00006fd0     0d5f          CALLA   CHANGE_PAL_MULTI
+         00006fe0 00000000! 
+    1254                    
+    1255 00007000     09f0          MOVI    INFOBOXES_INIT,B0
+         00007010 00000000! 
+    1256 00007030     0d5f          CALLA   EASYMAKE
+         00007040 00000000! 
+    1257 00007060     09e1          MOVI    [INFOBOX_Y,INFOBOX_XL],A1
+         00007070 006f000d  
+    1258 00007090     5642          CLR     A2
+    1259 000070a0     0d5f          CALLA   SET_SCRNOBJ
+         000070b0 00000000! 
+    1260 000070d0     0d5f          CALLA   INSERT_OBJ
+         000070e0 00000000! 
+    1261 00007100     09e0          MOVI    BLUFRMP,A0
+         00007110 00000000! 
+    1262 00007130     0d5f          CALLA   CHANGE_PAL
+         00007140 00000000! 
+    1263                    
+    1264 00007160     09f0          MOVI    INFOBOXES_BGND_INIT,B0
+         00007170 00000000! 
+    1265 00007190     0d5f          CALLA   EASYMAKE
+         000071a0 00000000! 
+    1266 000071c0     09e1          MOVI    [INFOBOX_Y,INFOBOX_XL],A1
+         000071d0 006f000d  
+    1267 000071f0     1822          MOVK    1,A2
+    1268 00007200     0d5f          CALLA   SET_SCRNOBJ
+         00007210 00000000! 
+    1269 00007230     0d5f          CALLA   INSERT_OBJ
+         00007240 00000000! 
+    1270                    
+    1271 00007260     09f0          MOVI    INFOBOXES_BGND_INIT,B0
+         00007270 00000000! 
+    1272 00007290     0d5f          CALLA   EASYMAKE
+         000072a0 00000000! 
+    1273 000072c0     09e1          MOVI    [INFOBOX_Y,INFOBOX_XL+80],A1
+         000072d0 006f005d  
+    1274 000072f0     1822          MOVK    1,A2
+    1275 00007300     0d5f          CALLA   SET_SCRNOBJ
+         00007310 00000000! 
+    1276 00007330     0d5f          CALLA   INSERT_OBJ
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   32
+
+         00007340 00000000! 
+    1277                    
+    1278 00007360     09f0          MOVI    INFOBOXES_INIT,B0
+         00007370 00000000! 
+    1279 00007390     0d5f          CALLA   EASYMAKE
+         000073a0 00000000! 
+    1280 000073c0     09e1          MOVI    [INFOBOX_Y,INFOBOX_XR],A1
+         000073d0 006f00d0  
+    1281 000073f0     5642          CLR     A2
+    1282 00007400     0d5f          CALLA   SET_SCRNOBJ
+         00007410 00000000! 
+    1283 00007430     0d5f          CALLA   INSERT_OBJ
+         00007440 00000000! 
+    1284 00007460     09e0          MOVI    REDFRMP,A0
+         00007470 00000000! 
+    1285 00007490     0d5f          CALLA   CHANGE_PAL
+         000074a0 00000000! 
+    1286                    
+    1287 000074c0     09f0          MOVI    INFOBOXES_BGND_INIT,B0
+         000074d0 00000000! 
+    1288 000074f0     0d5f          CALLA   EASYMAKE
+         00007500 00000000! 
+    1289 00007520     09e1          MOVI    [INFOBOX_Y,INFOBOX_XR],A1
+         00007530 006f00d0  
+    1290 00007550     1822          MOVK    1,A2
+    1291 00007560     0d5f          CALLA   SET_SCRNOBJ
+         00007570 00000000! 
+    1292 00007590     0d5f          CALLA   INSERT_OBJ
+         000075a0 00000000! 
+    1293                    
+    1294 000075c0     09f0          MOVI    INFOBOXES_BGND_INIT,B0
+         000075d0 00000000! 
+    1295 000075f0     0d5f          CALLA   EASYMAKE
+         00007600 00000000! 
+    1296 00007620     09e1          MOVI    [INFOBOX_Y,INFOBOX_XR+80],A1
+         00007630 006f0120  
+    1297 00007650     1822          MOVK    1,A2
+    1298 00007660     0d5f          CALLA   SET_SCRNOBJ
+         00007670 00000000! 
+    1299 00007690     0d5f          CALLA   INSERT_OBJ
+         000076a0 00000000! 
+    1300                    
+    1301 000076c0     1882          MOVK    4,A2
+    1302 000076d0     09ea          MOVI    PLAYER_6_BLOCK,A10
+         000076e0 00000000! 
+    1303 00007700           DUR_START_PROCS
+    1304                    ;mdp yescmosrecord
+    1305                    ;       MOVE    *A10(POF_LOCKED_CHAR),A14,W
+    1306                    ;       JRNZ    DUR_SP_CHECK_NEXT               ;BR=SPECIAL CHARACTER
+    1307                    ;mdp yescmosrecord
+    1308 00007700     b54e          MOVE    *A10(POF_CMOS),A14,W
+         00007710     0060  
+    1309 00007720     ce0a          JRN     DUR_SP_CHECK_NEXT               ;BR=NO CMOS RECORD
+    1310 00007730     4c49          MOVE    A2,A9
+    1311 00007740     1429          DEC     A9
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   33
+
+    1312 00007750                   CREATE  PID_IND,DISPLAY_CMOS
+    1313 000077d0           DUR_SP_CHECK_NEXT
+    1314 000077d0     0b42          CMPI    3,A2
+         000077e0     fffc  
+    1315 000077f0     cb02          JRNE    DUR_SP_NEXT                     ;BR=NOT PLAYER 5
+    1316 00007800     0bea          SUBI    PLAYER_BLOCK_SIZE*2,A10         ;SKIP DRONE PLAYER BLOCKS
+         00007810     dfff  
+    1317 00007820           DUR_SP_NEXT
+    1318 00007820     0bea          SUBI    PLAYER_BLOCK_SIZE,A10           ;NEXT PLAYER BLOCK
+         00007830     efff  
+    1319 00007840     3ea2          DSJS    A2,DUR_START_PROCS
+    1320                    
+    1321 00007850                   RETP
+    1322                    
+    1323                    **************************************************************************
+    1324                    *                                                                        *
+    1325                    * DISPLAY_CMOS                                                           *
+    1326                    *                                                                        *
+    1327                    * PASS:                                                                  *
+    1328                    * A9  = PLAYER NUMBER - 1                                                *
+    1329                    * A10 = PLAYER BLOCK ADDRESS                                             *
+    1330                    *                                                                        *
+    1331                    **************************************************************************
+    1332                    
+    1333 00007880           DISPLAY_CMOS
+    1334 00007880     b540          MOVE    *A10(POF_CMOS),A0,W
+         00007890     0060  
+    1335 000078a0     0d5f          CALLA   get_cmos_record_a
+         000078b0 00000000! 
+    1336 000078d0     4d46          MOVE    A10,A6
+    1337 000078e0     0d5f          CALLA   cx_find_rank
+         000078f0 00000000! 
+    1338                    
+    1339 00007910     0d3f          CALLR   PUT_INITIALS_IN_INFOBOX
+         00007920     00cb  
+    1340                    
+    1341 00007930     4d25          MOVE    A9,A5
+    1342 00007940     2485          SLL     4,A5
+    1343 00007950     0b25          ADDI    PLAYER_PAL_NUM_TABLE2,A5
+         00007960 00006170' 
+    1344 00007980     84a5          MOVE    *A5,A5,W                        ;[COLOR,PALETTE]
+    1345                    
+    1346 00007990     2489          SLL     4,A9
+    1347 000079a0     0b29          ADDI    INITIAL_MESS_CENTER_XPOS_TABLE,A9
+         000079b0 00000000! 
+    1348 000079d0     8529          MOVE    *A9,A9,W
+    1349 000079e0                   PUSHP   A9
+    1350 000079f0     0b29          ADDI    [RANK_YPOS,0],A9                ;[Y,X] SCREEN ADDRESS
+         00007a00 000a0000  
+    1351                    
+    1352 00007a20     5600          CLR     A0                              ;NO SLEEP TIL
+    1353 00007a30     09e1          MOVI    STRCNCONV,A1                    ;ROUTINE
+         00007a40 00000000! 
+    1354                    ;       MOVI    HFPAL,A5                        ;[COLOR,PALETTE]
+    1355 00007a60     09e8          MOVI    RANK_STRING,A8                  ;POINTER TO STRING
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   34
+
+         00007a70 00000000! 
+    1356 00007a90     09ea          MOVI    [0,-1],A10                      ;[Y,X] SPACING
+         00007aa0 0000ffff  
+    1357 00007ac0     09eb          MOVI    H11WFONT,A11                    ;FONT
+         00007ad0 00000000! 
+    1358 00007af0                   JSRP    PRINTF
+    1359                    
+    1360 00007b60     09c5          MOVI    HFPAL,A5                        ;[COLOR,PALETTE]
+         00007b70     0202  
+    1361 00007b80     09e8          MOVI    RECORD_STRING,A8                ;POINTER TO STRING
+         00007b90 00000000! 
+    1362 00007bb0     8589          MOVE    *A12,A9,W                       ;RESTORE A9, [0, X CENTER]
+    1363 00007bc0     0b29          ADDI    [RANK_YPOS+15,0],A9             ;[Y,X] SCREEN ADDRESS
+         00007bd0 00190000  
+    1364 00007bf0     09eb          MOVI    H10FONT,A11                     ;FONT
+         00007c00 00000000! 
+    1365 00007c20                   JSRP    PRINTF
+    1366                    
+    1367 00007c90     05a3          MOVE    @b_wins,A3,W
+         00007ca0 00000000! 
+    1368 00007cc0     4c66          MOVE    A3,A6
+    1369 00007cd0     2426          SLL     1,A6
+    1370 00007ce0     4c62          MOVE    A3,A2
+    1371 00007cf0     05ae          MOVE    @b_losses,A14,W
+         00007d00 00000000! 
+    1372 00007d20     41c2          ADD     A14,A2
+    1373 00007d30     05ae          MOVE    @b_ties,A14,W
+         00007d40 00000000! 
+    1374 00007d60     41c2          ADD     A14,A2                          ;TOTAL GAMES
+    1375                    
+    1376 00007d70     8589          MOVE    *A12,A9,W                       ;RESTORE A9, [0, X CENTER]
+    1377                    
+    1378 00007d80     41c6          ADD     A14,A6                          ;POINTS
+    1379 00007d90                   PUSHP   A6
+    1380                    
+    1381                    ;       MOVI    1000,A14
+    1382                    ;       MPYU    A14,A3
+    1383                    ;       DIVU    A2,A3
+    1384                    ;       MOVE    A3,A7
+    1385                    ;       MOVI    10,A14
+    1386                    ;       DIVU    A14,A3
+    1387                    ;       MOVE    A3,@RAMTEMP1,W                  ;PERCENT INTEGER
+    1388                    ;       MPYU    A14,A3
+    1389                    ;       SUB     A3,A7
+    1390                    ;       MOVE    A7,@RAMTEMP2,W                  ;PERCENT FRACTION
+    1391                    ;       MOVI    WINS_STRING,A8                  ;POINTER TO STRING
+    1392                    ;       ADDI    [RANK_YPOS+30,0],A9             ;[Y,X] SCREEN ADDRESS
+    1393                    ;       JSRP    PRINTF
+    1394                    
+    1395 00007da0     09c5          MOVI    HFPAL+0606H,A5                  ;[COLOR,PALETTE]
+         00007db0     0808  
+    1396                    
+    1397 00007dc0     2422          SLL     1,A2
+    1398 00007dd0     4846          CMP     A2,A6
+    1399 00007de0     cb0e          JRNE    DC_PCTG
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   35
+
+    1400                    
+    1401 00007df0     09e8          MOVI    PCTG_100_STRING,A8              ;POINTER TO STRING
+         00007e00 00000000! 
+    1402 00007e20     0b29          ADDI    [RANK_YPOS+30,0],A9             ;[Y,X] SCREEN ADDRESS
+         00007e30 00280000  
+    1403 00007e50                   JSRP    PRINTF
+    1404 00007ec0     c027          JRUC    DC_POINTS
+    1405 00007ed0           DC_PCTG
+    1406 00007ed0     4cc7          MOVE    A6,A7
+    1407 00007ee0     09ce          MOVI    10000,A14
+         00007ef0     2710  
+    1408 00007f00     5fc7          MPYU    A14,A7
+    1409 00007f10     5a47          DIVU    A2,A7
+    1410 00007f20     10a7          ADDK    5,A7                            ;ROUND UP
+    1411 00007f30     09ce          MOVI    10,A14
+         00007f40     000a  
+    1412 00007f50     5bc7          DIVU    A14,A7
+    1413                    
+    1414 00007f60     56c6          CLR     A6
+    1415 00007f70     5bc6          DIVU    A14,A6
+    1416 00007f80     0587          MOVE    A7,@RAMTEMP3,W                  ;THOUSANTHS
+         00007f90 00000000! 
+    1417 00007fb0     4cc7          MOVE    A6,A7
+    1418 00007fc0     56c6          CLR     A6
+    1419 00007fd0     5bc6          DIVU    A14,A6
+    1420 00007fe0     0587          MOVE    A7,@RAMTEMP2,W                  ;HUNDRETHS
+         00007ff0 00000000! 
+    1421 00008010     4cc7          MOVE    A6,A7
+    1422 00008020     56c6          CLR     A6
+    1423 00008030     5bc6          DIVU    A14,A6
+    1424 00008040     0587          MOVE    A7,@RAMTEMP1,W                  ;TENTHS
+         00008050 00000000! 
+    1425 00008070     09e8          MOVI    PCTG_STRING,A8                  ;POINTER TO STRING
+         00008080 00000000! 
+    1426 000080a0     0b29          ADDI    [RANK_YPOS+30,0],A9             ;[Y,X] SCREEN ADDRESS
+         000080b0 00280000  
+    1427 000080d0                   JSRP    PRINTF
+    1428 00008140           DC_POINTS
+    1429 00008140                   PULLPQ  A6
+    1430 00008150     0586          MOVE    A6,@RAMTEMP1,W
+         00008160 00000000! 
+    1431 00008180     09c5          MOVI    HFPAL,A5                        ;[COLOR,PALETTE]
+         00008190     0202  
+    1432 000081a0     09e8          MOVI    POINTS_STRING,A8                ;POINTER TO STRING
+         000081b0 00000000! 
+    1433 000081d0     8589          MOVE    *A12,A9,W                       ;RESTORE A9, [0, X CENTER]
+    1434 000081e0     0b29          ADDI    [RANK_YPOS+45,0],A9             ;[Y,X] SCREEN ADDRESS
+         000081f0 00370000  
+    1435 00008210                   JSRP    PRINTF
+    1436                    
+    1437 00008280     05ae          MOVE    @b_nextteam,A14,W
+         00008290 00000000! 
+    1438 000082b0     ca21          jrz     DC_DONE                         ;br=invalid next team
+    1439 000082c0     0b4e          CMPI    31,A14
+         000082d0     ffe0  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   36
+
+    1440 000082e0     ca1e          JREQ    DC_DONE                         ;BR=INVALID NEXT TEAM
+    1441                    
+    1442 000082f0     142e          DEC     A14
+    1443 00008300     248e          SLL     4,A14
+    1444 00008310     0b2e          ADDI    ALPHA_CITY_REMAP_TABLE,A14
+         00008320 00000000! 
+    1445 00008340     85ce          MOVE    *A14,A14,W
+    1446 00008350     0b0e          ADDI    'a',A14
+         00008360     0061  
+    1447 00008370     078e          MOVE    A14,@RAMTEMP1,L
+         00008380 00000000! 
+    1448                    
+    1449 000083a0     09c5          MOVI    HFPAL+0505H,A5                  ;[COLOR,PALETTE]
+         000083b0     0707  
+    1450 000083c0     09e8          MOVI    NEXT_TEAM_STRING,A8             ;POINTER TO STRING
+         000083d0 00008510' 
+    1451 000083f0     8589          MOVE    *A12,A9,W                       ;RESTORE A9, [0, X CENTER]
+    1452 00008400     0b29          ADDI    [RANK_YPOS+135,0],A9            ;[Y,X] SCREEN ADDRESS
+         00008410 00910000  
+    1453 00008430     09eb          MOVI    H10FONT,A11                     ;FONT
+         00008440 00000000! 
+    1454 00008460                   JSRP    PRINTF
+    1455 000084d0           DC_DONE
+    1456 000084d0                   PULLPQ  A9
+    1457                    
+    1458 000084e0                   DIE
+    1459                    
+    1460 00008510           NEXT_TEAM_STRING
+    1461 00008510       4e          .STRING "NEXT TEAM :\n\p%c",0
+    1462 000085a0 00000000!         .LONG   FONTGRYP
+    1463 000085c0 00000000!         .LONG   RAMTEMP1
+    1464                    
+    1465                    **************************************************************************
+    1466                    *                                                                        *
+    1467                    * PUT_INITIALS_IN_INFOBOX                                                *
+    1468                    *                                                                        *
+    1469                    * PASS:                                                                  *
+    1470                    * A9 = PLAYER NUMBER - 1                                                 *
+    1471                    * RETURN:                                                                *
+    1472                    * NUTIN'                                                                 *
+    1473                    *                                                                        *
+    1474                    **************************************************************************
+    1475                    
+    1476 000085e0           PUT_INITIALS_IN_INFOBOX
+    1477 000085e0     098f          MMTM    SP,A0,A1,A5,A8,A9,A10,A11
+         000085f0     c4f0  
+    1478                    
+    1479 00008600     0d5f          CALLA   a9_to_a0
+         00008610 00000000! 
+    1480                    
+    1481 00008630     576b          CLR     A11                             ;RESET SPACE COUNT
+    1482                    
+    1483 00008640     ae0e          MOVB    *A0(POF_INITIAL1),A14
+         00008650     00b0  
+    1484 00008660     0d3f          CALLR   PENACHO_TO_ASCII_COUNT
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   37
+
+         00008670     0047  
+    1485 00008680     078e          MOVE    A14,@RAMTEMP1,L
+         00008690 00000000! 
+    1486 000086b0     ae0e          MOVB    *A0(POF_INITIAL2),A14
+         000086c0     00b8  
+    1487 000086d0     0d3f          CALLR   PENACHO_TO_ASCII_COUNT
+         000086e0     0040  
+    1488 000086f0     078e          MOVE    A14,@RAMTEMP2,L
+         00008700 00000000! 
+    1489 00008720     ae0e          MOVB    *A0(POF_INITIAL3),A14
+         00008730     00c0  
+    1490 00008740     0d3f          CALLR   PENACHO_TO_ASCII_COUNT
+         00008750     0039  
+    1491 00008760     078e          MOVE    A14,@RAMTEMP3,L
+         00008770 00000000! 
+    1492                    
+    1493 00008790     09ea          MOVI    [0,-2],A10                      ;[Y,X] SPACING
+         000087a0 0000fffe  
+    1494                    
+    1495 000087c0     146b          SUBK    3,A11
+    1496 000087d0     cb0c          JRNZ    PIII_GO                         ;BR=NOT ALL SPACES
+    1497 000087e0     09ce          MOVI    '.',A14                         ;REPLACE WITH "..."
+         000087f0     002e  
+    1498 00008800     078e          MOVE    A14,@RAMTEMP1,L
+         00008810 00000000! 
+    1499 00008830     078e          MOVE    A14,@RAMTEMP2,L
+         00008840 00000000! 
+    1500 00008860     078e          MOVE    A14,@RAMTEMP3,L
+         00008870 00000000! 
+    1501 00008890     184a          MOVK    [0,2],A10                       ;NEW [Y,X] SPACING
+    1502 000088a0           PIII_GO 
+    1503 000088a0     4d25          MOVE    A9,A5
+    1504 000088b0     2485          SLL     4,A5
+    1505 000088c0     0b25          ADDI    PLAYER_PAL_NUM_TABLE2,A5
+         000088d0 00006170' 
+    1506 000088f0     84a5          MOVE    *A5,A5,W                        ;[COLOR,PALETTE]
+    1507                    
+    1508 00008900     2489          SLL     4,A9
+    1509 00008910     0b29          ADDI    INFOBOX_CENTER_XPOS_TABLE,A9
+         00008920 00000000! 
+    1510 00008940     8529          MOVE    *A9,A9,W
+    1511 00008950     0529          ZEXT    A9,W
+    1512 00008960     0b29          ADDI    [INFOBOX_Y+94,0],A9
+         00008970 00cd0000  
+    1513                    
+    1514 00008990     09d1          MOVI    OID_TEXT,B1                     ;[SOUND,OID]
+         000089a0     0480  
+    1515 000089b0     5600          CLR     A0                              ;NO SLEEP TIL
+    1516 000089c0     09e1          MOVI    STRCNCONV,A1                    ;ROUTINE
+         000089d0 00000000! 
+    1517                    ;       MOVI    HFPAL,A5                        ;[COLOR,PALETTE]
+    1518 000089f0     09e8          MOVI    INITIAL_CHAR_STRING,A8                  ;POINTER TO STRING
+         00008a00 00008bd0' 
+    1519                    ;       MOVI    [0,-2],A10                      ;[Y,X] SPACING
+    1520 00008a20     09eb          MOVI    H18FONT,A11                     ;FONT
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:10 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   38
+
+         00008a30 00000000! 
+    1521 00008a50                   JSRP    PRINTF
+    1522                    
+    1523 00008ac0     09af          MMFM    SP,A0,A1,A5,A8,A9,A10,A11
+         00008ad0     0f23  
+    1524 00008ae0     0960          RETS
+    1525                    
+    1526                    **************************************************************************
+    1527                    *                                                                        *
+    1528                    * PENACHO_TO_ASCII_COUNT                                                 *
+    1529                    *                                                                        *
+    1530                    **************************************************************************
+    1531                    
+    1532 00008af0           PENACHO_TO_ASCII_COUNT
+    1533 00008af0     0b4e          CMPI    26,A14
+         00008b00     ffe5  
+    1534 00008b10     c408          JRLT    PTA_ALPHA                       ;BR=DA ALPHABET
+    1535 00008b20     ca03          JREQ    PTA_SPACE                       ;BR=EMPTY SPACE
+    1536 00008b30     09ce          MOVI    ' ',A14                         ;Q-MARK
+         00008b40     0020  
+    1537 00008b50     0960          RETS
+    1538 00008b60           PTA_SPACE
+    1539 00008b60     09ce          MOVI    ' ',A14
+         00008b70     0020  
+    1540 00008b80     102b          INC     A11
+    1541 00008b90     0960          RETS
+    1542 00008ba0           PTA_ALPHA
+    1543 00008ba0     0b0e          ADDI    'A',A14
+         00008bb0     0041  
+    1544 00008bc0     0960          RETS
+    1545                    
+    1546 00008bd0           INITIAL_CHAR_STRING
+    1547 00008bd0       25          .STRING "%c%c%c",0
+    1548 00008c10 00000000!         .LONG   RAMTEMP1
+    1549 00008c30 00000000!         .LONG   RAMTEMP2
+    1550 00008c50 00000000!         .LONG   RAMTEMP3
+    1551                    
+    1552                            .end
+
+ No Errors,  No Warnings

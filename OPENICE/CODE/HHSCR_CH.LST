@@ -1,0 +1,3272 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHSCR_CH.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                            .INCLUDE        "HH.INC"
+      11                            .INCLUDE        "IMGTBL.GLO"
+      12                            .include        "hhscr_ch.tbl"
+      13                            .include        "hhscrmch.tbl"
+      14                            .include        "extras1.tbl"
+      15                            .include        "extras2.tbl"
+      16                            .include        "extras3.tbl"
+      17                            .include        "hhscr_ch.e"
+      18                            .include        "hhscr_fn.g"
+      19                            .include        "hhscrchf.g"
+      20                            .include        "hhshow.g"
+      21                            .include        "hhscr_sk.g"
+      22                    
+      23                    ; end of include files
+      24                    
+      25 00000000                   .TEXT
+      26 00000000                   .EVEN
+      27                    
+      28                    **************************************************************************
+      29                    *                                                                        *
+      30                    * for player objects, OIMG looks like this                               *
+      31                    *       .word   control,xsize,ysize                                      *
+      32                    *       .long   sag                                                      *
+      33                    *       .word   anix,aniy                                                *
+      34                    *       .word   puckx,pucky                                              *
+      35                    *       .word   headx,heady,headz                                        *
+      36                    *       .word   head#                                                    *
+      37                    *                                                                        *
+      38                    **************************************************************************
+      39 00000000           set_gofly_script_a7
+      40 00000000     098f          mmtm    sp,a0,a1,a6,a8
+         00000010     c280  
+      41 00000020     4ce6          move    a7,a6
+      42 00000030     b6c8          move    *a6(POF_OBJECT),a8,L
+         00000040     0280  
+      43 00000050     09ee          movi    sgfl_tab-32,a14
+         00000060 000000c0' 
+      44 00000080     0d5f          calla   start_panim_if_not_ta14
+         00000090 00000000! 
+      45 000000b0     09af          mmfm    sp,a0,a1,a6,a8
+         000000c0     0143  
+      46 000000d0     0960          rets
+      47                    
+      48 000000e0           sgfl_tab
+      49 000000e0 000001e0'         .long   anim_fly_to_stomach_1
+      50 00000100 000001e0'         .long   anim_fly_to_stomach_2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      51 00000120 000001e0'         .long   anim_fly_to_stomach_3
+      52 00000140 00000ce0'         .long   anim_fly_to_stomach_4
+      53 00000160 00000ce0'         .long   anim_fly_to_stomach_5
+      54 00000180 000017e0'         .long   anim_fly_to_stomach_6
+      55 000001a0 000022e0'         .long   anim_fly_to_stomach_7
+      56 000001c0 000022e0'         .long   anim_fly_to_stomach_8
+      57                    
+      58 000001e0           anim_fly_to_stomach_1
+      59 000001e0           anim_fly_to_stomach_2
+      60 000001e0           anim_fly_to_stomach_3
+      61 000001e0                   LWWL    HC22F03,3|AFUNC|AFLIP,0,a_set_flyv_1
+      62 00000240                   LW      HD32F02,2
+      63 00000270                   LW      HD32F03,2
+      64 000002a0                   LW      HD32F04,2
+      65 000002d0                   LW      HD32F05,2
+      66 00000300                   LW      HD32F02,2
+      67 00000330                   LW      HD32F03,2
+      68 00000360                   LW      HC22F04,3
+      69 00000390                   LW      HC22F06,3
+      70 000003c0                   LWL     HC22F07,AFUNC|3,a_screen_shake_snd
+      71 00000410                   LWL     HC22F08,AFUNC|3,zero_a8_y
+      72 00000460                   LW      HC22F10,3
+      73 00000490                   LW      HC22F12,3
+      74 000004c0                   LWL     1,AFUNC|4,a_slow_v
+      75 00000510                   LWL     1,AFUNC|4,a_slow_v
+      76 00000560                   LWL     1,AFUNC|4,a_slow_v
+      77 000005b0                   LWL     1,AFUNC|4,a_slow_v
+      78 00000600                   LWL     1,AFUNC|4,a_slow_v
+      79 00000650                   LWL     1,AFUNC|4,a_slow_v
+      80 000006a0                   LWL     1,AFUNC|4,a_stop_v
+      81 000006f0                   LW      RA12F02,3
+      82 00000720                   LW      RA12F03,3
+      83 00000750                   LW      RA12F04,3
+      84 00000780                   LW      RA12F06,3
+      85 000007b0                   LW      RA12F07,3
+      86 000007e0                   LW      RA12F08,3
+      87 00000810                   LWL     1,AFUNC|3,a_fall_done
+      88 00000860                   LWL     1,AFUNC|10,a_fall_done
+      89 000008b0                   LWL     1,AFUNC|10,a_fall_done
+      90 00000900                   LWL     1,AFUNC|10,a_fall_done
+      91 00000950                   LWL     1,AFUNC|10,a_fall_done
+      92 000009a0                   LWL     1,AFUNC|10,a_fall_done
+      93 000009f0                   LWL     1,AFUNC|10,a_fall_done
+      94 00000a40                   LWL     1,AFUNC|10,a_fall_done
+      95 00000a90                   LWL     1,AFUNC|10,a_fall_done
+      96 00000ae0                   LWL     1,AFUNC|10,a_fall_done
+      97 00000b30                   LWL     1,AFUNC|10,a_fall_done
+      98 00000b80                   LWL     1,AFUNC|10,a_fall_done
+      99 00000bd0                   LWL     1,AFUNC|10,a_fall_done
+     100 00000c20                   LWL     1,AFUNC|10,a_fall_done
+     101 00000c70                   LWL     1,AFUNC|10,a_fall_done
+     102 00000cc0 00000000          .long   0
+     103                    
+     104 00000ce0           anim_fly_to_stomach_4
+     105 00000ce0           anim_fly_to_stomach_5
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     106 00000ce0                   LWWL    HC14F02,3|AFUNC|AFLIP,0,a_set_flyv_1
+     107 00000d40                   LW      HD34F02,2
+     108 00000d70                   LW      HD34F04,2
+     109 00000da0                   LW      HD34F05,2
+     110 00000dd0                   LW      HD34F06,2
+     111 00000e00                   LW      HD34F02,2
+     112 00000e30                   LW      HD34F04,2
+     113 00000e60                   LW      HC14F04,3
+     114 00000e90                   LW      HC14F05,3
+     115 00000ec0                   LWL     HC14F06,AFUNC|3,a_screen_shake_snd
+     116 00000f10                   LWL     HC14F07,AFUNC|3,zero_a8_y
+     117 00000f60                   LW      HC14F08,3
+     118 00000f90                   LW      HC14F10,3
+     119 00000fc0                   LWL     1,AFUNC|4,a_slow_v
+     120 00001010                   LWL     1,AFUNC|4,a_slow_v
+     121 00001060                   LWL     1,AFUNC|4,a_slow_v
+     122 000010b0                   LWL     1,AFUNC|4,a_slow_v
+     123 00001100                   LWL     1,AFUNC|4,a_slow_v
+     124 00001150                   LWL     1,AFUNC|4,a_slow_v
+     125 000011a0                   LWL     1,AFUNC|4,a_stop_v
+     126 000011f0                   LW      RA14F01,3
+     127 00001220                   LW      RA14F02,3
+     128 00001250                   LW      RA14F03,3
+     129 00001280                   LW      RA14F04,3
+     130 000012b0                   LW      RA14F05,3
+     131 000012e0                   LW      RA14F06,3
+     132 00001310                   LWL     1,AFUNC|3,a_fall_done
+     133 00001360                   LWL     1,AFUNC|10,a_fall_done
+     134 000013b0                   LWL     1,AFUNC|10,a_fall_done
+     135 00001400                   LWL     1,AFUNC|10,a_fall_done
+     136 00001450                   LWL     1,AFUNC|10,a_fall_done
+     137 000014a0                   LWL     1,AFUNC|10,a_fall_done
+     138 000014f0                   LWL     1,AFUNC|10,a_fall_done
+     139 00001540                   LWL     1,AFUNC|10,a_fall_done
+     140 00001590                   LWL     1,AFUNC|10,a_fall_done
+     141 000015e0                   LWL     1,AFUNC|10,a_fall_done
+     142 00001630                   LWL     1,AFUNC|10,a_fall_done
+     143 00001680                   LWL     1,AFUNC|10,a_fall_done
+     144 000016d0                   LWL     1,AFUNC|10,a_fall_done
+     145 00001720                   LWL     1,AFUNC|10,a_fall_done
+     146 00001770                   LWL     1,AFUNC|10,a_fall_done
+     147 000017c0 00000000          .long   0
+     148                    
+     149 000017e0           anim_fly_to_stomach_6
+     150 000017e0                   LWWL    HC14F02,3|AFUNC|AFLIP,M_FLIPH,a_set_flyv_1
+     151 00001840                   LW      HD34F02,2
+     152 00001870                   LW      HD34F04,2
+     153 000018a0                   LW      HD34F05,2
+     154 000018d0                   LW      HD34F06,2
+     155 00001900                   LW      HD34F02,2
+     156 00001930                   LW      HD34F04,2
+     157 00001960                   LW      HC14F04,3
+     158 00001990                   LW      HC14F05,3
+     159 000019c0                   LWL     HC14F06,AFUNC|3,a_screen_shake_snd
+     160 00001a10                   LWL     HC14F07,AFUNC|3,zero_a8_y
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     161 00001a60                   LW      HC14F08,3
+     162 00001a90                   LW      HC14F10,3
+     163 00001ac0                   LWL     1,AFUNC|4,a_slow_v
+     164 00001b10                   LWL     1,AFUNC|4,a_slow_v
+     165 00001b60                   LWL     1,AFUNC|4,a_slow_v
+     166 00001bb0                   LWL     1,AFUNC|4,a_slow_v
+     167 00001c00                   LWL     1,AFUNC|4,a_slow_v
+     168 00001c50                   LWL     1,AFUNC|4,a_slow_v
+     169 00001ca0                   LWL     1,AFUNC|4,a_stop_v
+     170 00001cf0                   LW      RA14F01,3
+     171 00001d20                   LW      RA14F02,3
+     172 00001d50                   LW      RA14F03,3
+     173 00001d80                   LW      RA14F04,3
+     174 00001db0                   LW      RA14F05,3
+     175 00001de0                   LW      RA14F06,3
+     176 00001e10                   LWL     1,AFUNC|3,a_fall_done
+     177 00001e60                   LWL     1,AFUNC|10,a_fall_done
+     178 00001eb0                   LWL     1,AFUNC|10,a_fall_done
+     179 00001f00                   LWL     1,AFUNC|10,a_fall_done
+     180 00001f50                   LWL     1,AFUNC|10,a_fall_done
+     181 00001fa0                   LWL     1,AFUNC|10,a_fall_done
+     182 00001ff0                   LWL     1,AFUNC|10,a_fall_done
+     183 00002040                   LWL     1,AFUNC|10,a_fall_done
+     184 00002090                   LWL     1,AFUNC|10,a_fall_done
+     185 000020e0                   LWL     1,AFUNC|10,a_fall_done
+     186 00002130                   LWL     1,AFUNC|10,a_fall_done
+     187 00002180                   LWL     1,AFUNC|10,a_fall_done
+     188 000021d0                   LWL     1,AFUNC|10,a_fall_done
+     189 00002220                   LWL     1,AFUNC|10,a_fall_done
+     190 00002270                   LWL     1,AFUNC|10,a_fall_done
+     191 000022c0 00000000          .long   0
+     192                    
+     193 000022e0           anim_fly_to_stomach_7
+     194 000022e0           anim_fly_to_stomach_8
+     195 000022e0                   LWWL    HC22F03,3|AFUNC|AFLIP,M_FLIPH,a_set_flyv_1
+     196 00002340                   LW      HD32F02,2
+     197 00002370                   LW      HD32F03,2
+     198 000023a0                   LW      HD32F04,2
+     199 000023d0                   LW      HD32F05,2
+     200 00002400                   LW      HD32F02,2
+     201 00002430                   LW      HD32F03,2
+     202 00002460                   LW      HC22F04,3
+     203 00002490                   LW      HC22F06,3
+     204 000024c0                   LWL     HC22F07,AFUNC|3,a_screen_shake_snd
+     205 00002510                   LWL     HC22F08,AFUNC|3,zero_a8_y
+     206 00002560                   LW      HC22F10,3
+     207 00002590                   LW      HC22F12,3
+     208 000025c0                   LWL     1,AFUNC|4,a_slow_v
+     209 00002610                   LWL     1,AFUNC|4,a_slow_v
+     210 00002660                   LWL     1,AFUNC|4,a_slow_v
+     211 000026b0                   LWL     1,AFUNC|4,a_slow_v
+     212 00002700                   LWL     1,AFUNC|4,a_slow_v
+     213 00002750                   LWL     1,AFUNC|4,a_slow_v
+     214 000027a0                   LWL     1,AFUNC|4,a_stop_v
+     215 000027f0                   LW      RA12F02,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     216 00002820                   LW      RA12F03,3
+     217 00002850                   LW      RA12F04,3
+     218 00002880                   LW      RA12F06,3
+     219 000028b0                   LW      RA12F07,3
+     220 000028e0                   LW      RA12F08,3
+     221 00002910                   LWL     1,AFUNC|3,a_fall_done
+     222 00002960                   LWL     1,AFUNC|10,a_fall_done
+     223 000029b0                   LWL     1,AFUNC|10,a_fall_done
+     224 00002a00                   LWL     1,AFUNC|10,a_fall_done
+     225 00002a50                   LWL     1,AFUNC|10,a_fall_done
+     226 00002aa0                   LWL     1,AFUNC|10,a_fall_done
+     227 00002af0                   LWL     1,AFUNC|10,a_fall_done
+     228 00002b40                   LWL     1,AFUNC|10,a_fall_done
+     229 00002b90                   LWL     1,AFUNC|10,a_fall_done
+     230 00002be0                   LWL     1,AFUNC|10,a_fall_done
+     231 00002c30                   LWL     1,AFUNC|10,a_fall_done
+     232 00002c80                   LWL     1,AFUNC|10,a_fall_done
+     233 00002cd0                   LWL     1,AFUNC|10,a_fall_done
+     234 00002d20                   LWL     1,AFUNC|10,a_fall_done
+     235 00002d70                   LWL     1,AFUNC|10,a_fall_done
+     236 00002dc0 00000000          .long   0
+     237                    
+     238 00002de0           set_elbow_script
+     239 00002de0     57ce          clr     a14
+     240 00002df0     b1c6          move    a14,*a6(POF_HAS_CHECKED),W
+         00002e00     05d0  
+     241 00002e10     09e0          movi    set_elbow_team1,a0
+         00002e20 00002ed0' 
+     242 00002e40     aece          movb    *a6(POF_NUMBER),a14
+         00002e50     0000  
+     243 00002e60     0b4e          cmpi    4,a14
+         00002e70     fffb  
+     244 00002e80     c203          jrls    se9i
+     245 00002e90     09e0          movi    set_elbow_team2,a0
+         00002ea0 00003030' 
+     246 00002ec0     0160  se9i    jump    a0
+     247                    
+     248 00002ed0           set_elbow_team1
+     249 00002ed0     09ee          movi    sebt1_tab-32,a14
+         00002ee0 00002f10' 
+     250 00002f00     c080          jauc    start_panim_if_not_ta14
+         00002f10 00000000! 
+     251                    
+     252 00002f30           sebt1_tab
+     253 00002f30 00004f70'         .long   anim_elbow_1_l
+     254 00002f50 00005510'         .long   anim_elbow_2_l
+     255 00002f70 00005ab0'         .long   anim_elbow_3_l
+     256 00002f90 00006050'         .long   anim_elbow_4_l
+     257 00002fb0 000065f0'         .long   anim_elbow_5_l
+     258 00002fd0 00006b90'         .long   anim_elbow_6_l
+     259 00002ff0 00007130'         .long   anim_elbow_7_l
+     260 00003010 000076d0'         .long   anim_elbow_8_l
+     261                    
+     262 00003030           set_elbow_team2
+     263 00003030     09ee          movi    sebt2_tab-32,a14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+         00003040 00003070' 
+     264 00003060     c080          jauc    start_panim_if_not_ta14
+         00003070 00000000! 
+     265                    
+     266 00003090           sebt2_tab
+     267 00003090 00005240'         .long   anim_elbow_1_r
+     268 000030b0 000057e0'         .long   anim_elbow_2_r
+     269 000030d0 00005d80'         .long   anim_elbow_3_r
+     270 000030f0 00006320'         .long   anim_elbow_4_r
+     271 00003110 000068c0'         .long   anim_elbow_5_r
+     272 00003130 00006e60'         .long   anim_elbow_6_r
+     273 00003150 00007400'         .long   anim_elbow_7_r
+     274 00003170 000079a0'         .long   anim_elbow_8_r
+     275                    
+     276 00003190           set_1flipped_script_a7
+     277 00003190     098f          mmtm    sp,a0,a1,a6,a8
+         000031a0     c280  
+     278 000031b0     4ce6          move    a7,a6
+     279 000031c0     b6c8          move    *a6(POF_OBJECT),a8,L
+         000031d0     0280  
+     280 000031e0     09ee          movi    sflp_tab-32,a14
+         000031f0 00003330' 
+     281 00003210     0d5f          calla   start_panim_if_not_ta14
+         00003220 00000000! 
+     282 00003240     09af          mmfm    sp,a0,a1,a6,a8
+         00003250     0143  
+     283 00003260     0960          rets
+     284                    
+     285 00003270           set_2flipped_script_a7
+     286 00003270     098f          mmtm    sp,a0,a1,a6,a8
+         00003280     c280  
+     287 00003290     4ce6          move    a7,a6
+     288 000032a0     b6c8          move    *a6(POF_OBJECT),a8,L
+         000032b0     0280  
+     289 000032c0     09ee          movi    sflp2tab-32,a14
+         000032d0 00003430' 
+     290 000032f0     0d5f          calla   start_panim_if_not_ta14
+         00003300 00000000! 
+     291 00003320     09af          mmfm    sp,a0,a1,a6,a8
+         00003330     0143  
+     292 00003340     0960          rets
+     293                    
+     294 00003350           sflp_tab
+     295 00003350 0000aab0'         .long   anim_get_1flipped_1
+     296 00003370 0000aab0'         .long   anim_get_1flipped_2
+     297 00003390 0000aab0'         .long   anim_get_1flipped_3
+     298 000033b0 0000b500'         .long   anim_get_1flipped_4
+     299 000033d0 0000b500'         .long   anim_get_1flipped_5
+     300 000033f0 0000bf50'         .long   anim_get_1flipped_6
+     301 00003410 0000c9a0'         .long   anim_get_1flipped_7
+     302 00003430 0000c9a0'         .long   anim_get_1flipped_8
+     303                    
+     304 00003450           sflp2tab
+     305 00003450 00007c70'         .long   anim_get_2flipped_1
+     306 00003470 00007c70'         .long   anim_get_2flipped_2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     307 00003490 00007c70'         .long   anim_get_2flipped_3
+     308 000034b0 00008800'         .long   anim_get_2flipped_4
+     309 000034d0 00008800'         .long   anim_get_2flipped_5
+     310 000034f0 00009390'         .long   anim_get_2flipped_6
+     311 00003510 00009f20'         .long   anim_get_2flipped_7
+     312 00003530 00009f20'         .long   anim_get_2flipped_8
+     313                    
+     314 00003550           set_fall_script
+     315 00003550           set_fall_to_stomach_script
+     316 00003550     09ee          movi    sfts_tab-32,a14
+         00003560 00003590' 
+     317 00003580     c080          jauc    start_panim_if_not_ta14
+         00003590 00000000! 
+     318                    
+     319 000035b0           sfts_tab
+     320 000035b0 00010830'         .long   anim_fall_to_stomach_1
+     321 000035d0 0000d3f0'         .long   anim_fall_to_stomach_2
+     322 000035f0 0000d3f0'         .long   anim_fall_to_stomach_3
+     323 00003610 0000e100'         .long   anim_fall_to_stomach_4
+     324 00003630 00011550'         .long   anim_fall_to_stomach_5
+     325 00003650 0000ee10'         .long   anim_fall_to_stomach_6
+     326 00003670 0000fb20'         .long   anim_fall_to_stomach_7
+     327 00003690 0000fb20'         .long   anim_fall_to_stomach_8
+     328                    
+     329 000036b0           set_high_stick_script
+     330 000036b0     09ee          movi    shss_tab-32,a14
+         000036c0 000036f0' 
+     331 000036e0     c080          jauc    start_panim_if_not_ta14
+         000036f0 00000000! 
+     332                    
+     333 00003710           shss_tab
+     334 00003710 00012270'         .long   anim_high_stick_1
+     335 00003730 000125b0'         .long   anim_high_stick_2
+     336 00003750 00012900'         .long   anim_high_stick_3
+     337 00003770 00012c50'         .long   anim_high_stick_4
+     338 00003790 00012fa0'         .long   anim_high_stick_5
+     339 000037b0 000132e0'         .long   anim_high_stick_6
+     340 000037d0 00013630'         .long   anim_high_stick_7
+     341 000037f0 00013980'         .long   anim_high_stick_8
+     342                    
+     343 00003810           set_slash_script
+     344 00003810     09ee          movi    ssl_tab-32,a14
+         00003820 00003850' 
+     345 00003840     c080          jauc    start_panim_if_not_ta14
+         00003850 00000000! 
+     346                    
+     347 00003870           ssl_tab
+     348 00003870 00013cd0'         .long   anim_slash_1
+     349 00003890 00013fc0'         .long   anim_slash_2
+     350 000038b0 000142a0'         .long   anim_slash_3
+     351 000038d0 00014550'         .long   anim_slash_4
+     352 000038f0 00014800'         .long   anim_slash_5
+     353 00003910 00014ac0'         .long   anim_slash_6
+     354 00003930 00014d70'         .long   anim_slash_7
+     355 00003950 00015020'         .long   anim_slash_8
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     356                    
+     357 00003970           set_swing_script
+     358 00003970     09ee          movi    ssws_tab-32,a14
+         00003980 000039b0' 
+     359 000039a0     c080          jauc    start_panim_if_not_ta14
+         000039b0 00000000! 
+     360                    
+     361 000039d0           ssws_tab
+     362 000039d0 00015300'         .long   anim_swing_script_1
+     363 000039f0 000156c0'         .long   anim_swing_script_2
+     364 00003a10 000156c0'         .long   anim_swing_script_3
+     365 00003a30 000156c0'         .long   anim_swing_script_4
+     366 00003a50 00015300'         .long   anim_swing_script_5
+     367 00003a70 00015a70'         .long   anim_swing_script_6
+     368 00003a90 00015a70'         .long   anim_swing_script_7
+     369 00003ab0 00015a70'         .long   anim_swing_script_8
+     370                    
+     371 00003ad0           set_hip_check_up_script
+     372 00003ad0     09ee          movi    shcub_tab-32,a14
+         00003ae0 00003b10' 
+     373 00003b00     c080          jauc    start_panim_if_not_ta14
+         00003b10 00000000! 
+     374                    
+     375 00003b30           shcub_tab
+     376 00003b30 00015e20'         .long   anim_hip_check_up_script_1
+     377 00003b50 00015e20'         .long   anim_hip_check_up_script_2
+     378 00003b70 00015e20'         .long   anim_hip_check_up_script_3
+     379 00003b90 00015e20'         .long   anim_hip_check_up_script_4
+     380 00003bb0 00015e20'         .long   anim_hip_check_up_script_5
+     381 00003bd0 00015e20'         .long   anim_hip_check_up_script_6
+     382 00003bf0 00015e20'         .long   anim_hip_check_up_script_7
+     383 00003c10 00015e20'         .long   anim_hip_check_up_script_8
+     384                    
+     385 00003c30           set_hip_check_down_script
+     386 00003c30     09ee          movi    shcdb_tab-32,a14
+         00003c40 00003c70' 
+     387 00003c60     c080          jauc    start_panim_if_not_ta14
+         00003c70 00000000! 
+     388                    
+     389 00003c90           shcdb_tab
+     390 00003c90 00016ac0'         .long   anim_hip_check_down_script_1
+     391 00003cb0 00016ac0'         .long   anim_hip_check_down_script_2
+     392 00003cd0 00016ac0'         .long   anim_hip_check_down_script_3
+     393 00003cf0 00016ac0'         .long   anim_hip_check_down_script_4
+     394 00003d10 00016ac0'         .long   anim_hip_check_down_script_5
+     395 00003d30 00016ac0'         .long   anim_hip_check_down_script_6
+     396 00003d50 00016ac0'         .long   anim_hip_check_down_script_7
+     397 00003d70 00016ac0'         .long   anim_hip_check_down_script_8
+     398                    
+     399 00003d90           set_backward_sweep_check_script
+     400 00003d90     09ee          movi    sbsc_tab-32,a14
+         00003da0 00003dd0' 
+     401 00003dc0     c080          jauc    start_panim_if_not_ta14
+         00003dd0 00000000! 
+     402                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     403 00003df0           sbsc_tab
+     404 00003df0 00017760'         .long   anim_back_sweep_check_script_1
+     405 00003e10 00017860'         .long   anim_back_sweep_check_script_2
+     406 00003e30 00017ba0'         .long   anim_back_sweep_check_script_3
+     407 00003e50 00017ee0'         .long   anim_back_sweep_check_script_4
+     408 00003e70 00017760'         .long   anim_back_sweep_check_script_5
+     409 00003e90 00018220'         .long   anim_back_sweep_check_script_6
+     410 00003eb0 00018560'         .long   anim_back_sweep_check_script_7
+     411 00003ed0 000188a0'         .long   anim_back_sweep_check_script_8
+     412                    
+     413 00003ef0           set_reverse_face_spear_script
+     414 00003ef0     09ee          movi    sfsp_tab-32,a14
+         00003f00 00003f30' 
+     415 00003f20     c080          jauc    start_panim_if_not_ta14
+         00003f30 00000000! 
+     416 00003f50           sfsp_tab
+     417 00003f50 00018be0'         .long   anim_rev_face_spear_1
+     418 00003f70 00018d10'         .long   anim_rev_face_spear_2
+     419 00003f90 00018d10'         .long   anim_rev_face_spear_3
+     420 00003fb0 00018d10'         .long   anim_rev_face_spear_4
+     421 00003fd0 00018be0'         .long   anim_rev_face_spear_5
+     422 00003ff0 00018e50'         .long   anim_rev_face_spear_6
+     423 00004010 00018e50'         .long   anim_rev_face_spear_7
+     424 00004030 00018e50'         .long   anim_rev_face_spear_8
+     425                    
+     426 00004050           set_reverse_face_check_script
+     427 00004050     09ee          movi    sfck_tab-32,a14
+         00004060 00004090' 
+     428 00004080     c080          jauc    start_panim_if_not_ta14
+         00004090 00000000! 
+     429 000040b0           sfck_tab
+     430 000040b0 00018f90'         .long   anim_rev_face_check_1
+     431 000040d0 000190c0'         .long   anim_rev_face_check_2
+     432 000040f0 000190c0'         .long   anim_rev_face_check_3
+     433 00004110 000190c0'         .long   anim_rev_face_check_4
+     434 00004130 00018f90'         .long   anim_rev_face_check_5
+     435 00004150 00019200'         .long   anim_rev_face_check_6
+     436 00004170 00019200'         .long   anim_rev_face_check_7
+     437 00004190 00019200'         .long   anim_rev_face_check_8
+     438                    
+     439 000041b0           set_steal_script
+     440 000041b0     09ee          movi    ssls_tab-32,a14
+         000041c0 000041f0' 
+     441 000041e0     c080          jauc    start_panim_if_not_ta14
+         000041f0 00000000! 
+     442                    
+     443 00004210           ssls_tab
+     444 00004210 0001a810'         .long   anim_steal_1
+     445 00004230 0001abc0'         .long   anim_steal_2
+     446 00004250 0001af80'         .long   anim_steal_3
+     447 00004270 0001b340'         .long   anim_steal_4
+     448 00004290 0001b700'         .long   anim_steal_5
+     449 000042b0 0001bab0'         .long   anim_steal_6
+     450 000042d0 0001be70'         .long   anim_steal_7
+     451 000042f0 0001c230'         .long   anim_steal_8
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     452                    
+     453 00004310           set_shake_script
+     454 00004310     09ee          movi    ssfs_tab-32,a14
+         00004320 00004350' 
+     455 00004340     c080          jauc    start_panim_if_not_ta14
+         00004350 00000000! 
+     456                    
+     457 00004370           ssfs_tab
+     458 00004370 00019340'         .long   anim_shake_1
+     459 00004390 00019750'         .long   anim_shake_2
+     460 000043b0 00019750'         .long   anim_shake_3
+     461 000043d0 00019bb0'         .long   anim_shake_4
+     462 000043f0 00019340'         .long   anim_shake_5
+     463 00004410 00019fb0'         .long   anim_shake_6
+     464 00004430 0001a3b0'         .long   anim_shake_7
+     465 00004450 0001a3b0'         .long   anim_shake_8
+     466                    
+     467 00004470           set_push_script
+     468 00004470     09ee          movi    ssps_tab-32,a14
+         00004480 000044b0' 
+     469 000044a0     c080          jauc    start_panim_if_not_ta14
+         000044b0 00000000! 
+     470                    
+     471 000044d0           ssps_tab
+     472 000044d0 0001c5f0'         .long   anim_push_1
+     473 000044f0 0001c8d0'         .long   anim_push_2
+     474 00004510 0001cbc0'         .long   anim_push_3
+     475 00004530 0001ceb0'         .long   anim_push_4
+     476 00004550 0001d1a0'         .long   anim_push_5
+     477 00004570 0001d480'         .long   anim_push_6
+     478 00004590 0001d770'         .long   anim_push_7
+     479 000045b0 0001da60'         .long   anim_push_8
+     480                    
+     481 000045d0           set_body_check_script
+     482 000045d0     09ee          movi    sbcp_tab-32,a14
+         000045e0 00004610' 
+     483 00004600     c080          jauc    start_panim_if_not_ta14
+         00004610 00000000! 
+     484                    
+     485 00004630           sbcp_tab
+     486 00004630 0001dd50'         .long   anim_body_check_1
+     487 00004650 0001e160'         .long   anim_body_check_2
+     488 00004670 0001ed30'         .long   anim_body_check_3
+     489 00004690 0001f550'         .long   anim_body_check_4
+     490 000046b0 0001f960'         .long   anim_body_check_5
+     491 000046d0 0001f140'         .long   anim_body_check_6
+     492 000046f0 0001e920'         .long   anim_body_check_7
+     493 00004710 0001e540'         .long   anim_body_check_8
+     494                    
+     495 00004730           set_body_check_wall_script
+     496 00004730     09ee          movi    sbcw_tab-32,a14
+         00004740 00004770' 
+     497 00004760     c080          jauc    start_panim_if_not_ta14
+         00004770 00000000! 
+     498                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     499 00004790           sbcw_tab
+     500 00004790 0001dec0'         .long   anim_body_check_wall_1
+     501 000047b0 0001e2d0'         .long   anim_body_check_wall_2
+     502 000047d0 0001eea0'         .long   anim_body_check_wall_3
+     503 000047f0 0001f6c0'         .long   anim_body_check_wall_4
+     504 00004810 0001fad0'         .long   anim_body_check_wall_5
+     505 00004830 0001f2b0'         .long   anim_body_check_wall_6
+     506 00004850 0001ea90'         .long   anim_body_check_wall_7
+     507 00004870 0001e6b0'         .long   anim_body_check_wall_8
+     508                    
+     509 00004890           set_body_check_down_script
+     510 00004890     09ee          movi    sbcd_tab-32,a14
+         000048a0 000048d0' 
+     511 000048c0     c080          jauc    start_panim_if_not_ta14
+         000048d0 00000000! 
+     512                    
+     513 000048f0           sbcd_tab
+     514 000048f0 0001dfb0'         .long   anim_body_check_down_1
+     515 00004910 0001e3c0'         .long   anim_body_check_down_2
+     516 00004930 0001ef90'         .long   anim_body_check_down_3
+     517 00004950 0001f7b0'         .long   anim_body_check_down_4
+     518 00004970 0001fbc0'         .long   anim_body_check_down_5
+     519 00004990 0001f3a0'         .long   anim_body_check_down_6
+     520 000049b0 0001eb80'         .long   anim_body_check_down_7
+     521 000049d0 0001e7a0'         .long   anim_body_check_down_8
+     522                    
+     523 000049f0           set_body_chkd_back_script
+     524 000049f0           set_body_chkd_face_script
+     525 000049f0     09ee          movi    sbcfs_tab-32,a14
+         00004a00 00004a30' 
+     526 00004a20     c080          jauc    start_panim_if_not_ta14
+         00004a30 00000000! 
+     527                    
+     528 00004a50           sbcfs_tab
+     529 00004a50 0001fd70'         .long   anim_body_checked_face_1
+     530 00004a70 00020270'         .long   anim_body_checked_face_2
+     531 00004a90 000207a0'         .long   anim_body_checked_face_3
+     532 00004ab0 00020cd0'         .long   anim_body_checked_face_4
+     533 00004ad0 00021200'         .long   anim_body_checked_face_5
+     534 00004af0 000216a0'         .long   anim_body_checked_face_6
+     535 00004b10 00021bd0'         .long   anim_body_checked_face_7
+     536 00004b30 00022100'         .long   anim_body_checked_face_8
+     537                    
+     538 00004b50           set_body_chkd_back_wall_script
+     539 00004b50           set_body_chkd_face_wall_script
+     540 00004b50     09ee          movi    sbcfws_tab-32,a14
+         00004b60 00004b90' 
+     541 00004b80     c080          jauc    start_panim_if_not_ta14
+         00004b90 00000000! 
+     542                    
+     543 00004bb0           sbcfws_tab
+     544 00004bb0 0001fe60'         .long   anim_body_checked_face_wall_1
+     545 00004bd0 00020360'         .long   anim_body_checked_face_wall_2
+     546 00004bf0 00020890'         .long   anim_body_checked_face_wall_3
+     547 00004c10 00020dc0'         .long   anim_body_checked_face_wall_4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     548 00004c30 000212f0'         .long   anim_body_checked_face_wall_5
+     549 00004c50 00021790'         .long   anim_body_checked_face_wall_6
+     550 00004c70 00021cc0'         .long   anim_body_checked_face_wall_7
+     551 00004c90 000221f0'         .long   anim_body_checked_face_wall_8
+     552                    
+     553 00004cb0           set_body_chkd_back_down_script
+     554 00004cb0           set_body_chkd_face_down_script
+     555 00004cb0     09ee          movi    sbcfds_tab-32,a14
+         00004cc0 00004cf0' 
+     556 00004ce0     c080          jauc    start_panim_if_not_ta14
+         00004cf0 00000000! 
+     557                    
+     558 00004d10           sbcfds_tab
+     559 00004d10 0001ff10'         .long   anim_body_checked_face_down_1
+     560 00004d30 00020410'         .long   anim_body_checked_face_down_2
+     561 00004d50 00020940'         .long   anim_body_checked_face_down_3
+     562 00004d70 00020e70'         .long   anim_body_checked_face_down_4
+     563 00004d90 000213a0'         .long   anim_body_checked_face_down_5
+     564 00004db0 00021840'         .long   anim_body_checked_face_down_6
+     565 00004dd0 00021d70'         .long   anim_body_checked_face_down_7
+     566 00004df0 000222a0'         .long   anim_body_checked_face_down_8
+     567                    
+     568                    ;set_body_chkd_back_script
+     569                    ;       movi    sbcbs_tab-32,a14
+     570                    ;       jauc    start_panim_if_not_ta14
+     571                    ;
+     572                    ;sbcbs_tab
+     573                    ;       .long   anim_body_checked_back_1
+     574                    ;       .long   anim_body_checked_back_2
+     575                    ;       .long   anim_body_checked_back_3
+     576                    ;       .long   anim_body_checked_back_4
+     577                    ;       .long   anim_body_checked_back_5
+     578                    ;       .long   anim_body_checked_back_6
+     579                    ;       .long   anim_body_checked_back_7
+     580                    ;       .long   anim_body_checked_back_8
+     581                    ;
+     582                    ;set_body_chkd_back_wall_script
+     583                    ;       movi    sbcbws_tab-32,a14
+     584                    ;       jauc    start_panim_if_not_ta14
+     585                    ;
+     586                    ;sbcbws_tab
+     587                    ;       .long   anim_body_checked_back_wall_1
+     588                    ;       .long   anim_body_checked_back_wall_2
+     589                    ;       .long   anim_body_checked_back_wall_3
+     590                    ;       .long   anim_body_checked_back_wall_4
+     591                    ;       .long   anim_body_checked_back_wall_5
+     592                    ;       .long   anim_body_checked_back_wall_6
+     593                    ;       .long   anim_body_checked_back_wall_7
+     594                    ;       .long   anim_body_checked_back_wall_8
+     595                    ;
+     596                    ;set_body_chkd_back_down_script
+     597                    ;       movi    sbcbds_tab-32,a14
+     598                    ;       jauc    start_panim_if_not_ta14
+     599                    ;
+     600                    ;sbcbds_tab
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     601                    ;       .long   anim_body_checked_back_down_1
+     602                    ;       .long   anim_body_checked_back_down_2
+     603                    ;       .long   anim_body_checked_back_down_3
+     604                    ;       .long   anim_body_checked_back_down_4
+     605                    ;       .long   anim_body_checked_back_down_5
+     606                    ;       .long   anim_body_checked_back_down_6
+     607                    ;       .long   anim_body_checked_back_down_7
+     608                    ;       .long   anim_body_checked_back_down_8
+     609                    
+     610 00004e10           set_whack_goalie_script
+     611 00004e10     09ee          movi    wckgl_tab-32,a14
+         00004e20 00004e50' 
+     612 00004e40     c080          jauc    start_panim_if_not_ta14
+         00004e50 00000000! 
+     613                    
+     614 00004e70           wckgl_tab
+     615 00004e70 00022630'         .long   anim_whack_goalie_1
+     616 00004e90 00022820'         .long   anim_whack_goalie_2
+     617 00004eb0 00022a10'         .long   anim_whack_goalie_3
+     618 00004ed0 00022c00'         .long   anim_whack_goalie_4
+     619 00004ef0 00022df0'         .long   anim_whack_goalie_5
+     620 00004f10 00022fe0'         .long   anim_whack_goalie_6
+     621 00004f30 000231d0'         .long   anim_whack_goalie_7
+     622 00004f50 000233c0'         .long   anim_whack_goalie_8
+     623                    
+     624 00004f70           anim_elbow_1_l
+     625 00004f70                   LWW     TE31F01,5|AFLIP,0
+     626 00004fb0                   LWL     TE31F02,3|AFUNC,a_collision+6
+     627 00005000 fff6003c          .long   [-10,60],[-50,50],get_elbowed
+     628 00005060                   LW      TE31F03,4
+     629 00005090                   LW      FI11F07,4
+     630 000050c0                   LW      TE51F01,5
+     631 000050f0                   LWL     TE51F02,3|AFUNC,a_collision+6
+     632 00005140 ffc4000a          .long   [-60,10],[-50,50],get_elbowed
+     633 000051a0                   LW      TE51F03,4
+     634 000051d0                   LWL     1,AFUNC|1,a_control_script_done
+     635 00005220 00000000          .long   0
+     636 00005240           anim_elbow_1_r
+     637 00005240                   LWW     TE51F01,5|AFLIP,0
+     638 00005280                   LWL     TE51F02,3|AFUNC,a_collision+6
+     639 000052d0 ffc4000a          .long   [-60,10],[-50,50],get_elbowed
+     640 00005330                   LW      TE51F03,4
+     641 00005360                   LW      FI11F07,4
+     642 00005390                   LW      TE31F01,5
+     643 000053c0                   LWL     TE31F02,3|AFUNC,a_collision+6
+     644 00005410 fff6003c          .long   [-10,60],[-50,50],get_elbowed
+     645 00005470                   LW      TE31F03,4
+     646 000054a0                   LWL     1,AFUNC|1,a_control_script_done
+     647 000054f0 00000000          .long   0
+     648 00005510           anim_elbow_2_l
+     649 00005510                   LWW     TE12F01,5|AFLIP,0
+     650 00005550                   LWL     TE12F02,3|AFUNC,a_collision+6
+     651 000055a0 fff6002d          .long   [-10,45],[-10,45],get_elbowed
+     652 00005600                   LW      TE12F03,4
+     653 00005630                   LW      FI12F08,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     654 00005660                   LW      TE32F01,5
+     655 00005690                   LWL     TE32F02,3|AFUNC,a_collision+6
+     656 000056e0 ffd3000a          .long   [-45,10],[-45,10],get_elbowed
+     657 00005740                   LW      TE32F03,4
+     658 00005770                   LWL     1,AFUNC|1,a_control_script_done
+     659 000057c0 00000000          .long   0
+     660 000057e0           anim_elbow_2_r
+     661 000057e0                   LWW     TE32F01,5|AFLIP,0
+     662 00005820                   LWL     TE32F02,3|AFUNC,a_collision+6
+     663 00005870 ffd3000a          .long   [-45,10],[-45,10],get_elbowed
+     664 000058d0                   LW      TE32F03,4
+     665 00005900                   LW      FI12F08,4
+     666 00005930                   LW      TE12F01,5
+     667 00005960                   LWL     TE12F02,3|AFUNC,a_collision+6
+     668 000059b0 fff6002d          .long   [-10,45],[-10,45],get_elbowed
+     669 00005a10                   LW      TE12F03,4
+     670 00005a40                   LWL     1,AFUNC|1,a_control_script_done
+     671 00005a90 00000000          .long   0
+     672 00005ab0           anim_elbow_3_l
+     673 00005ab0                   LWW     TE23F01,5|AFLIP,0
+     674 00005af0                   LWL     TE23F02,3|AFUNC,a_collision+6
+     675 00005b40 ffce0032          .long   [-50,50],[-10,60],get_elbowed
+     676 00005ba0                   LW      TE23F03,4
+     677 00005bd0                   LW      FI13F04,4
+     678 00005c00                   LW      TE13F01,5
+     679 00005c30                   LWL     TE13F02,3|AFUNC,a_collision+6
+     680 00005c80 ffce0032          .long   [-50,50],[-60,10],get_elbowed
+     681 00005ce0                   LW      TE13F03,4
+     682 00005d10                   LWL     1,AFUNC|1,a_control_script_done
+     683 00005d60 00000000          .long   0
+     684 00005d80           anim_elbow_3_r
+     685 00005d80                   LWW     TE13F01,5|AFLIP,0
+     686 00005dc0                   LWL     TE13F02,3|AFUNC,a_collision+6
+     687 00005e10 ffce0032          .long   [-50,50],[-60,10],get_elbowed
+     688 00005e70                   LW      TE13F03,4
+     689 00005ea0                   LW      FI13F04,4
+     690 00005ed0                   LW      TE23F01,5
+     691 00005f00                   LWL     TE23F02,3|AFUNC,a_collision+6
+     692 00005f50 ffce0032          .long   [-50,50],[-10,60],get_elbowed
+     693 00005fb0                   LW      TE23F03,4
+     694 00005fe0                   LWL     1,AFUNC|1,a_control_script_done
+     695 00006030 00000000          .long   0
+     696 00006050           anim_elbow_4_l
+     697 00006050                   LWW     TE64F01,5|AFLIP,0
+     698 00006090                   LWL     TE64F02,3|AFUNC,a_collision+6
+     699 000060e0 ffd3000a          .long   [-45,10],[-10,45],get_elbowed
+     700 00006140                   LW      TE64F03,4
+     701 00006170                   LW      FI14F07,4
+     702 000061a0                   LW      TE44F01,5
+     703 000061d0                   LWL     TE44F02,3|AFUNC,a_collision+6
+     704 00006220 fff6002d          .long   [-10,45],[-45,10],get_elbowed
+     705 00006280                   LW      TE44F03,4
+     706 000062b0                   LWL     1,AFUNC|1,a_control_script_done
+     707 00006300 00000000          .long   0
+     708 00006320           anim_elbow_4_r
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     709 00006320                   LWW     TE44F01,5|AFLIP,0
+     710 00006360                   LWL     TE44F02,3|AFUNC,a_collision+6
+     711 000063b0 fff6002d          .long   [-10,45],[-45,10],get_elbowed
+     712 00006410                   LW      TE44F03,4
+     713 00006440                   LW      FI14F07,4
+     714 00006470                   LW      TE64F01,5
+     715 000064a0                   LWL     TE64F02,3|AFUNC,a_collision+6
+     716 000064f0 ffd3000a          .long   [-45,10],[-10,45],get_elbowed
+     717 00006550                   LW      TE64F03,4
+     718 00006580                   LWL     1,AFUNC|1,a_control_script_done
+     719 000065d0 00000000          .long   0
+     720 000065f0           anim_elbow_5_l
+     721 000065f0                   LWW     TE25F01,5|AFLIP,0
+     722 00006630                   LWL     TE25F02,3|AFUNC,a_collision+6
+     723 00006680 ffc4000a          .long   [-60,10],[-50,50],get_elbowed
+     724 000066e0                   LW      TE25F03,4
+     725 00006710                   LW      FI15F06,4
+     726 00006740                   LW      TE45F01,5
+     727 00006770                   LWL     TE45F02,3|AFUNC,a_collision+6
+     728 000067c0 fff6003c          .long   [-10,60],[-50,50],get_elbowed
+     729 00006820                   LW      TE45F03,4
+     730 00006850                   LWL     1,AFUNC|1,a_control_script_done
+     731 000068a0 00000000          .long   0
+     732 000068c0           anim_elbow_5_r
+     733 000068c0                   LWW     TE45F01,5|AFLIP,0
+     734 00006900                   LWL     TE45F02,3|AFUNC,a_collision+6
+     735 00006950 fff6003c          .long   [-10,60],[-50,50],get_elbowed
+     736 000069b0                   LW      TE45F03,4
+     737 000069e0                   LW      FI15F06,4
+     738 00006a10                   LW      TE25F01,5
+     739 00006a40                   LWL     TE25F02,3|AFUNC,a_collision+6
+     740 00006a90 ffc4000a          .long   [-60,10],[-50,50],get_elbowed
+     741 00006af0                   LW      TE25F03,4
+     742 00006b20                   LWL     1,AFUNC|1,a_control_script_done
+     743 00006b70 00000000          .long   0
+     744 00006b90           anim_elbow_6_l
+     745 00006b90                   LWW     TE44F01,5|AFLIP,M_FLIPH
+     746 00006bd0                   LWL     TE44F02,3|AFUNC,a_collision+6
+     747 00006c20 ffd3000a          .long   [-45,10],[-45,10],get_elbowed
+     748 00006c80                   LW      TE44F03,4
+     749 00006cb0                   LW      FI14F07,4
+     750 00006ce0                   LW      TE64F01,5
+     751 00006d10                   LWL     TE64F02,3|AFUNC,a_collision+6
+     752 00006d60 fff6002d          .long   [-10,45],[-10,45],get_elbowed
+     753 00006dc0                   LW      TE64F03,4
+     754 00006df0                   LWL     1,AFUNC|1,a_control_script_done
+     755 00006e40 00000000          .long   0
+     756 00006e60           anim_elbow_6_r
+     757 00006e60                   LWW     TE64F01,5|AFLIP,M_FLIPH
+     758 00006ea0                   LWL     TE64F02,3|AFUNC,a_collision+6
+     759 00006ef0 fff6002d          .long   [-10,45],[-10,45],get_elbowed
+     760 00006f50                   LW      TE64F03,4
+     761 00006f80                   LW      FI14F07,4
+     762 00006fb0                   LW      TE44F01,5
+     763 00006fe0                   LWL     TE44F02,3|AFUNC,a_collision+6
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     764 00007030 ffd3000a          .long   [-45,10],[-45,10],get_elbowed
+     765 00007090                   LW      TE44F03,4
+     766 000070c0                   LWL     1,AFUNC|1,a_control_script_done
+     767 00007110 00000000          .long   0
+     768 00007130           anim_elbow_7_l
+     769 00007130                   LWW     TE13F01,5|AFLIP,M_FLIPH
+     770 00007170                   LWL     TE13F02,3|AFUNC,a_collision+6
+     771 000071c0 ffce0032          .long   [-50,50],[-60,10],get_elbowed
+     772 00007220                   LW      TE13F03,4
+     773 00007250                   LW      FI13F04,4
+     774 00007280                   LW      TE23F01,5
+     775 000072b0                   LWL     TE23F02,3|AFUNC,a_collision+6
+     776 00007300 ffce0032          .long   [-50,50],[-10,60],get_elbowed
+     777 00007360                   LW      TE23F03,4
+     778 00007390                   LWL     1,AFUNC|1,a_control_script_done
+     779 000073e0 00000000          .long   0
+     780 00007400           anim_elbow_7_r
+     781 00007400                   LWW     TE23F01,5|AFLIP,M_FLIPH
+     782 00007440                   LWL     TE23F02,3|AFUNC,a_collision+6
+     783 00007490 ffce0032          .long   [-50,50],[-10,60],get_elbowed
+     784 000074f0                   LW      TE23F03,4
+     785 00007520                   LW      FI13F04,4
+     786 00007550                   LW      TE13F01,5
+     787 00007580                   LWL     TE13F02,3|AFUNC,a_collision+6
+     788 000075d0 ffce0032          .long   [-50,50],[-60,10],get_elbowed
+     789 00007630                   LW      TE13F03,4
+     790 00007660                   LWL     1,AFUNC|1,a_control_script_done
+     791 000076b0 00000000          .long   0
+     792 000076d0           anim_elbow_8_l
+     793 000076d0                   LWW     TE32F01,5|AFLIP,M_FLIPH
+     794 00007710                   LWL     TE32F02,3|AFUNC,a_collision+6
+     795 00007760 fff6002d          .long   [-10,45],[-45,10],get_elbowed
+     796 000077c0                   LW      TE32F03,4
+     797 000077f0                   LW      FI12F08,4
+     798 00007820                   LW      TE12F01,5
+     799 00007850                   LWL     TE12F02,3|AFUNC,a_collision+6
+     800 000078a0 ffd3000a          .long   [-45,10],[-10,45],get_elbowed
+     801 00007900                   LW      TE12F03,4
+     802 00007930                   LWL     1,AFUNC|1,a_control_script_done
+     803 00007980 00000000          .long   0
+     804 000079a0           anim_elbow_8_r
+     805 000079a0                   LWW     TE12F01,5|AFLIP,M_FLIPH
+     806 000079e0                   LWL     TE12F02,3|AFUNC,a_collision+6
+     807 00007a30 ffd3000a          .long   [-45,10],[-10,45],get_elbowed
+     808 00007a90                   LW      TE12F03,4
+     809 00007ac0                   LW      FI12F08,4
+     810 00007af0                   LW      TE32F01,5
+     811 00007b20                   LWL     TE32F02,3|AFUNC,a_collision+6
+     812 00007b70 fff6002d          .long   [-10,45],[-45,10],get_elbowed
+     813 00007bd0                   LW      TE32F03,4
+     814 00007c00                   LWL     1,AFUNC|1,a_control_script_done
+     815 00007c50 00000000          .long   0
+     816                    
+     817 00007c70           anim_get_2flipped_1
+     818 00007c70           anim_get_2flipped_2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     819 00007c70           anim_get_2flipped_3
+     820 00007c70                   LWWL    HD52F02,3|AFUNC|AFLIP,0,a_set_flipv_2
+     821 00007cd0                   LW      HD52F04,3
+     822 00007d00                   LW      HD52F06,3
+     823 00007d30                   LW      HD62F01,3
+     824 00007d60                   LW      HD62F03,3
+     825 00007d90                   LW      HD82F04b,3
+     826 00007dc0                   LW      HD52F02,3
+     827 00007df0                   LW      HD52F04,3
+     828 00007e20                   LW      HD52F06,3
+     829 00007e50                   LW      HD62F01,3
+     830 00007e80                   LW      HD62F03,3
+     831 00007eb0                   LW      HD92F05,3
+     832 00007ee0                   LW      HD92F07,3
+     833 00007f10                   LWL     HD92F09,3|AFUNC,a_screen_shake_snd
+     834 00007f60                   LWL     HE12F01,4|AFUNC,zero_a8_y
+     835 00007fb0                   LWL     HE11F01,4|AFUNC,a_slow_v
+     836 00008000                   LWWL    HE12F01,4|AFLIP|AFUNC,M_FLIPH,a_slow_v
+     837 00008060                   LWL     HE13F01,4|AFUNC,a_slow_v
+     838 000080b0                   LWL     HD74F07,4|AFUNC,a_slow_v
+     839 00008100                   LWWL    HE15F01,4|AFLIP|AFUNC,0,a_slow_v
+     840 00008160                   LWL     HD74F07,4|AFUNC,a_slow_v
+     841 000081b0                   LWL     HE13F01,4|AFUNC,a_slow_v
+     842 00008200                   LWL     HE12F01,4|AFUNC,a_slow_v
+     843 00008250                   LWL     HE12F02,4|AFUNC,a_stop_v
+     844 000082a0                   LW      HE12F03,4
+     845 000082d0                   LW      HE12F05,4
+     846 00008300                   LW      HE12F06,4
+     847 00008330                   LWL     HE12F07,4|AFUNC,a_maybe_spagetti
+     848 00008380                   LWL     1,AFUNC|10,a_fall_done
+     849 000083d0                   LWL     1,AFUNC|10,a_fall_done
+     850 00008420                   LWL     1,AFUNC|10,a_fall_done
+     851 00008470                   LWL     1,AFUNC|10,a_fall_done
+     852 000084c0                   LWL     1,AFUNC|10,a_fall_done
+     853 00008510                   LWL     1,AFUNC|10,a_fall_done
+     854 00008560                   LWL     1,AFUNC|10,a_fall_done
+     855 000085b0                   LWL     1,AFUNC|10,a_fall_done
+     856 00008600                   LWL     1,AFUNC|10,a_fall_done
+     857 00008650                   LWL     1,AFUNC|10,a_fall_done
+     858 000086a0                   LWL     1,AFUNC|10,a_fall_done
+     859 000086f0                   LWL     1,AFUNC|10,a_fall_done
+     860 00008740                   LWL     1,AFUNC|10,a_fall_done
+     861 00008790                   LWL     1,AFUNC|10,a_fall_done
+     862 000087e0 00000000          .long   0
+     863                    
+     864 00008800           anim_get_2flipped_4
+     865 00008800           anim_get_2flipped_5
+     866 00008800                   LWWL    HD44F02,3|AFUNC|AFLIP,0,a_set_flipv_1
+     867 00008860                   LW      HD44F05,3
+     868 00008890                   LW      HD44F08,3
+     869 000088c0                   LW      HD54F02,3
+     870 000088f0                   LW      HD64F06,3
+     871 00008920                   LW      HD64F03b,3
+     872 00008950                   LW      HD44F02,3
+     873 00008980                   LW      HD44F05,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     874 000089b0                   LW      HD44F08,3
+     875 000089e0                   LW      HD54F02,3
+     876 00008a10                   LW      HD64F06,3
+     877 00008a40                   LW      HD74F04,3
+     878 00008a70                   LW      HD74F05,3
+     879 00008aa0                   LWL     HD74F06,3|AFUNC,a_screen_shake_snd
+     880 00008af0                   LWL     HD74F07,4|AFUNC,zero_a8_y
+     881 00008b40                   LWL     HE13F01,4|AFUNC,a_slow_v
+     882 00008b90                   LWL     HE12F01,4|AFUNC,a_slow_v
+     883 00008be0                   LWL     HE11F01,4|AFUNC,a_slow_v
+     884 00008c30                   LWWL    HE12F01,4|AFLIP|AFUNC,M_FLIPH,a_slow_v
+     885 00008c90                   LWL     HE13F01,4|AFUNC,a_slow_v
+     886 00008ce0                   LWL     HD74F07,4|AFUNC,a_slow_v
+     887 00008d30                   LWWL    HE15F01,4|AFLIP|AFUNC,0,a_slow_v
+     888 00008d90                   LWL     HD74F07,4|AFUNC,a_slow_v
+     889 00008de0                   LWL     HE14F01,4|AFUNC,a_stop_v
+     890 00008e30                   LW      HE14F02,4
+     891 00008e60                   LW      HE14F04,4
+     892 00008e90                   LW      HE14F06,4
+     893 00008ec0                   LWL     HE14F07,4|AFUNC,a_maybe_spagetti
+     894 00008f10                   LWL     1,AFUNC|10,a_fall_done
+     895 00008f60                   LWL     1,AFUNC|10,a_fall_done
+     896 00008fb0                   LWL     1,AFUNC|10,a_fall_done
+     897 00009000                   LWL     1,AFUNC|10,a_fall_done
+     898 00009050                   LWL     1,AFUNC|10,a_fall_done
+     899 000090a0                   LWL     1,AFUNC|10,a_fall_done
+     900 000090f0                   LWL     1,AFUNC|10,a_fall_done
+     901 00009140                   LWL     1,AFUNC|10,a_fall_done
+     902 00009190                   LWL     1,AFUNC|10,a_fall_done
+     903 000091e0                   LWL     1,AFUNC|10,a_fall_done
+     904 00009230                   LWL     1,AFUNC|10,a_fall_done
+     905 00009280                   LWL     1,AFUNC|10,a_fall_done
+     906 000092d0                   LWL     1,AFUNC|10,a_fall_done
+     907 00009320                   LWL     1,AFUNC|10,a_fall_done
+     908 00009370 00000000          .long   0
+     909                    
+     910 00009390           anim_get_2flipped_6
+     911 00009390                   LWWL    HD44F02,3|AFUNC|AFLIP,M_FLIPH,a_set_flipv_1
+     912 000093f0                   LW      HD44F05,3
+     913 00009420                   LW      HD44F08,3
+     914 00009450                   LW      HD54F02,3
+     915 00009480                   LW      HD64F06,3
+     916 000094b0                   LW      HD64F03b,3
+     917 000094e0                   LW      HD44F02,3
+     918 00009510                   LW      HD44F05,3
+     919 00009540                   LW      HD44F08,3
+     920 00009570                   LW      HD54F02,3
+     921 000095a0                   LW      HD64F06,3
+     922 000095d0                   LW      HD74F04,3
+     923 00009600                   LW      HD74F05,3
+     924 00009630                   LWL     HD74F06,3|AFUNC,a_screen_shake_snd
+     925 00009680                   LWL     HD74F07,4|AFUNC,zero_a8_y
+     926 000096d0                   LWL     HE13F01,4|AFUNC,a_slow_v
+     927 00009720                   LWL     HE12F01,4|AFUNC,a_slow_v
+     928 00009770                   LWL     HE11F01,4|AFUNC,a_slow_v
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+     929 000097c0                   LWWL    HE12F01,4|AFLIP|AFUNC,0,a_slow_v
+     930 00009820                   LWL     HE13F01,4|AFUNC,a_slow_v
+     931 00009870                   LWL     HD74F07,4|AFUNC,a_slow_v
+     932 000098c0                   LWWL    HE15F01,4|AFLIP|AFUNC,M_FLIPH,a_slow_v
+     933 00009920                   LWL     HD74F07,4|AFUNC,a_slow_v
+     934 00009970                   LWL     HE14F01,4|AFUNC,a_stop_v
+     935 000099c0                   LW      HE14F02,4
+     936 000099f0                   LW      HE14F04,4
+     937 00009a20                   LW      HE14F06,4
+     938 00009a50                   LWL     HE14F07,4|AFUNC,a_maybe_spagetti
+     939 00009aa0                   LWL     1,AFUNC|10,a_fall_done
+     940 00009af0                   LWL     1,AFUNC|10,a_fall_done
+     941 00009b40                   LWL     1,AFUNC|10,a_fall_done
+     942 00009b90                   LWL     1,AFUNC|10,a_fall_done
+     943 00009be0                   LWL     1,AFUNC|10,a_fall_done
+     944 00009c30                   LWL     1,AFUNC|10,a_fall_done
+     945 00009c80                   LWL     1,AFUNC|10,a_fall_done
+     946 00009cd0                   LWL     1,AFUNC|10,a_fall_done
+     947 00009d20                   LWL     1,AFUNC|10,a_fall_done
+     948 00009d70                   LWL     1,AFUNC|10,a_fall_done
+     949 00009dc0                   LWL     1,AFUNC|10,a_fall_done
+     950 00009e10                   LWL     1,AFUNC|10,a_fall_done
+     951 00009e60                   LWL     1,AFUNC|10,a_fall_done
+     952 00009eb0                   LWL     1,AFUNC|10,a_fall_done
+     953 00009f00 00000000          .long   0
+     954                    
+     955 00009f20           anim_get_2flipped_7
+     956 00009f20           anim_get_2flipped_8
+     957 00009f20                   LWWL    HD52F02,3|AFUNC|AFLIP,M_FLIPH,a_set_flipv_2
+     958 00009f80                   LW      HD52F04,3
+     959 00009fb0                   LW      HD52F06,3
+     960 00009fe0                   LW      HD62F01,3
+     961 0000a010                   LW      HD62F03,3
+     962 0000a040                   LW      HD82F04b,3
+     963 0000a070                   LW      HD52F02,3
+     964 0000a0a0                   LW      HD52F04,3
+     965 0000a0d0                   LW      HD52F06,3
+     966 0000a100                   LW      HD62F01,3
+     967 0000a130                   LW      HD62F03,3
+     968 0000a160                   LW      HD92F05,3
+     969 0000a190                   LW      HD92F07,3
+     970 0000a1c0                   LWL     HD92F09,3|AFUNC,a_screen_shake_snd
+     971 0000a210                   LWL     HE12F01,4|AFUNC,zero_a8_y
+     972 0000a260                   LWL     HE11F01,4|AFUNC,a_slow_v
+     973 0000a2b0                   LWWL    HE12F01,4|AFLIP|AFUNC,0,a_slow_v
+     974 0000a310                   LWL     HE13F01,4|AFUNC,a_slow_v
+     975 0000a360                   LWL     HD74F07,4|AFUNC,a_slow_v
+     976 0000a3b0                   LWWL    HE15F01,4|AFLIP|AFUNC,M_FLIPH,a_slow_v
+     977 0000a410                   LWL     HD74F07,4|AFUNC,a_slow_v
+     978 0000a460                   LWL     HE13F01,4|AFUNC,a_slow_v
+     979 0000a4b0                   LWL     HE12F01,4|AFUNC,a_slow_v
+     980 0000a500                   LWL     HE12F02,4|AFUNC,a_stop_v
+     981 0000a550                   LW      HE12F03,4
+     982 0000a580                   LW      HE12F05,4
+     983 0000a5b0                   LW      HE12F06,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+     984 0000a5e0                   LWL     HE12F07,4|AFUNC,a_maybe_spagetti
+     985 0000a630                   LWL     1,AFUNC|10,a_fall_done
+     986 0000a680                   LWL     1,AFUNC|10,a_fall_done
+     987 0000a6d0                   LWL     1,AFUNC|10,a_fall_done
+     988 0000a720                   LWL     1,AFUNC|10,a_fall_done
+     989 0000a770                   LWL     1,AFUNC|10,a_fall_done
+     990 0000a7c0                   LWL     1,AFUNC|10,a_fall_done
+     991 0000a810                   LWL     1,AFUNC|10,a_fall_done
+     992 0000a860                   LWL     1,AFUNC|10,a_fall_done
+     993 0000a8b0                   LWL     1,AFUNC|10,a_fall_done
+     994 0000a900                   LWL     1,AFUNC|10,a_fall_done
+     995 0000a950                   LWL     1,AFUNC|10,a_fall_done
+     996 0000a9a0                   LWL     1,AFUNC|10,a_fall_done
+     997 0000a9f0                   LWL     1,AFUNC|10,a_fall_done
+     998 0000aa40                   LWL     1,AFUNC|10,a_fall_done
+     999 0000aa90 00000000          .long   0
+    1000                    
+    1001 0000aab0           anim_get_1flipped_1
+    1002 0000aab0           anim_get_1flipped_2
+    1003 0000aab0           anim_get_1flipped_3
+    1004 0000aab0                   LWWL    HD52F02,4|AFUNC|AFLIP,0,a_set_flipv_1
+    1005 0000ab10                   LW      HD52F04,4
+    1006 0000ab40                   LW      HD52F06,4
+    1007 0000ab70                   LW      HD62F01,4
+    1008 0000aba0                   LW      HD62F03,4
+    1009 0000abd0                   LW      HD92F05,4
+    1010 0000ac00                   LW      HD92F07,4
+    1011 0000ac30                   LWL     HD92F09,4|AFUNC,a_screen_shake_snd
+    1012 0000ac80                   LWL     HE12F01,4|AFUNC,zero_a8_y
+    1013 0000acd0                   LWL     HE11F01,5|AFUNC,a_slow_v
+    1014 0000ad20                   LWWL    HE12F01,4|AFLIP|AFUNC,M_FLIPH,a_slow_v
+    1015 0000ad80                   LWL     HE13F01,5|AFUNC,a_slow_v
+    1016 0000add0                   LWL     HD74F07,4|AFUNC,a_slow_v
+    1017 0000ae20                   LWWL    HE15F01,5|AFLIP|AFUNC,0,a_slow_v
+    1018 0000ae80                   LWL     HD74F07,4|AFUNC,a_slow_v
+    1019 0000aed0                   LWL     HE13F01,5|AFUNC,a_slow_v
+    1020 0000af20                   LWL     HE12F01,4|AFUNC,a_slow_v
+    1021 0000af70                   LWL     HE12F02,4|AFUNC,a_stop_v
+    1022 0000afc0                   LW      HE12F03,4
+    1023 0000aff0                   LW      HE12F05,4
+    1024 0000b020                   LW      HE12F06,4
+    1025 0000b050                   LW      HE12F07,4
+    1026 0000b080                   LWL     1,AFUNC|10,a_fall_done
+    1027 0000b0d0                   LWL     1,AFUNC|10,a_fall_done
+    1028 0000b120                   LWL     1,AFUNC|10,a_fall_done
+    1029 0000b170                   LWL     1,AFUNC|10,a_fall_done
+    1030 0000b1c0                   LWL     1,AFUNC|10,a_fall_done
+    1031 0000b210                   LWL     1,AFUNC|10,a_fall_done
+    1032 0000b260                   LWL     1,AFUNC|10,a_fall_done
+    1033 0000b2b0                   LWL     1,AFUNC|10,a_fall_done
+    1034 0000b300                   LWL     1,AFUNC|10,a_fall_done
+    1035 0000b350                   LWL     1,AFUNC|10,a_fall_done
+    1036 0000b3a0                   LWL     1,AFUNC|10,a_fall_done
+    1037 0000b3f0                   LWL     1,AFUNC|10,a_fall_done
+    1038 0000b440                   LWL     1,AFUNC|10,a_fall_done
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+    1039 0000b490                   LWL     1,AFUNC|10,a_fall_done
+    1040 0000b4e0 00000000          .long   0
+    1041                    
+    1042 0000b500           anim_get_1flipped_4
+    1043 0000b500           anim_get_1flipped_5
+    1044 0000b500                   LWWL    HD44F02,4|AFUNC|AFLIP,0,a_set_flipv_1
+    1045 0000b560                   LW      HD44F05,4
+    1046 0000b590                   LW      HD44F08,4
+    1047 0000b5c0                   LW      HD54F02,4
+    1048 0000b5f0                   LW      HD64F06,4
+    1049 0000b620                   LW      HD74F04,4
+    1050 0000b650                   LW      HD74F05,4
+    1051 0000b680                   LWL     HD74F06,4|AFUNC,a_screen_shake_snd
+    1052 0000b6d0                   LWL     HD74F07,4|AFUNC,zero_a8_y
+    1053 0000b720                   LWL     HE13F01,4|AFUNC,a_slow_v
+    1054 0000b770                   LWL     HE12F01,4|AFUNC,a_slow_v
+    1055 0000b7c0                   LWL     HE11F01,4|AFUNC,a_slow_v
+    1056 0000b810                   LWWL    HE12F01,4|AFLIP|AFUNC,M_FLIPH,a_slow_v
+    1057 0000b870                   LWL     HE13F01,4|AFUNC,a_slow_v
+    1058 0000b8c0                   LWL     HD74F07,4|AFUNC,a_slow_v
+    1059 0000b910                   LWWL    HE15F01,4|AFLIP|AFUNC,0,a_slow_v
+    1060 0000b970                   LWL     HD74F07,4|AFUNC,a_slow_v
+    1061 0000b9c0                   LWL     HE14F01,4|AFUNC,a_stop_v
+    1062 0000ba10                   LW      HE14F02,4
+    1063 0000ba40                   LW      HE14F04,4
+    1064 0000ba70                   LW      HE14F06,4
+    1065 0000baa0                   LW      HE14F07,4
+    1066 0000bad0                   LWL     1,AFUNC|10,a_fall_done
+    1067 0000bb20                   LWL     1,AFUNC|10,a_fall_done
+    1068 0000bb70                   LWL     1,AFUNC|10,a_fall_done
+    1069 0000bbc0                   LWL     1,AFUNC|10,a_fall_done
+    1070 0000bc10                   LWL     1,AFUNC|10,a_fall_done
+    1071 0000bc60                   LWL     1,AFUNC|10,a_fall_done
+    1072 0000bcb0                   LWL     1,AFUNC|10,a_fall_done
+    1073 0000bd00                   LWL     1,AFUNC|10,a_fall_done
+    1074 0000bd50                   LWL     1,AFUNC|10,a_fall_done
+    1075 0000bda0                   LWL     1,AFUNC|10,a_fall_done
+    1076 0000bdf0                   LWL     1,AFUNC|10,a_fall_done
+    1077 0000be40                   LWL     1,AFUNC|10,a_fall_done
+    1078 0000be90                   LWL     1,AFUNC|10,a_fall_done
+    1079 0000bee0                   LWL     1,AFUNC|10,a_fall_done
+    1080 0000bf30 00000000          .long   0
+    1081                    
+    1082 0000bf50           anim_get_1flipped_6
+    1083 0000bf50                   LWWL    HD44F02,4|AFUNC|AFLIP,M_FLIPH,a_set_flipv_1
+    1084 0000bfb0                   LW      HD44F05,4
+    1085 0000bfe0                   LW      HD44F08,4
+    1086 0000c010                   LW      HD54F02,4
+    1087 0000c040                   LW      HD64F06,4
+    1088 0000c070                   LW      HD74F04,4
+    1089 0000c0a0                   LW      HD74F05,4
+    1090 0000c0d0                   LWL     HD74F06,4|AFUNC,a_screen_shake_snd
+    1091 0000c120                   LWL     HD74F07,4|AFUNC,zero_a8_y
+    1092 0000c170                   LWL     HE13F01,4|AFUNC,a_slow_v
+    1093 0000c1c0                   LWL     HE12F01,4|AFUNC,a_slow_v
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+    1094 0000c210                   LWL     HE11F01,4|AFUNC,a_slow_v
+    1095 0000c260                   LWWL    HE12F01,4|AFLIP|AFUNC,0,a_slow_v
+    1096 0000c2c0                   LWL     HE13F01,4|AFUNC,a_slow_v
+    1097 0000c310                   LWL     HD74F07,4|AFUNC,a_slow_v
+    1098 0000c360                   LWWL    HE15F01,4|AFLIP|AFUNC,M_FLIPH,a_slow_v
+    1099 0000c3c0                   LWL     HD74F07,4|AFUNC,a_slow_v
+    1100 0000c410                   LWL     HE14F01,4|AFUNC,a_stop_v
+    1101 0000c460                   LW      HE14F02,4
+    1102 0000c490                   LW      HE14F04,4
+    1103 0000c4c0                   LW      HE14F06,4
+    1104 0000c4f0                   LW      HE14F07,4
+    1105 0000c520                   LWL     1,AFUNC|10,a_fall_done
+    1106 0000c570                   LWL     1,AFUNC|10,a_fall_done
+    1107 0000c5c0                   LWL     1,AFUNC|10,a_fall_done
+    1108 0000c610                   LWL     1,AFUNC|10,a_fall_done
+    1109 0000c660                   LWL     1,AFUNC|10,a_fall_done
+    1110 0000c6b0                   LWL     1,AFUNC|10,a_fall_done
+    1111 0000c700                   LWL     1,AFUNC|10,a_fall_done
+    1112 0000c750                   LWL     1,AFUNC|10,a_fall_done
+    1113 0000c7a0                   LWL     1,AFUNC|10,a_fall_done
+    1114 0000c7f0                   LWL     1,AFUNC|10,a_fall_done
+    1115 0000c840                   LWL     1,AFUNC|10,a_fall_done
+    1116 0000c890                   LWL     1,AFUNC|10,a_fall_done
+    1117 0000c8e0                   LWL     1,AFUNC|10,a_fall_done
+    1118 0000c930                   LWL     1,AFUNC|10,a_fall_done
+    1119 0000c980 00000000          .long   0
+    1120                    
+    1121 0000c9a0           anim_get_1flipped_7
+    1122 0000c9a0           anim_get_1flipped_8
+    1123 0000c9a0                   LWWL    HD52F02,4|AFUNC|AFLIP,M_FLIPH,a_set_flipv_1
+    1124 0000ca00                   LW      HD52F04,4
+    1125 0000ca30                   LW      HD52F06,4
+    1126 0000ca60                   LW      HD62F01,4
+    1127 0000ca90                   LW      HD62F03,4
+    1128 0000cac0                   LW      HD92F05,4
+    1129 0000caf0                   LW      HD92F07,4
+    1130 0000cb20                   LWL     HD92F09,4|AFUNC,a_screen_shake_snd
+    1131 0000cb70                   LWL     HE12F01,4|AFUNC,zero_a8_y
+    1132 0000cbc0                   LWL     HE11F01,5|AFUNC,a_slow_v
+    1133 0000cc10                   LWWL    HE12F01,4|AFLIP|AFUNC,0,a_slow_v
+    1134 0000cc70                   LWL     HE13F01,5|AFUNC,a_slow_v
+    1135 0000ccc0                   LWL     HD74F07,4|AFUNC,a_slow_v
+    1136 0000cd10                   LWWL    HE15F01,5|AFLIP|AFUNC,M_FLIPH,a_slow_v
+    1137 0000cd70                   LWL     HD74F07,4|AFUNC,a_slow_v
+    1138 0000cdc0                   LWL     HE13F01,5|AFUNC,a_slow_v
+    1139 0000ce10                   LWL     HE12F01,4|AFUNC,a_slow_v
+    1140 0000ce60                   LWL     HE12F02,4|AFUNC,a_stop_v
+    1141 0000ceb0                   LW      HE12F03,4
+    1142 0000cee0                   LW      HE12F05,4
+    1143 0000cf10                   LW      HE12F06,4
+    1144 0000cf40                   LW      HE12F07,4
+    1145 0000cf70                   LWL     1,AFUNC|10,a_fall_done
+    1146 0000cfc0                   LWL     1,AFUNC|10,a_fall_done
+    1147 0000d010                   LWL     1,AFUNC|10,a_fall_done
+    1148 0000d060                   LWL     1,AFUNC|10,a_fall_done
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+    1149 0000d0b0                   LWL     1,AFUNC|10,a_fall_done
+    1150 0000d100                   LWL     1,AFUNC|10,a_fall_done
+    1151 0000d150                   LWL     1,AFUNC|10,a_fall_done
+    1152 0000d1a0                   LWL     1,AFUNC|10,a_fall_done
+    1153 0000d1f0                   LWL     1,AFUNC|10,a_fall_done
+    1154 0000d240                   LWL     1,AFUNC|10,a_fall_done
+    1155 0000d290                   LWL     1,AFUNC|10,a_fall_done
+    1156 0000d2e0                   LWL     1,AFUNC|10,a_fall_done
+    1157 0000d330                   LWL     1,AFUNC|10,a_fall_done
+    1158 0000d380                   LWL     1,AFUNC|10,a_fall_done
+    1159 0000d3d0 00000000          .long   0
+    1160                    
+    1161 0000d3f0           anim_fall_to_stomach_2
+    1162 0000d3f0           anim_fall_to_stomach_3
+    1163 0000d3f0           af231   LWW     HC22F03,AFLIP|3,0
+    1164 0000d430                   LWL     HC22F04,AFUNC|1,a_start_get_up_count
+    1165 0000d480                   LW      HC22F06,3
+    1166 0000d4b0                   LWL     HC22F07,AFUNC|3,body_fall_sound
+    1167 0000d500                   LWL     HC22F08,AFUNC|3,a_fall_stopv
+    1168 0000d550                   LW      HC22F10,3
+    1169 0000d580           af232   LWL     HC22F12,AFUNC|1,a_wait_get_up+4
+    1170 0000d5d0 0000d3f0'         .long    af231,af232
+    1171 0000d610                   LW      RA12F02,3
+    1172 0000d640                   LW      RA12F03,3
+    1173 0000d670                   LW      RA12F04,3
+    1174 0000d6a0                   LW      RA12F06,3
+    1175 0000d6d0                   LW      RA12F07,3
+    1176 0000d700                   LW      RA12F08,3
+    1177 0000d730                   LWL     1,AFUNC|3,a_fall_done
+    1178 0000d780                   LWL     1,AFUNC|10,a_fall_done
+    1179 0000d7d0                   LWL     1,AFUNC|10,a_fall_done
+    1180 0000d820                   LWL     1,AFUNC|10,a_fall_done
+    1181 0000d870                   LWL     1,AFUNC|10,a_fall_done
+    1182 0000d8c0                   LWL     1,AFUNC|10,a_fall_done
+    1183 0000d910                   LWL     1,AFUNC|10,a_fall_done
+    1184 0000d960                   LWL     1,AFUNC|10,a_fall_done
+    1185 0000d9b0                   LWL     1,AFUNC|10,a_fall_done
+    1186 0000da00                   LWL     1,AFUNC|10,a_fall_done
+    1187 0000da50                   LWL     1,AFUNC|10,a_fall_done
+    1188 0000daa0                   LWL     1,AFUNC|10,a_fall_done
+    1189 0000daf0                   LWL     1,AFUNC|10,a_fall_done
+    1190 0000db40                   LWL     1,AFUNC|10,a_fall_done
+    1191 0000db90                   LWL     1,AFUNC|10,a_fall_done
+    1192 0000dbe0                   LWL     1,AFUNC|10,a_fall_done
+    1193 0000dc30                   LWL     1,AFUNC|10,a_fall_done
+    1194 0000dc80                   LWL     1,AFUNC|10,a_fall_done
+    1195 0000dcd0                   LWL     1,AFUNC|10,a_fall_done
+    1196 0000dd20                   LWL     1,AFUNC|10,a_fall_done
+    1197 0000dd70                   LWL     1,AFUNC|10,a_fall_done
+    1198 0000ddc0                   LWL     1,AFUNC|10,a_fall_done
+    1199 0000de10                   LWL     1,AFUNC|10,a_fall_done
+    1200 0000de60                   LWL     1,AFUNC|10,a_fall_done
+    1201 0000deb0                   LWL     1,AFUNC|10,a_fall_done
+    1202 0000df00                   LWL     1,AFUNC|10,a_fall_done
+    1203 0000df50                   LWL     1,AFUNC|10,a_fall_done
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+    1204 0000dfa0                   LWL     1,AFUNC|10,a_fall_done
+    1205 0000dff0                   LWL     1,AFUNC|10,a_fall_done
+    1206 0000e040                   LWL     1,AFUNC|10,a_fall_done
+    1207 0000e090                   LWL     1,AFUNC|10,a_fall_done
+    1208 0000e0e0 00000000          .long   0
+    1209 0000e100           anim_fall_to_stomach_4
+    1210 0000e100           af41    LWW     HC14F02,AFLIP|3,0
+    1211 0000e140                   LWL     HC14F04,AFUNC|1,a_start_get_up_count
+    1212 0000e190                   LW      HC14F05,3
+    1213 0000e1c0                   LWL     HC14F06,AFUNC|3,body_fall_sound
+    1214 0000e210                   LWL     HC14F07,AFUNC|3,a_fall_stopv
+    1215 0000e260                   LW      HC14F08,3
+    1216 0000e290           af42    LWL     HC14F10,AFUNC|1,a_wait_get_up+4
+    1217 0000e2e0 0000e100'         .long    af41,af42
+    1218 0000e320                   LW      RA14F01,3
+    1219 0000e350                   LW      RA14F02,3
+    1220 0000e380                   LW      RA14F03,3
+    1221 0000e3b0                   LW      RA14F04,3
+    1222 0000e3e0                   LW      RA14F05,3
+    1223 0000e410                   LW      RA14F06,3
+    1224 0000e440                   LWL     1,AFUNC|3,a_fall_done
+    1225 0000e490                   LWL     1,AFUNC|10,a_fall_done
+    1226 0000e4e0                   LWL     1,AFUNC|10,a_fall_done
+    1227 0000e530                   LWL     1,AFUNC|10,a_fall_done
+    1228 0000e580                   LWL     1,AFUNC|10,a_fall_done
+    1229 0000e5d0                   LWL     1,AFUNC|10,a_fall_done
+    1230 0000e620                   LWL     1,AFUNC|10,a_fall_done
+    1231 0000e670                   LWL     1,AFUNC|10,a_fall_done
+    1232 0000e6c0                   LWL     1,AFUNC|10,a_fall_done
+    1233 0000e710                   LWL     1,AFUNC|10,a_fall_done
+    1234 0000e760                   LWL     1,AFUNC|10,a_fall_done
+    1235 0000e7b0                   LWL     1,AFUNC|10,a_fall_done
+    1236 0000e800                   LWL     1,AFUNC|10,a_fall_done
+    1237 0000e850                   LWL     1,AFUNC|10,a_fall_done
+    1238 0000e8a0                   LWL     1,AFUNC|10,a_fall_done
+    1239 0000e8f0                   LWL     1,AFUNC|10,a_fall_done
+    1240 0000e940                   LWL     1,AFUNC|10,a_fall_done
+    1241 0000e990                   LWL     1,AFUNC|10,a_fall_done
+    1242 0000e9e0                   LWL     1,AFUNC|10,a_fall_done
+    1243 0000ea30                   LWL     1,AFUNC|10,a_fall_done
+    1244 0000ea80                   LWL     1,AFUNC|10,a_fall_done
+    1245 0000ead0                   LWL     1,AFUNC|10,a_fall_done
+    1246 0000eb20                   LWL     1,AFUNC|10,a_fall_done
+    1247 0000eb70                   LWL     1,AFUNC|10,a_fall_done
+    1248 0000ebc0                   LWL     1,AFUNC|10,a_fall_done
+    1249 0000ec10                   LWL     1,AFUNC|10,a_fall_done
+    1250 0000ec60                   LWL     1,AFUNC|10,a_fall_done
+    1251 0000ecb0                   LWL     1,AFUNC|10,a_fall_done
+    1252 0000ed00                   LWL     1,AFUNC|10,a_fall_done
+    1253 0000ed50                   LWL     1,AFUNC|10,a_fall_done
+    1254 0000eda0                   LWL     1,AFUNC|10,a_fall_done
+    1255 0000edf0 00000000          .long   0
+    1256                    
+    1257 0000ee10           anim_fall_to_stomach_6
+    1258 0000ee10           af61    LWW     HC14F02,AFLIP|3,M_FLIPH
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+    1259 0000ee50                   LWL     HC14F04,AFUNC|1,a_start_get_up_count
+    1260 0000eea0                   LW      HC14F05,3
+    1261 0000eed0                   LWL     HC14F06,AFUNC|3,body_fall_sound
+    1262 0000ef20                   LWL     HC14F07,AFUNC|3,a_fall_stopv
+    1263 0000ef70                   LW      HC14F08,3
+    1264 0000efa0           af62    LWL     HC14F10,AFUNC|1,a_wait_get_up+4
+    1265 0000eff0 0000ee10'         .long    af61,af62
+    1266 0000f030                   LW      RA14F01,3
+    1267 0000f060                   LW      RA14F02,3
+    1268 0000f090                   LW      RA14F03,3
+    1269 0000f0c0                   LW      RA14F04,3
+    1270 0000f0f0                   LW      RA14F05,3
+    1271 0000f120                   LW      RA14F06,3
+    1272 0000f150                   LWL     1,AFUNC|3,a_fall_done
+    1273 0000f1a0                   LWL     1,AFUNC|10,a_fall_done
+    1274 0000f1f0                   LWL     1,AFUNC|10,a_fall_done
+    1275 0000f240                   LWL     1,AFUNC|10,a_fall_done
+    1276 0000f290                   LWL     1,AFUNC|10,a_fall_done
+    1277 0000f2e0                   LWL     1,AFUNC|10,a_fall_done
+    1278 0000f330                   LWL     1,AFUNC|10,a_fall_done
+    1279 0000f380                   LWL     1,AFUNC|10,a_fall_done
+    1280 0000f3d0                   LWL     1,AFUNC|10,a_fall_done
+    1281 0000f420                   LWL     1,AFUNC|10,a_fall_done
+    1282 0000f470                   LWL     1,AFUNC|10,a_fall_done
+    1283 0000f4c0                   LWL     1,AFUNC|10,a_fall_done
+    1284 0000f510                   LWL     1,AFUNC|10,a_fall_done
+    1285 0000f560                   LWL     1,AFUNC|10,a_fall_done
+    1286 0000f5b0                   LWL     1,AFUNC|10,a_fall_done
+    1287 0000f600                   LWL     1,AFUNC|10,a_fall_done
+    1288 0000f650                   LWL     1,AFUNC|10,a_fall_done
+    1289 0000f6a0                   LWL     1,AFUNC|10,a_fall_done
+    1290 0000f6f0                   LWL     1,AFUNC|10,a_fall_done
+    1291 0000f740                   LWL     1,AFUNC|10,a_fall_done
+    1292 0000f790                   LWL     1,AFUNC|10,a_fall_done
+    1293 0000f7e0                   LWL     1,AFUNC|10,a_fall_done
+    1294 0000f830                   LWL     1,AFUNC|10,a_fall_done
+    1295 0000f880                   LWL     1,AFUNC|10,a_fall_done
+    1296 0000f8d0                   LWL     1,AFUNC|10,a_fall_done
+    1297 0000f920                   LWL     1,AFUNC|10,a_fall_done
+    1298 0000f970                   LWL     1,AFUNC|10,a_fall_done
+    1299 0000f9c0                   LWL     1,AFUNC|10,a_fall_done
+    1300 0000fa10                   LWL     1,AFUNC|10,a_fall_done
+    1301 0000fa60                   LWL     1,AFUNC|10,a_fall_done
+    1302 0000fab0                   LWL     1,AFUNC|10,a_fall_done
+    1303 0000fb00 00000000          .long   0
+    1304                    
+    1305 0000fb20           anim_fall_to_stomach_7
+    1306 0000fb20           anim_fall_to_stomach_8
+    1307 0000fb20           af781   LWW     HC22F03,AFLIP|3,M_FLIPH
+    1308 0000fb60                   LWL     HC22F04,AFUNC|1,a_start_get_up_count
+    1309 0000fbb0                   LW      HC22F06,3
+    1310 0000fbe0                   LWL     HC22F07,AFUNC|3,body_fall_sound
+    1311 0000fc30                   LWL     HC22F08,AFUNC|3,a_fall_stopv
+    1312 0000fc80                   LW      HC22F10,3
+    1313 0000fcb0           af782   LWL     HC22F12,AFUNC|1,a_wait_get_up+4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+    1314 0000fd00 0000fb20'         .long    af781,af782
+    1315 0000fd40                   LW      RA12F02,3
+    1316 0000fd70                   LW      RA12F03,3
+    1317 0000fda0                   LW      RA12F04,3
+    1318 0000fdd0                   LW      RA12F06,3
+    1319 0000fe00                   LW      RA12F07,3
+    1320 0000fe30                   LW      RA12F08,3
+    1321 0000fe60                   LWL     1,AFUNC|3,a_fall_done
+    1322 0000feb0                   LWL     1,AFUNC|10,a_fall_done
+    1323 0000ff00                   LWL     1,AFUNC|10,a_fall_done
+    1324 0000ff50                   LWL     1,AFUNC|10,a_fall_done
+    1325 0000ffa0                   LWL     1,AFUNC|10,a_fall_done
+    1326 0000fff0                   LWL     1,AFUNC|10,a_fall_done
+    1327 00010040                   LWL     1,AFUNC|10,a_fall_done
+    1328 00010090                   LWL     1,AFUNC|10,a_fall_done
+    1329 000100e0                   LWL     1,AFUNC|10,a_fall_done
+    1330 00010130                   LWL     1,AFUNC|10,a_fall_done
+    1331 00010180                   LWL     1,AFUNC|10,a_fall_done
+    1332 000101d0                   LWL     1,AFUNC|10,a_fall_done
+    1333 00010220                   LWL     1,AFUNC|10,a_fall_done
+    1334 00010270                   LWL     1,AFUNC|10,a_fall_done
+    1335 000102c0                   LWL     1,AFUNC|10,a_fall_done
+    1336 00010310                   LWL     1,AFUNC|10,a_fall_done
+    1337 00010360                   LWL     1,AFUNC|10,a_fall_done
+    1338 000103b0                   LWL     1,AFUNC|10,a_fall_done
+    1339 00010400                   LWL     1,AFUNC|10,a_fall_done
+    1340 00010450                   LWL     1,AFUNC|10,a_fall_done
+    1341 000104a0                   LWL     1,AFUNC|10,a_fall_done
+    1342 000104f0                   LWL     1,AFUNC|10,a_fall_done
+    1343 00010540                   LWL     1,AFUNC|10,a_fall_done
+    1344 00010590                   LWL     1,AFUNC|10,a_fall_done
+    1345 000105e0                   LWL     1,AFUNC|10,a_fall_done
+    1346 00010630                   LWL     1,AFUNC|10,a_fall_done
+    1347 00010680                   LWL     1,AFUNC|10,a_fall_done
+    1348 000106d0                   LWL     1,AFUNC|10,a_fall_done
+    1349 00010720                   LWL     1,AFUNC|10,a_fall_done
+    1350 00010770                   LWL     1,AFUNC|10,a_fall_done
+    1351 000107c0                   LWL     1,AFUNC|10,a_fall_done
+    1352 00010810 00000000          .long   0
+    1353                    
+    1354 00010830           anim_fall_to_stomach_1
+    1355 00010830           af11    LWL     HC22F03,3|AFUNC,a_set_15_flip
+    1356 00010880                   LWL     HC22F04,AFUNC|1,a_start_get_up_count
+    1357 000108d0                   LW      HC22F06,3
+    1358 00010900                   LWL     HC22F07,AFUNC|3,body_fall_sound
+    1359 00010950                   LWL     HC22F08,AFUNC|3,a_fall_stopv
+    1360 000109a0                   LW      HC22F10,3
+    1361 000109d0           af12    LWL     HC22F12,AFUNC|1,a_wait_get_up+4
+    1362 00010a20 00010830'         .long    af11,af12
+    1363 00010a60                   LW      RA12F02,3
+    1364 00010a90                   LW      RA12F03,3
+    1365 00010ac0                   LW      RA12F04,3
+    1366 00010af0                   LW      RA12F06,3
+    1367 00010b20                   LW      RA12F07,3
+    1368 00010b50                   LW      RA12F08,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   27
+
+    1369 00010b80                   LWL     1,AFUNC|3,a_fall_done
+    1370 00010bd0                   LWL     1,AFUNC|10,a_fall_done
+    1371 00010c20                   LWL     1,AFUNC|10,a_fall_done
+    1372 00010c70                   LWL     1,AFUNC|10,a_fall_done
+    1373 00010cc0                   LWL     1,AFUNC|10,a_fall_done
+    1374 00010d10                   LWL     1,AFUNC|10,a_fall_done
+    1375 00010d60                   LWL     1,AFUNC|10,a_fall_done
+    1376 00010db0                   LWL     1,AFUNC|10,a_fall_done
+    1377 00010e00                   LWL     1,AFUNC|10,a_fall_done
+    1378 00010e50                   LWL     1,AFUNC|10,a_fall_done
+    1379 00010ea0                   LWL     1,AFUNC|10,a_fall_done
+    1380 00010ef0                   LWL     1,AFUNC|10,a_fall_done
+    1381 00010f40                   LWL     1,AFUNC|10,a_fall_done
+    1382 00010f90                   LWL     1,AFUNC|10,a_fall_done
+    1383 00010fe0                   LWL     1,AFUNC|10,a_fall_done
+    1384 00011030                   LWL     1,AFUNC|10,a_fall_done
+    1385 00011080                   LWL     1,AFUNC|10,a_fall_done
+    1386 000110d0                   LWL     1,AFUNC|10,a_fall_done
+    1387 00011120                   LWL     1,AFUNC|10,a_fall_done
+    1388 00011170                   LWL     1,AFUNC|10,a_fall_done
+    1389 000111c0                   LWL     1,AFUNC|10,a_fall_done
+    1390 00011210                   LWL     1,AFUNC|10,a_fall_done
+    1391 00011260                   LWL     1,AFUNC|10,a_fall_done
+    1392 000112b0                   LWL     1,AFUNC|10,a_fall_done
+    1393 00011300                   LWL     1,AFUNC|10,a_fall_done
+    1394 00011350                   LWL     1,AFUNC|10,a_fall_done
+    1395 000113a0                   LWL     1,AFUNC|10,a_fall_done
+    1396 000113f0                   LWL     1,AFUNC|10,a_fall_done
+    1397 00011440                   LWL     1,AFUNC|10,a_fall_done
+    1398 00011490                   LWL     1,AFUNC|10,a_fall_done
+    1399 000114e0                   LWL     1,AFUNC|10,a_fall_done
+    1400 00011530 00000000          .long   0
+    1401 00011550           anim_fall_to_stomach_5
+    1402 00011550           af51    LWL     HC14F02,3|AFUNC,a_set_15_flip
+    1403 000115a0                   LWL     HC14F04,AFUNC|1,a_start_get_up_count
+    1404 000115f0                   LW      HC14F05,3
+    1405 00011620                   LWL     HC14F06,AFUNC|3,body_fall_sound
+    1406 00011670                   LWL     HC14F07,AFUNC|3,a_fall_stopv
+    1407 000116c0                   LW      HC14F08,3
+    1408 000116f0           af52    LWL     HC14F10,AFUNC|1,a_wait_get_up+4
+    1409 00011740 00011550'         .long    af51,af52
+    1410 00011780                   LW      RA14F01,3
+    1411 000117b0                   LW      RA14F02,3
+    1412 000117e0                   LW      RA14F03,3
+    1413 00011810                   LW      RA14F04,3
+    1414 00011840                   LW      RA14F05,3
+    1415 00011870                   LW      RA14F06,3
+    1416 000118a0                   LWL     1,AFUNC|3,a_fall_done
+    1417 000118f0                   LWL     1,AFUNC|10,a_fall_done
+    1418 00011940                   LWL     1,AFUNC|10,a_fall_done
+    1419 00011990                   LWL     1,AFUNC|10,a_fall_done
+    1420 000119e0                   LWL     1,AFUNC|10,a_fall_done
+    1421 00011a30                   LWL     1,AFUNC|10,a_fall_done
+    1422 00011a80                   LWL     1,AFUNC|10,a_fall_done
+    1423 00011ad0                   LWL     1,AFUNC|10,a_fall_done
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   28
+
+    1424 00011b20                   LWL     1,AFUNC|10,a_fall_done
+    1425 00011b70                   LWL     1,AFUNC|10,a_fall_done
+    1426 00011bc0                   LWL     1,AFUNC|10,a_fall_done
+    1427 00011c10                   LWL     1,AFUNC|10,a_fall_done
+    1428 00011c60                   LWL     1,AFUNC|10,a_fall_done
+    1429 00011cb0                   LWL     1,AFUNC|10,a_fall_done
+    1430 00011d00                   LWL     1,AFUNC|10,a_fall_done
+    1431 00011d50                   LWL     1,AFUNC|10,a_fall_done
+    1432 00011da0                   LWL     1,AFUNC|10,a_fall_done
+    1433 00011df0                   LWL     1,AFUNC|10,a_fall_done
+    1434 00011e40                   LWL     1,AFUNC|10,a_fall_done
+    1435 00011e90                   LWL     1,AFUNC|10,a_fall_done
+    1436 00011ee0                   LWL     1,AFUNC|10,a_fall_done
+    1437 00011f30                   LWL     1,AFUNC|10,a_fall_done
+    1438 00011f80                   LWL     1,AFUNC|10,a_fall_done
+    1439 00011fd0                   LWL     1,AFUNC|10,a_fall_done
+    1440 00012020                   LWL     1,AFUNC|10,a_fall_done
+    1441 00012070                   LWL     1,AFUNC|10,a_fall_done
+    1442 000120c0                   LWL     1,AFUNC|10,a_fall_done
+    1443 00012110                   LWL     1,AFUNC|10,a_fall_done
+    1444 00012160                   LWL     1,AFUNC|10,a_fall_done
+    1445 000121b0                   LWL     1,AFUNC|10,a_fall_done
+    1446 00012200                   LWL     1,AFUNC|10,a_fall_done
+    1447 00012250 00000000          .long   0
+    1448 00012270           anim_high_stick_1
+    1449 00012270                   LWL     CD23F01,AFUNC|3,a_flip_accelerate_start+3
+    1450 000122c0     0000          .word   0,-40,8
+    1451 000122f0                   LW      CD23F02,3
+    1452 00012320                   LW      CD23F03,3
+    1453 00012350                   LWL     CD23F05,AFUNC|3,a_collision+6
+    1454 000123a0 ffce0032          .long   [-50,50],[-80,10],get_highsticked
+    1455 00012400                   LW      CD23F06,2
+    1456 00012430                   LWL     1,AFUNC|1,a_accelerate_restore
+    1457 00012480                   LW      CD23F07,3
+    1458 000124b0                   LW      CD23F08,3
+    1459 000124e0                   LW      CD23F09,3
+    1460 00012510                   LW      CD23F11,3
+    1461 00012540                   LWL     1,AFUNC|1,a_control_script_done
+    1462 00012590 00000000          .long   0
+    1463                    
+    1464 000125b0           anim_high_stick_2
+    1465 000125b0                   LWWL    CD23F01,AFUNC|AFLIP|3,0,a_accelerate_start+3
+    1466 00012610     001e          .word   30,-30,8
+    1467 00012640                   LW      CD23F02,3
+    1468 00012670                   LW      CD23F03,3
+    1469 000126a0                   LWL     CD23F05,AFUNC|3,a_collision+6
+    1470 000126f0 fff60041          .long   [-10,65],[-65,10],get_highsticked
+    1471 00012750                   LW      CD23F06,2
+    1472 00012780                   LWL     1,AFUNC|1,a_accelerate_restore
+    1473 000127d0                   LW      CD23F07,3
+    1474 00012800                   LW      CD23F08,3
+    1475 00012830                   LW      CD23F09,3
+    1476 00012860                   LW      CD23F11,3
+    1477 00012890                   LWL     1,AFUNC|1,a_control_script_done
+    1478 000128e0 00000000          .long   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   29
+
+    1479                    
+    1480 00012900           anim_high_stick_3
+    1481 00012900                   LWWL    CD23F01,AFUNC|AFLIP|3,0,a_accelerate_start+3
+    1482 00012960     0028          .word   40,0,8
+    1483 00012990                   LW      CD23F02,3
+    1484 000129c0                   LW      CD23F03,3
+    1485 000129f0                   LWL     CD23F05,AFUNC|3,a_collision+6
+    1486 00012a40 fff60050          .long   [-10,80],[-50,50],get_highsticked
+    1487 00012aa0                   LW      CD23F06,2
+    1488 00012ad0                   LWL     1,AFUNC|1,a_accelerate_restore
+    1489 00012b20                   LW      CD23F07,3
+    1490 00012b50                   LW      CD23F08,3
+    1491 00012b80                   LW      CD23F09,3
+    1492 00012bb0                   LW      CD23F11,3
+    1493 00012be0                   LWL     1,AFUNC|1,a_control_script_done
+    1494 00012c30 00000000          .long   0
+    1495                    
+    1496 00012c50           anim_high_stick_4
+    1497 00012c50                   LWWL    CD23F01,AFUNC|AFLIP|3,0,a_accelerate_start+3
+    1498 00012cb0     001e          .word   30,30,8
+    1499 00012ce0                   LW      CD23F02,3
+    1500 00012d10                   LW      CD23F03,3
+    1501 00012d40                   LWL     CD23F05,AFUNC|3,a_collision+6
+    1502 00012d90 fff60041          .long   [-10,65],[-10,65],get_highsticked
+    1503 00012df0                   LW      CD23F06,2
+    1504 00012e20                   LWL     1,AFUNC|1,a_accelerate_restore
+    1505 00012e70                   LW      CD23F07,3
+    1506 00012ea0                   LW      CD23F08,3
+    1507 00012ed0                   LW      CD23F09,3
+    1508 00012f00                   LW      CD23F11,3
+    1509 00012f30                   LWL     1,AFUNC|1,a_control_script_done
+    1510 00012f80 00000000          .long   0
+    1511                    
+    1512 00012fa0           anim_high_stick_5
+    1513 00012fa0                   LWL     CD23F01,AFUNC|3,a_flip_accelerate_start+3
+    1514 00012ff0     0000          .word   0,40,8
+    1515 00013020                   LW      CD23F02,3
+    1516 00013050                   LW      CD23F03,3
+    1517 00013080                   LWL     CD23F05,AFUNC|3,a_collision+6
+    1518 000130d0 ffce0032          .long   [-50,50],[-10,80],get_highsticked
+    1519 00013130                   LW      CD23F06,2
+    1520 00013160                   LWL     1,AFUNC|1,a_accelerate_restore
+    1521 000131b0                   LW      CD23F07,3
+    1522 000131e0                   LW      CD23F08,3
+    1523 00013210                   LW      CD23F09,3
+    1524 00013240                   LW      CD23F11,3
+    1525 00013270                   LWL     1,AFUNC|1,a_control_script_done
+    1526 000132c0 00000000          .long   0
+    1527                    
+    1528 000132e0           anim_high_stick_6
+    1529 000132e0                   LWWL    CD23F01,AFUNC|AFLIP|3,M_FLIPH,a_accelerate_start+3
+    1530 00013340     ffe2          .word   -30,30,8
+    1531 00013370                   LW      CD23F02,3
+    1532 000133a0                   LW      CD23F03,3
+    1533 000133d0                   LWL     CD23F05,AFUNC|3,a_collision+6
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   30
+
+    1534 00013420 ffbf000a          .long   [-65,10],[-10,65],get_highsticked
+    1535 00013480                   LW      CD23F06,2
+    1536 000134b0                   LWL     1,AFUNC|1,a_accelerate_restore
+    1537 00013500                   LW      CD23F07,3
+    1538 00013530                   LW      CD23F08,3
+    1539 00013560                   LW      CD23F09,3
+    1540 00013590                   LW      CD23F11,3
+    1541 000135c0                   LWL     1,AFUNC|1,a_control_script_done
+    1542 00013610 00000000          .long   0
+    1543                    
+    1544 00013630           anim_high_stick_7
+    1545 00013630                   LWWL    CD23F01,AFUNC|AFLIP|3,M_FLIPH,a_accelerate_start+3
+    1546 00013690     ffd8          .word   -40,0,8
+    1547 000136c0                   LW      CD23F02,3
+    1548 000136f0                   LW      CD23F03,3
+    1549 00013720                   LWL     CD23F05,AFUNC|3,a_collision+6
+    1550 00013770 ffb0000a          .long   [-80,10],[-50,50],get_highsticked
+    1551 000137d0                   LW      CD23F06,2
+    1552 00013800                   LWL     1,AFUNC|1,a_accelerate_restore
+    1553 00013850                   LW      CD23F07,3
+    1554 00013880                   LW      CD23F08,3
+    1555 000138b0                   LW      CD23F09,3
+    1556 000138e0                   LW      CD23F11,3
+    1557 00013910                   LWL     1,AFUNC|1,a_control_script_done
+    1558 00013960 00000000          .long   0
+    1559                    
+    1560 00013980           anim_high_stick_8
+    1561 00013980                   LWWL    CD23F01,AFUNC|AFLIP|3,M_FLIPH,a_accelerate_start+3
+    1562 000139e0     ffe2          .word   -30,-30,8
+    1563 00013a10                   LW      CD23F02,3
+    1564 00013a40                   LW      CD23F03,3
+    1565 00013a70                   LWL     CD23F05,AFUNC|3,a_collision+6
+    1566 00013ac0 ffbf000a          .long   [-65,10],[-65,10],get_highsticked
+    1567 00013b20                   LW      CD23F06,2
+    1568 00013b50                   LWL     1,AFUNC|1,a_accelerate_restore
+    1569 00013ba0                   LW      CD23F07,3
+    1570 00013bd0                   LW      CD23F08,3
+    1571 00013c00                   LW      CD23F09,3
+    1572 00013c30                   LW      CD23F11,3
+    1573 00013c60                   LWL     1,AFUNC|1,a_control_script_done
+    1574 00013cb0 00000000          .long   0
+    1575                    
+    1576 00013cd0           anim_slash_1
+    1577 00013cd0                   LWL     CB12F01,AFUNC|3,a_set_15_flip
+    1578 00013d20                   LW      CB12F02,3
+    1579 00013d50                   LW      CB12F03,3
+    1580 00013d80                   LW      CB12F04,3
+    1581 00013db0                   LW      CB12F05,3
+    1582 00013de0                   LW      CB12F06,3
+    1583 00013e10                   LWL     CB12F07,AFUNC|3,a_collision+6
+    1584 00013e60 ffce0032          .long   [-50,50],[-80,10],get_slashed
+    1585 00013ec0                   LW      CB12F05,3
+    1586 00013ef0                   LW      CB12F02,3
+    1587 00013f20                   LW      CB12F01,3
+    1588 00013f50                   LWL     1,AFUNC|1,a_control_script_done
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   31
+
+    1589 00013fa0 00000000          .long   0
+    1590 00013fc0           anim_slash_2
+    1591 00013fc0                   LWW     CB12F01,AFLIP|3,0
+    1592 00014000                   LW      CB12F02,3
+    1593 00014030                   LW      CB12F03,3
+    1594 00014060                   LW      CB12F04,3
+    1595 00014090                   LW      CB12F05,3
+    1596 000140c0                   LW      CB12F06,3
+    1597 000140f0                   LWL     CB12F07,AFUNC|3,a_collision+6
+    1598 00014140 fff60041          .long   [-10,65],[-65,10],get_slashed
+    1599 000141a0                   LW      CB12F05,3
+    1600 000141d0                   LW      CB12F02,3
+    1601 00014200                   LW      CB12F01,3
+    1602 00014230                   LWL     1,AFUNC|1,a_control_script_done
+    1603 00014280 00000000          .long   0
+    1604 000142a0           anim_slash_3
+    1605 000142a0                   LWW     CB13F01,AFLIP|3,0
+    1606 000142e0                   LW      CB13F02,3
+    1607 00014310                   LW      CB13F03,3
+    1608 00014340                   LW      CB13F04,3
+    1609 00014370                   LW      CB13F05,3
+    1610 000143a0                   LWL     CB13F06,AFUNC|3,a_collision+6
+    1611 000143f0 fff60050          .long   [-10,80],[-50,50],get_slashed
+    1612 00014450                   LW      CB13F05,3
+    1613 00014480                   LW      CB13F02,3
+    1614 000144b0                   LW      CB13F01,3
+    1615 000144e0                   LWL     1,AFUNC|1,a_control_script_done
+    1616 00014530 00000000          .long   0
+    1617 00014550           anim_slash_4
+    1618 00014550                   LWW     CB14F01,AFLIP|3,0
+    1619 00014590                   LW      CB14F02,3
+    1620 000145c0                   LW      CB14F03,3
+    1621 000145f0                   LW      CB14F04,3
+    1622 00014620                   LW      CB14F05,3
+    1623 00014650                   LWL     CB14F06,AFUNC|3,a_collision+6
+    1624 000146a0 fff60041          .long   [-10,65],[-10,65],get_slashed
+    1625 00014700                   LW      CB14F05,3
+    1626 00014730                   LW      CB14F02,3
+    1627 00014760                   LW      CB14F01,3
+    1628 00014790                   LWL     1,AFUNC|1,a_control_script_done
+    1629 000147e0 00000000          .long   0
+    1630 00014800           anim_slash_5
+    1631 00014800                   LWL     CB14F01,AFUNC|3,a_set_15_flip
+    1632 00014850                   LW      CB14F02,3
+    1633 00014880                   LW      CB14F03,3
+    1634 000148b0                   LW      CB14F04,3
+    1635 000148e0                   LW      CB14F05,3
+    1636 00014910                   LWL     CB14F06,AFUNC|3,a_collision+6
+    1637 00014960 ffce0032          .long   [-50,50],[-10,80],get_slashed
+    1638 000149c0                   LW      CB14F05,3
+    1639 000149f0                   LW      CB14F02,3
+    1640 00014a20                   LW      CB14F01,3
+    1641 00014a50                   LWL     1,AFUNC|1,a_control_script_done
+    1642 00014aa0 00000000          .long   0
+    1643 00014ac0           anim_slash_6
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   32
+
+    1644 00014ac0                   LWW     CB14F01,AFLIP|3,M_FLIPH
+    1645 00014b00                   LW      CB14F02,3
+    1646 00014b30                   LW      CB14F03,3
+    1647 00014b60                   LW      CB14F04,3
+    1648 00014b90                   LW      CB14F05,3
+    1649 00014bc0                   LWL     CB14F06,AFUNC|3,a_collision+6
+    1650 00014c10 ffbf000a          .long   [-65,10],[-10,65],get_slashed
+    1651 00014c70                   LW      CB14F05,3
+    1652 00014ca0                   LW      CB14F02,3
+    1653 00014cd0                   LW      CB14F01,3
+    1654 00014d00                   LWL     1,AFUNC|1,a_control_script_done
+    1655 00014d50 00000000          .long   0
+    1656 00014d70           anim_slash_7
+    1657 00014d70                   LWW     CB13F01,AFLIP|3,M_FLIPH
+    1658 00014db0                   LW      CB13F02,3
+    1659 00014de0                   LW      CB13F03,3
+    1660 00014e10                   LW      CB13F04,3
+    1661 00014e40                   LW      CB13F05,3
+    1662 00014e70                   LWL     CB13F06,AFUNC|3,a_collision+6
+    1663 00014ec0 ffb0000a          .long   [-80,10],[-50,50],get_slashed
+    1664 00014f20                   LW      CB13F05,3
+    1665 00014f50                   LW      CB13F02,3
+    1666 00014f80                   LW      CB13F01,3
+    1667 00014fb0                   LWL     1,AFUNC|1,a_control_script_done
+    1668 00015000 00000000          .long   0
+    1669 00015020           anim_slash_8
+    1670 00015020                   LWW     CB12F01,AFLIP|3,M_FLIPH
+    1671 00015060                   LW      CB12F02,3
+    1672 00015090                   LW      CB12F03,3
+    1673 000150c0                   LW      CB12F04,3
+    1674 000150f0                   LW      CB12F05,3
+    1675 00015120                   LW      CB12F06,3
+    1676 00015150                   LWL     CB12F07,AFUNC|3,a_collision+6
+    1677 000151a0 ffbf000a          .long   [-65,10],[-65,10],get_slashed
+    1678 00015200                   LW      CB12F05,3
+    1679 00015230                   LW      CB12F02,3
+    1680 00015260                   LW      CB12F01,3
+    1681 00015290                   LWL     1,AFUNC|1,a_control_script_done
+    1682 000152e0 00000000          .long   0
+    1683                    
+    1684 00015300           anim_swing_script_1
+    1685 00015300           anim_swing_script_5
+    1686 00015300                   LWL     CE13F02,AFUNC|3,a_set_15_flip
+    1687 00015350                   LW      CE13F04,3
+    1688 00015380                   LWL     CE13F05,AFUNC|3,a_collision+6
+    1689 000153d0 fff60032          .long    [-10,50],[0,110],get_highsticked
+    1690 00015430                   LWL     CE13F07,AFUNC|3,a_collision+6
+    1691 00015480 fff60064          .long    [-10,100],[-50,50],get_highsticked
+    1692 000154e0                   LWL     CE13F08,AFUNC|3,a_collision+6
+    1693 00015530 fff60032          .long    [-10,50],[-110,0],get_highsticked
+    1694 00015590                   LW      CE13F09,3
+    1695 000155c0                   LW      CE13F10,3
+    1696 000155f0                   LW      CE13F11,3
+    1697 00015620                   LW      CE13F12,3
+    1698 00015650                   LWL     1,AFUNC|1,a_control_script_done
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   33
+
+    1699 000156a0 00000000          .long   0
+    1700                    
+    1701 000156c0           anim_swing_script_2
+    1702 000156c0           anim_swing_script_3
+    1703 000156c0           anim_swing_script_4
+    1704 000156c0                   LWW     CE13F02,AFLIP|3,0
+    1705 00015700                   LW      CE13F04,3
+    1706 00015730                   LWL     CE13F05,AFUNC|3,a_collision+6
+    1707 00015780 fff60032          .long    [-10,50],[0,110],get_highsticked
+    1708 000157e0                   LWL     CE13F07,AFUNC|3,a_collision+6
+    1709 00015830 fff60064          .long    [-10,100],[-50,50],get_highsticked
+    1710 00015890                   LWL     CE13F08,AFUNC|3,a_collision+6
+    1711 000158e0 fff60032          .long    [-10,50],[-110,0],get_highsticked
+    1712 00015940                   LW      CE13F09,3
+    1713 00015970                   LW      CE13F10,3
+    1714 000159a0                   LW      CE13F11,3
+    1715 000159d0                   LW      CE13F12,3
+    1716 00015a00                   LWL     1,AFUNC|1,a_control_script_done
+    1717 00015a50 00000000          .long   0
+    1718                    
+    1719                    
+    1720 00015a70           anim_swing_script_6
+    1721 00015a70           anim_swing_script_7
+    1722 00015a70           anim_swing_script_8
+    1723 00015a70                   LWW     CE13F02,AFLIP|3,M_FLIPH
+    1724 00015ab0                   LW      CE13F04,3
+    1725 00015ae0                   LWL     CE13F05,AFUNC|3,a_collision+6
+    1726 00015b30 ffce000a          .long    [-50,10],[0,110],get_highsticked
+    1727 00015b90                   LWL     CE13F07,AFUNC|3,a_collision+6
+    1728 00015be0 ff9c000a          .long    [-100,10],[-50,50],get_highsticked
+    1729 00015c40                   LWL     CE13F08,AFUNC|3,a_collision+6
+    1730 00015c90 ffce000a          .long    [-50,10],[-110,0],get_highsticked
+    1731 00015cf0                   LW      CE13F09,3
+    1732 00015d20                   LW      CE13F10,3
+    1733 00015d50                   LW      CE13F11,3
+    1734 00015d80                   LW      CE13F12,3
+    1735 00015db0                   LWL     1,AFUNC|1,a_control_script_done
+    1736 00015e00 00000000          .long   0
+    1737                    
+    1738                    
+    1739 00015e20           anim_hip_check_up_script_1
+    1740 00015e20           anim_hip_check_up_script_2
+    1741 00015e20           anim_hip_check_up_script_3
+    1742 00015e20           anim_hip_check_up_script_4
+    1743 00015e20           anim_hip_check_up_script_5
+    1744 00015e20           anim_hip_check_up_script_6
+    1745 00015e20           anim_hip_check_up_script_7
+    1746 00015e20           anim_hip_check_up_script_8
+    1747 00015e20                   LWL     AF13F03,AFUNC|1,a_slow_us
+    1748 00015e70                   LWL     1,AFUNC|1,a_slow_us
+    1749 00015ec0                   LWL     1,AFUNC|1,a_slow_us
+    1750 00015f10                   LWL     AF13F04,AFUNC|1,a_slow_us
+    1751 00015f60                   LWL     1,AFUNC|1,a_slow_us
+    1752 00015fb0                   LWL     1,AFUNC|1,a_slow_us
+    1753 00016000                   LWL     AF13F06,AFUNC|1,a_slow_us_chk+6
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   34
+
+    1754 00016050 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1755 000160b0                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1756 00016100 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1757 00016160                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1758 000161b0 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1759 00016210                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1760 00016260 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1761 000162c0                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1762 00016310 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1763 00016370                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1764 000163c0 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1765 00016420                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1766 00016470 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1767 000164d0                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1768 00016520 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1769 00016580                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1770 000165d0 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1771 00016630                   LWL     AF13F09,AFUNC|1,a_slow_us_chk+6
+    1772 00016680 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1773 000166e0                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1774 00016730 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1775 00016790                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1776 000167e0 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1777 00016840                   LWL     AF13F11,AFUNC|1,a_slow_us_chk+6
+    1778 00016890 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1779 000168f0                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1780 00016940 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1781 000169a0                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1782 000169f0 ffd80028          .long   [-40,40],[-5,60],get_hipped
+    1783 00016a50                   LWL     1,AFUNC|1,a_control_script_done
+    1784 00016aa0 00000000          .long   0
+    1785                    
+    1786 00016ac0           anim_hip_check_down_script_1
+    1787 00016ac0           anim_hip_check_down_script_2
+    1788 00016ac0           anim_hip_check_down_script_3
+    1789 00016ac0           anim_hip_check_down_script_4
+    1790 00016ac0           anim_hip_check_down_script_5
+    1791 00016ac0           anim_hip_check_down_script_6
+    1792 00016ac0           anim_hip_check_down_script_7
+    1793 00016ac0           anim_hip_check_down_script_8
+    1794 00016ac0                   LWL     AF23F02,AFUNC|1,a_slow_us
+    1795 00016b10                   LWL     1,AFUNC|1,a_slow_us
+    1796 00016b60                   LWL     1,AFUNC|1,a_slow_us
+    1797 00016bb0                   LWL     AF23F04,AFUNC|1,a_slow_us
+    1798 00016c00                   LWL     1,AFUNC|1,a_slow_us
+    1799 00016c50                   LWL     1,AFUNC|1,a_slow_us
+    1800 00016ca0                   LWL     AF23F05,AFUNC|1,a_slow_us_chk+6
+    1801 00016cf0 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1802 00016d50                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1803 00016da0 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1804 00016e00                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1805 00016e50 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1806 00016eb0                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1807 00016f00 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1808 00016f60                   LWL     1,AFUNC|1,a_slow_us_chk+6
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   35
+
+    1809 00016fb0 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1810 00017010                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1811 00017060 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1812 000170c0                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1813 00017110 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1814 00017170                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1815 000171c0 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1816 00017220                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1817 00017270 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1818 000172d0                   LWL     AF23F07,AFUNC|1,a_slow_us_chk+6
+    1819 00017320 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1820 00017380                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1821 000173d0 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1822 00017430                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1823 00017480 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1824 000174e0                   LWL     AF23F09,AFUNC|1,a_slow_us_chk+6
+    1825 00017530 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1826 00017590                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1827 000175e0 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1828 00017640                   LWL     1,AFUNC|1,a_slow_us_chk+6
+    1829 00017690 ffd80028          .long   [-40,40],[-60,5],get_hipped
+    1830 000176f0                   LWL     1,AFUNC|1,a_control_script_done
+    1831 00017740 00000000          .long   0
+    1832                    
+    1833 00017760           anim_back_sweep_check_script_1
+    1834 00017760           anim_back_sweep_check_script_5
+    1835 00017760                   LW      AE73F07,6
+    1836 00017790                   LW      AE73F09,4
+    1837 000177c0                   LW      AE73F10,4
+    1838 000177f0                   LWL     1,AFUNC|3,a_steal_done
+    1839 00017840 00000000          .long   0
+    1840                    
+    1841 00017860           anim_back_sweep_check_script_2
+    1842 00017860                   LWWL    AE42F02,AFLIP|AFUNC|2,0,a_collision_puck+6
+    1843 000178c0 fff60064          .long   [-10,100],[-100,10],take_puck_or_free_only
+    1844 00017920                   LWL     AE42F02,AFUNC|2,a_collision_puck+6
+    1845 00017970 fff60064          .long   [-10,100],[-100,10],take_puck_or_free_only
+    1846 000179d0                   LWL     AE42F02,AFUNC|1,a_collision_puck+6
+    1847 00017a20 fff60064          .long   [-10,100],[-100,10],take_puck_or_free_only
+    1848 00017a80                   LWL     1,1|AFUNC,a_sound_for_steal
+    1849 00017ad0                   LW      AE42F03,4
+    1850 00017b00                   LW      AE42F04,4
+    1851 00017b30                   LWL     1,AFUNC|3,a_steal_done
+    1852 00017b80 00000000          .long   0
+    1853                    
+    1854 00017ba0           anim_back_sweep_check_script_3
+    1855 00017ba0                   LWWL    AE73F07,AFLIP|AFUNC|2,0,a_collision_puck+6
+    1856 00017c00 fff6008c          .long   [-10,140],[-40,40],take_puck_or_free_only
+    1857 00017c60                   LWL     AE73F07,AFUNC|2,a_collision_puck+6
+    1858 00017cb0 fff6008c          .long   [-10,140],[-40,40],take_puck_or_free_only
+    1859 00017d10                   LWL     AE73F07,AFUNC|1,a_collision_puck+6
+    1860 00017d60 fff6008c          .long   [-10,140],[-40,40],take_puck_or_free_only
+    1861 00017dc0                   LWL     1,1|AFUNC,a_sound_for_steal
+    1862 00017e10                   LW      AE73F09,4
+    1863 00017e40                   LW      AE73F10,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   36
+
+    1864 00017e70                   LWL     1,AFUNC|3,a_steal_done
+    1865 00017ec0 00000000          .long   0
+    1866                    
+    1867 00017ee0           anim_back_sweep_check_script_4
+    1868 00017ee0                   LWWL    AE24F02,AFLIP|AFUNC|2,0,a_collision_puck+6
+    1869 00017f40 fff60064          .long   [-10,100],[-10,100],take_puck_or_free_only
+    1870 00017fa0                   LWL     AE24F02,AFUNC|2,a_collision_puck+6
+    1871 00017ff0 fff60064          .long   [-10,100],[-10,100],take_puck_or_free_only
+    1872 00018050                   LWL     AE24F02,AFUNC|1,a_collision_puck+6
+    1873 000180a0 fff60064          .long   [-10,100],[-10,100],take_puck_or_free_only
+    1874 00018100                   LWL     1,1|AFUNC,a_sound_for_steal
+    1875 00018150                   LW      AE24F03,4
+    1876 00018180                   LW      AE24F04,4
+    1877 000181b0                   LWL     1,AFUNC|3,a_steal_done
+    1878 00018200 00000000          .long   0
+    1879                    
+    1880 00018220           anim_back_sweep_check_script_6
+    1881 00018220                   LWWL    AE24F02,AFLIP|AFUNC|2,M_FLIPH,a_collision_puck+6
+    1882 00018280 ff9c000a          .long   [-100,10],[-10,100],take_puck_or_free_only
+    1883 000182e0                   LWL     AE24F02,AFUNC|2,a_collision_puck+6
+    1884 00018330 ff9c000a          .long   [-100,10],[-10,100],take_puck_or_free_only
+    1885 00018390                   LWL     AE24F02,AFUNC|1,a_collision_puck+6
+    1886 000183e0 ff9c000a          .long   [-100,10],[-10,100],take_puck_or_free_only
+    1887 00018440                   LWL     1,1|AFUNC,a_sound_for_steal
+    1888 00018490                   LW      AE24F03,4
+    1889 000184c0                   LW      AE24F04,4
+    1890 000184f0                   LWL     1,AFUNC|3,a_steal_done
+    1891 00018540 00000000          .long   0
+    1892                    
+    1893 00018560           anim_back_sweep_check_script_7
+    1894 00018560                   LWWL    AE73F07,AFLIP|AFUNC|2,M_FLIPH,a_collision_puck+6
+    1895 000185c0 ff74000a          .long   [-140,10],[-40,40],take_puck_or_free_only
+    1896 00018620                   LWL     AE73F07,AFUNC|2,a_collision_puck+6
+    1897 00018670 ff74000a          .long   [-140,10],[-40,40],take_puck_or_free_only
+    1898 000186d0                   LWL     AE73F07,AFUNC|1,a_collision_puck+6
+    1899 00018720 ff74000a          .long   [-140,10],[-40,40],take_puck_or_free_only
+    1900 00018780                   LWL     1,1|AFUNC,a_sound_for_steal
+    1901 000187d0                   LW      AE73F09,4
+    1902 00018800                   LW      AE73F10,4
+    1903 00018830                   LWL     1,AFUNC|3,a_steal_done
+    1904 00018880 00000000          .long   0
+    1905                    
+    1906 000188a0           anim_back_sweep_check_script_8
+    1907 000188a0                   LWWL    AE42F02,AFLIP|AFUNC|2,M_FLIPH,a_collision_puck+6
+    1908 00018900 ff9c000a          .long   [-100,10],[-100,10],take_puck_or_free_only
+    1909 00018960                   LWL     AE42F02,AFUNC|2,a_collision_puck+6
+    1910 000189b0 ff9c000a          .long   [-100,10],[-100,10],take_puck_or_free_only
+    1911 00018a10                   LWL     AE42F02,AFUNC|1,a_collision_puck+6
+    1912 00018a60 ff9c000a          .long   [-100,10],[-100,10],take_puck_or_free_only
+    1913 00018ac0                   LWL     1,1|AFUNC,a_sound_for_steal
+    1914 00018b10                   LW      AE42F03,4
+    1915 00018b40                   LW      AE42F04,4
+    1916 00018b70                   LWL     1,AFUNC|3,a_steal_done
+    1917 00018bc0 00000000          .long   0
+    1918                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   37
+
+    1919 00018be0           anim_rev_face_spear_1
+    1920 00018be0           anim_rev_face_spear_5
+    1921 00018be0                   LW      FP63F01,3
+    1922 00018c10                   LW      FP63F04,3
+    1923 00018c40                   LW      FP63F06,3
+    1924 00018c70                   LW      FP63F08,3
+    1925 00018ca0                   LWL     1,AFUNC|1,a_control_script_done
+    1926 00018cf0 00000000          .long   0
+    1927                    
+    1928 00018d10           anim_rev_face_spear_2
+    1929 00018d10           anim_rev_face_spear_3
+    1930 00018d10           anim_rev_face_spear_4
+    1931 00018d10                   LWW     FP63F01,AFLIP|3,0
+    1932 00018d50                   LW      FP63F04,3
+    1933 00018d80                   LW      FP63F06,3
+    1934 00018db0                   LW      FP63F08,3
+    1935 00018de0                   LWL     1,AFUNC|1,a_control_script_done
+    1936 00018e30 00000000          .long   0
+    1937                    
+    1938 00018e50           anim_rev_face_spear_6
+    1939 00018e50           anim_rev_face_spear_7
+    1940 00018e50           anim_rev_face_spear_8
+    1941 00018e50                   LWW     FP63F01,AFLIP|3,M_FLIPH
+    1942 00018e90                   LW      FP63F04,3
+    1943 00018ec0                   LW      FP63F06,3
+    1944 00018ef0                   LW      FP63F08,3
+    1945 00018f20                   LWL     1,AFUNC|1,a_control_script_done
+    1946 00018f70 00000000          .long   0
+    1947                    
+    1948 00018f90           anim_rev_face_check_1
+    1949 00018f90           anim_rev_face_check_5
+    1950 00018f90                   LW      FP73F04,3
+    1951 00018fc0                   LW      FP73F07,3
+    1952 00018ff0                   LW      FP73F08,3
+    1953 00019020                   LW      FP73F10,3
+    1954 00019050                   LWL     1,AFUNC|1,a_control_script_done
+    1955 000190a0 00000000          .long   0
+    1956                    
+    1957 000190c0           anim_rev_face_check_2
+    1958 000190c0           anim_rev_face_check_3
+    1959 000190c0           anim_rev_face_check_4
+    1960 000190c0                   LW      FP73F04,AFLIP|3,0
+    1961 00019100                   LW      FP73F07,3
+    1962 00019130                   LW      FP73F08,3
+    1963 00019160                   LW      FP73F10,3
+    1964 00019190                   LWL     1,AFUNC|1,a_control_script_done
+    1965 000191e0 00000000          .long   0
+    1966                    
+    1967 00019200           anim_rev_face_check_6
+    1968 00019200           anim_rev_face_check_7
+    1969 00019200           anim_rev_face_check_8
+    1970 00019200                   LW      FP73F04,AFLIP|3,M_FLIPH
+    1971 00019240                   LW      FP73F07,3
+    1972 00019270                   LW      FP73F08,3
+    1973 000192a0                   LW      FP73F10,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   38
+
+    1974 000192d0                   LWL     1,AFUNC|1,a_control_script_done
+    1975 00019320 00000000          .long   0
+    1976                    
+    1977 00019340           anim_shake_1
+    1978 00019340           anim_shake_5
+    1979 00019340                   LWL     HB14F03,3|AFUNC,a_set_15_flip
+    1980 00019390                   LW      HB14F04,3
+    1981 000193c0                   LW      HB14F05,3
+    1982 000193f0                   LW      HB14F06,3
+    1983 00019420                   LWL     HB14F07,AFUNC|3,a_fall_stopv
+    1984 00019470                   LW      HB14F08,3
+    1985 000194a0                   LW      HB14F10,3
+    1986 000194d0                   LW      HB14F11,3
+    1987 00019500                   LWL     1,AFUNC|4,a_fall_done
+    1988 00019550                   LWL     1,AFUNC|10,a_fall_done
+    1989 000195a0                   LWL     1,AFUNC|10,a_fall_done
+    1990 000195f0                   LWL     1,AFUNC|10,a_fall_done
+    1991 00019640                   LWL     1,AFUNC|10,a_fall_done
+    1992 00019690                   LWL     1,AFUNC|10,a_fall_done
+    1993 000196e0                   LWL     1,AFUNC|10,a_fall_done
+    1994 00019730 00000000          .long   0
+    1995                    
+    1996 00019750           anim_shake_2
+    1997 00019750           anim_shake_3
+    1998 00019750                   LWW     HA12F02,AFLIP|3,0
+    1999 00019790                   LW      HA12F04,3
+    2000 000197c0                   LW      HA12F06,3
+    2001 000197f0                   LW      HA12F07,3
+    2002 00019820                   LW      HA12F08,3
+    2003 00019850                   LWL     HA12F09,AFUNC|3,a_fall_stopv
+    2004 000198a0                   LW      HA12F10,3
+    2005 000198d0                   LW      HA12F12,3
+    2006 00019900                   LW      HA12F14,3
+    2007 00019930                   LW      HA12F16,3
+    2008 00019960                   LWL     1,AFUNC|4,a_fall_done
+    2009 000199b0                   LWL     1,AFUNC|10,a_fall_done
+    2010 00019a00                   LWL     1,AFUNC|10,a_fall_done
+    2011 00019a50                   LWL     1,AFUNC|10,a_fall_done
+    2012 00019aa0                   LWL     1,AFUNC|10,a_fall_done
+    2013 00019af0                   LWL     1,AFUNC|10,a_fall_done
+    2014 00019b40                   LWL     1,AFUNC|10,a_fall_done
+    2015 00019b90 00000000          .long   0
+    2016                    
+    2017 00019bb0           anim_shake_4
+    2018 00019bb0                   LWW     HB14F03,AFLIP|3,0
+    2019 00019bf0                   LW      HB14F04,3
+    2020 00019c20                   LW      HB14F05,3
+    2021 00019c50                   LW      HB14F06,3
+    2022 00019c80                   LWL     HB14F07,AFUNC|3,a_fall_stopv
+    2023 00019cd0                   LW      HB14F08,3
+    2024 00019d00                   LW      HB14F10,3
+    2025 00019d30                   LW      HB14F11,3
+    2026 00019d60                   LWL     1,AFUNC|4,a_fall_done
+    2027 00019db0                   LWL     1,AFUNC|10,a_fall_done
+    2028 00019e00                   LWL     1,AFUNC|10,a_fall_done
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   39
+
+    2029 00019e50                   LWL     1,AFUNC|10,a_fall_done
+    2030 00019ea0                   LWL     1,AFUNC|10,a_fall_done
+    2031 00019ef0                   LWL     1,AFUNC|10,a_fall_done
+    2032 00019f40                   LWL     1,AFUNC|10,a_fall_done
+    2033 00019f90 00000000          .long   0
+    2034                    
+    2035 00019fb0           anim_shake_6
+    2036 00019fb0                   LWW     HB14F03,AFLIP|3,M_FLIPH
+    2037 00019ff0                   LW      HB14F04,3
+    2038 0001a020                   LW      HB14F05,3
+    2039 0001a050                   LW      HB14F06,3
+    2040 0001a080                   LWL     HB14F07,AFUNC|3,a_fall_stopv
+    2041 0001a0d0                   LW      HB14F08,3
+    2042 0001a100                   LW      HB14F10,3
+    2043 0001a130                   LW      HB14F11,3
+    2044 0001a160                   LWL     1,AFUNC|4,a_fall_done
+    2045 0001a1b0                   LWL     1,AFUNC|10,a_fall_done
+    2046 0001a200                   LWL     1,AFUNC|10,a_fall_done
+    2047 0001a250                   LWL     1,AFUNC|10,a_fall_done
+    2048 0001a2a0                   LWL     1,AFUNC|10,a_fall_done
+    2049 0001a2f0                   LWL     1,AFUNC|10,a_fall_done
+    2050 0001a340                   LWL     1,AFUNC|10,a_fall_done
+    2051 0001a390 00000000          .long   0
+    2052                    
+    2053 0001a3b0           anim_shake_7
+    2054 0001a3b0           anim_shake_8
+    2055 0001a3b0                   LWW     HA12F02,AFLIP|3,M_FLIPH
+    2056 0001a3f0                   LW      HA12F04,3
+    2057 0001a420                   LW      HA12F06,3
+    2058 0001a450                   LW      HA12F07,3
+    2059 0001a480                   LW      HA12F08,3
+    2060 0001a4b0                   LWL     HA12F09,AFUNC|3,a_fall_stopv
+    2061 0001a500                   LW      HA12F10,3
+    2062 0001a530                   LW      HA12F12,3
+    2063 0001a560                   LW      HA12F14,3
+    2064 0001a590                   LW      HA12F16,3
+    2065 0001a5c0                   LWL     1,AFUNC|4,a_fall_done
+    2066 0001a610                   LWL     1,AFUNC|10,a_fall_done
+    2067 0001a660                   LWL     1,AFUNC|10,a_fall_done
+    2068 0001a6b0                   LWL     1,AFUNC|10,a_fall_done
+    2069 0001a700                   LWL     1,AFUNC|10,a_fall_done
+    2070 0001a750                   LWL     1,AFUNC|10,a_fall_done
+    2071 0001a7a0                   LWL     1,AFUNC|10,a_fall_done
+    2072 0001a7f0 00000000          .long   0
+    2073                    
+    2074 0001a810           anim_steal_1
+    2075 0001a810                   LWL     PK11F02,AFUNC|2,a_flip_collision+6
+    2076 0001a860 ffce0032          .long   [-50,50],[-100,10],take_puck
+    2077 0001a8c0                   LWL     PK11F02,AFUNC|2,a_collision+6
+    2078 0001a910 ffce0032          .long   [-50,50],[-100,10],take_puck
+    2079 0001a970                   LWL     PK11F02,AFUNC|1,a_collision+6
+    2080 0001a9c0 ffce0032          .long   [-50,50],[-100,10],take_puck
+    2081 0001aa20                   LWL     PK11F02,AFUNC|1,a_collision_puck+6
+    2082 0001aa70 ffce0032          .long   [-50,50],[-100,10],take_puck_or_free_only
+    2083 0001aad0                   LWL     PK11F03,4|AFUNC,a_sound_for_steal
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   40
+
+    2084 0001ab20                   LW      PK11F04,4
+    2085 0001ab50                   LWL     1,AFUNC|3,a_steal_done
+    2086 0001aba0 00000000          .long   0
+    2087 0001abc0           anim_steal_2
+    2088 0001abc0                   LWWL    PK12F02,AFLIP|AFUNC|2,0,a_collision+6
+    2089 0001ac20 fff60046          .long   [-10,70],[-70,10],take_puck
+    2090 0001ac80                   LWL     PK12F02,AFUNC|2,a_collision+6
+    2091 0001acd0 fff60046          .long   [-10,70],[-70,10],take_puck
+    2092 0001ad30                   LWL     PK12F02,AFUNC|1,a_collision+6
+    2093 0001ad80 fff60046          .long   [-10,70],[-70,10],take_puck
+    2094 0001ade0                   LWL     PK12F02,AFUNC|1,a_collision_puck+6
+    2095 0001ae30 fff60046          .long   [-10,70],[-70,10],take_puck_or_free_only
+    2096 0001ae90                   LWL     PK12F03,4|AFUNC,a_sound_for_steal
+    2097 0001aee0                   LW      PK12F04,4
+    2098 0001af10                   LWL     1,AFUNC|3,a_steal_done
+    2099 0001af60 00000000          .long   0
+    2100 0001af80           anim_steal_3
+    2101 0001af80                   LWWL    PK13F02,AFLIP|AFUNC|2,0,a_collision+6
+    2102 0001afe0 fff60064          .long   [-10,100],[-50,50],take_puck
+    2103 0001b040                   LWL     PK13F02,AFUNC|2,a_collision+6
+    2104 0001b090 fff60064          .long   [-10,100],[-50,50],take_puck
+    2105 0001b0f0                   LWL     PK13F02,AFUNC|1,a_collision+6
+    2106 0001b140 fff60064          .long   [-10,100],[-50,50],take_puck
+    2107 0001b1a0                   LWL     PK13F02,AFUNC|1,a_collision_puck+6
+    2108 0001b1f0 fff60064          .long   [-10,100],[-50,50],take_puck_or_free_only
+    2109 0001b250                   LWL     PK13F03,4|AFUNC,a_sound_for_steal
+    2110 0001b2a0                   LW      PK13F04,4
+    2111 0001b2d0                   LWL     1,AFUNC|3,a_steal_done
+    2112 0001b320 00000000          .long   0
+    2113 0001b340           anim_steal_4
+    2114 0001b340                   LWWL    PK14F02,AFLIP|AFUNC|2,0,a_collision+6
+    2115 0001b3a0 fff60046          .long   [-10,70],[-10,70],take_puck
+    2116 0001b400                   LWL     PK14F02,AFUNC|2,a_collision+6
+    2117 0001b450 fff60046          .long   [-10,70],[-10,70],take_puck
+    2118 0001b4b0                   LWL     PK14F02,AFUNC|1,a_collision+6
+    2119 0001b500 fff60046          .long   [-10,70],[-10,70],take_puck
+    2120 0001b560                   LWL     PK14F02,AFUNC|1,a_collision_puck+6
+    2121 0001b5b0 fff60046          .long   [-10,70],[-10,70],take_puck_or_free_only
+    2122 0001b610                   LWL     PK14F03,4|AFUNC,a_sound_for_steal
+    2123 0001b660                   LW      PK14F04,4
+    2124 0001b690                   LWL     1,AFUNC|3,a_steal_done
+    2125 0001b6e0 00000000          .long   0
+    2126 0001b700           anim_steal_5
+    2127 0001b700                   LWL     PK15F02,AFUNC|2,a_flip_collision+6
+    2128 0001b750 ffce0032          .long   [-50,50],[-10,100],take_puck
+    2129 0001b7b0                   LWL     PK15F02,AFUNC|2,a_collision+6
+    2130 0001b800 ffce0032          .long   [-50,50],[-10,100],take_puck
+    2131 0001b860                   LWL     PK15F02,AFUNC|1,a_collision+6
+    2132 0001b8b0 ffce0032          .long   [-50,50],[-10,100],take_puck
+    2133 0001b910                   LWL     PK15F02,AFUNC|1,a_collision_puck+6
+    2134 0001b960 ffce0032          .long   [-50,50],[-10,100],take_puck_or_free_only
+    2135 0001b9c0                   LWL     PK15F03,4|AFUNC,a_sound_for_steal
+    2136 0001ba10                   LW      PK15F04,4
+    2137 0001ba40                   LWL     1,AFUNC|3,a_steal_done
+    2138 0001ba90 00000000          .long   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   41
+
+    2139 0001bab0           anim_steal_6
+    2140 0001bab0                   LWWL    PK14F02,AFLIP|AFUNC|2,M_FLIPH,a_collision+6
+    2141 0001bb10 ffba000a          .long   [-70,10],[-10,70],take_puck
+    2142 0001bb70                   LWL     PK14F02,AFUNC|2,a_collision+6
+    2143 0001bbc0 ffba000a          .long   [-70,10],[-10,70],take_puck
+    2144 0001bc20                   LWL     PK14F02,AFUNC|1,a_collision+6
+    2145 0001bc70 ffba000a          .long   [-70,10],[-10,70],take_puck
+    2146 0001bcd0                   LWL     PK14F02,AFUNC|1,a_collision_puck+6
+    2147 0001bd20 ffba000a          .long   [-70,10],[-10,70],take_puck_or_free_only
+    2148 0001bd80                   LWL     PK14F03,4|AFUNC,a_sound_for_steal
+    2149 0001bdd0                   LW      PK14F04,4
+    2150 0001be00                   LWL     1,AFUNC|3,a_steal_done
+    2151 0001be50 00000000          .long   0
+    2152 0001be70           anim_steal_7
+    2153 0001be70                   LWWL    PK13F02,AFLIP|AFUNC|2,M_FLIPH,a_collision+6
+    2154 0001bed0 ff9c000a          .long   [-100,10],[-50,50],take_puck
+    2155 0001bf30                   LWL     PK13F02,AFUNC|2,a_collision+6
+    2156 0001bf80 ff9c000a          .long   [-100,10],[-50,50],take_puck
+    2157 0001bfe0                   LWL     PK13F02,AFUNC|1,a_collision+6
+    2158 0001c030 ff9c000a          .long   [-100,10],[-50,50],take_puck
+    2159 0001c090                   LWL     PK13F02,AFUNC|1,a_collision_puck+6
+    2160 0001c0e0 ff9c000a          .long   [-100,10],[-50,50],take_puck_or_free_only
+    2161 0001c140                   LWL     PK13F03,4|AFUNC,a_sound_for_steal
+    2162 0001c190                   LW      PK13F04,4
+    2163 0001c1c0                   LWL     1,AFUNC|3,a_steal_done
+    2164 0001c210 00000000          .long   0
+    2165 0001c230           anim_steal_8
+    2166 0001c230                   LWWL    PK12F02,AFLIP|AFUNC|2,M_FLIPH,a_collision+6
+    2167 0001c290 ffba000a          .long   [-70,10],[-70,10],take_puck
+    2168 0001c2f0                   LWL     PK12F02,AFUNC|2,a_collision+6
+    2169 0001c340 ffba000a          .long   [-70,10],[-70,10],take_puck
+    2170 0001c3a0                   LWL     PK12F02,AFUNC|1,a_collision+6
+    2171 0001c3f0 ffba000a          .long   [-70,10],[-70,10],take_puck
+    2172 0001c450                   LWL     PK12F02,AFUNC|1,a_collision_puck+6
+    2173 0001c4a0 ffba000a          .long   [-70,10],[-70,10],take_puck_or_free_only
+    2174 0001c500                   LWL     PK12F03,4|AFUNC,a_sound_for_steal
+    2175 0001c550                   LW      PK12F04,4
+    2176 0001c580                   LWL     1,AFUNC|3,a_steal_done
+    2177 0001c5d0 00000000          .long   0
+    2178                    
+    2179 0001c5f0           anim_push_1
+    2180 0001c5f0                   LWL     CA13F01,AFUNC|3,a_flip_accelerate_start+3
+    2181 0001c640     0000          .word   0,-40,6
+    2182 0001c670                   LW      CA13F02,2
+    2183 0001c6a0                   LW      CA13F03,2
+    2184 0001c6d0                   LWL     1,AFUNC|2,a_collision+6
+    2185 0001c720 ffce0032          .long   [-50,50],[-60,10],get_pushed
+    2186 0001c780                   LWL     1,AFUNC|1,a_accelerate_restore
+    2187 0001c7d0                   LW      CA13F04,3
+    2188 0001c800                   LW      CA13F05,3
+    2189 0001c830                   LW      CA13F07,3
+    2190 0001c860                   LWL     1,AFUNC|1,a_control_script_done
+    2191 0001c8b0 00000000          .long   0
+    2192                    
+    2193 0001c8d0           anim_push_2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   42
+
+    2194 0001c8d0                   LWWL    CA13F01,AFUNC|AFLIP|3,0,a_accelerate_start+3
+    2195 0001c930     001e          .word   30,-30,6
+    2196 0001c960                   LW      CA13F02,2
+    2197 0001c990                   LW      CA13F03,2
+    2198 0001c9c0                   LWL     1,AFUNC|2,a_collision+6
+    2199 0001ca10 fff6002d          .long   [-10,45],[-45,10],get_pushed
+    2200 0001ca70                   LWL     1,AFUNC|1,a_accelerate_restore
+    2201 0001cac0                   LW      CA13F04,3
+    2202 0001caf0                   LW      CA13F05,3
+    2203 0001cb20                   LW      CA13F07,3
+    2204 0001cb50                   LWL     1,AFUNC|1,a_control_script_done
+    2205 0001cba0 00000000          .long   0
+    2206                    
+    2207 0001cbc0           anim_push_3
+    2208 0001cbc0                   LWWL    CA13F01,AFUNC|AFLIP|3,0,a_accelerate_start+3
+    2209 0001cc20     0028          .word   40,0,6
+    2210 0001cc50                   LW      CA13F02,2
+    2211 0001cc80                   LW      CA13F03,2
+    2212 0001ccb0                   LWL     1,AFUNC|2,a_collision+6
+    2213 0001cd00 fff6003c          .long   [-10,60],[-50,50],get_pushed
+    2214 0001cd60                   LWL     1,AFUNC|1,a_accelerate_restore
+    2215 0001cdb0                   LW      CA13F04,3
+    2216 0001cde0                   LW      CA13F05,3
+    2217 0001ce10                   LW      CA13F07,3
+    2218 0001ce40                   LWL     1,AFUNC|1,a_control_script_done
+    2219 0001ce90 00000000          .long   0
+    2220                    
+    2221 0001ceb0           anim_push_4
+    2222 0001ceb0                   LWWL    CA13F01,AFUNC|AFLIP|3,0,a_accelerate_start+3
+    2223 0001cf10     001e          .word   30,30,6
+    2224 0001cf40                   LW      CA13F02,2
+    2225 0001cf70                   LW      CA13F03,2
+    2226 0001cfa0                   LWL     1,AFUNC|2,a_collision+6
+    2227 0001cff0 fff6002d          .long   [-10,45],[-10,45],get_pushed
+    2228 0001d050                   LWL     1,AFUNC|1,a_accelerate_restore
+    2229 0001d0a0                   LW      CA13F04,3
+    2230 0001d0d0                   LW      CA13F05,3
+    2231 0001d100                   LW      CA13F07,3
+    2232 0001d130                   LWL     1,AFUNC|1,a_control_script_done
+    2233 0001d180 00000000          .long   0
+    2234                    
+    2235 0001d1a0           anim_push_5
+    2236 0001d1a0                   LWL     CA13F01,AFUNC|3,a_flip_accelerate_start+3
+    2237 0001d1f0     0000          .word   0,40,6
+    2238 0001d220                   LW      CA13F02,2
+    2239 0001d250                   LW      CA13F03,2
+    2240 0001d280                   LWL     1,AFUNC|2,a_collision+6
+    2241 0001d2d0 ffce0032          .long   [-50,50],[-10,60],get_pushed
+    2242 0001d330                   LWL     1,AFUNC|1,a_accelerate_restore
+    2243 0001d380                   LW      CA13F04,3
+    2244 0001d3b0                   LW      CA13F05,3
+    2245 0001d3e0                   LW      CA13F07,3
+    2246 0001d410                   LWL     1,AFUNC|1,a_control_script_done
+    2247 0001d460 00000000          .long   0
+    2248                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   43
+
+    2249 0001d480           anim_push_6
+    2250 0001d480                   LWWL    CA13F01,AFUNC|AFLIP|3,M_FLIPH,a_accelerate_start+3
+    2251 0001d4e0     ffe2          .word   -30,30,6
+    2252 0001d510                   LW      CA13F02,2
+    2253 0001d540                   LW      CA13F03,2
+    2254 0001d570                   LWL     1,AFUNC|2,a_collision+6
+    2255 0001d5c0 ffd3000a          .long   [-45,10],[-10,45],get_pushed
+    2256 0001d620                   LWL     1,AFUNC|1,a_accelerate_restore
+    2257 0001d670                   LW      CA13F04,3
+    2258 0001d6a0                   LW      CA13F05,3
+    2259 0001d6d0                   LW      CA13F07,3
+    2260 0001d700                   LWL     1,AFUNC|1,a_control_script_done
+    2261 0001d750 00000000          .long   0
+    2262                    
+    2263 0001d770           anim_push_7
+    2264 0001d770                   LWWL    CA13F01,AFUNC|AFLIP|3,M_FLIPH,a_accelerate_start+3
+    2265 0001d7d0     ffd8          .word   -40,0,6
+    2266 0001d800                   LW      CA13F02,2
+    2267 0001d830                   LW      CA13F03,2
+    2268 0001d860                   LWL     1,AFUNC|2,a_collision+6
+    2269 0001d8b0 ffc4000a          .long   [-60,10],[-50,50],get_pushed
+    2270 0001d910                   LWL     1,AFUNC|1,a_accelerate_restore
+    2271 0001d960                   LW      CA13F04,3
+    2272 0001d990                   LW      CA13F05,3
+    2273 0001d9c0                   LW      CA13F07,3
+    2274 0001d9f0                   LWL     1,AFUNC|1,a_control_script_done
+    2275 0001da40 00000000          .long   0
+    2276                    
+    2277 0001da60           anim_push_8
+    2278 0001da60                   LWWL    CA13F01,AFUNC|AFLIP|3,M_FLIPH,a_accelerate_start+3
+    2279 0001dac0     ffe2          .word   -30,-30,6
+    2280 0001daf0                   LW      CA13F02,2
+    2281 0001db20                   LW      CA13F03,2
+    2282 0001db50                   LWL     1,AFUNC|2,a_collision+6
+    2283 0001dba0 ffd3000a          .long   [-45,10],[-45,10],get_pushed
+    2284 0001dc00                   LWL     1,AFUNC|1,a_accelerate_restore
+    2285 0001dc50                   LW      CA13F04,3
+    2286 0001dc80                   LW      CA13F05,3
+    2287 0001dcb0                   LW      CA13F07,3
+    2288 0001dce0                   LWL     1,AFUNC|1,a_control_script_done
+    2289 0001dd30 00000000          .long   0
+    2290                    
+    2291 0001dd50           anim_body_check_1
+    2292 0001dd50           ac110   LW      BC11F01,1
+    2293 0001dd80                   LWL     BC11F02,AFUNC|1,a_ch_vels
+    2294 0001ddd0           ac111   LWL     1,AFUNC|1,a_wall_branch+8
+    2295 0001de20 0001dd50'         .long    ac110,ac111,[-50,50],[-60,10]
+    2296 0001dea0 00000000          .long   0
+    2297 0001dec0           anim_body_check_wall_1
+    2298 0001dec0           ac120   LWL     BC11F03,AFUNC|1,a_wall_branch+8
+    2299 0001df10 0001dec0'         .long    ac120,ac120,[-50,50],[-60,10]
+    2300 0001df90 00000000          .long   0
+    2301 0001dfb0           anim_body_check_down_1
+    2302 0001dfb0           ac130   LWL     BC11F04,AFUNC|1,a_go_down
+    2303 0001e000           ac131   LWL     1,AFUNC|1,a_until_ground+4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   44
+
+    2304 0001e050 0001dfb0'         .long    ac130,ac131
+    2305 0001e090                   LWL     BC11F05,AFUNC|3,a_bface+1
+    2306 0001e0e0     0003          .word    3
+    2307 0001e0f0                   LWL     1,AFUNC|1,a_control_script_done
+    2308 0001e140 00000000          .long   0
+    2309                    
+    2310 0001e160           anim_body_check_2
+    2311 0001e160           ac210   LW      BC12F01,1
+    2312 0001e190                   LWL     BC12F02,AFUNC|1,a_ch_vels
+    2313 0001e1e0           ac211   LWL     1,AFUNC|1,a_wall_branch+8
+    2314 0001e230 0001e160'         .long    ac210,ac211,[-10,45],[-45,10]
+    2315 0001e2b0 00000000          .long   0
+    2316 0001e2d0           anim_body_check_wall_2
+    2317 0001e2d0           ac220   LWL     BC12F03,AFUNC|1,a_wall_branch+8
+    2318 0001e320 0001e2d0'         .long    ac220,ac220,[-10,45],[-45,10]
+    2319 0001e3a0 00000000          .long   0
+    2320 0001e3c0           anim_body_check_down_2
+    2321 0001e3c0           ac230   LWL     BC12F04,AFUNC|1,a_go_down
+    2322 0001e410           ac231   LWL     1,AFUNC|1,a_until_ground+4
+    2323 0001e460 0001e3c0'         .long    ac230,ac231
+    2324 0001e4a0                   LW      BC12F05,3
+    2325 0001e4d0                   LWL     1,AFUNC|1,a_control_script_done
+    2326 0001e520 00000000          .long   0
+    2327                    
+    2328 0001e540           anim_body_check_8
+    2329 0001e540           ac810   LW      BC12F01,1
+    2330 0001e570                   LWL     BC12F02,AFUNC|1,a_ch_vels
+    2331 0001e5c0           ac811   LWL     1,AFUNC|1,a_wall_branch+8
+    2332 0001e610 0001e540'         .long    ac810,ac811,[-45,10],[-45,10]
+    2333 0001e690 00000000          .long   0
+    2334 0001e6b0           anim_body_check_wall_8
+    2335 0001e6b0           ac820   LWL     BC12F03,AFUNC|1,a_wall_branch+8
+    2336 0001e700 0001e6b0'         .long    ac820,ac820,[-45,10],[-45,10]
+    2337 0001e780 00000000          .long   0
+    2338 0001e7a0           anim_body_check_down_8
+    2339 0001e7a0           ac830   LWL     BC12F04,AFUNC|1,a_go_down
+    2340 0001e7f0           ac831   LWL     1,AFUNC|1,a_until_ground+4
+    2341 0001e840 0001e7a0'         .long    ac830,ac831
+    2342 0001e880                   LW      BC12F05,3
+    2343 0001e8b0                   LWL     1,AFUNC|1,a_control_script_done
+    2344 0001e900 00000000          .long   0
+    2345                    
+    2346 0001e920           anim_body_check_7
+    2347 0001e920           ac710   LW      BC13F01,1
+    2348 0001e950                   LWL     BC13F02,AFUNC|1,a_ch_vels
+    2349 0001e9a0           ac711   LWL     1,AFUNC|1,a_wall_branch+8
+    2350 0001e9f0 0001e920'         .long    ac710,ac711,[-60,10],[-50,50]
+    2351 0001ea70 00000000          .long   0
+    2352 0001ea90           anim_body_check_wall_7
+    2353 0001ea90           ac720   LWL     BC13F03,AFUNC|1,a_wall_branch+8
+    2354 0001eae0 0001ea90'         .long    ac720,ac720,[-60,10],[-50,50]
+    2355 0001eb60 00000000          .long   0
+    2356 0001eb80           anim_body_check_down_7
+    2357 0001eb80           ac730   LWL     BC13F04,AFUNC|1,a_go_down
+    2358 0001ebd0           ac731   LWL     1,AFUNC|1,a_until_ground+4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   45
+
+    2359 0001ec20 0001eb80'         .long    ac730,ac731
+    2360 0001ec60                   LWL     1,AFUNC|1,a_bface+1
+    2361 0001ecb0     0001          .word    1
+    2362 0001ecc0                   LWL     1,AFUNC|1,a_control_script_done
+    2363 0001ed10 00000000          .long   0
+    2364                    
+    2365 0001ed30           anim_body_check_3
+    2366 0001ed30           ac310   LW      BC13F01,1
+    2367 0001ed60                   LWL     BC13F02,AFUNC|1,a_ch_vels
+    2368 0001edb0           ac311   LWL     1,AFUNC|1,a_wall_branch+8
+    2369 0001ee00 0001ed30'         .long    ac310,ac311,[-10,60],[-50,50]
+    2370 0001ee80 00000000          .long   0
+    2371 0001eea0           anim_body_check_wall_3
+    2372 0001eea0           ac320   LWL     BC13F03,AFUNC|1,a_wall_branch+8
+    2373 0001eef0 0001eea0'         .long    ac320,ac320,[-10,60],[-50,50]
+    2374 0001ef70 00000000          .long   0
+    2375 0001ef90           anim_body_check_down_3
+    2376 0001ef90           ac330   LWL     BC13F04,AFUNC|1,a_go_down
+    2377 0001efe0           ac331   LWL     1,AFUNC|1,a_until_ground+4
+    2378 0001f030 0001ef90'         .long    ac330,ac331
+    2379 0001f070                   LWL     1,AFUNC|1,a_bface+1
+    2380 0001f0c0     0001          .word    1
+    2381 0001f0d0                   LWL     1,AFUNC|1,a_control_script_done
+    2382 0001f120 00000000          .long   0
+    2383                    
+    2384 0001f140           anim_body_check_6
+    2385 0001f140           ac610   LW      BC23F01,1
+    2386 0001f170                   LWL     BC23F02,AFUNC|1,a_ch_vels
+    2387 0001f1c0           ac611   LWL     1,AFUNC|1,a_wall_branch+8
+    2388 0001f210 0001f140'         .long    ac610,ac611,[-45,10],[-10,45]
+    2389 0001f290 00000000          .long   0
+    2390 0001f2b0           anim_body_check_wall_6
+    2391 0001f2b0           ac620   LWL     BC23F03,AFUNC|1,a_wall_branch+8
+    2392 0001f300 0001f2b0'         .long    ac620,ac620,[-45,10],[-10,45]
+    2393 0001f380 00000000          .long   0
+    2394 0001f3a0           anim_body_check_down_6
+    2395 0001f3a0           ac630   LWL     BC23F04,AFUNC|1,a_go_down
+    2396 0001f3f0           ac631   LWL     1,AFUNC|1,a_until_ground+4
+    2397 0001f440 0001f3a0'         .long    ac630,ac631
+    2398 0001f480                   LWL     BC23F05,AFUNC|3,a_bface+1
+    2399 0001f4d0     0008          .word    8
+    2400 0001f4e0                   LWL     1,AFUNC|1,a_control_script_done
+    2401 0001f530 00000000          .long   0
+    2402                    
+    2403 0001f550           anim_body_check_4
+    2404 0001f550           ac410   LW      BC23F01,1
+    2405 0001f580                   LWL     BC23F02,AFUNC|1,a_ch_vels
+    2406 0001f5d0           ac411   LWL     1,AFUNC|1,a_wall_branch+8
+    2407 0001f620 0001f550'         .long    ac410,ac411,[-10,45],[-10,45]
+    2408 0001f6a0 00000000          .long   0
+    2409 0001f6c0           anim_body_check_wall_4
+    2410 0001f6c0           ac420   LWL     BC23F03,AFUNC|1,a_wall_branch+8
+    2411 0001f710 0001f6c0'         .long    ac420,ac420,[-10,45],[-10,45]
+    2412 0001f790 00000000          .long   0
+    2413 0001f7b0           anim_body_check_down_4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   46
+
+    2414 0001f7b0           ac430   LWL     BC23F04,AFUNC|1,a_go_down
+    2415 0001f800           ac431   LWL     1,AFUNC|1,a_until_ground+4
+    2416 0001f850 0001f7b0'         .long    ac430,ac431
+    2417 0001f890                   LWL     BC23F05,AFUNC|3,a_bface+1
+    2418 0001f8e0     0002          .word    2
+    2419 0001f8f0                   LWL     1,AFUNC|1,a_control_script_done
+    2420 0001f940 00000000          .long   0
+    2421                    
+    2422 0001f960           anim_body_check_5
+    2423 0001f960           ac510   LW      BC15F01,1
+    2424 0001f990                   LWL     BC15F02,AFUNC|1,a_ch_vels
+    2425 0001f9e0           ac511   LWL     1,AFUNC|1,a_wall_branch+8
+    2426 0001fa30 0001f960'         .long    ac510,ac511,[-50,50],[-10,60]
+    2427 0001fab0 00000000          .long   0
+    2428 0001fad0           anim_body_check_wall_5
+    2429 0001fad0           ac520   LWL     BC15F03,AFUNC|1,a_wall_branch+8
+    2430 0001fb20 0001fad0'         .long    ac520,ac520,[-50,50],[-10,60]
+    2431 0001fba0 00000000          .long   0
+    2432 0001fbc0           anim_body_check_down_5
+    2433 0001fbc0           ac530   LWL     BC15F04,AFUNC|1,a_go_down
+    2434 0001fc10           ac531   LWL     1,AFUNC|1,a_until_ground+4
+    2435 0001fc60 0001fbc0'         .long    ac530,ac531
+    2436 0001fca0                   LWL     BC15F05,AFUNC|3,a_bface+1
+    2437 0001fcf0     0002          .word    2
+    2438 0001fd00                   LWL     1,AFUNC|1,a_control_script_done
+    2439 0001fd50 00000000          .long   0
+    2440                    
+    2441 0001fd70           anim_body_checked_face_1
+    2442 0001fd70           axc11   LWW     HE112F01,AFLIP|3,0
+    2443 0001fdb0           axc12   LWL     HE112F02,AFUNC|1,a_watch_ground_loop+4
+    2444 0001fe00 0001fd70'         .long    axc11,axc12
+    2445 0001fe40 00000000          .long   0
+    2446 0001fe60           anim_body_checked_face_wall_1
+    2447 0001fe60           ayc11   LWL     HE112F02,AFUNC|1,a_watch_ground_loop+4
+    2448 0001feb0 0001fe60'         .long    ayc11,ayc11
+    2449 0001fef0 00000000          .long   0
+    2450 0001ff10           anim_body_checked_face_down_1
+    2451 0001ff10           acf10   LWWL    HE112F03,AFUNC|AFLIP|3,0,a_go_down_c
+    2452 0001ff70           acf11   LWL     HE112F06,AFUNC|1,a_until_ground_c+4
+    2453 0001ffc0 0001ff10'         .long    acf10,acf11
+    2454 00020000                   LWL     RA12F02,AFUNC|1,a_start_get_up_count
+    2455 00020050           aqcf10  LWL     1,AFUNC|1,a_wait_get_up+4
+    2456 000200a0 0001ff10'         .long   acf10,aqcf10
+    2457 000200e0                   LW      RA12F03,3
+    2458 00020110                   LW      RA12F04,3
+    2459 00020140                   LW      RA12F06,3
+    2460 00020170                   LW      RA12F07,3
+    2461 000201a0                   LWL     RA12F08,AFUNC|3,a_bface+1
+    2462 000201f0     0002          .word    2
+    2463 00020200                   LWL     1,AFUNC|1,a_control_script_done
+    2464 00020250 00000000          .long   0
+    2465                    
+    2466 00020270           anim_body_checked_face_2
+    2467 00020270           axc21   LWW     HE122F01,AFLIP|3,0
+    2468 000202b0           axc22   LWL     HE122F02,AFUNC|1,a_watch_ground_loop+4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   47
+
+    2469 00020300 00020270'         .long    axc21,axc22
+    2470 00020340 00000000          .long   0
+    2471 00020360           anim_body_checked_face_wall_2
+    2472 00020360           ayc21   LWL     HE122F02,AFUNC|1,a_watch_ground_loop+4
+    2473 000203b0 00020360'         .long    ayc21,ayc21
+    2474 000203f0 00000000          .long   0
+    2475 00020410           anim_body_checked_face_down_2
+    2476 00020410           acf20   LWWL    HE122F03,AFUNC|AFLIP|3,0,a_go_down_c
+    2477 00020470           acf21   LWL     HE122F04,AFUNC|1,a_until_ground_c+4
+    2478 000204c0 00020410'         .long    acf20,acf21
+    2479 00020500                   LW      HE122F07,3
+    2480 00020530                   LWL     RA14F01,AFUNC|1,a_start_get_up_count
+    2481 00020580           aqcf20  LWL     1,AFUNC|1,a_wait_get_up+4
+    2482 000205d0 00020410'         .long   acf20,aqcf20
+    2483 00020610                   LW      RA14F02,3
+    2484 00020640                   LW      RA14F03,3
+    2485 00020670                   LW      RA14F04,3
+    2486 000206a0                   LW      RA14F05,3
+    2487 000206d0                   LWL     RA14F06,AFUNC|3,a_bface+1
+    2488 00020720     0004          .word    4
+    2489 00020730                   LWL     1,AFUNC|1,a_control_script_done
+    2490 00020780 00000000          .long   0
+    2491                    
+    2492 000207a0           anim_body_checked_face_3
+    2493 000207a0           axc31   LWW     HE132F01,AFLIP|3,0
+    2494 000207e0           axc32   LWL     HE132F03,AFUNC|1,a_watch_ground_loop+4
+    2495 00020830 000207a0'         .long    axc31,axc32
+    2496 00020870 00000000          .long   0
+    2497 00020890           anim_body_checked_face_wall_3
+    2498 00020890           ayc31   LWL     HE132F03,AFUNC|1,a_watch_ground_loop+4
+    2499 000208e0 00020890'         .long    ayc31,ayc31
+    2500 00020920 00000000          .long   0
+    2501 00020940           anim_body_checked_face_down_3
+    2502 00020940           acf30   LWWL    HE132F04,AFUNC|AFLIP|3,0,a_go_down_c
+    2503 000209a0           acf31   LWL     HE132F05,AFUNC|1,a_until_ground_c+4
+    2504 000209f0 00020940'         .long    acf30,acf31
+    2505 00020a30                   LW      HE132F07,3
+    2506 00020a60                   LWL     RB15F01,AFUNC|1,a_start_get_up_count
+    2507 00020ab0           aqcf30  LWL     1,AFUNC|1,a_wait_get_up+4
+    2508 00020b00 00020940'         .long   acf30,aqcf30
+    2509 00020b40                   LW      RB15F03,3
+    2510 00020b70                   LW      RB15F04,3
+    2511 00020ba0                   LW      RB15F06,3
+    2512 00020bd0                   LW      RB15F08,3
+    2513 00020c00                   LWL     RB15F09,AFUNC|3,a_bface+1
+    2514 00020c50     0005          .word    5
+    2515 00020c60                   LWL     1,AFUNC|1,a_control_script_done
+    2516 00020cb0 00000000          .long   0
+    2517                    
+    2518 00020cd0           anim_body_checked_face_4
+    2519 00020cd0           axc41   LWW     HE142F01,AFLIP|3,0
+    2520 00020d10           axc42   LWL     HE142F02,AFUNC|1,a_watch_ground_loop+4
+    2521 00020d60 00020cd0'         .long    axc41,axc42
+    2522 00020da0 00000000          .long   0
+    2523 00020dc0           anim_body_checked_face_wall_4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   48
+
+    2524 00020dc0           ayc41   LWL     HE142F02,AFUNC|1,a_watch_ground_loop+4
+    2525 00020e10 00020dc0'         .long    ayc41,ayc41
+    2526 00020e50 00000000          .long   0
+    2527 00020e70           anim_body_checked_face_down_4
+    2528 00020e70           acf40   LWWL    HE142F03,AFUNC|AFLIP|3,0,a_go_down_c
+    2529 00020ed0           acf41   LWL     HE142F05,AFUNC|1,a_until_ground_c+4
+    2530 00020f20 00020e70'         .long    acf40,acf41
+    2531 00020f60                   LW      HE142F07,3
+    2532 00020f90                   LWL     HE12F02,AFUNC|1,a_start_get_up_count
+    2533 00020fe0           aqcf40  LWL     1,AFUNC|1,a_wait_get_up+4
+    2534 00021030 00020e70'         .long   acf40,aqcf40
+    2535 00021070                   LW      HE12F03,3
+    2536 000210a0                   LW      HE12F05,3
+    2537 000210d0                   LW      HE12F06,3
+    2538 00021100                   LW      HE12F07,3
+    2539 00021130                   LWL     HE12F09,AFUNC|3,a_bface+1
+    2540 00021180     0006          .word    6
+    2541 00021190                   LWL     1,AFUNC|1,a_control_script_done
+    2542 000211e0 00000000          .long   0
+    2543                    
+    2544 00021200           anim_body_checked_face_5
+    2545 00021200           axc51   LWW     HE152F01,AFLIP|3,0
+    2546 00021240           axc52   LWL     HE152F02,AFUNC|1,a_watch_ground_loop+4
+    2547 00021290 00021200'         .long    axc51,axc52
+    2548 000212d0 00000000          .long   0
+    2549 000212f0           anim_body_checked_face_wall_5
+    2550 000212f0           ayc51   LWL     HE152F02,AFUNC|1,a_watch_ground_loop+4
+    2551 00021340 000212f0'         .long    ayc51,ayc51
+    2552 00021380 00000000          .long   0
+    2553 000213a0           anim_body_checked_face_down_5
+    2554 000213a0           acf50   LWWL    HE152F03,AFUNC|AFLIP|3,0,a_go_down_c
+    2555 00021400           acf51   LWL     RB15F01,AFUNC|1,a_until_ground_c+4
+    2556 00021450 000213a0'         .long    acf50,acf51
+    2557 00021490                   LWL     RB15F03,AFUNC|1,a_start_get_up_count
+    2558 000214e0           aqcf50  LWL     1,AFUNC|1,a_wait_get_up+4
+    2559 00021530 000213a0'         .long   acf50,aqcf50
+    2560 00021570                   LW      RB15F04,3
+    2561 000215a0                   LW      RB15F06,3
+    2562 000215d0                   LW      RB15F08,3
+    2563 00021600                   LW      RB15F09,3
+    2564 00021630                   LWL     1,AFUNC|1,a_control_script_done
+    2565 00021680 00000000          .long   0
+    2566                    
+    2567 000216a0           anim_body_checked_face_6
+    2568 000216a0           axc61   LWW     HE142F01,AFLIP|3,M_FLIPH
+    2569 000216e0           axc62   LWL     HE142F02,AFUNC|1,a_watch_ground_loop+4
+    2570 00021730 000216a0'         .long    axc61,axc62
+    2571 00021770 00000000          .long   0
+    2572 00021790           anim_body_checked_face_wall_6
+    2573 00021790           ayc61   LWL     HE142F02,AFUNC|1,a_watch_ground_loop+4
+    2574 000217e0 00021790'         .long    ayc61,ayc61
+    2575 00021820 00000000          .long   0
+    2576 00021840           anim_body_checked_face_down_6
+    2577 00021840           acf60   LWWL    HE142F03,AFUNC|AFLIP|3,M_FLIPH,a_go_down_c
+    2578 000218a0           acf61   LWL     HE142F05,AFUNC|1,a_until_ground_c+4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   49
+
+    2579 000218f0 00021840'         .long    acf60,acf61
+    2580 00021930                   LW      HE142F07,3
+    2581 00021960                   LWL     HE12F02,AFUNC|1,a_start_get_up_count
+    2582 000219b0           aqcf60  LWL     1,AFUNC|1,a_wait_get_up+4
+    2583 00021a00 00021840'         .long   acf60,aqcf60
+    2584 00021a40                   LW      HE12F03,3
+    2585 00021a70                   LW      HE12F05,3
+    2586 00021aa0                   LW      HE12F06,3
+    2587 00021ad0                   LW      HE12F07,3
+    2588 00021b00                   LWL     HE12F09,AFUNC|3,a_bface+1
+    2589 00021b50     0004          .word    4
+    2590 00021b60                   LWL     1,AFUNC|1,a_control_script_done
+    2591 00021bb0 00000000          .long   0
+    2592                    
+    2593 00021bd0           anim_body_checked_face_7
+    2594 00021bd0           axc71   LWW     HE132F01,AFLIP|3,M_FLIPH
+    2595 00021c10           axc72   LWL     HE132F03,AFUNC|1,a_watch_ground_loop+4
+    2596 00021c60 00021bd0'         .long    axc71,axc72
+    2597 00021ca0 00000000          .long   0
+    2598 00021cc0           anim_body_checked_face_wall_7
+    2599 00021cc0           ayc71   LWL     HE132F03,AFUNC|1,a_watch_ground_loop+4
+    2600 00021d10 00021cc0'         .long    ayc71,ayc71
+    2601 00021d50 00000000          .long   0
+    2602 00021d70           anim_body_checked_face_down_7
+    2603 00021d70           acf70   LWWL    HE132F04,AFUNC|AFLIP|3,M_FLIPH,a_go_down_c
+    2604 00021dd0           acf71   LWL     HE132F05,AFUNC|1,a_until_ground_c+4
+    2605 00021e20 00021d70'         .long    acf70,acf71
+    2606 00021e60                   LW      HE132F07,3
+    2607 00021e90                   LWL     RB15F01,AFUNC|1,a_start_get_up_count
+    2608 00021ee0           aqcf70  LWL     1,AFUNC|1,a_wait_get_up+4
+    2609 00021f30 00021d70'         .long   acf70,aqcf70
+    2610 00021f70                   LW      RB15F03,3
+    2611 00021fa0                   LW      RB15F04,3
+    2612 00021fd0                   LW      RB15F06,3
+    2613 00022000                   LW      RB15F08,3
+    2614 00022030                   LWL     RB15F09,AFUNC|3,a_bface+1
+    2615 00022080     0005          .word    5
+    2616 00022090                   LWL     1,AFUNC|1,a_control_script_done
+    2617 000220e0 00000000          .long   0
+    2618                    
+    2619 00022100           anim_body_checked_face_8
+    2620 00022100           axc81   LWW     HE122F01,AFLIP|3,M_FLIPH
+    2621 00022140           axc82   LWL     HE122F02,AFUNC|1,a_watch_ground_loop+4
+    2622 00022190 00022100'         .long    axc81,axc82
+    2623 000221d0 00000000          .long   0
+    2624 000221f0           anim_body_checked_face_wall_8
+    2625 000221f0           ayc81   LWL     HE122F02,AFUNC|1,a_watch_ground_loop+4
+    2626 00022240 000221f0'         .long    ayc81,ayc81
+    2627 00022280 00000000          .long   0
+    2628 000222a0           anim_body_checked_face_down_8
+    2629 000222a0           acf80   LWWL    HE122F03,AFUNC|AFLIP|3,M_FLIPH,a_go_down_c
+    2630 00022300           acf81   LWL     HE122F04,AFUNC|1,a_until_ground_c+4
+    2631 00022350 000222a0'         .long    acf80,acf81
+    2632 00022390                   LW      HE122F07,3
+    2633 000223c0                   LWL     RA14F01,AFUNC|1,a_start_get_up_count
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   50
+
+    2634 00022410           aqcf80  LWL     1,AFUNC|1,a_wait_get_up+4
+    2635 00022460 000222a0'         .long   acf80,aqcf80
+    2636 000224a0                   LW      RA14F02,3
+    2637 000224d0                   LW      RA14F03,3
+    2638 00022500                   LW      RA14F04,3
+    2639 00022530                   LW      RA14F05,3
+    2640 00022560                   LWL     RA14F06,AFUNC|3,a_bface+1
+    2641 000225b0     0006          .word    6
+    2642 000225c0                   LWL     1,AFUNC|1,a_control_script_done
+    2643 00022610 00000000          .long   0
+    2644                    
+    2645                    ;anim_body_checked_back_1
+    2646                    ;bxc11  LWW     HE21F01,AFLIP|3,0
+    2647                    ;bxc12  LWL     HE21F02,AFUNC|1,a_watch_ground_loop+4
+    2648                    ;       .long    bxc11,bxc12
+    2649                    ;       .long   0
+    2650                    ;anim_body_checked_back_wall_1
+    2651                    ;byc11  LWL     HE21F02,AFUNC|1,a_watch_ground_loop+4
+    2652                    ;       .long    byc11,byc11
+    2653                    ;       .long   0
+    2654                    ;anim_body_checked_back_down_1
+    2655                    ;acb10  LWWL    HE21F03,AFUNC|AFLIP|3,0,a_go_down_c
+    2656                    ;acb11  LWL     HE21F05,AFUNC|1,a_until_ground_c+4
+    2657                    ;       .long    acb10,acb11
+    2658                    ;       LWL     HE14F01,AFUNC|1,a_start_get_up_count
+    2659                    ;apcb10 LWL     1,AFUNC|1,a_wait_get_up+4
+    2660                    ;       .long   acb10,apcb10
+    2661                    ;       LW      HE14F02,3
+    2662                    ;       LW      HE14F04,3
+    2663                    ;       LW      HE14F06,3
+    2664                    ;       LW      HE14F07,3
+    2665                    ;       LWL     HE14F09,AFUNC|3,a_bface+1
+    2666                    ;       .word    8
+    2667                    ;       LWL     1,AFUNC|1,a_control_script_done
+    2668                    ;       .long   0
+    2669                    ;
+    2670                    ;anim_body_checked_back_2
+    2671                    ;bxc21  LWW     HE122F01,AFLIP|3,0
+    2672                    ;bxc22  LWL     HE122F02,AFUNC|1,a_watch_ground_loop+4
+    2673                    ;       .long    bxc21,bxc22
+    2674                    ;       .long   0
+    2675                    ;anim_body_checked_back_wall_2
+    2676                    ;byc21  LWL     HE122F02,AFUNC|1,a_watch_ground_loop+4
+    2677                    ;       .long    byc21,byc21
+    2678                    ;       .long   0
+    2679                    ;anim_body_checked_back_down_2
+    2680                    ;acb20  LWWL    HE122F03,AFUNC|AFLIP|3,0,a_go_down_c
+    2681                    ;acb21  LWL     HE122F04,AFUNC|1,a_until_ground_c+4
+    2682                    ;       .long    acb20,acb21
+    2683                    ;       LW      HE122F07,3
+    2684                    ;       LWL     RA14F01,AFUNC|1,a_start_get_up_count
+    2685                    ;apcb20 LWL     1,AFUNC|1,a_wait_get_up+4
+    2686                    ;       .long   acb20,apcb20
+    2687                    ;       LW      RA14F02,3
+    2688                    ;       LW      RA14F03,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   51
+
+    2689                    ;       LW      RA14F04,3
+    2690                    ;       LW      RA14F05,3
+    2691                    ;       LWL     RA14F06,AFUNC|3,a_bface+1
+    2692                    ;       .word    4
+    2693                    ;       LWL     1,AFUNC|1,a_control_script_done
+    2694                    ;       .long   0
+    2695                    ;
+    2696                    ;anim_body_checked_back_3
+    2697                    ;bxc31  LWW     HE23F01,AFLIP|3,0
+    2698                    ;bxc32  LWL     HE23F02,AFUNC|1,a_watch_ground_loop+4
+    2699                    ;       .long    bxc31,bxc32
+    2700                    ;       .long   0
+    2701                    ;anim_body_checked_back_wall_3
+    2702                    ;byc31  LWL     HE23F02,AFUNC|1,a_watch_ground_loop+4
+    2703                    ;       .long    byc31,byc31
+    2704                    ;       .long   0
+    2705                    ;anim_body_checked_back_down_3
+    2706                    ;acb30  LWWL    HE23F03,AFUNC|AFLIP|3,0,a_go_down_c
+    2707                    ;acb31  LWL     HE23F05,AFUNC|1,a_until_ground_c+4
+    2708                    ;       .long    acb30,acb31
+    2709                    ;       LW      HE23F07,3
+    2710                    ;       LW      HE23F08,3
+    2711                    ;       LWL     HE14F01,AFUNC|1,a_start_get_up_count
+    2712                    ;apcb30 LWL     1,AFUNC|1,a_wait_get_up+4
+    2713                    ;       .long   acb30,apcb30
+    2714                    ;       LW      HE14F02,3
+    2715                    ;       LW      HE14F04,3
+    2716                    ;       LW      HE14F06,3
+    2717                    ;       LW      HE14F07,3
+    2718                    ;       LWL     HE14F09,AFUNC|3,a_bface+1
+    2719                    ;       .word    8
+    2720                    ;       LWL     1,AFUNC|1,a_control_script_done
+    2721                    ;       .long   0
+    2722                    ;
+    2723                    ;anim_body_checked_back_4
+    2724                    ;bxc41  LWW     HE24F01,AFLIP|3,0
+    2725                    ;bxc42  LWL     HE24F02,AFUNC|1,a_watch_ground_loop+4
+    2726                    ;       .long    bxc41,bxc42
+    2727                    ;       .long   0
+    2728                    ;anim_body_checked_back_wall_4
+    2729                    ;byc41  LWL     HE24F02,AFUNC|1,a_watch_ground_loop+4
+    2730                    ;       .long    byc41,byc41
+    2731                    ;       .long   0
+    2732                    ;anim_body_checked_back_down_4
+    2733                    ;acb40  LWWL    HE24F03,AFUNC|AFLIP|3,0,a_go_down_c
+    2734                    ;acb41  LWL     HE24F04,AFUNC|1,a_until_ground_c+4
+    2735                    ;       .long    acb40,acb41
+    2736                    ;       LW      HE24F06,3
+    2737                    ;       LWL     RB11F01,AFUNC|1,a_start_get_up_count
+    2738                    ;apcb40 LWL     1,AFUNC|1,a_wait_get_up+4
+    2739                    ;       .long   acb40,apcb40
+    2740                    ;       LW      RB11F03,3
+    2741                    ;       LW      RB11F05,3
+    2742                    ;       LW      RB11F07,3
+    2743                    ;       LW      RB11F09,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   52
+
+    2744                    ;       LWL     RB11F10,AFUNC|3,a_bface+1
+    2745                    ;       .word    1
+    2746                    ;       LWL     1,AFUNC|1,a_control_script_done
+    2747                    ;       .long   0
+    2748                    ;
+    2749                    ;anim_body_checked_back_5
+    2750                    ;bxc51  LWW     HE25F01,AFLIP|3,0
+    2751                    ;bxc52  LWL     HE25F02,AFUNC|1,a_watch_ground_loop+4
+    2752                    ;       .long    bxc51,bxc52
+    2753                    ;       .long   0
+    2754                    ;anim_body_checked_back_wall_5
+    2755                    ;byc51  LWL     HE25F02,AFUNC|1,a_watch_ground_loop+4
+    2756                    ;       .long    byc51,byc51
+    2757                    ;       .long   0
+    2758                    ;anim_body_checked_back_down_5
+    2759                    ;acb50  LWWL    HE25F03,AFUNC|AFLIP|3,0,a_go_down_c
+    2760                    ;acb51  LWL     HE25F04,AFUNC|1,a_until_ground_c+4
+    2761                    ;       .long    acb50,acb51
+    2762                    ;       LWL     RA12F02,AFUNC|1,a_start_get_up_count
+    2763                    ;apcb50 LWL     1,AFUNC|1,a_wait_get_up+4
+    2764                    ;       .long   acb50,apcb50
+    2765                    ;       LW      RA12F03,3
+    2766                    ;       LW      RA12F04,3
+    2767                    ;       LW      RA12F06,3
+    2768                    ;       LW      RA12F07,3
+    2769                    ;       LWL     RA12F08,AFUNC|3,a_bface+1
+    2770                    ;       .word    2
+    2771                    ;       LWL     1,AFUNC|1,a_control_script_done
+    2772                    ;       .long   0
+    2773                    ;
+    2774                    ;anim_body_checked_back_6
+    2775                    ;bxc61  LWW     HE24F01,AFLIP|3,M_FLIPH
+    2776                    ;bxc62  LWL     HE24F02,AFUNC|1,a_watch_ground_loop+4
+    2777                    ;       .long    bxc61,bxc62
+    2778                    ;       .long   0
+    2779                    ;anim_body_checked_back_wall_6
+    2780                    ;byc61  LWL     HE24F02,AFUNC|1,a_watch_ground_loop+4
+    2781                    ;       .long    byc61,byc61
+    2782                    ;       .long   0
+    2783                    ;anim_body_checked_back_down_6
+    2784                    ;acb60  LWWL    HE24F03,AFUNC|AFLIP|3,M_FLIPH,a_go_down_c
+    2785                    ;acb61  LWL     HE24F04,AFUNC|1,a_until_ground_c+4
+    2786                    ;       .long    acb60,acb61
+    2787                    ;       LW      HE24F06,3
+    2788                    ;       LWL     RB11F01,AFUNC|1,a_start_get_up_count
+    2789                    ;apcb60 LWL     1,AFUNC|1,a_wait_get_up+4
+    2790                    ;       .long   acb60,apcb60
+    2791                    ;       LW      RB11F03,3
+    2792                    ;       LW      RB11F05,3
+    2793                    ;       LW      RB11F07,3
+    2794                    ;       LW      RB11F09,3
+    2795                    ;       LWL     RB11F10,AFUNC|3,a_bface+1
+    2796                    ;       .word    1
+    2797                    ;       LWL     1,AFUNC|1,a_control_script_done
+    2798                    ;       .long   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   53
+
+    2799                    ;
+    2800                    ;anim_body_checked_back_7
+    2801                    ;bxc71  LWW     HE23F01,AFLIP|3,M_FLIPH
+    2802                    ;bxc72  LWL     HE23F02,AFUNC|1,a_watch_ground_loop+4
+    2803                    ;       .long    bxc71,bxc72
+    2804                    ;       .long   0
+    2805                    ;anim_body_checked_back_wall_7
+    2806                    ;byc71  LWL     HE23F02,AFUNC|1,a_watch_ground_loop+4
+    2807                    ;       .long    byc71,byc71
+    2808                    ;       .long   0
+    2809                    ;anim_body_checked_back_down_7
+    2810                    ;acb70  LWWL    HE23F03,AFUNC|AFLIP|3,M_FLIPH,a_go_down_c
+    2811                    ;acb71  LWL     HE23F05,AFUNC|1,a_until_ground_c+4
+    2812                    ;       .long    acb70,acb71
+    2813                    ;       LW      HE23F07,3
+    2814                    ;       LW      HE23F08,3
+    2815                    ;       LWL     HE14F01,AFUNC|1,a_start_get_up_count
+    2816                    ;apcb70 LWL     1,AFUNC|1,a_wait_get_up+4
+    2817                    ;       .long   acb70,apcb70
+    2818                    ;       LW      HE14F02,3
+    2819                    ;       LW      HE14F04,3
+    2820                    ;       LW      HE14F06,3
+    2821                    ;       LW      HE14F07,3
+    2822                    ;       LWL     HE14F09,AFUNC|3,a_bface+1
+    2823                    ;       .word    2
+    2824                    ;       LWL     1,AFUNC|1,a_control_script_done
+    2825                    ;       .long   0
+    2826                    ;
+    2827                    ;anim_body_checked_back_8
+    2828                    ;bxc81  LWW     HE122F01,AFLIP|3,M_FLIPH
+    2829                    ;bxc82  LWL     HE122F02,AFUNC|1,a_watch_ground_loop+4
+    2830                    ;       .long    bxc81,bxc82
+    2831                    ;       .long   0
+    2832                    ;anim_body_checked_back_wall_8
+    2833                    ;byc81  LWL     HE122F02,AFUNC|1,a_watch_ground_loop+4
+    2834                    ;       .long    byc81,byc81
+    2835                    ;       .long   0
+    2836                    ;anim_body_checked_back_down_8
+    2837                    ;acb80  LWWL    HE122F03,AFUNC|AFLIP|3,M_FLIPH,a_go_down_c
+    2838                    ;acb81  LWL     HE122F04,AFUNC|1,a_until_ground_c+4
+    2839                    ;       .long    acb80,acb81
+    2840                    ;       LW      HE122F07,3
+    2841                    ;       LWL     RA14F01,AFUNC|1,a_start_get_up_count
+    2842                    ;apcb80 LWL     1,AFUNC|1,a_wait_get_up+4
+    2843                    ;       .long   acb80,apcb80
+    2844                    ;       LW      RA14F02,3
+    2845                    ;       LW      RA14F03,3
+    2846                    ;       LW      RA14F04,3
+    2847                    ;       LW      RA14F05,3
+    2848                    ;       LWL     RA14F06,AFUNC|3,a_bface+1
+    2849                    ;       .word    6
+    2850                    ;       LWL     1,AFUNC|1,a_control_script_done
+    2851                    ;       .long   0
+    2852                    
+    2853 00022630           anim_whack_goalie_1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   54
+
+    2854 00022630                   LWW     WG11F02,3|AFLIP,0
+    2855 00022670                   LW      WG11F03,3
+    2856 000226a0                   LW      WG11F04,3
+    2857 000226d0                   LWL     WG11F09,AFUNC|3,a_set_whack
+    2858 00022720                   LW      WG11F04,3
+    2859 00022750                   LW      WG11F03,3
+    2860 00022780                   LW      WG11F02,3
+    2861 000227b0                   LWL     1,AFUNC|1,a_control_script_done
+    2862 00022800 00000000          .long   0
+    2863 00022820           anim_whack_goalie_2
+    2864 00022820                   LWW     WG12F02,3|AFLIP,0
+    2865 00022860                   LW      WG12F03,3
+    2866 00022890                   LW      WG12F04,3
+    2867 000228c0                   LWL     WG12F05,AFUNC|3,a_set_whack
+    2868 00022910                   LW      WG12F04,3
+    2869 00022940                   LW      WG12F03,3
+    2870 00022970                   LW      WG12F02,3
+    2871 000229a0                   LWL     1,AFUNC|1,a_control_script_done
+    2872 000229f0 00000000          .long   0
+    2873 00022a10           anim_whack_goalie_3
+    2874 00022a10                   LWW     WG13F01,3|AFLIP,0
+    2875 00022a50                   LW      WG13F02,3
+    2876 00022a80                   LW      WG13F03,3
+    2877 00022ab0                   LWL     WG13F04,AFUNC|3,a_set_whack
+    2878 00022b00                   LW      WG13F03,3
+    2879 00022b30                   LW      WG13F02,3
+    2880 00022b60                   LW      WG13F01,3
+    2881 00022b90                   LWL     1,AFUNC|1,a_control_script_done
+    2882 00022be0 00000000          .long   0
+    2883 00022c00           anim_whack_goalie_4
+    2884 00022c00                   LWW     WG14F03,3|AFLIP,0
+    2885 00022c40                   LW      WG14F04,3
+    2886 00022c70                   LW      WG14F05,3
+    2887 00022ca0                   LWL     WG14F06,AFUNC|3,a_set_whack
+    2888 00022cf0                   LW      WG14F05,3
+    2889 00022d20                   LW      WG14F04,3
+    2890 00022d50                   LW      WG14F03,3
+    2891 00022d80                   LWL     1,AFUNC|1,a_control_script_done
+    2892 00022dd0 00000000          .long   0
+    2893 00022df0           anim_whack_goalie_5
+    2894 00022df0                   LWW     WG15F03,3|AFLIP,0
+    2895 00022e30                   LW      WG15F04,3
+    2896 00022e60                   LW      WG15F05,3
+    2897 00022e90                   LWL     WG15F06,AFUNC|3,a_set_whack
+    2898 00022ee0                   LW      WG15F05,3
+    2899 00022f10                   LW      WG15F04,3
+    2900 00022f40                   LW      WG15F03,3
+    2901 00022f70                   LWL     1,AFUNC|1,a_control_script_done
+    2902 00022fc0 00000000          .long   0
+    2903 00022fe0           anim_whack_goalie_6
+    2904 00022fe0                   LWW     WG14F03,3|AFLIP,M_FLIPH
+    2905 00023020                   LW      WG14F04,3
+    2906 00023050                   LW      WG14F05,3
+    2907 00023080                   LWL     WG14F06,AFUNC|3,a_set_whack
+    2908 000230d0                   LW      WG14F05,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:59 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   55
+
+    2909 00023100                   LW      WG14F04,3
+    2910 00023130                   LW      WG14F03,3
+    2911 00023160                   LWL     1,AFUNC|1,a_control_script_done
+    2912 000231b0 00000000          .long   0
+    2913 000231d0           anim_whack_goalie_7
+    2914 000231d0                   LWW     WG13F01,3|AFLIP,M_FLIPH
+    2915 00023210                   LW      WG13F02,3
+    2916 00023240                   LW      WG13F03,3
+    2917 00023270                   LWL     WG13F04,AFUNC|3,a_set_whack
+    2918 000232c0                   LW      WG13F03,3
+    2919 000232f0                   LW      WG13F02,3
+    2920 00023320                   LW      WG13F01,3
+    2921 00023350                   LWL     1,AFUNC|1,a_control_script_done
+    2922 000233a0 00000000          .long   0
+    2923 000233c0           anim_whack_goalie_8
+    2924 000233c0                   LWW     WG12F02,3|AFLIP,M_FLIPH
+    2925 00023400                   LW      WG12F03,3
+    2926 00023430                   LW      WG12F04,3
+    2927 00023460                   LWL     WG12F05,AFUNC|3,a_set_whack
+    2928 000234b0                   LW      WG12F04,3
+    2929 000234e0                   LW      WG12F03,3
+    2930 00023510                   LW      WG12F02,3
+    2931 00023540                   LWL     1,AFUNC|1,a_control_script_done
+    2932 00023590 00000000          .long   0
+    2933                    
+
+ No Errors,  No Warnings

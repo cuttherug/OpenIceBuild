@@ -1,0 +1,1034 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHSHOW.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                            .INCLUDE        "HH.INC"                ;Game equates
+       8                            .include        "hhshow.e"
+       9                            .include        "hhutil.g"
+      10                            .include        "hhsnd.g"
+      11                            .include        "hhmath.g"
+      12                            .include        "hhpuck.g"
+      13                            .include        "hhproc.g"
+      14                            .include        "hhspeech.g"
+      15                            .include        "hhscore.g"
+      16                    
+      17                    ; end of include files
+      18                    
+      19 00000000                   .TEXT
+      20                    
+      21 00000000                   .bss    skate_sound_type,16
+      22 00000010                   .bss    last_corner_vel,32
+      23 00000030                   .bss    goalpost_holding,16
+      24                    
+      25 00000000           flame_shoot_sound
+      26 00000000     098f          mmtm    sp,a4
+         00000010     0800  
+      27 00000020     09c4          movi    s_flame_shoot_sound,a4
+         00000030     012d  
+      28 00000040     0d5f          calla   do_sound
+         00000050 00000000! 
+      29 00000070     09af          mmfm    sp,a4
+         00000080     0010  
+      30 00000090     0960          rets
+      31                    
+      32 000000a0           whoosh_show
+      33 000000a0     1860          movk    3,a0
+      34 000000b0     0d5f          calla   RAND0
+         000000c0 00000000! 
+      35 000000e0     2480          sll     4,a0
+      36 000000f0     0b20          addi    whsh_table,a0
+         00000100 00000160' 
+      37 00000120     8404          move    *a0,a4,W
+      38 00000130     c080          jauc    do_sound
+         00000140 00000000! 
+      39                    
+      40 00000160           whsh_table
+      41 00000160     012a          .word   s_whoosh_sound_1
+      42 00000170     012b          .word   s_whoosh_sound_2
+      43 00000180     012c          .word   s_whoosh_sound_3
+      44                    
+      45 00000190           break_glass_sound
+      46 00000190     09c4          movi    s_break_glass,a4
+         000001a0     0129  
+      47 000001b0     c080          jauc    do_sound
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+         000001c0 00000000! 
+      48                    
+      49 000001e0           attach_to_player_show
+      50 000001e0     098f          mmtm    sp,a4
+         000001f0     0800  
+      51 00000200     09c4          movi    body_slam_7b,a4
+         00000210     00a1  
+      52 00000220     0d5f          calla   do_sound
+         00000230 00000000! 
+      53 00000250     09af          mmfm    sp,a4
+         00000260     0010  
+      54 00000270     0960          rets
+      55                    
+      56 00000280           body_fall_show
+      57 00000280     09c4          movi    body_fall_7,a4
+         00000290     0092  
+      58 000002a0     c080          jauc    do_sound
+         000002b0 00000000! 
+      59                    
+      60 000002d0           time_running_out_show
+      61 000002d0     09c4          movi    s_time_running_out,a4
+         000002e0     0111  
+      62 000002f0     c080          jauc    do_sound
+         00000300 00000000! 
+      63                    
+      64 00000320           down_on_knees_show
+      65 00000320     09c4          movi    s_tune_down_knees,a4
+         00000330     0106  
+      66 00000340     c080          jauc    do_sound
+         00000350 00000000! 
+      67                    
+      68 00000370           puck_stick_bounce_sound
+      69 00000370     1860          movk    3,a0
+      70 00000380     0d5f          calla   RAND0
+         00000390 00000000! 
+      71 000003b0     2480          sll     4,a0
+      72 000003c0     0b20          addi    psb_table,a0
+         000003d0 00000430' 
+      73 000003f0     8404          move    *a0,a4,W
+      74 00000400     c080          jauc    do_sound
+         00000410 00000000! 
+      75                    
+      76 00000430           psb_table
+      77 00000430     0038          .word   s_plastic_impact_2
+      78 00000440     003b          .word   s_puck_to_metal_0
+      79 00000450     0045          .word   s_puck_ricochet_3
+      80                    
+      81 00000460           quick_step_dig_show
+      82 00000460     19e0          movk    15,a0
+      83 00000470     0d5f          calla   RAND0
+         00000480 00000000! 
+      84 000004a0     2480          sll     4,a0
+      85 000004b0     0b20          addi    qsd_table,a0
+         000004c0 00000540' 
+      86 000004e0     8404          move    *a0,a4,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+      87                    
+      88 000004f0     09c1          movi    200,a1
+         00000500     00c8  
+      89 00000510     18e2          movk    7,a2
+      90 00000520     c000          jruc    check_skate_sound
+         00000530     0301  
+      91                    
+      92                    
+      93 00000540           qsd_table
+      94 00000540     0018          .word   s_hard_skate_stop_2
+      95 00000550     0019          .word   s_hard_skate_stop_3
+      96 00000560     001b          .word   s_hard_skate_stop_5
+      97 00000570     0051          .word   s_skate_8
+      98 00000580     0052          .word   s_skate_9
+      99 00000590     0053          .word   s_skate_10
+     100 000005a0     0054          .word   s_skate_11
+     101 000005b0     005b          .word   s_skate_18
+     102 000005c0     005c          .word   s_skate_19
+     103 000005d0     005d          .word   s_skate_20
+     104 000005e0     005e          .word   s_skate_21
+     105 000005f0     005f          .word   s_skate_22
+     106 00000600     0061          .word   s_skate_24
+     107 00000610     0062          .word   s_skate_25
+     108 00000620     0063          .word   s_skate_26
+     109                    
+     110 00000630           zone_faceoff_show
+     111 00000630     09c4          movi    s_whistle,a4
+         00000640     0110  
+     112 00000650     c080          jauc    do_sound
+         00000660 00000000! 
+     113                    
+     114 00000680           faceoff_tap_show
+     115 00000680     1860          movk    3,a0
+     116 00000690     0d5f          calla   RAND0
+         000006a0 00000000! 
+     117 000006c0     2480          sll     4,a0
+     118 000006d0     0b20          addi    fts_table,a0
+         000006e0 00000740' 
+     119 00000700     8404          move    *a0,a4,W
+     120 00000710     c080          jauc    do_sound
+         00000720 00000000! 
+     121                    
+     122 00000740           fts_table
+     123 00000740     0078          .word   s_stick_sound_1
+     124 00000750     0037          .word   s_plastic_impact_1
+     125 00000760     0038          .word   s_plastic_impact_2
+     126                    
+     127 00000770           on_off_fire_show
+     128 00000770     098f          mmtm    sp,a4
+         00000780     0800  
+     129                    ;       movi    s_crowd_high_noise_4,a4
+     130                    ;       calla   do_sound
+     131                    ;       movi    s_crowd_high_noise_5,a4
+     132                    ;       calla   do_sound
+     133                    ;       movi    s_crowd_high_noise_6,a4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     134                    ;       calla   do_sound
+     135                    ;       movi    s_crowd_high_noise_11,a4
+     136                    ;       calla   do_sound
+     137                    ;       movi    s_scoring_horn,a4
+     138                    ;       calla   do_sound
+     139 00000790     09c4          movi    s_scoring_horn,a4
+         000007a0     011e  
+     140 000007b0     0d5f          calla   do_sound
+         000007c0 00000000! 
+     141 000007e0     09af          mmfm    sp,a4
+         000007f0     0010  
+     142 00000800     0960          rets
+     143                    
+     144 00000810           player_grunt_sound
+     145 00000810     09c0          movi    39,a0
+         00000820     0027  
+     146 00000830     0d5f          calla   RAND0
+         00000840 00000000! 
+     147 00000860     2480          sll     4,a0
+     148 00000870     0b20          addi    pgs_table,a0
+         00000880 00000900' 
+     149 000008a0     8404          move    *a0,a4,W
+     150 000008b0     09c1          movi    255,a1
+         000008c0     00ff  
+     151 000008d0     c080          jauc    do_sound_at_volume
+         000008e0 00000000! 
+     152                    
+     153 00000900           pgs_table
+     154 00000900     00ba          .word   player_grunt_carlos_05
+     155 00000910     00bb          .word   player_grunt_carlos_10
+     156 00000920     00bc          .word   player_grunt_carlos_11
+     157 00000930     00bd          .word   player_grunt_carlos_12
+     158 00000940     00be          .word   player_grunt_carlos_16
+     159 00000950     00bf          .word   player_grunt_carlos_21
+     160 00000960     00c0          .word   player_grunt_carlos_23
+     161 00000970     00c1          .word   player_grunt_carlos_25
+     162 00000980     00c2          .word   player_grunt_carlos_26
+     163 00000990     00c3          .word   player_grunt_carlos_29
+     164 000009a0     00c4          .word   player_grunt_carlos_31
+     165 000009b0     00c5          .word   player_grunt_carlos_32
+     166 000009c0     00c6          .word   player_grunt_jackh_01
+     167 000009d0     00c7          .word   player_grunt_jackh_03
+     168 000009e0     00c8          .word   player_grunt_jackh_06
+     169 000009f0     00c9          .word   player_grunt_jackh_08
+     170 00000a00     00ca          .word   player_grunt_jackh_13
+     171 00000a10     00cb          .word   player_grunt_jackh_17
+     172 00000a20     00cc          .word   player_grunt_jackh_34
+     173 00000a30     00cd          .word   player_grunt_jackh_45
+     174 00000a40     00ce          .word   player_grunt_jackh_47
+     175 00000a50     00cf          .word   player_grunt_markp_01
+     176 00000a60     00d0          .word   player_grunt_markp_02
+     177 00000a70     00d1          .word   player_grunt_markp_07
+     178 00000a80     00d2          .word   player_grunt_marty_05
+     179 00000a90     00d3          .word   player_grunt_marty_07
+     180 00000aa0     00d4          .word   player_grunt_marty_10
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     181 00000ab0     00d5          .word   player_grunt_marty_11
+     182 00000ac0     00d6          .word   player_grunt_marty_14
+     183 00000ad0     00d7          .word   player_grunt_marty_15
+     184 00000ae0     00d8          .word   player_grunt_marty_20
+     185 00000af0     00d9          .word   player_grunt_marty_33
+     186 00000b00     00da          .word   player_grunt_marty_34
+     187 00000b10     00db          .word   player_grunt_marty_40
+     188 00000b20     00dc          .word   player_grunt_marty_45
+     189 00000b30     00dd          .word   player_grunt_marty_49
+     190 00000b40     00de          .word   player_grunt_marty_51
+     191 00000b50     00df          .word   player_grunt_marty_53
+     192 00000b60     00e0          .word   player_grunt_marty_62
+     193                    
+     194 00000b70           body_slam_sound
+     195 00000b70     1980          movk    12,a0
+     196 00000b80     0d5f          calla   RAND0
+         00000b90 00000000! 
+     197 00000bb0     2480          sll     4,a0
+     198 00000bc0     0b20          addi    bss_table,a0
+         00000bd0 00000c30' 
+     199 00000bf0     8404          move    *a0,a4,W
+     200 00000c00     c080          jauc    do_sound
+         00000c10 00000000! 
+     201                    
+     202 00000c30           bss_table
+     203 00000c30     009a          .word   body_slam_1
+     204 00000c40     009b          .word   body_slam_2
+     205 00000c50     009c          .word   body_slam_3
+     206 00000c60     009d          .word   body_slam_4
+     207 00000c70     009e          .word   body_slam_5
+     208 00000c80     009f          .word   body_slam_6
+     209 00000c90     00a0          .word   body_slam_7
+     210 00000ca0     00a1          .word   body_slam_7b
+     211 00000cb0     00a2          .word   body_slam_8
+     212 00000cc0     00a3          .word   body_slam_9
+     213 00000cd0     00a4          .word   body_slam_10
+     214 00000ce0     00a6          .word   body_slam_vince7
+     215 00000cf0     00a7          .word   body_slam_vince8
+     216                    
+     217 00000d00           body_fall_sound
+     218 00000d00     1980          movk    12,a0
+     219 00000d10     0d5f          calla   RAND0
+         00000d20 00000000! 
+     220 00000d40     2480          sll     4,a0
+     221 00000d50     0b20          addi    bfs_table,a0
+         00000d60 00000dc0' 
+     222 00000d80     8404          move    *a0,a4,W
+     223 00000d90     c080          jauc    do_sound
+         00000da0 00000000! 
+     224 00000dc0           bfs_table
+     225 00000dc0     008c          .word   body_fall_1
+     226 00000dd0     008d          .word   body_fall_2
+     227 00000de0     008e          .word   body_fall_3
+     228 00000df0     008f          .word   body_fall_4
+     229 00000e00     0090          .word   body_fall_5
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     230 00000e10     0092          .word   body_fall_7
+     231 00000e20     0093          .word   body_fall_8
+     232 00000e30     0094          .word   body_fall_9
+     233 00000e40     0095          .word   body_fall_11
+     234 00000e50     0096          .word   body_fall_12
+     235 00000e60     0097          .word   body_fall_13
+     236 00000e70     0099          .word   body_fall_15
+     237                    
+     238                    ;       movi    s_board_crash_5,a4
+     239                    ;       jauc    do_sound
+     240                    
+     241 00000e80           steal_miss_sound
+     242 00000e80           steal_freed_sound
+     243 00000e80     09c4          movi    s_steal_miss,a4
+         00000e90     012f  
+     244 00000ea0     c080          jauc    do_sound
+         00000eb0 00000000! 
+     245 00000ed0           steal_made_sound
+     246 00000ed0     09c4          movi    s_steal_made,a4
+         00000ee0     0130  
+     247 00000ef0     c080          jauc    do_sound
+         00000f00 00000000! 
+     248                    
+     249 00000f20           puck_steal_show
+     250 00000f20     18a1          movk    5,a1
+     251 00000f30     c001          jruc    puck_drop_sound
+     252 00000f40           puck_faceoff_drop_show
+     253 00000f40     1941          movk    10,a1   ;insure loud sound
+     254                            ;
+     255 00000f50           puck_drop_sound         ;a1 = puck y velocity
+     256 00000f50     098f          mmtm    sp,a0,a1,a4,a5
+         00000f60     cc00  
+     257 00000f70     05a0          move    @puck_bounce_track,a0,W
+         00000f80 00000000! 
+     258 00000fa0     ca08          jrz     pds_1
+     259 00000fb0     098f          mmtm    sp,a1
+         00000fc0     4000  
+     260 00000fd0     5621          clr     a1
+     261 00000fe0     0d5f          calla   set_track_time                  ;let it continue if it can
+         00000ff0 00000000! 
+     262 00001010     09af          mmfm    sp,a1
+         00001020     0002  
+     263 00001030     4c25  pds_1   move    a1,a5
+     264 00001040     2a01          sra     16,a1
+     265 00001050     09e4          movi    puck_drop_table,a4
+         00001060 00001240' 
+     266 00001080     0d3f          callr   pbs_tab
+         00001090     00f8  
+     267 000010a0     0584          move    a4,@trigger_puck_sound  ;here is a convenient place to store a trigger
+         000010b0 00000000! 
+     268 000010d0     0b44          cmpi    s_puck_drop_3,a4
+         000010e0     ffd4  
+     269 000010f0     ca08          jrz     pds_v
+     270 00001100     0d5f          calla   do_sound
+         00001110 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     271 00001130     c90d          jrnc    pds_9
+     272 00001140     0584          move    a4,@puck_bounce_track,W
+         00001150 00000000! 
+     273 00001170     c009          jruc    pds_9
+     274 00001180     2b05  pds_v   sra     8,a5
+     275 00001190     4ca1          move    a5,a1
+     276 000011a0     0d5f          calla   do_sound_at_volume
+         000011b0 00000000! 
+     277 000011d0     c903          jrnc    pds_9
+     278 000011e0     0584          move    a4,@puck_bounce_track,W
+         000011f0 00000000! 
+     279 00001210     09af  pds_9   mmfm    sp,a0,a1,a4,a5
+         00001220     0033  
+     280 00001230     0960          rets
+     281                    
+     282 00001240           puck_drop_table
+     283 00001240     0004          .word   4,s_puck_drop_1
+     284 00001260     0002          .word   2,s_puck_drop_in_net
+     285 00001280     0001          .word   1,s_puck_drop_2
+     286 000012a0     ffff          .word   -1,s_puck_drop_3
+     287                    
+     288 000012c0           puck_board_corner_sound
+     289 000012c0     098f          mmtm    sp,a0,a1,a4
+         000012d0     c800  
+     290 000012e0     05a0          move    @PUCK_CONTROL,a0,W
+         000012f0 00000000! 
+     291 00001310     cb00          jrnz    pbs_9
+         00001320     00cc  
+     292 00001330     0b63          cmpi    XD0200,a3,L
+         00001340 ffebffff  
+     293 00001360     c900          jrhs    pbss_s
+         00001370     008e  
+     294 00001380     b701          move    *a8(ODT_VEL),a1,L
+         00001390     04d0  
+     295 000013a0     07ae          move    @last_corner_vel,a14,L
+         000013b0 00000010- 
+     296 000013d0     0781          move    a1,@last_corner_vel,L
+         000013e0 00000010- 
+     297 00001400     49c1          cmp     a14,a1
+     298 00001410     c209          jrls    nocs
+     299 00001420     09c4          movi    s_ice_crunch_2,a4
+         00001430     001d  
+     300 00001440     2ea1          srl     11,a1
+     301 00001450     0d5f          calla   do_sound_at_volume
+         00001460 00000000! 
+     302 00001480     09af          mmfm    sp,a0,a1,a4
+         00001490     0013  
+     303 000014a0     0960          rets
+     304 000014b0     5621  nocs    clr     a1
+     305 000014c0     1421          dec     a1
+     306 000014d0     0581          move    a1,@trigger_puck_sound,W
+         000014e0 00000000! 
+     307 00001500     09af          mmfm    sp,a0,a1,a4
+         00001510     0013  
+     308 00001520     0960          rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     309                    
+     310 00001530           puck_goal_sound1
+     311 00001530     098f          mmtm    sp,a8
+         00001540     0080  
+     312 00001550     05ae          move    @has_scored,a14,W
+         00001560 00000000! 
+     313 00001580     cb14          jrnz    pgsabrt
+     314 00001590     07a8          move    @PUCK_OBJECT,a8,L
+         000015a0 00000000! 
+     315 000015c0     b50e          move    *a8(OXPOS),a14,W
+         000015d0     0150  
+     316 000015e0     ce04          jrn     pgs_l
+     317 000015f0     b70e  pgs_r   move    *a8(OXVEL),a14,L
+         00001600     0100  
+     318 00001610     cf04          jrnn    pgsgd
+     319 00001620     c00a          jruc    pgsabrt
+     320 00001630     b70e  pgs_l   move    *a8(OXVEL),a14,L
+         00001640     0100  
+     321 00001650     cf07          jrnn    pgsabrt
+     322 00001660     182e  pgsgd   movk    1,a14
+     323 00001670     058e          move    a14,@goalpost_holding,W
+         00001680 00000030- 
+     324 000016a0     09af          mmfm    sp,a8
+         000016b0     0100  
+     325 000016c0     0960          rets
+     326 000016d0     57ce  pgsabrt clr     a14
+     327 000016e0     058e          move    a14,@goalpost_holding,W
+         000016f0 00000030- 
+     328 00001710     09af          mmfm    sp,a8
+         00001720     0100  
+     329 00001730     0960          rets
+     330                    
+     331 00001740           puck_goal_sound2                ;a3 = delta from parallel
+     332                                            ;a8 = puck object
+     333 00001740     05ae          move    @goalpost_holding,a14,W
+         00001750 00000030- 
+     334 00001770     ca25          jrz     pgs2r
+     335 00001780     05ae          move    @has_scored,a14,W
+         00001790 00000000! 
+     336 000017b0     cb21          jrnz    pgs2r
+     337 000017c0     b50e          move    *a8(OXPOS),a14,W
+         000017d0     0150  
+     338 000017e0     ce04          jrn     pt2l
+     339 000017f0     b70e  pt2r    move    *a8(OXVEL),a14,L
+         00001800     0100  
+     340 00001810     cf1b          jrnn    pgs2r                   ;we are not bouncing right, abort
+     341 00001820     c004          jruc    pgsgps          ;start goal post bounce
+     342 00001830     b70e  pt2l    move    *a8(OXVEL),a14,L
+         00001840     0100  
+     343 00001850     ce17          jrn     pgs2r                   ;we are not bouncing right, abort
+     344 00001860     ca16          jrz     pgs2r                   ;we are not bouncing right, abort
+     345                    
+     346 00001870     098f  pgsgps  mmtm    sp,a0,a1,a4,a7
+         00001880     c900  
+     347 00001890     09c4          movi    s_puck_to_metal_0,a4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+         000018a0     003b  
+     348 000018b0     0d5f          calla   do_sound
+         000018c0 00000000! 
+     349 000018e0                   C_A_K   PID_TRY_GPOST,try_sp_gp
+     350 00001960     57ce          clr     a14
+     351 00001970     058e          move    a14,@goalpost_holding
+         00001980 00000030- 
+     352 000019a0     09af          mmfm    sp,a0,a1,a4,a7
+         000019b0     0093  
+     353 000019c0     0960          rets
+     354                    
+     355 000019d0     098f  pgs2r   mmtm    sp,a0,a1,a4
+         000019e0     c800  
+     356 000019f0     05a0          move    @PUCK_CONTROL,a0,W
+         00001a00 00000000! 
+     357 00001a20     cb5c          jrnz    pbs_9
+     358 00001a30     b500          move    *a8(OYPOS),a0,W
+         00001a40     0170  
+     359 00001a50     ca05          jrz     pgs29
+     360 00001a60     09c4          movi    s_puck_in_net_6,a4
+         00001a70     0036  
+     361 00001a80     0d5f          calla   do_sound
+         00001a90 00000000! 
+     362 00001ab0     57ce  pgs29   clr     a14
+     363 00001ac0     058e          move    a14,@goalpost_holding
+         00001ad0 00000030- 
+     364 00001af0     09af          mmfm    sp,a0,a1,a4
+         00001b00     0013  
+     365 00001b10     0960          rets
+     366                    
+     367 00001b20           try_sp_gp
+     368 00001b20                   SLEEP   3
+     369 00001b60     05ae          move    @has_scored,a14,W
+         00001b70 00000000! 
+     370 00001b90     cb03          jrnz    tsg9
+     371 00001ba0     0d5f          calla   spx_off_goalpost
+         00001bb0 00000000! 
+     372 00001bd0     c080  tsg9    jauc    SUCIDE
+         00001be0 00000000! 
+     373                    
+     374 00001c00           puck_board_sound        ;a3 = delta from parallel
+     375                                            ;a8 = puck object
+     376 00001c00     098f          mmtm    sp,a0,a1,a4
+         00001c10     c800  
+     377 00001c20     05a0          move    @PUCK_CONTROL,a0,W
+         00001c30 00000000! 
+     378 00001c50     cb39          jrnz    pbs_9
+     379 00001c60     5600  pbss_s  clr     a0
+     380 00001c70     0780          move    a0,@last_corner_vel,L
+         00001c80 00000010- 
+     381 00001ca0     0b63          cmpi    XD0040,a3,L
+         00001cb0 fffbffff  
+     382 00001cd0     c231          jrls    pbs_9
+     383 00001ce0     4c60          move    a3,a0
+     384 00001cf0     0d5f          calla   GETSIN
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+         00001d00 00000000! 
+     385 00001d20     b701          move    *a8(ODT_VEL),a1,L
+         00001d30     04d0  
+     386 00001d40     0d5f          calla   MULT
+         00001d50 00000000! 
+     387 00001d70     4c24          move    a1,a4           ;save it
+     388 00001d80     2e01          srl     16,a1
+     389 00001d90     b500          move    *a8(OYPOS),a0,W
+         00001da0     0170  
+     390 00001db0     0380          abs     a0
+     391 00001dc0     0b40          cmpi    8,a0
+         00001dd0     fff7  
+     392 00001de0     c204          jrls    pbs_l
+     393 00001df0     09e4  pbs_h   movi    puck_high_table,a4
+         00001e00 00002200' 
+     394 00001e20     c014          jruc    pbs_l1
+     395 00001e30     0b41  pbs_l   cmpi    2,a1
+         00001e40     fffd  
+     396 00001e50     c90e          jrhs    pbs_l2
+     397 00001e60     4c81          move    a4,a1
+     398 00001e70     2ec1          srl     10,a1
+     399 00001e80     0b41          cmpi    40,a1
+         00001e90     ffd7  
+     400 00001ea0     c214          jrls    pbs_9
+     401 00001eb0     09c4          movi    s_plastic_board_hit_1,a4
+         00001ec0     0039  
+     402 00001ed0     0584          move    a4,@trigger_puck_sound  ;here is a convenient place to store a trigger
+         00001ee0 00000000! 
+     403 00001f00     0d5f          calla   do_sound_at_volume
+         00001f10 00000000! 
+     404 00001f30     c00b          jruc    pbs_9
+     405 00001f40     09e4  pbs_l2  movi    puck_low_table,a4
+         00001f50 00002180' 
+     406 00001f70     0d3f  pbs_l1  callr   pbs_tab
+         00001f80     0009  
+     407 00001f90     0584          move    a4,@trigger_puck_sound  ;here is a convenient place to store a trigger
+         00001fa0 00000000! 
+     408 00001fc0     0d5f          calla   do_sound
+         00001fd0 00000000! 
+     409 00001ff0     09af  pbs_9   mmfm    sp,a0,a1,a4
+         00002000     0013  
+     410 00002010     0960          rets
+     411                    
+     412 00002020     848e  pbs_tab move    *a4,a14,W
+     413 00002030     ce04          jrn     pbs_h2
+     414 00002040     49c1          cmp     a14,a1
+     415 00002050     c902          jrhs    pbs_h2
+     416 00002060     1004          addk    32,a4
+     417 00002070     c0fa          jruc    pbs_tab
+     418 00002080     b484  pbs_h2  move    *a4(16),a4,W
+         00002090     0010  
+     419 000020a0     0960          rets
+     420                    
+     421 000020b0           pass_off_boards_sound
+     422 000020b0     098f          mmtm    sp,a4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+         000020c0     0800  
+     423 000020d0     09c4          movi    s_plastic_board_hit_2,a4
+         000020e0     003a  
+     424 000020f0     0584          move    a4,@trigger_puck_sound  ;here is a convenient place to store a trigger
+         00002100 00000000! 
+     425 00002120     0d5f          calla   do_sound
+         00002130 00000000! 
+     426 00002150     09af          mmfm    sp,a4
+         00002160     0010  
+     427 00002170     0960          rets
+     428                    
+     429 00002180           puck_low_table
+     430 00002180     000c          .word   12,s_plastic_board_hit_1
+     431 000021a0     0008          .word   8,s_puck_to_metal_1
+     432 000021c0     0004          .word   4,s_puck_to_metal_0
+     433 000021e0     ffff          .word   -1,s_puck_to_metal_2
+     434                    
+     435 00002200           puck_high_table
+     436 00002200     000e          .word   14,s_loud_board_1
+     437 00002220     000b          .word   11,s_loud_board_3
+     438 00002240     0007          .word   7,s_loud_board_2
+     439 00002260     0004          .word   4,s_puck_hit_board_2
+     440 00002280     0002          .word   2,s_puck_hit_board_1
+     441 000022a0     ffff          .word   -1,s_puck_hit_board_3
+     442                    
+     443 000022c0           puck_slide_sound
+     444 000022c0     098f          mmtm    sp,a0,a1,a7
+         000022d0     c100  
+     445 000022e0                   C_A_K   PID_PUCK_SOUND,pss_1
+     446 00002360     09af          mmfm    sp,a0,a1,a7
+         00002370     0083  
+     447 00002380     0960          rets
+     448 00002390     05a0  pss_1   move    @puck_ice_track,a0,W
+         000023a0 00000000! 
+     449 000023c0     ca07          jrz     pss_6
+     450 000023d0     0d5f          calla   cancel_track_sound
+         000023e0 00000000! 
+     451 00002400     5600          clr     a0
+     452 00002410     0580          move    a0,@puck_ice_track,W
+         00002420 00000000! 
+     453 00002440     09c4  pss_6   movi    s_long_puck_slide_6,a4
+         00002450     0083  
+     454 00002460     0d5f          calla   RANDOM
+         00002470 00000000! 
+     455 00002490     1fe0          btst    0,a0
+     456 000024a0     cb02          jrnz    pss_4
+     457 000024b0     09c4          movi    s_long_puck_slide_7,a4
+         000024c0     0084  
+     458 000024d0     0d5f  pss_4   calla   do_sound
+         000024e0 00000000! 
+     459 00002500     c936          jrnc    pss_99
+     460 00002510     09ea          movi    07ffffh,a10             ;sliding velocity compare
+         00002520 0007ffff  
+     461 00002540     0584          move    a4,@puck_ice_track,W
+         00002550 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     462 00002570     05a0  pss_3   move    @PUCK_CONTROL,a0,W
+         00002580 00000000! 
+     463 000025a0     cb22          jrnz    pss_9
+     464 000025b0     07a8          move    @PUCK_OBJECT,a8,L
+         000025c0 00000000! 
+     465 000025e0     b700          move    *a8(OYVAL),a0,L
+         000025f0     0160  
+     466 00002600     ce1c          jrn     pss_9
+     467 00002610     b700          move    *a8(OYVEL),a0,L
+         00002620     0120  
+     468 00002630     ce19          jrn     pss_9
+     469 00002640     b700          move    *a8(ODT_VEL),a0,L
+         00002650     04d0  
+     470 00002660     4940          cmp     a10,a0
+     471 00002670     c201          jrls    pss_2
+     472 00002680     4d40          move    a10,a0
+     473 00002690     2ea0  pss_2   srl     11,a0
+     474 000026a0     4c01          move    a0,a1
+     475 000026b0     ca11          jrz     pss_9
+     476 000026c0     05a0          move    @puck_ice_track,a0,W
+         000026d0 00000000! 
+     477 000026f0     0d5f          calla   set_track_volume
+         00002700 00000000! 
+     478 00002720                   SLEEP   3
+     479 00002760     0bea          subi    2800h,a10
+         00002770     d7ff  
+     480 00002780     05ae          move    @puck_ice_track,a14,W
+         00002790 00000000! 
+     481 000027b0     ca0b          jrz     pss_99
+     482 000027c0     c0da          jruc    pss_3
+     483 000027d0     05a0  pss_9   move    @puck_ice_track,a0,W
+         000027e0 00000000! 
+     484 00002800     0d5f          calla   cancel_track_sound
+         00002810 00000000! 
+     485 00002830     5600          clr     a0
+     486 00002840     0580          move    a0,@puck_ice_track,W
+         00002850 00000000! 
+     487 00002870     c080  pss_99  jauc    SUCIDE
+         00002880 00000000! 
+     488                    
+     489                    
+     490 000028a0           down_check_sound
+     491 000028a0     0d3f          callr   check_for_abort
+         000028b0     005f  
+     492 000028c0     09e1          movi    XD0900,a1
+         000028d0 005a0000  
+     493 000028f0     c01c          jruc    coa_1
+     494 00002900           up_check_sound
+     495 00002900     0d3f          callr   check_for_abort
+         00002910     0059  
+     496 00002920     09e1          movi    XD2700,a1
+         00002930 010e0000  
+     497 00002950     c016          jruc    coa_1
+     498 00002960           left_check_sound
+     499 00002960     0d3f          callr   check_for_abort
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+         00002970     0053  
+     500 00002980     5621          clr     a1
+     501 00002990     c012          jruc    coa_1
+     502 000029a0           right_check_sound
+     503 000029a0     0d3f          callr   check_for_abort
+         000029b0     004f  
+     504 000029c0     09e1          movi    XD1800,a1
+         000029d0 00b40000  
+     505 000029f0     c00c          jruc    coa_1
+     506 00002a00           ll_check_sound
+     507 00002a00     0d3f          callr   check_for_abort
+         00002a10     0049  
+     508 00002a20     0960          rets
+     509 00002a30           ul_check_sound
+     510 00002a30     0d3f          callr   check_for_abort
+         00002a40     0046  
+     511 00002a50     0960          rets
+     512 00002a60           lr_check_sound
+     513 00002a60     0d3f          callr   check_for_abort
+         00002a70     0043  
+     514 00002a80     0960          rets
+     515 00002a90           ur_check_sound
+     516 00002a90     0d3f          callr   check_for_abort
+         00002aa0     0040  
+     517 00002ab0     0960          rets
+     518                    
+     519 00002ac0     098f  coa_1   mmtm    sp,a0,a1,a4
+         00002ad0     c800  
+     520 00002ae0     b500          move    *a8(OFLAGS),a0,W
+         00002af0     0420  
+     521 00002b00     1f00          btst    B_OFSCRN,a0
+     522 00002b10     cb36          jrnz    coa_9
+     523 00002b20     b700          move    *a8(ODT_DIR),a0,L
+         00002b30     04b0  
+     524 00002b40     4420          sub     a1,a0
+     525 00002b50     0380          abs     a0
+     526 00002b60                   THETA_N a0
+     527 00002c40     0b60          cmpi    XD0900,a0
+         00002c50 ffa5ffff  
+     528 00002c70     c220          jrls    coa_9
+     529 00002c80     0b60          cmpi    XD2700,a0
+         00002c90 fef1ffff  
+     530 00002cb0     c91c          jrhs    coa_9
+     531 00002cc0     0d5f          calla   GETCOS
+         00002cd0 00000000! 
+     532 00002cf0     0380          abs     a0
+     533 00002d00     b701          move    *a8(ODT_VEL),a1,L
+         00002d10     04d0  
+     534 00002d20     0d5f          calla   MULT
+         00002d30 00000000! 
+     535 00002d50     29a1          sra     17+2,a1         ;mdpnew
+     536 00002d60     ca11          jrz     coa_9
+     537 00002d70     2441          sll     2,a1            ;mdpnew
+     538 00002d80     0b41          cmpi    5,a1
+         00002d90     fffa  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     539 00002da0     c201          jrls    coa_2
+     540 00002db0     18a1          movk    5,a1
+     541 00002dc0     2481  coa_2   sll     4,a1
+     542 00002dd0     0b21          addi    body_into_board_table-16,a1
+         00002de0 00002fc0' 
+     543 00002e00     8424          move    *a1,a4,W
+     544 00002e10     0d5f          calla   do_sound
+         00002e20 00000000! 
+     545 00002e40     5684          clr     a4
+     546 00002e50     1424          dec     a4
+     547 00002e60     b286          move    a4,*a6(POF_LAST_BOARD_CVEL),L
+         00002e70     0520  
+     548 00002e80     09af  coa_9   mmfm    sp,a0,a1,a4
+         00002e90     0013  
+     549 00002ea0     0960          rets
+     550                    
+     551 00002eb0           check_for_abort
+     552 00002eb0     098f          mmtm    sp,a0,a8,a14
+         00002ec0     8082  
+     553 00002ed0     b700          move    *a8(ODT_VEL),a0,L
+         00002ee0     04d0  
+     554 00002ef0     b6ce          move    *a6(POF_LAST_BOARD_CVEL),a14,L
+         00002f00     0520  
+     555 00002f10     ce07          jrn     cfa_n
+     556 00002f20     b206          move    a0,*a6(POF_LAST_BOARD_CVEL),L
+         00002f30     0520  
+     557 00002f40     49c0          cmp     a14,a0
+     558 00002f50     c203          jrls    cfa_n
+     559 00002f60     09af  cfa_y   mmfm    sp,a0,a8,a14
+         00002f70     4101  
+     560 00002f80     0960          rets
+     561 00002f90     09af  cfa_n   mmfm    sp,a0,a8,a14
+         00002fa0     4101  
+     562 00002fb0     100f          addk    32,sp           ;pull return address
+     563 00002fc0     0960          rets                    ;return to above where we were called
+     564                    
+     565 00002fd0           body_into_board_table
+     566 00002fd0     0003          .word   s_board_crash_8
+     567 00002fe0     0004          .word   s_board_crash_9
+     568 00002ff0     0002          .word   s_board_crash_5
+     569 00003000     0000          .word   s_board_crash_10
+     570 00003010     0001          .word   s_board_crash_4
+     571                    
+     572 00003020           slide_to_stop_sound
+     573 00003020           slide_to_reverse_sound
+     574 00003020     098f          mmtm    sp,a0,a1,a2,a3,a4
+         00003030     f800  
+     575 00003040     18a0          movk    5,a0
+     576 00003050     0d5f          calla   RAND0
+         00003060 00000000! 
+     577 00003080     2480          sll     4,a0
+     578 00003090     0b20          addi    sts_list,a0
+         000030a0 00003150' 
+     579 000030c0     8404          move    *a0,a4,W
+     580 000030d0     09c1  stss_2  movi    255,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+         000030e0     00ff  
+     581 000030f0     1942          movk    10,a2
+     582 00003100     0d3f          callr   check_skate_sound
+         00003110     0043  
+     583 00003120     09af          mmfm    sp,a0,a1,a2,a3,a4
+         00003130     001f  
+     584 00003140     0960          rets
+     585 00003150           sts_list
+     586 00003150     007c          .word   s_skate_stop_or_turn_1
+     587 00003160     007f          .word   s_skate_stop_or_turn_4
+     588 00003170     0018          .word   s_hard_skate_stop_2
+     589 00003180     0019          .word   s_hard_skate_stop_3
+     590 00003190     001b          .word   s_hard_skate_stop_5
+     591                    
+     592 000031a0           a_light_push
+     593 000031a0           a_medium_push
+     594 000031a0     098f          mmtm    sp,a0,a1,a2,a3,a4
+         000031b0     f800  
+     595 000031c0     1880          movk    4,a0
+     596 000031d0     0d5f          calla   RAND0
+         000031e0 00000000! 
+     597 00003200     2480          sll     4,a0
+     598 00003210     0b20          addi    amp_tab,a0
+         00003220 000032d0' 
+     599 00003240     8404          move    *a0,a4,W
+     600 00003250     09c1          movi    255,a1
+         00003260     00ff  
+     601 00003270     18a2          movk    5,a2
+     602 00003280     0d3f          callr   check_skate_sound
+         00003290     002b  
+     603 000032a0     09af          mmfm    sp,a0,a1,a2,a3,a4
+         000032b0     001f  
+     604 000032c0     0960          rets
+     605                    
+     606 000032d0     006d  amp_tab .word   s_skate_36
+     607 000032e0     006e          .word   s_skate_37
+     608 000032f0     004b          .word   s_skate_2
+     609 00003300     006c          .word   s_skate_35
+     610                    
+     611 00003310           turn_sound
+     612 00003310     098f          mmtm    sp,a0,a1,a2,a3,a4
+         00003320     f800  
+     613 00003330     b701          move    *a8(ODT_VEL),a1,L
+         00003340     04d0  
+     614 00003350     0b61          cmpi    0fffffh,a1
+         00003360 fff00000  
+     615 00003380     c203          jrls    tss_1
+     616 00003390     09e1          movi    0fffffh,a1
+         000033a0 000fffff  
+     617 000033c0     4c24  tss_1   move    a1,a4
+     618 000033d0     2e61          srl     13,a1
+     619 000033e0     0be1          subi    12,a1
+         000033f0     fff3  
+     620 00003400     cf01          jrnn    tss_2
+     621 00003410     5621          clr     a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     622 00003420     1840  tss_2   movk    2,a0
+     623 00003430     0d5f          calla   RAND0
+         00003440 00000000! 
+     624 00003460     2480          sll     4,a0
+     625 00003470     0b20          addi    tss_l,a0
+         00003480 00003530' 
+     626 000034a0     8404          move    *a0,a4,W
+     627 000034b0     09c1          movi    255,a1
+         000034c0     00ff  
+     628 000034d0     1902          movk    8,a2
+     629 000034e0     0d3f          callr   check_skate_sound
+         000034f0     0005  
+     630 00003500     09af          mmfm    sp,a0,a1,a2,a3,a4
+         00003510     001f  
+     631 00003520     0960          rets
+     632                    
+     633 00003530     006a  tss_l   .word   s_skate_33                      ;turn
+     634 00003540     0066          .word   s_skate_29                      ;turn
+     635                    
+     636 00003550           check_skate_sound       ;a1 = volume, a2 = mini skate sound pri, a4 = sound
+     637 00003550     4c23          move    a1,a3
+     638 00003560     b500          move    *a8(OFLAGS),a0,W
+         00003570     0420  
+     639 00003580     1f00          btst    B_OFSCRN,a0
+     640 00003590     cb1d          jrnz    csss_9
+     641 000035a0     05a0          move    @ice_skate_track,a0,W
+         000035b0 00000000! 
+     642 000035d0     ca0e          jrz     csss_o
+     643 000035e0     0d5f          calla   get_track_time
+         000035f0 00000000! 
+     644 00003610     4c21          move    a1,a1
+     645 00003620     ca09          jrz     csss_o          ;expired, do always
+     646 00003630     05ae          move    @skate_sound_type,a14,W
+         00003640 00000000- 
+     647 00003660     49c2          cmp     a14,a2
+     648 00003670     c80f          jrlo    csss_9
+     649 00003680     5621          clr     a1
+     650 00003690     0d5f          calla   set_track_time          ;turn sound off logically, but let it continue if it can
+         000036a0 00000000! 
+     651 000036c0     0582  csss_o  move    a2,@skate_sound_type,W
+         000036d0 00000000- 
+     652 000036f0     4c61          move    a3,a1
+     653 00003700     0d5f          calla   do_sound_at_volume
+         00003710 00000000! 
+     654 00003730     c903          jrnc    csss_9
+     655 00003740     0584          move    a4,@ice_skate_track,W
+         00003750 00000000! 
+     656 00003770     0960  csss_9  rets
+     657                    
+     658 00003780           puck_stop_sound         ;a8 = puck, a6 = player
+     659 00003780     098f          mmtm    sp,a0,a1,a2,a3,a4,a7
+         00003790     f900  
+     660 000037a0     b6c7          move    *a6(POF_OBJECT),a7,L
+         000037b0     0280  
+     661 000037c0     b700          move    *a8(OXVEL),a0,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+         000037d0     0100  
+     662 000037e0     b701          move    *a8(OZVEL),a1,L
+         000037f0     00e0  
+     663 00003800     b6e2          move    *a7(OXVEL),a2,L
+         00003810     0100  
+     664 00003820     b6e3          move    *a7(OZVEL),a3,L
+         00003830     00e0  
+     665 00003840     0d5f          calla   find_dis_to_point_whole
+         00003850 00000000! 
+     666 00003870     4c81          move    a4,a1
+     667 00003880     24a1          sll     5,a1
+     668 00003890     09c4          movi    s_slapshot_7,a4
+         000038a0     0077  
+     669 000038b0     0d5f          calla   do_sound_at_volume
+         000038c0 00000000! 
+     670 000038e0     09af          mmfm    sp,a0,a1,a2,a3,a4,a7
+         000038f0     009f  
+     671 00003900     0960          rets
+     672                    
+     673 00003910           puck_rebound_sound
+     674 00003910     098f          mmtm    sp,a1,a4
+         00003920     4800  
+     675 00003930     09c4          movi    s_slapshot_7,a4
+         00003940     0077  
+     676 00003950     09c1          movi    120,a1
+         00003960     0078  
+     677 00003970     0d5f          calla   do_sound_at_volume
+         00003980 00000000! 
+     678 000039a0     09af          mmfm    sp,a1,a4
+         000039b0     0012  
+     679 000039c0     0960          rets
+     680 000039d0           wrist_shot_sound
+     681 000039d0     098f          mmtm    sp,a4
+         000039e0     0800  
+     682 000039f0     09c4          movi    s_slapshot_6,a4
+         00003a00     0076  
+     683 00003a10     0d5f          calla   do_sound
+         00003a20 00000000! 
+     684 00003a40     09af          mmfm    sp,a4
+         00003a50     0010  
+     685 00003a60     0960          rets
+     686 00003a70           slap_shot_sound
+     687 00003a70     098f          mmtm    sp,a4
+         00003a80     0800  
+     688 00003a90     09c4          movi    s_slapshot_1,a4
+         00003aa0     0072  
+     689 00003ab0     0d5f          calla   do_sound
+         00003ac0 00000000! 
+     690 00003ae0     09af          mmfm    sp,a4
+         00003af0     0010  
+     691 00003b00     0960          rets
+     692                    
+     693                    ;other pushes
+     694                    ;       .word   s_skate_16
+     695                    ;       .word   s_skate_14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:13 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     696                    ;       .word   s_skate_15
+     697                    ;       .word   s_skate_13
+     698                    ;       .word   s_skate_12
+     699                    ;       .word   s_skate_28
+     700                    ;       .word   s_skate_stop_or_turn_2
+     701                    ;       .word   s_skate_stop_or_turn_3
+     702                    
+
+ No Errors,  No Warnings

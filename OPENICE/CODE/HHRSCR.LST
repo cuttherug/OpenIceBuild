@@ -1,0 +1,973 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .WIDTH  132
+       3                            .OPTION B,D,L,T
+       4                            .MNOLIST
+       5                    
+       6                    *
+       7                    *GET THE SYSTEM STUFF
+       8                    *
+       9                            .INCLUDE        "HH.INC"
+      10                            .INCLUDE        "HHSTRING.H"
+      11                            .INCLUDE        "IMGTBL.GLO"
+      12                            .include        "hhrscr.tbl"
+      13                            .include        "hhrscr.e"
+      14                            .include        "hhplayer.g"
+      15                            .include        "hhpuck.g"
+      16                            .include        "hhshow.g"
+      17                            .include        "hhscr_fn.g"
+      18                            .include        "hhhigher.g"
+      19                            .include        "hhd.g"
+      20                            .include        "hhmath.g"
+      21                    
+      22                    ; end of include files
+      23                    
+      24 00000000                   .TEXT
+      25 00000000                   .EVEN
+      26                    
+      27 00000000                   .bss    ref_size,16
+      28                    
+      29                    **************************************************************************
+      30                    *                                                                        *
+      31                    * for player objects, OIMG looks like this                               *
+      32                    *       .word   control,xsize,ysize                                      *
+      33                    *       .long   sag                                                      *
+      34                    *       .word   anix,aniy                                                *
+      35                    *       .word   puckx,pucky                                              *
+      36                    *       .word   headx,heady,headz                                        *
+      37                    *       .word   head#                                                    *
+      38                    *                                                                        *
+      39                    **************************************************************************
+      40                    
+      41 00000000           set_ref_look_script
+      42 00000000     05a1          move    @ref_size,a1,W
+         00000010 00000000- 
+      43 00000030     24a1          sll     5,a1
+      44 00000040     0b21          addi    srlok_l,a1
+         00000050 000000b0' 
+      45 00000070     8621          move    *a1,a1,L
+      46 00000080     c080          jauc    start_anim_if_not
+         00000090 00000000! 
+      47                    
+      48 000000b0 00002f50' srlok_l .long   ref_look_large_script
+      49 000000d0 00003340'         .long   ref_look_medium_script
+      50 000000f0 00003730'         .long   ref_look_small_script
+      51                    
+      52 00000110           set_ref_stand_script
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      53 00000110     05a1          move    @ref_size,a1,W
+         00000120 00000000- 
+      54 00000140     24a1          sll     5,a1
+      55 00000150     0b21          addi    srsts_l,a1
+         00000160 000001c0' 
+      56 00000180     8621          move    *a1,a1,L
+      57 00000190     c080          jauc    start_anim_if_not
+         000001a0 00000000! 
+      58                    
+      59 000001c0 00003b20' srsts_l .long   ref_stand_large_script
+      60 000001e0 00003b80'         .long   ref_stand_medium_script
+      61 00000200 00003be0'         .long   ref_stand_small_script
+      62                    
+      63 00000220           set_ref_setup_script
+      64 00000220     05ae          move    @faceoff_type,a14,W
+         00000230 00000000! 
+      65 00000250     cb0b          jrnz    srst
+      66 00000260     05a1          move    @ref_size,a1,W
+         00000270 00000000- 
+      67 00000290     24a1          sll     5,a1
+      68 000002a0     0b21          addi    srsss_l,a1
+         000002b0 00000370' 
+      69 000002d0     8621          move    *a1,a1,L
+      70 000002e0     c080          jauc    start_anim_if_not
+         000002f0 00000000! 
+      71 00000310     09e1  srst    movi    ref_alt_setup_medium_script,a1
+         00000320 00001950' 
+      72 00000340     c080          jauc    start_anim_if_not
+         00000350 00000000! 
+      73                    
+      74 00000370 00000c00' srsss_l .long   ref_setup_large_script
+      75 00000390 00001070'         .long   ref_setup_medium_script
+      76 000003b0 000014e0'         .long   ref_setup_small_script
+      77                    
+      78 000003d0           set_ref_drop_script
+      79 000003d0     05ae          move    @faceoff_type,a14,W
+         000003e0 00000000! 
+      80 00000400     cb0b          jrnz    srdt
+      81 00000410     05a1          move    @ref_size,a1,W
+         00000420 00000000- 
+      82 00000440     24a1          sll     5,a1
+      83 00000450     0b21          addi    srddd_l,a1
+         00000460 00000520' 
+      84 00000480     8621          move    *a1,a1,L
+      85 00000490     c080          jauc    start_anim_if_not
+         000004a0 00000000! 
+      86 000004c0     09e1  srdt    movi    ref_alt_drop_medium_script,a1
+         000004d0 00002bc0' 
+      87 000004f0     c080          jauc    start_anim_if_not
+         00000500 00000000! 
+      88 00000520 00001f60' srddd_l .long   ref_drop_large_script
+      89 00000540 00002380'         .long   ref_drop_medium_script
+      90 00000560 000027a0'         .long   ref_drop_small_script
+      91                    
+      92 00000580           set_ref_skate_right_script
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+      93 00000580     05a1          move    @ref_size,a1,W
+         00000590 00000000- 
+      94 000005b0     24a1          sll     5,a1
+      95 000005c0     0b21          addi    srsrd_l,a1
+         000005d0 00000630' 
+      96 000005f0     8621          move    *a1,a1,L
+      97 00000600     c080          jauc    start_anim_if_not
+         00000610 00000000! 
+      98 00000630 00003c40' srsrd_l .long   ref_skate_right_large_script
+      99 00000650 00004010'         .long   ref_skate_right_medium_script
+     100 00000670 000043e0'         .long   ref_skate_right_small_script
+     101                    
+     102 00000690           set_ref_skate_left_script
+     103 00000690     05a1          move    @ref_size,a1,W
+         000006a0 00000000- 
+     104 000006c0     24a1          sll     5,a1
+     105 000006d0     0b21          addi    srsld_l,a1
+         000006e0 00000740' 
+     106 00000700     8621          move    *a1,a1,L
+     107 00000710     c080          jauc    start_anim_if_not
+         00000720 00000000! 
+     108 00000740 00004810' srsld_l .long   ref_skate_left_large_script
+     109 00000760 00004be0'         .long   ref_skate_left_medium_script
+     110 00000780 00004fb0'         .long   ref_skate_left_small_script
+     111                    
+     112 000007a0           set_ref_skate_right_norm_script
+     113 000007a0     05a1          move    @ref_size,a1,W
+         000007b0 00000000- 
+     114 000007d0     24a1          sll     5,a1
+     115 000007e0     0b21          addi    srsrndl,a1
+         000007f0 00000850' 
+     116 00000810     8621          move    *a1,a1,L
+     117 00000820     c080          jauc    start_anim_if_not
+         00000830 00000000! 
+     118 00000850 00005aa0' srsrndl .long   ref_skate_right_f_large_script
+     119 00000870 00005cb0'         .long   ref_skate_right_f_medium_script
+     120 00000890 00005ec0'         .long   ref_skate_right_f_small_script
+     121                    
+     122 000008b0           set_ref_skate_left_norm_script
+     123 000008b0     05a1          move    @ref_size,a1,W
+         000008c0 00000000- 
+     124 000008e0     24a1          sll     5,a1
+     125 000008f0     0b21          addi    slsrndl,a1
+         00000900 00000960' 
+     126 00000920     8621          move    *a1,a1,L
+     127 00000930     c080          jauc    start_anim_if_not
+         00000940 00000000! 
+     128 00000960 000060d0' slsrndl .long   ref_skate_left_f_large_script
+     129 00000980 000062e0'         .long   ref_skate_left_f_medium_script
+     130 000009a0 000064f0'         .long   ref_skate_left_f_small_script
+     131                    
+     132 000009c0           set_ref_stop_left_right_script
+     133 000009c0     05a1          move    @ref_size,a1,W
+         000009d0 00000000- 
+     134 000009f0     24a1          sll     5,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     135 00000a00     0b21          addi    srstndl,a1
+         00000a10 00000a70' 
+     136 00000a30     8621          move    *a1,a1,L
+     137 00000a40     c080          jauc    start_anim_if_not
+         00000a50 00000000! 
+     138 00000a70 00006700' srstndl .long   ref_stop_f_large_script
+     139 00000a90 000068d0'         .long   ref_stop_f_medium_script
+     140 00000ab0 00006aa0'         .long   ref_stop_f_small_script
+     141                    
+     142 00000ad0           set_ref_stop_backwards_script
+     143 00000ad0     05a1          move    @ref_size,a1,W
+         00000ae0 00000000- 
+     144 00000b00     24a1          sll     5,a1
+     145 00000b10     0b21          addi    srstbwl,a1
+         00000b20 00000b80' 
+     146 00000b40     8621          move    *a1,a1,L
+     147 00000b50     c080          jauc    start_anim_if_not
+         00000b60 00000000! 
+     148 00000b80 00006c70' srstbwl .long   ref_stop_b_large_script
+     149 00000ba0 00006e00'         .long   ref_stop_b_medium_script
+     150 00000bc0 00006f90'         .long   ref_stop_b_small_script
+     151                    
+     152 00000be0           set_ref_skate_back_script
+     153 00000be0     0960          rets
+     154                    ;       movi    ref_skate_back_script,a1
+     155                    ;       jauc    start_anim_if_not
+     156                    
+     157 00000bf0           set_ref_bump_script
+     158 00000bf0     0960          rets
+     159                    ;       movi    ref_bump_boards_script,a1
+     160                    ;       jauc    start_anim_if_not
+     161                    
+     162 00000c00           ref_setup_large_script
+     163 00000c00                   LWW     RFL51F01,AFLIP|6,0
+     164 00000c40                   LW      RFL51F02,6
+     165 00000c70                   LW      RFL51F03,15
+     166 00000ca0                   LW      RFL51F04,3
+     167 00000cd0                   LW      RFL51F05,6
+     168 00000d00                   LW      RFL51F06,6
+     169 00000d30                   LW      RFL51F07,9
+     170 00000d60                   LWL     RFL51F08,AFUNC|127,a_ref_hold_puck
+     171 00000db0                   LW      RFL51F08,127
+     172 00000de0                   LW      RFL51F08,127
+     173 00000e10                   LW      RFL51F08,127
+     174 00000e40                   LW      RFL51F08,127
+     175 00000e70                   LW      RFL51F08,127
+     176 00000ea0                   LW      RFL51F08,127
+     177 00000ed0                   LW      RFL51F08,127
+     178 00000f00                   LW      RFL51F08,127
+     179 00000f30                   LW      RFL51F08,127
+     180 00000f60                   LW      RFL51F08,127
+     181 00000f90                   LW      RFL51F08,127
+     182 00000fc0                   LW      RFL51F08,127
+     183 00000ff0                   LW      RFL51F08,127
+     184 00001020                   LW      RFL51F08,127
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     185 00001050 00000000          .long   0
+     186                    
+     187 00001070           ref_setup_medium_script
+     188 00001070                   LWW     RFM51F01,AFLIP|6,0
+     189 000010b0                   LW      RFM51F02,6
+     190 000010e0                   LW      RFM51F03,15
+     191 00001110                   LW      RFM51F04,3
+     192 00001140                   LW      RFM51F05,6
+     193 00001170                   LW      RFM51F06,6
+     194 000011a0                   LW      RFM51F07,9
+     195 000011d0                   LWL     RFM51F08,AFUNC|127,a_ref_hold_puck
+     196 00001220                   LW      RFM51F08,127
+     197 00001250                   LW      RFM51F08,127
+     198 00001280                   LW      RFM51F08,127
+     199 000012b0                   LW      RFM51F08,127
+     200 000012e0                   LW      RFM51F08,127
+     201 00001310                   LW      RFM51F08,127
+     202 00001340                   LW      RFM51F08,127
+     203 00001370                   LW      RFM51F08,127
+     204 000013a0                   LW      RFM51F08,127
+     205 000013d0                   LW      RFM51F08,127
+     206 00001400                   LW      RFM51F08,127
+     207 00001430                   LW      RFM51F08,127
+     208 00001460                   LW      RFM51F08,127
+     209 00001490                   LW      RFM51F08,127
+     210 000014c0 00000000          .long   0
+     211                    
+     212 000014e0           ref_setup_small_script
+     213 000014e0                   LWW     RFS51F01,AFLIP|6,0
+     214 00001520                   LW      RFS51F02,6
+     215 00001550                   LW      RFS51F03,15
+     216 00001580                   LW      RFS51F04,3
+     217 000015b0                   LW      RFS51F05,6
+     218 000015e0                   LW      RFS51F06,6
+     219 00001610                   LW      RFS51F07,9
+     220 00001640                   LWL     RFS51F08,AFUNC|127,a_ref_hold_puck
+     221 00001690                   LW      RFS51F08,127
+     222 000016c0                   LW      RFS51F08,127
+     223 000016f0                   LW      RFS51F08,127
+     224 00001720                   LW      RFS51F08,127
+     225 00001750                   LW      RFS51F08,127
+     226 00001780                   LW      RFS51F08,127
+     227 000017b0                   LW      RFS51F08,127
+     228 000017e0                   LW      RFS51F08,127
+     229 00001810                   LW      RFS51F08,127
+     230 00001840                   LW      RFS51F08,127
+     231 00001870                   LW      RFS51F08,127
+     232 000018a0                   LW      RFS51F08,127
+     233 000018d0                   LW      RFS51F08,127
+     234 00001900                   LW      RFS51F08,127
+     235 00001930 00000000          .long   0
+     236                    
+     237 00001950           ref_alt_setup_medium_script
+     238 00001950                   LWW     RMD61F01,AFLIP|5,0
+     239 00001990                   LW      RMD61F02,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     240 000019c0                   LW      RMD61F03,5
+     241 000019f0                   LW      RMD61F04,9
+     242 00001a20                   LW      RMD61F05,7
+     243 00001a50                   LW      RMD61F06,4
+     244 00001a80                   LW      RMD61F07,5
+     245 00001ab0                   LW      RMD61F08,9
+     246 00001ae0                   LW      RMD61F09,6
+     247 00001b10                   LW      RMD61F10,7
+     248 00001b40                   LW      RMD61F11,7
+     249 00001b70                   LW      RMD71F02,5
+     250 00001ba0                   LW      RMD71F03,5
+     251 00001bd0                   LW      RMD71F04,5
+     252 00001c00                   LWL     RMD71F05,AFUNC|7,a_ref_hold_puck
+     253 00001c50                   LWL     RMD71F06,AFUNC|127,a_ref_hold_puck
+     254 00001ca0                   LW      RMD71F06,127
+     255 00001cd0                   LW      RMD71F06,127
+     256 00001d00                   LW      RMD71F06,127
+     257 00001d30                   LW      RMD71F06,127
+     258 00001d60                   LW      RMD71F06,127
+     259 00001d90                   LW      RMD71F06,127
+     260 00001dc0                   LW      RMD71F06,127
+     261 00001df0                   LW      RMD71F06,127
+     262 00001e20                   LW      RMD71F06,127
+     263 00001e50                   LW      RMD71F06,127
+     264 00001e80                   LW      RMD71F06,127
+     265 00001eb0                   LW      RMD71F06,127
+     266 00001ee0                   LW      RMD71F06,127
+     267 00001f10                   LW      RMD71F06,127
+     268 00001f40 00000000          .long   0
+     269                    
+     270 00001f60           ref_drop_large_script
+     271 00001f60                   LWWL    RFL51F09,AFUNC|AFLIP|1,0,a_ref_hold_puck
+     272 00001fc0                   LWL     RFL51F09,AFUNC|1,a_ref_puck_half
+     273 00002010                   LWL     RFL51F09,AFUNC|1,a_ref_puck_0
+     274 00002060                   LW      RFL51F11,2
+     275 00002090                   LW      RFL51F11,127
+     276 000020c0                   LW      RFL51F11,127
+     277 000020f0                   LW      RFL51F11,127
+     278 00002120                   LW      RFL51F11,127
+     279 00002150                   LW      RFL51F11,127
+     280 00002180                   LW      RFL51F11,127
+     281 000021b0                   LW      RFL51F11,127
+     282 000021e0                   LW      RFL51F11,127
+     283 00002210                   LW      RFL51F11,127
+     284 00002240                   LW      RFL51F11,127
+     285 00002270                   LW      RFL51F11,127
+     286 000022a0                   LW      RFL51F11,127
+     287 000022d0                   LW      RFL51F11,127
+     288 00002300                   LW      RFL51F11,127
+     289 00002330                   LW      RFL51F11,127
+     290 00002360 00000000          .long   0
+     291                    
+     292 00002380           ref_drop_medium_script
+     293 00002380                   LWWL    RFM51F09,AFUNC|AFLIP|1,0,a_ref_hold_puck
+     294 000023e0                   LWL     RFM51F09,AFUNC|1,a_ref_puck_half
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     295 00002430                   LWL     RFM51F09,AFUNC|1,a_ref_puck_0
+     296 00002480                   LW      RFM51F11,2
+     297 000024b0                   LW      RFM51F11,127
+     298 000024e0                   LW      RFM51F11,127
+     299 00002510                   LW      RFM51F11,127
+     300 00002540                   LW      RFM51F11,127
+     301 00002570                   LW      RFM51F11,127
+     302 000025a0                   LW      RFM51F11,127
+     303 000025d0                   LW      RFM51F11,127
+     304 00002600                   LW      RFM51F11,127
+     305 00002630                   LW      RFM51F11,127
+     306 00002660                   LW      RFM51F11,127
+     307 00002690                   LW      RFM51F11,127
+     308 000026c0                   LW      RFM51F11,127
+     309 000026f0                   LW      RFM51F11,127
+     310 00002720                   LW      RFM51F11,127
+     311 00002750                   LW      RFM51F11,127
+     312 00002780 00000000          .long   0
+     313                    
+     314 000027a0           ref_drop_small_script
+     315 000027a0                   LWWL    RFS51F09,AFUNC|AFLIP|1,0,a_ref_hold_puck
+     316 00002800                   LWL     RFS51F09,AFUNC|1,a_ref_puck_half
+     317 00002850                   LWL     RFS51F09,AFUNC|1,a_ref_puck_0
+     318 000028a0                   LW      RFS51F11,2
+     319 000028d0                   LW      RFS51F11,127
+     320 00002900                   LW      RFS51F11,127
+     321 00002930                   LW      RFS51F11,127
+     322 00002960                   LW      RFS51F11,127
+     323 00002990                   LW      RFS51F11,127
+     324 000029c0                   LW      RFS51F11,127
+     325 000029f0                   LW      RFS51F11,127
+     326 00002a20                   LW      RFS51F11,127
+     327 00002a50                   LW      RFS51F11,127
+     328 00002a80                   LW      RFS51F11,127
+     329 00002ab0                   LW      RFS51F11,127
+     330 00002ae0                   LW      RFS51F11,127
+     331 00002b10                   LW      RFS51F11,127
+     332 00002b40                   LW      RFS51F11,127
+     333 00002b70                   LW      RFS51F11,127
+     334 00002ba0 00000000          .long   0
+     335                    
+     336 00002bc0           ref_alt_drop_medium_script
+     337 00002bc0                   LWWL    RMD71F07,AFUNC|AFLIP|1,0,a_ref_hold_puck
+     338 00002c20                   LWL     RMD71F07,AFUNC|1,a_ref_puck_half
+     339 00002c70                   LWL     RMD71F07,AFUNC|1,a_ref_puck_0
+     340 00002cc0                   LW      RMD71F08,3
+     341 00002cf0                   LW      RMD71F09,127
+     342 00002d20                   LW      RMD71F09,127
+     343 00002d50                   LW      RMD71F09,127
+     344 00002d80                   LW      RMD71F09,127
+     345 00002db0                   LW      RMD71F09,127
+     346 00002de0                   LW      RMD71F09,127
+     347 00002e10                   LW      RMD71F09,127
+     348 00002e40                   LW      RMD71F09,127
+     349 00002e70                   LW      RMD71F09,127
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     350 00002ea0                   LW      RMD71F09,127
+     351 00002ed0                   LW      RMD71F09,127
+     352 00002f00                   LW      RMD71F09,127
+     353 00002f30 00000000          .long   0
+     354                    
+     355 00002f50           ref_look_large_script
+     356 00002f50                   LWW     RFL51F01b,AFLIP|30,0
+     357 00002f90                   LW      RFL51F01a,7
+     358 00002fc0                   LW      RFL51F01b,7
+     359 00002ff0                   LW      RFL51F01c,7
+     360 00003020                   LW      RFL51F01d,7
+     361 00003050                   LW      RFL51F01c,7
+     362 00003080                   LW      RFL51F01b,127
+     363 000030b0                   LW      RFL51F01b,127
+     364 000030e0                   LW      RFL51F01b,127
+     365 00003110                   LW      RFL51F01b,127
+     366 00003140                   LW      RFL51F01b,127
+     367 00003170                   LW      RFL51F01b,127
+     368 000031a0                   LW      RFL51F01b,127
+     369 000031d0                   LW      RFL51F01b,127
+     370 00003200                   LW      RFL51F01b,127
+     371 00003230                   LW      RFL51F01b,127
+     372 00003260                   LW      RFL51F01b,127
+     373 00003290                   LW      RFL51F01b,127
+     374 000032c0                   LW      RFL51F01b,127
+     375 000032f0                   LW      RFL51F01b,127
+     376 00003320 00000000          .long   0
+     377                    
+     378 00003340           ref_look_medium_script
+     379 00003340                   LWW     RFM51F01b,AFLIP|30,0
+     380 00003380                   LW      RFM51F01a,7
+     381 000033b0                   LW      RFM51F01b,7
+     382 000033e0                   LW      RFM51F01c,7
+     383 00003410                   LW      RFM51F01d,7
+     384 00003440                   LW      RFM51F01c,7
+     385 00003470                   LW      RFM51F01b,127
+     386 000034a0                   LW      RFM51F01b,127
+     387 000034d0                   LW      RFM51F01b,127
+     388 00003500                   LW      RFM51F01b,127
+     389 00003530                   LW      RFM51F01b,127
+     390 00003560                   LW      RFM51F01b,127
+     391 00003590                   LW      RFM51F01b,127
+     392 000035c0                   LW      RFM51F01b,127
+     393 000035f0                   LW      RFM51F01b,127
+     394 00003620                   LW      RFM51F01b,127
+     395 00003650                   LW      RFM51F01b,127
+     396 00003680                   LW      RFM51F01b,127
+     397 000036b0                   LW      RFM51F01b,127
+     398 000036e0                   LW      RFM51F01b,127
+     399 00003710 00000000          .long   0
+     400                    
+     401 00003730           ref_look_small_script
+     402 00003730                   LWW     RFS51F01b,AFLIP|30,0
+     403 00003770                   LW      RFS51F01a,7
+     404 000037a0                   LW      RFS51F01b,7
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     405 000037d0                   LW      RFS51F01c,7
+     406 00003800                   LW      RFS51F01d,7
+     407 00003830                   LW      RFS51F01c,7
+     408 00003860                   LW      RFS51F01b,127
+     409 00003890                   LW      RFS51F01b,127
+     410 000038c0                   LW      RFS51F01b,127
+     411 000038f0                   LW      RFS51F01b,127
+     412 00003920                   LW      RFS51F01b,127
+     413 00003950                   LW      RFS51F01b,127
+     414 00003980                   LW      RFS51F01b,127
+     415 000039b0                   LW      RFS51F01b,127
+     416 000039e0                   LW      RFS51F01b,127
+     417 00003a10                   LW      RFS51F01b,127
+     418 00003a40                   LW      RFS51F01b,127
+     419 00003a70                   LW      RFS51F01b,127
+     420 00003aa0                   LW      RFS51F01b,127
+     421 00003ad0                   LW      RFS51F01b,127
+     422 00003b00 00000000          .long   0
+     423                    
+     424 00003b20           ref_stand_large_script
+     425 00003b20                   LWW     RFL51F03,AFLIP|127,0
+     426 00003b60 00000000          .long   0
+     427 00003b80           ref_stand_medium_script
+     428 00003b80                   LWW     RFM51F03,AFLIP|127,0
+     429 00003bc0 00000000          .long   0
+     430 00003be0           ref_stand_small_script
+     431 00003be0                   LWW     RFS51F03,AFLIP|127,0
+     432 00003c20 00000000          .long   0
+     433                    
+     434 00003c40           ref_skate_right_large_script
+     435 00003c40                   LWW     RSTL3F01,AFLIP|1,0
+     436 00003c80                   LW      RSTL3F02,2
+     437 00003cb0                   LWL     RSTL3F03,AFUNC|2,a_spd_right
+     438 00003d00                   LW      RSTL3F09,3
+     439 00003d30                   LW      RSKL3F02,3
+     440 00003d60                   LW      RSKL3F03,3
+     441 00003d90                   LW      RSKL3F04,3
+     442 00003dc0                   LW      RSKL3F05,3
+     443 00003df0                   LWL     RLG23F02,AFUNC|3,a_speed_up
+     444 00003e40                   LW      RLG23F03,3
+     445 00003e70                   LW      RLG23F04,3
+     446 00003ea0                   LW      RLG23F05,3
+     447 00003ed0           rskl1   LW      RLG23F06,8
+     448 00003f00                   LW      RLG63F06,8
+     449 00003f30                   LWL     RLG23F06,AFUNC|8,a_ref_logic_right
+     450 00003f80                   LWL     RLG63F06,AFUNC|8,a_branch+2
+     451 00003fd0 00003ed0'         .long    rskl1
+     452 00003ff0 00000000          .long   0
+     453                    
+     454 00004010           ref_skate_right_medium_script
+     455 00004010                   LWW     RSTM3F01,AFLIP|1,0
+     456 00004050                   LW      RSTM3F02,2
+     457 00004080                   LWL     RSTM3F03,AFUNC|2,a_spd_right
+     458 000040d0                   LW      RSTM3F09,3
+     459 00004100                   LW      RSKM3F02,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     460 00004130                   LW      RSKM3F03,3
+     461 00004160                   LW      RSKM3F04,3
+     462 00004190                   LW      RSKM3F05,3
+     463 000041c0                   LWL     RMD23F02,AFUNC|3,a_speed_up
+     464 00004210                   LW      RMD23F03,3
+     465 00004240                   LW      RMD23F04,3
+     466 00004270                   LW      RMD23F05,3
+     467 000042a0           rskm1   LW      RMD23F06,8
+     468 000042d0                   LW      RMD63F06,8
+     469 00004300                   LWL     RMD23F06,AFUNC|8,a_ref_logic_right
+     470 00004350                   LWL     RMD63F06,AFUNC|8,a_branch+2
+     471 000043a0 000042a0'         .long    rskm1
+     472 000043c0 00000000          .long   0
+     473                    
+     474 000043e0           ref_skate_right_small_script
+     475 000043e0                   LWW     RSTS3F01,AFLIP|1,0
+     476 00004420                   LW      RSTS3F02,2
+     477 00004450                   LWL     RSTS3F03,AFUNC|2,a_spd_right
+     478 000044a0                   LW      RSTS3F09,3
+     479 000044d0                   LW      RSKS3F02,3
+     480 00004500                   LW      RSKS3F03,3
+     481 00004530                   LW      RSKS3F04,3
+     482 00004560                   LW      RSKS3F05,3
+     483 00004590                   LWL     RSM23F02,AFUNC|3,a_speed_up
+     484 000045e0                   LW      RSM23F03,3
+     485 00004610                   LW      RSM23F04,3
+     486 00004640                   LW      RSM23F05,3
+     487 00004670           rsks1   LW      RSM23F06,8
+     488 000046a0                   LW      RSM63F06,8
+     489 000046d0                   LWL     RSM23F06,AFUNC|8,a_ref_logic_right
+     490 00004720                   LWL     RSM63F06,AFUNC|8,a_branch+2
+     491 00004770 00004670'         .long    rsks1
+     492 00004790 00000000          .long   0
+     493                    
+     494 000047b0           a_spd_right
+     495 000047b0     09e0          movi    [6,0],a0
+         000047c0 00060000  
+     496 000047e0     b208          move    a0,*a8(OXVEL),L
+         000047f0     0100  
+     497 00004800     0960          rets
+     498                    
+     499 00004810           ref_skate_left_large_script
+     500 00004810                   LWW     RSTL3F01,AFLIP|1,M_FLIPH
+     501 00004850                   LW      RSTL3F02,2
+     502 00004880                   LWL     RSTL3F03,AFUNC|2,a_spd_left
+     503 000048d0                   LW      RSTL3F09,3
+     504 00004900                   LW      RSKL3F02,3
+     505 00004930                   LW      RSKL3F03,3
+     506 00004960                   LW      RSKL3F04,3
+     507 00004990                   LW      RSKL3F05,3
+     508 000049c0                   LWL     RLG23F02,AFUNC|3,a_speed_up
+     509 00004a10                   LW      RLG23F03,3
+     510 00004a40                   LW      RLG23F04,3
+     511 00004a70                   LW      RLG23F05,3
+     512 00004aa0           lskl1   LW      RLG23F06,8
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     513 00004ad0                   LW      RLG63F06,8
+     514 00004b00                   LWL     RLG23F06,AFUNC|8,a_ref_logic_left
+     515 00004b50                   LWL     RLG63F06,AFUNC|8,a_branch+2
+     516 00004ba0 00004aa0'         .long    lskl1
+     517 00004bc0 00000000          .long   0
+     518                    
+     519 00004be0           ref_skate_left_medium_script
+     520 00004be0                   LWW     RSTM3F01,AFLIP|1,M_FLIPH
+     521 00004c20                   LW      RSTM3F02,2
+     522 00004c50                   LWL     RSTM3F03,AFUNC|2,a_spd_left
+     523 00004ca0                   LW      RSTM3F09,3
+     524 00004cd0                   LW      RSKM3F02,3
+     525 00004d00                   LW      RSKM3F03,3
+     526 00004d30                   LW      RSKM3F04,3
+     527 00004d60                   LW      RSKM3F05,3
+     528 00004d90                   LWL     RMD23F02,AFUNC|3,a_speed_up
+     529 00004de0                   LW      RMD23F03,3
+     530 00004e10                   LW      RMD23F04,3
+     531 00004e40                   LW      RMD23F05,3
+     532 00004e70           lskm1   LW      RMD23F06,8
+     533 00004ea0                   LW      RMD63F06,8
+     534 00004ed0                   LWL     RMD23F06,AFUNC|8,a_ref_logic_left
+     535 00004f20                   LWL     RMD63F06,AFUNC|8,a_branch+2
+     536 00004f70 00004e70'         .long    lskm1
+     537 00004f90 00000000          .long   0
+     538                    
+     539 00004fb0           ref_skate_left_small_script
+     540 00004fb0                   LWW     RSTS3F01,AFLIP|1,M_FLIPH
+     541 00004ff0                   LW      RSTS3F02,2
+     542 00005020                   LWL     RSTS3F03,AFUNC|2,a_spd_left
+     543 00005070                   LW      RSTS3F09,3
+     544 000050a0                   LW      RSKS3F02,3
+     545 000050d0                   LW      RSKS3F03,3
+     546 00005100                   LW      RSKS3F04,3
+     547 00005130                   LW      RSKS3F05,3
+     548 00005160                   LWL     RSM23F02,AFUNC|3,a_speed_up
+     549 000051b0                   LW      RSM23F03,3
+     550 000051e0                   LW      RSM23F04,3
+     551 00005210                   LW      RSM23F05,3
+     552 00005240           lsks1   LW      RSM23F06,8
+     553 00005270                   LW      RSM63F06,8
+     554 000052a0                   LWL     RSM23F06,AFUNC|8,a_ref_logic_left
+     555 000052f0                   LWL     RSM63F06,AFUNC|8,a_branch+2
+     556 00005340 00005240'         .long    lsks1
+     557 00005360 00000000          .long   0
+     558                    
+     559 00005380           a_spd_left
+     560 00005380     09e0          movi    [-6,0],a0
+         00005390 fffa0000  
+     561 000053b0     b208          move    a0,*a8(OXVEL),L
+         000053c0     0100  
+     562 000053d0     0960          rets
+     563                    
+     564 000053e0           a_ref_logic_left
+     565 000053e0     07a1          move    @SCROLLX,a1,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+         000053f0 00000000! 
+     566 00005410     4c2e          move    a1,a14
+     567 00005420     038e          abs     a14
+     568 00005430     0b6e          cmpi    [2,0],a14
+         00005440 fffdffff  
+     569 00005460     b700          move    *a8(OXVEL),a0,L
+         00005470     0100  
+     570 00005480     4c2e          move    a1,a14
+     571 00005490     4c02          move    a0,a2
+     572 000054a0     282e          sra     31,a14
+     573 000054b0     2822          sra     31,a2
+     574 000054c0     49c2          cmp     a14,a2
+     575 000054d0     cb1e          jrnz    a_speed_up      ;different direction
+     576                    
+     577 000054e0     0d00          subi    [20,0],a0
+         000054f0 ffebffff  
+     578 00005510     4820          cmp     a1,a0
+     579 00005520     c719          jrgt    a_speed_up
+     580 00005530     c000          jruc    set_ref_stop_backwards_script
+         00005540     fb58  
+     581                    
+     582 00005550           a_ref_logic_right
+     583 00005550     07a1          move    @SCROLLX,a1,L
+         00005560 00000000! 
+     584 00005580     4c2e          move    a1,a14
+     585 00005590     038e          abs     a14
+     586 000055a0     0b6e          cmpi    [2,0],a14
+         000055b0 fffdffff  
+     587 000055d0     b700          move    *a8(OXVEL),a0,L
+         000055e0     0100  
+     588 000055f0     4c2e          move    a1,a14
+     589 00005600     4c02          move    a0,a2
+     590 00005610     282e          sra     31,a14
+     591 00005620     2822          sra     31,a2
+     592 00005630     49c2          cmp     a14,a2
+     593 00005640     cb07          jrnz    a_speed_up      ;different direction
+     594                    
+     595 00005650     0b20          addi    [20,0],a0
+         00005660 00140000  
+     596 00005680     4820          cmp     a1,a0
+     597 00005690     c402          jrlt    a_speed_up
+     598 000056a0     c000          jruc    set_ref_stop_backwards_script
+         000056b0     fb41  
+     599                    
+     600 000056c0           a_speed_up
+     601 000056c0     b700          move    *a8(OXVEL),a0,L
+         000056d0     0100  
+     602 000056e0     4c0e          move    a0,a14
+     603 000056f0     2bce          sra     2,a14
+     604 00005700     41c0          add     a14,a0
+     605 00005710     2bee          sra     1,a14
+     606 00005720     41c0          add     a14,a0
+     607 00005730     b208          move    a0,*a8(OXVEL),L
+         00005740     0100  
+     608 00005750     0960          rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     609                    
+     610 00005760           a_ref_hold_puck
+     611 00005760     0d5f          calla   get_players_puck_point_rz
+         00005770 00000000! 
+     612 00005790     0be1          subi    200,a1
+         000057a0     ff37  
+     613 000057b0     07a8          move    @PUCK_OBJECT,a8,L
+         000057c0 00000000! 
+     614 000057e0     57ce          clr     a14
+     615 000057f0     b3c8          move    a14,*a8(OXVEL),L
+         00005800     0100  
+     616 00005810     b3c8          move    a14,*a8(OYVEL),L
+         00005820     0120  
+     617 00005830     b3c8          move    a14,*a8(OZVEL),L
+         00005840     00e0  
+     618 00005850     b208          move    a0,*a8(OXVAL),L
+         00005860     0140  
+     619 00005870     b228          move    a1,*a8(OZVAL),L
+         00005880     0180  
+     620 00005890     b248          move    a2,*a8(OYVAL),L
+         000058a0     0160  
+     621 000058b0     0d5f          calla   set_puck_script
+         000058c0 00000000! 
+     622 000058e0     c080          jauc    turn_puck_on
+         000058f0 00000000! 
+     623                    
+     624 00005910           a_ref_puck_half
+     625 00005910     07a9          move    @PUCK_OBJECT,a9,L
+         00005920 00000000! 
+     626 00005940     57ce          clr     a14
+     627 00005950     b3c9          move    a14,*a9(OXVEL),L
+         00005960     0100  
+     628 00005970     b3c9          move    a14,*a9(OYVEL),L
+         00005980     0120  
+     629 00005990     b3c9          move    a14,*a9(OZVEL),L
+         000059a0     00e0  
+     630 000059b0     b722          move    *a9(OYVAL),a2,L
+         000059c0     0160  
+     631 000059d0     2be2          sra     1,a2
+     632 000059e0     b249          move    a2,*a9(OYVAL),L
+         000059f0     0160  
+     633 00005a00     0960          rets
+     634                    
+     635 00005a10           a_ref_puck_0
+     636 00005a10     07a9          move    @PUCK_OBJECT,a9,L
+         00005a20 00000000! 
+     637 00005a40     5642          clr     a2
+     638 00005a50     b249          move    a2,*a9(OYVAL),L
+         00005a60     0160  
+     639 00005a70     c080          jauc    puck_faceoff_drop_show
+         00005a80 00000000! 
+     640                    
+     641                    
+     642 00005aa0           ref_skate_right_f_large_script
+     643 00005aa0                   LWW     RSTL3F09,AFLIP|3,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     644 00005ae0                   LW      RSKL3F02,3
+     645 00005b10                   LW      RSKL3F03,3
+     646 00005b40                   LW      RSKL3F04,3
+     647 00005b70                   LW      RSKL3F05,3
+     648 00005ba0                   LW      RSKL3F06,3
+     649 00005bd0                   LW      RSKL3F07,3
+     650 00005c00                   LW      RSKL3F08,3
+     651 00005c30                   LW      RSKL3F09,3
+     652 00005c60                   LW      RSKL3F10,3
+     653 00005c90 00000000          .long   0
+     654 00005cb0           ref_skate_right_f_medium_script
+     655 00005cb0                   LWW     RSTM3F09,AFLIP|3,0
+     656 00005cf0                   LW      RSKM3F02,3
+     657 00005d20                   LW      RSKM3F03,3
+     658 00005d50                   LW      RSKM3F04,3
+     659 00005d80                   LW      RSKM3F05,3
+     660 00005db0                   LW      RSKM3F06,3
+     661 00005de0                   LW      RSKM3F07,3
+     662 00005e10                   LW      RSKM3F08,3
+     663 00005e40                   LW      RSKM3F09,3
+     664 00005e70                   LW      RSKM3F10,3
+     665 00005ea0 00000000          .long   0
+     666 00005ec0           ref_skate_right_f_small_script
+     667 00005ec0                   LWW     RSTS3F09,AFLIP|3,0
+     668 00005f00                   LW      RSKS3F02,3
+     669 00005f30                   LW      RSKS3F03,3
+     670 00005f60                   LW      RSKS3F04,3
+     671 00005f90                   LW      RSKS3F05,3
+     672 00005fc0                   LW      RSKS3F06,3
+     673 00005ff0                   LW      RSKS3F07,3
+     674 00006020                   LW      RSKS3F08,3
+     675 00006050                   LW      RSKS3F09,3
+     676 00006080                   LW      RSKS3F10,3
+     677 000060b0 00000000          .long   0
+     678                    
+     679 000060d0           ref_skate_left_f_large_script
+     680 000060d0                   LWW     RSTL3F09,AFLIP|3,M_FLIPH
+     681 00006110                   LW      RSKL3F02,3
+     682 00006140                   LW      RSKL3F03,3
+     683 00006170                   LW      RSKL3F04,3
+     684 000061a0                   LW      RSKL3F05,3
+     685 000061d0                   LW      RSKL3F06,3
+     686 00006200                   LW      RSKL3F07,3
+     687 00006230                   LW      RSKL3F08,3
+     688 00006260                   LW      RSKL3F09,3
+     689 00006290                   LW      RSKL3F10,3
+     690 000062c0 00000000          .long   0
+     691 000062e0           ref_skate_left_f_medium_script
+     692 000062e0                   LWW     RSTM3F09,AFLIP|3,M_FLIPH
+     693 00006320                   LW      RSKM3F02,3
+     694 00006350                   LW      RSKM3F03,3
+     695 00006380                   LW      RSKM3F04,3
+     696 000063b0                   LW      RSKM3F05,3
+     697 000063e0                   LW      RSKM3F06,3
+     698 00006410                   LW      RSKM3F07,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     699 00006440                   LW      RSKM3F08,3
+     700 00006470                   LW      RSKM3F09,3
+     701 000064a0                   LW      RSKM3F10,3
+     702 000064d0 00000000          .long   0
+     703 000064f0           ref_skate_left_f_small_script
+     704 000064f0                   LWW     RSTS3F09,AFLIP|3,M_FLIPH
+     705 00006530                   LW      RSKS3F02,3
+     706 00006560                   LW      RSKS3F03,3
+     707 00006590                   LW      RSKS3F04,3
+     708 000065c0                   LW      RSKS3F05,3
+     709 000065f0                   LW      RSKS3F06,3
+     710 00006620                   LW      RSKS3F07,3
+     711 00006650                   LW      RSKS3F08,3
+     712 00006680                   LW      RSKS3F09,3
+     713 000066b0                   LW      RSKS3F10,3
+     714 000066e0 00000000          .long   0
+     715                    
+     716 00006700           ref_stop_f_large_script
+     717 00006700           rslr10  LW      RLG43F02,3
+     718 00006730                   LW      RLG43F03,3
+     719 00006760           rslr11  LWLLL   RLG43F04,AFUNC|1,a_loop_til_zero+4,rslr10,rslr11
+     720 000067f0                   LW      RLG43F05,127
+     721 00006820                   LW      RLG43F05,127
+     722 00006850                   LW      RLG43F05,127
+     723 00006880                   LW      RLG43F05,127
+     724 000068b0 00000000          .long   0
+     725 000068d0           ref_stop_f_medium_script
+     726 000068d0           rsmr10  LW      RMD43F02,3
+     727 00006900                   LW      RMD43F03,3
+     728 00006930           rsmr11  LWLLL   RMD43F04,AFUNC|1,a_loop_til_zero+4,rsmr10,rsmr11
+     729 000069c0                   LW      RMD43F05,127
+     730 000069f0                   LW      RMD43F05,127
+     731 00006a20                   LW      RMD43F05,127
+     732 00006a50                   LW      RMD43F05,127
+     733 00006a80 00000000          .long   0
+     734 00006aa0           ref_stop_f_small_script
+     735 00006aa0           rssr10  LW      RSM43F02,3
+     736 00006ad0                   LW      RSM43F03,3
+     737 00006b00           rssr11  LWLLL   RSM43F04,AFUNC|1,a_loop_til_zero+4,rssr10,rssr11
+     738 00006b90                   LW      RSM43F05,127
+     739 00006bc0                   LW      RSM43F05,127
+     740 00006bf0                   LW      RSM43F05,127
+     741 00006c20                   LW      RSM43F05,127
+     742 00006c50 00000000          .long   0
+     743                    
+     744 00006c70           ref_stop_b_large_script
+     745 00006c70           rslb10  LW      RLG33F02,3
+     746 00006ca0                   LW      RLG33F03,3
+     747 00006cd0           rslb11  LWLLL   RLG33F04,AFUNC|1,a_loop_til_zeros+4,rslb10,rslb11
+     748 00006d60                   LW      RLG33F05,6
+     749 00006d90                   LWL     1,AFUNC|1,a_smart_ref_direction
+     750 00006de0 00000000          .long   0
+     751 00006e00           ref_stop_b_medium_script
+     752 00006e00           rsmb10  LW      RMD33F02,3
+     753 00006e30                   LW      RMD33F03,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     754 00006e60           rsmb11  LWLLL   RMD33F04,AFUNC|1,a_loop_til_zeros+4,rsmb10,rsmb11
+     755 00006ef0                   LW      RMD33F05,6
+     756 00006f20                   LWL     1,AFUNC|1,a_smart_ref_direction
+     757 00006f70 00000000          .long   0
+     758 00006f90           ref_stop_b_small_script
+     759 00006f90           rssb10  LW      RSM33F02,3
+     760 00006fc0                   LW      RSM33F03,3
+     761 00006ff0           rssb11  LWLLL   RSM33F04,AFUNC|1,a_loop_til_zeros+4,rssb10,rssb11
+     762 00007080                   LW      RSM33F05,6
+     763 000070b0                   LWL     1,AFUNC|1,a_smart_ref_direction
+     764 00007100 00000000          .long   0
+     765                    
+     766 00007120           a_smart_ref_direction
+     767 00007120     07a2          move    @SCROLLX,a2,L
+         00007130 00000000! 
+     768 00007150     4c4e          move    a2,a14
+     769 00007160     038e          abs     a14
+     770 00007170     0b6e          cmpi    [4,0],a14
+         00007180 fffbffff  
+     771 000071a0     c302          jrhi    asrd1
+     772 000071b0     b502          move    *a8(OXPOS),a2,W
+         000071c0     0150  
+     773 000071d0     09e1  asrd1   movi    set_ref_skate_right_script,a1
+         000071e0 00000580' 
+     774 00007200     4c42          move    a2,a2
+     775 00007210     ce03          jrn     asrd9
+     776 00007220     09e1          movi    set_ref_skate_left_script,a1
+         00007230 00000690' 
+     777 00007250     0161  asrd9   jump    a1
+     778                    
+     779 00007260           a_loop_til_zeros
+     780 00007260     b701          move    *a8(OXVEL),a1,L
+         00007270     0100  
+     781 00007280     5642          clr     a2
+     782 00007290     1b23          movk    25,a3
+     783 000072a0     0d5f          calla   move_to_speed_x
+         000072b0 00000000! 
+     784 000072d0     4c2e          move    a1,a14
+     785 000072e0     038e          abs     a14
+     786 000072f0     0b6e          cmpi    [2,0],a14
+         00007300 fffdffff  
+     787 00007320     c301          jrhi    ahrr
+     788 00007330     5621          clr     a1
+     789 00007340     b228  ahrr    move    a1,*a8(OXVEL),L
+         00007350     0100  
+     790                            ;
+     791 00007360           a_loop_til_zero
+     792 00007360     b700          move    *a8(OXVEL),a0,L
+         00007370     0100  
+     793 00007380     ca0a          jrz     altz9
+     794 00007390     b700          move    *a8(ANIMARG),a0,L
+         000073a0     03e0  
+     795 000073b0     b701          move    *a8(ANIMSCR),a1,L
+         000073c0     0340  
+     796 000073d0     960e          move    *a0+,a14,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:34:07 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     797 000073e0     482e          cmp     a1,a14
+     798 000073f0     cb03          jrnz    altz9
+     799 00007400     960e          move    *a0+,a14,L
+     800 00007410     b3c8          move    a14,*a8(ANIMFRM),L
+         00007420     0320  
+     801 00007430     0960  altz9   rets
+
+ No Errors,  No Warnings

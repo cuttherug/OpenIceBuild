@@ -1,0 +1,3840 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHDRONE.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                    
+      11                            .INCLUDE        "HH.INC"
+      12                            .INCLUDE        "HHSTRING.H"
+      13                            .INCLUDE        "IMGTBL.GLO"
+      14                            .include        "hhpuck.g"
+      15                            .include        "hhmath.g"
+      16                            .include        "hhcontrl.g"
+      17                            .include        "hhplayer.g"
+      18                            .include        "hhtimer.g"
+      19                            .include        "hhgame.g"
+      20                            .include        "hhram.g"
+      21                            .include        "hhndrone.e"
+      22                            .include        "hh.g"
+      23                            .include        "hhutil.g"
+      24                            .include        "hhcx.g"
+      25                            .include        "hhcontr2.g"
+      26                            .include        "hhcmos.g"
+      27                            .include        "hhfix.g"
+      28                    
+      29                    ; end of include files
+      30                    
+      31 00000000                   .bss    drone_level_t1,16
+      32 00000010                   .bss    drone_level_t2,16
+      33 00000020                   .bss    drone_temp_1,32
+      34                    
+      35                            ;  0 - extremely easy - never if with human teammate
+      36                            ;.      only check if behind by 4
+      37                            ;.      reduce all probabilities to checks
+      38                            ;.      only get mean if behind by 5
+      39                            ;.      reduce all probabilities to meanness
+      40                            ;v      low percentage to all shots     - done in hhcontr2
+      41                            ;.      delay on chasing all pucks
+      42                            ;.      take farther distance when following man
+      43                            ;  1 - very easy
+      44                            ;.      reduce all probabilities to checks
+      45                            ;.      only get mean if behind by 3
+      46                            ;.      reduce all probabilities to meanness
+      47                            ;x      percentage shots based on score
+      48                            ;.      delay on chasing all pucks
+      49                            ;.      take farther distance when following man
+      50                            ;  2 - easy
+      51                            ;.      reduce all probabilities to checks
+      52                            ;.      reduce all probabilities to meanness
+      53                            ;x      percentage shots based on score
+      54                            ;.      delay on chasing all pucks
+      55                            ;.      take farther distance when following man
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56                            ;  3 - moderate
+      57                            ;.      reduce all probabilities to meanness
+      58                            ;x      percentage shots based on score
+      59                            ;.      take farther distance when following man
+      60                            ;  4 - mid moderate
+      61                            ;.      reduce all probabilities to meanness
+      62                            ;  5 - normal - minimum human teammate against all drone team
+      63                            ;  6 - slightly difficult
+      64                            ;v      increase percentage to all shots- done in hhcontr2
+      65                            ;  7 - moderately difficult
+      66                            ;v      increase percentage to all shots- done in hhcontr2
+      67                            ;.      chase down all pucks
+      68                            ;  8 - difficult
+      69                            ;.      increase probabilities to meanness
+      70                            ;v      increase percentage to all shots- done in hhcontr2
+      71                            ;.      chase down all pucks
+      72                            ;  9 - very difficult
+      73                            ;.      increase probabilities to checks
+      74                            ;.      increase probabilities to meanness
+      75                            ;v      increase percentage to all shots- done in hhcontr2
+      76                            ;.      chase down all pucks
+      77                            ; 10 - extremely difficult
+      78                            ;.      increase probabilities to checks more
+      79                            ;.      increase probabilities to meanness more
+      80                            ;v      increase percentage to all shots
+      81                            ;.      chase down all pucks
+      82                            ;.      tighten distance when following man
+      83                    
+      84                    ;extra levels
+      85                            ; 11 - yes, it's hard
+      86                            ;.      increase probabilities to checks even more
+      87                            ;.      increase probabilities to meanness even more
+      88                            ;v      increase percentage to all shots
+      89                            ;.      chase down all pucks
+      90                            ;.      tighten distance when following man even more
+      91                            ; 12 - all we got
+      92                            ;.      probabilty to check is damn near 100%
+      93                            ;.      chances are, we are mean
+      94                            ;v      percentage to all shots is even higher
+      95                            ;.      all pucks get chased down
+      96                            ;.      distance when following is very close (we are mean anyway, so it doesn't really matter)
+      97                    
+      98 00000000           maybe_set_drone_levels
+      99 00000000     05ae          move    @GAME_STATE,a14,W
+         00000010 00000000! 
+     100 00000030     0b4e          cmpi    INAMODE,a14
+         00000040     ffcf  
+     101 00000050     ca09          jrz     set_drone_levels
+     102 00000060     05ae          move    @PLAYER_BITS,a14,W
+         00000070 00000000! 
+     103 00000090     05a0          move    @PLAYERLBITS,a0,W
+         000000a0 00000000! 
+     104 000000c0     480e          cmp     a0,a14
+     105 000000d0     cb01          jrnz    set_drone_levels
+     106 000000e0     0960          rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     107                    
+     108 000000f0           set_drone_levels
+     109 000000f0     05ae          move    @GAME_STATE,a14,W
+         00000100 00000000! 
+     110 00000120     0b4e          cmpi    INAMODE,a14
+         00000130     ffcf  
+     111 00000140     cb10          jrnz    sdle1
+     112 00000150     1960          movk    11,a0
+     113 00000160     0d5f          calla   RAND0
+         00000170 00000000! 
+     114 00000190     0580          move    a0,@drone_level_t1,W
+         000001a0 00000000- 
+     115 000001c0     1960          movk    11,a0
+     116 000001d0     0d5f          calla   RAND0
+         000001e0 00000000! 
+     117 00000200     0580          move    a0,@drone_level_t2,W
+         00000210 00000010- 
+     118 00000230     c000          jruc    sdr_9
+         00000240     0091  
+     119 00000250     05c0  sdle1   move    @PLAYER_BITS,@PLAYERLBITS,W
+         00000260 00000000! 
+         00000280 00000000! 
+     120 000002a0     1820          movk    1,a0
+     121 000002b0     0d3f          callr   get_our_human_stats
+         000002c0     0ee6  
+     122 000002d0     4c4a          move    a2,a10
+     123 000002e0     18a0          movk    5,a0
+     124 000002f0     0d3f          callr   get_our_human_stats
+         00000300     0ee2  
+     125 00000310     4c4b          move    a2,a11
+     126 00000320     05a1          move    @team1_score,a1,W
+         00000330 00000000! 
+     127 00000350     05a2          move    @team2_score,a2,W
+         00000360 00000000! 
+     128 00000380     4d4a          move    a10,a10
+     129 00000390     ca0d          jrz     sd_t10h                 ;team 1 is all drone
+     130 000003a0     4d6b          move    a11,a11
+     131 000003b0     ca0f          jrz     sd_t20h                 ;team 2 is all drone
+     132 000003c0     0b4a          cmpi    2,a10
+         000003d0     fffd  
+     133 000003e0     ca04          jrz     sd_t12h                 ;team 1 is both human
+     134 000003f0     0b4b          cmpi    2,a11
+         00000400     fffd  
+     135 00000410     ca15          jrz     sd_1_vs_2               ;team 1 is one human, team 2 is 2 humans
+     136 00000420     c02c          jruc    sd_1_vs_1               ;team 1 is one human, team 2 is 1 human
+     137 00000430     0b4b  sd_t12h cmpi    2,a11
+         00000440     fffd  
+     138 00000450     ca09          jrz     sd_2_vs_2               ;team 1 is two humans, team 2 is two humans
+     139 00000460     c01c          jruc    sd_2_vs_1               ;team 1 is two humans, team 2 is one human
+     140 00000470     0b4b  sd_t10h cmpi    1,a11
+         00000480     fffe  
+     141 00000490     ca33          jrz     sd_0_vs_1               ;team 1 is all drone, team 2 is one human
+     142 000004a0     c050          jruc    sd_0_vs_2               ;team 1 is all drone, team 2 is two humans
+     143 000004b0     0b4a  sd_t20h cmpi    1,a10
+         000004c0     fffe  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     144 000004d0     ca3e          jrz     sd_1_vs_0               ;team 1 is one human, team 2 is all drone
+     145 000004e0     c05a          jruc    sd_2_vs_0               ;team 1 is two humans, team 2 is all drone
+     146                    
+     147 000004f0           sd_2_vs_2       ;2 vs 2
+     148 000004f0     18a0          movk    5,a0
+     149 00000500     0580          move    a0,@drone_level_t1,W
+         00000510 00000000- 
+     150 00000530     0580          move    a0,@drone_level_t2,W
+         00000540 00000010- 
+     151 00000560     c05f          jruc    sdr_9
+     152 00000570           sd_1_vs_2       ;1 vs 2
+     153 00000570     4c23          move    a1,a3
+     154 00000580     4443          sub     a2,a3           ;a3 is differential from t1 view
+     155 00000590     0d3f          callr   dl1v2
+         000005a0     0090  
+     156 000005b0     0580          move    a0,@drone_level_t1,W
+         000005c0 00000000- 
+     157 000005e0     18a0          movk    5,a0
+     158 000005f0     0580          move    a0,@drone_level_t2,W
+         00000600 00000010- 
+     159 00000620     c053          jruc    sdr_9
+     160 00000630           sd_2_vs_1
+     161 00000630     18a0          movk    5,a0
+     162 00000640     0580          move    a0,@drone_level_t1,W
+         00000650 00000000- 
+     163 00000670     4c43          move    a2,a3
+     164 00000680     4423          sub     a1,a3           ;a3 is differential from t2 view
+     165 00000690     0d3f          callr   dl1v2
+         000006a0     0080  
+     166 000006b0     0580          move    a0,@drone_level_t2,W
+         000006c0 00000010- 
+     167 000006e0     c047          jruc    sdr_9
+     168 000006f0           sd_1_vs_1
+     169 000006f0     4c23          move    a1,a3
+     170 00000700     4443          sub     a2,a3           ;a3 is differential from t1 view
+     171 00000710     0d3f          callr   dl1v1
+         00000720     007f  
+     172 00000730     0580          move    a0,@drone_level_t1,W
+         00000740 00000000- 
+     173 00000760     03a3          neg     a3              ;a3 is differential from t2 view
+     174 00000770     0d3f          callr   dl1v1
+         00000780     0079  
+     175 00000790     0580          move    a0,@drone_level_t2,W
+         000007a0 00000010- 
+     176 000007c0     c039          jruc    sdr_9
+     177 000007d0           sd_0_vs_1
+     178 000007d0     4c23          move    a1,a3
+     179 000007e0     4443          sub     a2,a3           ;a3 is differential from t1 view
+     180 000007f0     18a4          movk    5,a4            ;check teams beat for players 5 and 6
+     181 00000800     0d3f          callr   dl0v1
+         00000810     0061  
+     182 00000820     0580          move    a0,@drone_level_t1,W
+         00000830 00000000- 
+     183 00000850     03a3          neg     a3              ;a3 is differential from t2 view
+     184 00000860     0d3f          callr   dl1v0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+         00000870     006b  
+     185 00000880     0580          move    a0,@drone_level_t2,W
+         00000890 00000010- 
+     186 000008b0     c02a          jruc    sdr_9
+     187 000008c0           sd_1_vs_0
+     188 000008c0     4c23          move    a1,a3
+     189 000008d0     4443          sub     a2,a3           ;a3 is differential from t1 view
+     190 000008e0     0d3f          callr   dl1v0
+         000008f0     0063  
+     191 00000900     0580          move    a0,@drone_level_t1,W
+         00000910 00000000- 
+     192 00000930     03a3          neg     a3              ;a3 is differential from t2 view
+     193 00000940     1824          movk    1,a4            ;check teams beat for players 1 and 2
+     194 00000950     0d3f          callr   dl0v1
+         00000960     004c  
+     195 00000970     0580          move    a0,@drone_level_t2,W
+         00000980 00000010- 
+     196 000009a0     c01b          jruc    sdr_9
+     197 000009b0           sd_0_vs_2
+     198 000009b0     4c23          move    a1,a3
+     199 000009c0     4443          sub     a2,a3           ;a3 is differential from t1 view
+     200 000009d0     18a4          movk    5,a4            ;check teams beat for players 5 and 6
+     201 000009e0     0d3f          callr   dl0v2
+         000009f0     0047  
+     202 00000a00     0580          move    a0,@drone_level_t1,W
+         00000a10 00000000- 
+     203 00000a30     03a3          neg     a3              ;a3 is differential from t2 view
+     204 00000a40     18a0          movk    5,a0
+     205 00000a50     0580          move    a0,@drone_level_t2,W
+         00000a60 00000010- 
+     206 00000a80     c00d          jruc    sdr_9
+     207 00000a90           sd_2_vs_0
+     208 00000a90     4c23          move    a1,a3
+     209 00000aa0     4443          sub     a2,a3           ;a3 is differential from t1 view
+     210 00000ab0     18a0          movk    5,a0
+     211 00000ac0     0580          move    a0,@drone_level_t1,W
+         00000ad0 00000000- 
+     212 00000af0     03a3          neg     a3              ;a3 is differential from t2 view
+     213 00000b00     1824          movk    1,a4            ;check teams beat for players 1 and 2
+     214 00000b10     0d3f          callr   dl0v2
+         00000b20     0034  
+     215 00000b30     0580          move    a0,@drone_level_t2,W
+         00000b40 00000010- 
+     216                            ;
+     217 00000b60     05a1  sdr_9   move    @drone_level_t1,a1,W
+         00000b70 00000000- 
+     218 00000b90     0581          move    a1,@PLAYER_3_BLOCK+POF_DRONE_LEVEL,W
+         00000ba0 00000be0! 
+     219 00000bc0     0581          move    a1,@PLAYER_4_BLOCK+POF_DRONE_LEVEL,W
+         00000bd0 00000be0! 
+     220 00000bf0     1820          movk    1,a0
+     221 00000c00     0d3f          callr   sr1a
+         00000c10     000e  
+     222 00000c20     0d3f          callr   sr1a
+         00000c30     000c  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     223 00000c40     05a1          move    @drone_level_t2,a1,W
+         00000c50 00000010- 
+     224 00000c70     0581          move    a1,@PLAYER_7_BLOCK+POF_DRONE_LEVEL,W
+         00000c80 00000be0! 
+     225 00000ca0     0581          move    a1,@PLAYER_8_BLOCK+POF_DRONE_LEVEL,W
+         00000cb0 00000be0! 
+     226 00000cd0     18a0          movk    5,a0
+     227 00000ce0     0d3f          callr   sr1a
+         00000cf0     0000  
+     228 00000d00           sr1a    GBLOCK  a0,a14
+     229 00000d50     4c22          move    a1,a2
+     230 00000d60     b5c3          move    *a14(POF_HOT_VALUE),a3,W
+         00000d70     0b70  
+     231 00000d80     0b43          cmpi    19,a3
+         00000d90     ffec  
+     232 00000da0     cb04          jrnz    sr2a
+     233 00000db0     0b42          cmpi    10,a2
+         00000dc0     fff5  
+     234 00000dd0     c901          jrhs    sr2a
+     235 00000de0     1022          inc     a2
+     236 00000df0     b04e  sr2a    move    a2,*a14(POF_DRONE_LEVEL),W
+         00000e00     0be0  
+     237 00000e10     1020          inc     a0
+     238 00000e20     0960          rets
+     239                    
+     240                    ;coin boost drone level
+     241                    ; game over (no free)
+     242                    ;  coin_boost = 0
+     243                    ;  coin_d3p_boost = 0
+     244                    ; 1p wins
+     245                    ;  vs cpu
+     246                    ;   if large victory
+     247                    ;    coin_boost +=2
+     248                    ;   coin_boost +=1
+     249                    ;  vs 1p
+     250                    ;   coin_boost = no_change (hold level for back to 1p/2p play)
+     251                    ;  vs 2p
+     252                    ;   coin_boost = no_change (hold level for back to 1p/2p play)
+     253                    ;   coin_d3p_boost -=1 (if margin > 2);
+     254                    ; 2p wins
+     255                    ;  vs cpu
+     256                    ;   if large victory
+     257                    ;    coin_boost +=2
+     258                    ;   coin_boost +=1
+     259                    ;  vs 1p
+     260                    ;   coin_boost = no change (hold level for back to 1p/2p play)
+     261                    ;   coin_d3p_boost +=1 (if margin > 2);
+     262                    ;  vs 2p
+     263                    ;   coin_boost = no change (hold level for back to 1p/2p play)
+     264                    
+     265 00000e30           dl0v1   ;get drone level for all drone vs 1 human
+     266 00000e30     09e5          movi    drones_vs_one_player_table,a5
+         00000e40 00001970' 
+     267 00000e60     c016          jruc    do_tms_table    ;do table for teams beat and game adjust
+     268                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     269 00000e70           dl0v2   ;get drone level for all drone vs 2 humans
+     270 00000e70     09e5          movi    drones_vs_two_players_table,a5
+         00000e80 000031d0' 
+     271 00000ea0     c012          jruc    do_tms_table    ;do table for teams beat and game adjust
+     272                    
+     273 00000eb0           dl1v2   ;get drpme level for 1 human vs 2 humans
+     274 00000eb0     0300          nop
+     275 00000ec0     0d3f          callr   dl1v1           ;get 1 vs 1
+         00000ed0     0004  
+     276 00000ee0     1460          subk    3,a0
+     277 00000ef0     cf01          jrnn    d12v9
+     278 00000f00     5600          clr     a0              ;don't let us (unlikely) go below zero
+     279 00000f10     0960  d12v9   rets
+     280                    
+     281 00000f20           dl1v1   ;get drone level for 1 human vs 1 human
+     282 00000f20     0300          nop
+     283 00000f30           dl1v0   ;get drone level for 1 human vs all drone
+     284 00000f30     18a0          movk    5,a0    ;5 if 5 or more ahead
+     285 00000f40     0b43          cmpi    4,a3
+         00000f50     fffb  
+     286 00000f60     c705          jrgt    d1v09
+     287 00000f70     18c0          movk    6,a0    ;6 if 4 ahead to 2 behind
+     288 00000f80     0b43          cmpi    -3,a3
+         00000f90     0002  
+     289 00000fa0     c701          jrgt    d1v09
+     290 00000fb0     18e0          movk    7,a0    ;7 if 3 or more behind
+     291 00000fc0     0960  d1v09   rets
+     292                    
+     293 00000fd0           do_tms_table
+     294 00000fd0     09c0          movi    ADJDIFF,a0
+         00000fe0     000d  
+     295 00000ff0     0d5f          calla   GET_ADJ
+         00001000 00000000! 
+     296 00001020     4c00          move    a0,a0
+     297 00001030     c101          jrp     dtm1
+     298 00001040     1820          movk    1,a0
+     299 00001050     0b40  dtm1    cmpi    9,a0
+         00001060     fff6  
+     300 00001070     c201          jrls    dtm2
+     301 00001080     1920          movk    9,a0
+     302 00001090     1420  dtm2    dec     a0              ;32 below table for 1-9
+     303 000010a0     24a0          sll     5,a0
+     304 000010b0     4005          add     a0,a5
+     305 000010c0     86a5          move    *a5,a5,L        ;a5 is our group of tables
+     306 000010d0     0d3f          callr   get_minimum_teams_beat
+         000010e0     0037  
+     307 000010f0     2488          sll     4,a8
+     308 00001100     4105          add     a8,a5
+     309 00001110     84a0          move    *a5,a0,W        ;a0 is our drone level, before +/- score correction
+     310 00001120     18e5          movk    7,a5            ;add 7 if behind 6
+     311 00001130     0b43          cmpi    -5,a3
+         00001140     0004  
+     312 00001150     c419          jrlt    dtm3
+     313 00001160     1885          movk    4,a5            ;add 4 if behind 3
+     314 00001170     0b43          cmpi    -2,a3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+         00001180     0001  
+     315 00001190     c415          jrlt    dtm3
+     316 000011a0     56a5          clr     a5              ;nothing if losing
+     317 000011b0     05a8          move    @period,a8,W    ;a8 is our period (for period 3 check)
+         000011c0 00000000! 
+     318 000011e0     0b48          cmpi    3,a8            ;
+         000011f0     fffc  
+     319 00001200     cb01          jrnz    dtm21
+     320 00001210     1825          movk    1,a5            ;add 1 if losing and period is 3 (but not ot)
+     321 00001220     4c63  dtm21   move    a3,a3
+     322 00001230     ce0b          jrn     dtm3
+     323 00001240     56a5          clr     a5              ;nothing if ahead 2
+     324 00001250     0b43          cmpi    3,a3
+         00001260     fffc  
+     325 00001270     c407          jrlt    dtm3
+     326 00001280     09c5          movi    -2,a5           ;subtract 2 if ahead 4
+         00001290     fffe  
+     327 000012a0     0b43          cmpi    5,a3
+         000012b0     fffa  
+     328 000012c0     c402          jrlt    dtm3
+     329 000012d0     09c5          movi    -3,a5           ;subtract 3 if ahead 5 or more
+         000012e0     fffd  
+     330 000012f0     40a0  dtm3    add     a5,a0
+     331 00001300     cf01          jrnn    dtm4
+     332 00001310     5600          clr     a0
+     333 00001320     098f  dtm4    mmtm    sp,a0
+         00001330     8000  
+     334 00001340     0d3f          callr   get_dronemod
+         00001350     0041  
+     335 00001360     09af          mmfm    sp,a0
+         00001370     0001  
+     336 00001380     4100          add     a8,a0
+     337 00001390     0b40          cmpi    10,a0
+         000013a0     fff5  
+     338 000013b0     c201          jrls    dtm5
+     339 000013c0     1940          movk    10,a0           ;cap regular drones at 10
+     340 000013d0     05ae  dtm5    move    @cdronemod,a14,W
+         000013e0 00000000! 
+     341 00001400     41c0          add     a14,a0
+     342 00001410     0b40          cmpi    12,a0
+         00001420     fff3  
+     343 00001430     c201          jrls    dtm6
+     344 00001440     1980          movk    12,a0           ;cap coin modified drones at 12
+     345 00001450     0960  dtm6    rets
+     346                    
+     347 00001460           get_minimum_teams_beat
+     348 00001460     098f          mmtm    sp,a3
+         00001470     1000  
+     349 00001480     4c80          move    a4,a0
+     350 00001490     5708  gmt1    clr     a8
+     351 000014a0     0d3f          callr   gmsb
+         000014b0     0006  
+     352 000014c0     1020          inc     a0
+     353 000014d0     0d3f          callr   gmsb
+         000014e0     0003  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     354 000014f0     09af          mmfm    sp,a3
+         00001500     0008  
+     355 00001510     0960          rets
+     356 00001520           gmsb    GBLOCK  a0,a6
+     357 00001570     b4ce          move    *a6(POF_FLAGS),a14,W
+         00001580     0200  
+     358 00001590     1fee          btst    B_PF_HUMAN,a14
+     359 000015a0     ca17          jrz     gh3             ;drone
+     360                    ;mdp yescmosrecord
+     361                    ;       move    *a6(POF_LOCKED_CHAR),a14,W
+     362                    ;       jrnz    gh21h
+     363                    ;mdp yescmosrecord
+     364 000015b0     b4ce          move    *a6(POF_CMOS),a14,W
+         000015c0     0060  
+     365 000015d0     ce15          jrn     gh212           ;no previous record or no initials
+     366 000015e0     098f          mmtm    sp,a0
+         000015f0     8000  
+     367 00001600     4dc0          move    a14,a0
+     368 00001610     0d5f          calla   get_cmos_record_a
+         00001620 00000000! 
+     369 00001640     09af          mmfm    sp,a0
+         00001650     0001  
+     370 00001660     07ae          move    @b_teamsbeat,a14,L
+         00001670 00000000! 
+     371 00001690     56c6          clr     a6
+     372 000016a0     1803          movk    32,a3
+     373 000016b0     242e  gh1     sll     1,a14
+     374 000016c0     c901          jrnc    gh2
+     375 000016d0     1026          inc     a6
+     376 000016e0     3c83  gh2     dsjs    a3,gh1
+     377 000016f0     4906  gh212a  cmp     a8,a6
+     378 00001700     c201          jrls    gh3
+     379 00001710     4cc8          move    a6,a8
+     380 00001720     0960  gh3     rets
+     381                    
+     382 00001730     18c6  gh212   movk    6,a6            ;if no record, pretend 6 teams beat
+     383 00001740     c0fa          jruc    gh212a
+     384 00001750     1926  gh21h   movk    9,a6            ;if locked character
+     385 00001760     c0f8          jruc    gh212a
+     386                    
+     387                    
+     388 00001770           get_dronemod
+     389 00001770     4c80          move    a4,a0
+     390 00001780     5708          clr     a8
+     391 00001790     0d3f          callr   dmsb
+         000017a0     0001  
+     392 000017b0     1020          inc     a0
+     393 000017c0           dmsb    GBLOCK  a0,a6
+     394 00001810     b4ce          move    *a6(POF_FLAGS),a14,W
+         00001820     0200  
+     395 00001830     1fee          btst    B_PF_HUMAN,a14
+     396 00001840     ca11          jrz     dms3            ;drone
+     397 00001850     b4ce          move    *a6(POF_CMOS),a14,W
+         00001860     0060  
+     398 00001870     ce0e          jrn     dms3            ;no previous record or no initials
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     399 00001880     098f          mmtm    sp,a0
+         00001890     8000  
+     400 000018a0     4dc0          move    a14,a0
+     401 000018b0     0d5f          calla   get_cmos_record_a
+         000018c0 00000000! 
+     402 000018e0     09af          mmfm    sp,a0
+         000018f0     0001  
+     403 00001900     05a6          move    @b_dronemod,a6,W
+         00001910 00000000! 
+     404 00001930     4906          cmp     a8,a6
+     405 00001940     c201          jrls    dms3
+     406 00001950     4cc8          move    a6,a8
+     407 00001960     0960  dms3    rets
+     408                    
+     409                    ;                                   1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2
+     410                    ;teams beat     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
+     411                    
+     412 00001970           drones_vs_one_player_table
+     413 00001970 00001ab0'         .long   dl1_01,dl1_02,dl1_03,dl1_04,dl1_05
+     414 00001a10 00002640'         .long   dl1_06,dl1_07,dl1_08,dl1_09,dl1_10
+     415                    
+     416 00001ab0     0001  dl1_01  .word   1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,5,5, 5,5,5,5,5,5,5,5,5,5
+     417 00001d00     0001  dl1_02  .word   1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,5,6,6, 6,6,6,6,6,6,6,6,6,6
+     418 00001f50     0001  dl1_03  .word   1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,5,6,6, 6,6,6,6,6,6,6,6,6,6
+     419 000021a0     0001  dl1_04  .word   1,2,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,5,5,5,5,6,6,6,7, 7,7,7,7,7,7,7,7,7,7
+     420 000023f0     0002  dl1_05  .word   2,2,2,2,2,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,5,5,6,6,6,7,7, 7,7,7,7,7,7,7,7,7,7
+     421 00002640     0002  dl1_06  .word   2,2,2,2,3,3,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,7,7,8, 8,8,8,8,8,8,8,8,8,8
+     422 00002890     0002  dl1_07  .word   2,2,3,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,6,6,7,8,9, 9,9,9,9,9,9,9,9,9,9
+     423 00002ae0     0002  dl1_08  .word   2,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,6,6,6,7,8,9,10, 10,10,10,10,10,10,10,10,10,10
+     424 00002d30     0003  dl1_09  .word   3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,6,6,6,6,7,7,7,8,9,10, 10,10,10,10,10,10,10,10,10,10
+     425 00002f80     0003  dl1_10  .word   3,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,6,7,7,7,7,8,8,8,9,9,10, 10,10,10,10,10,10,10,10,10,10
+     426                    
+     427                    ;                                   1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2
+     428                    ;teams beat     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6
+     429                    
+     430 000031d0           drones_vs_two_players_table
+     431 000031d0 00003310'         .long   dl2_01,dl2_02,dl2_03,dl2_04,dl2_05
+     432 00003270 00003ea0'         .long   dl2_06,dl2_07,dl2_08,dl2_09,dl2_10
+     433                    
+     434 00003310     0001  dl2_01  .word   1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4, 4,4,4,4,4,4,4,4,4,4
+     435 00003560     0001  dl2_02  .word   1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4, 4,4,4,4,4,4,4,4,4,4
+     436 000037b0     0001  dl2_03  .word   1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,4,4,5, 5,5,5,5,5,5,5,5,5,5
+     437 00003a00     0001  dl2_04  .word   1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5, 5,5,5,5,5,5,5,5,5,5
+     438 00003c50     0001  dl2_05  .word   1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5, 5,5,5,5,5,5,5,5,5,5
+     439 00003ea0     0001  dl2_06  .word   1,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,6, 6,6,6,6,6,6,6,6,6,6
+     440 000040f0     0002  dl2_07  .word   2,2,2,2,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,6,6,6, 6,6,6,6,6,6,6,6,6,6
+     441 00004340     0002  dl2_08  .word   2,2,2,3,3,3,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,6,7,7, 7,7,7,7,7,7,7,7,7,7
+     442 00004590     0002  dl2_09  .word   2,2,2,3,3,3,3,4,4,4,4,4,4,4,5,5,5,5,5,5,6,6,6,6,7,7,8, 8,8,8,8,8,8,8,8,8,8
+     443 000047e0     0002  dl2_10  .word   2,2,3,3,3,3,4,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6,6,7,7,7,8, 8,8,8,8,8,8,8,8,8,8
+     444                    
+     445                    ;chase pucks
+     446                    
+     447 00004a30           get_our_score_diff
+     448 00004a30     05a2          move    @team1_score,a2,W
+         00004a40 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     449 00004a60     05ae          move    @team2_score,a14,W
+         00004a70 00000000! 
+     450 00004a90     45c2          sub     a14,a2
+     451 00004aa0     aece          movb    *a6(POF_NUMBER),a14
+         00004ab0     0000  
+     452 00004ac0     0b4e          cmpi    4,a14
+         00004ad0     fffb  
+     453 00004ae0     c201          jrls    gosd9
+     454 00004af0     03a2          neg     a2
+     455 00004b00     0960  gosd9   rets
+     456                    
+     457 00004b10           do_drone_logic
+     458 00004b10     098f          mmtm    sp,a0,a10
+         00004b20     8020  
+     459 00004b30     b4ce          move    *a6(POF_DRONEC),a14,W
+         00004b40     0720  
+     460 00004b50     ca08          jrz     ddl_iu
+     461 00004b60     57ce          clr     a14
+     462 00004b70     b1c6          move    a14,*a6(POF_DRONEC),W
+         00004b80     0720  
+     463 00004b90     b4ce          move    *a6(POF_DRONECT),a14,W
+         00004ba0     0750  
+     464 00004bb0     102e          inc     a14
+     465 00004bc0     b1c6          move    a14,*a6(POF_DRONECT),W
+         00004bd0     0750  
+     466 00004be0     0d3f  ddl_iu  callr   ddl1
+         00004bf0     0052  
+     467 00004c00     b50e          move    *a8(OFLAGS),a14,W
+         00004c10     0420  
+     468 00004c20     1f0e          btst    B_OFSCRN,a14
+     469 00004c30     cb05          jrnz    ddl_sim                 ;skip mean increment if off screen
+     470 00004c40     b4c0          move    *a6(POF_DRONE_MEANNESS),a0,W
+         00004c50     0ab0  
+     471 00004c60     1020          inc     a0
+     472 00004c70     b006          move    a0,*a6(POF_DRONE_MEANNESS),W
+         00004c80     0ab0  
+     473 00004c90     b4ce  ddl_sim move    *a6(POF_DRONE_MEANSTATE),a14,W
+         00004ca0     0ac0  
+     474 00004cb0     cb43          jrnz    ddl9
+     475 00004cc0     0b40          cmpi    200,a0
+         00004cd0     ff37  
+     476 00004ce0     c240          jrls    ddl9
+     477 00004cf0     05ae          move    @PUCK_CONTROL,a14,W
+         00004d00 00000000! 
+     478 00004d20     ca04          jrz     ddl_nx
+     479 00004d30     05ae          move    @global_control_slow,a14,W
+         00004d40 00000000! 
+     480 00004d60     cb13          jrnz    ddl_s3  ;if we are slowing puck carrier down, drones can get mean
+     481                    
+     482 00004d70     0d3f  ddl_nx  callr   get_our_score_diff
+         00004d80     ffca  
+     483 00004d90     b4c0          move    *a6(POF_DRONE_LEVEL),a0,W
+         00004da0     0be0  
+     484 00004db0     cb03          jrnz    ddl_s1
+     485 00004dc0     0b42          cmpi    -5,a2           ;drone level 0, behind by 5?
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+         00004dd0     0004  
+     486 00004de0     c730          jrgt    ddl9
+     487 00004df0     0b40  ddl_s1  cmpi    1,a0
+         00004e00     fffe  
+     488 00004e10     cb03          jrnz    ddl_s2
+     489 00004e20     0b42          cmpi    -3,a2
+         00004e30     0002  
+     490 00004e40     c72a          jrgt    ddl9            ;drone level 1, behind by 3?
+     491 00004e50     0b40  ddl_s2  cmpi    4,a0
+         00004e60     fffb  
+     492 00004e70     c302          jrhi    ddl_s3
+     493 00004e80     1800          movk    32,a0   ;was 25 ;drone level 0-4, low meanness probability
+     494 00004e90     c019          jruc    ddl_s4
+     495                    
+     496 00004ea0     0b40  ddl_s3  cmpi    8,a0
+         00004eb0     fff7  
+     497 00004ec0     c414          jrlt    ddl_sr          ;drone level 5-7, regular meanness
+     498 00004ed0     0b40          cmpi    10,a0
+         00004ee0     fff5  
+     499 00004ef0     c903          jrhs    ddl_m2          ;drone level 10 or more, very mean
+     500 00004f00     09c0  ddl_m1  movi    115,a0  ;was 70 ;drone level 8,9 - mean
+         00004f10     0073  
+     501 00004f20     c010          jruc    ddl_s4
+     502 00004f30     09ce  ddl_m2  movi    400,a14
+         00004f40     0190  
+     503 00004f50     0b40          cmpi    10,a0
+         00004f60     fff5  
+     504 00004f70     ca07          jrz     dm2_d2
+     505 00004f80     09ce          movi    700,a14
+         00004f90     02bc  
+     506 00004fa0     0b40          cmpi    11,a0
+         00004fb0     fff4  
+     507 00004fc0     ca02          jrz     dm2_d2
+     508 00004fd0     09ce          movi    950,a14
+         00004fe0     03b6  
+     509 00004ff0     4dc0  dm2_d2  move    a14,a0
+     510 00005000     c002          jruc    ddl_s4
+     511                    
+     512                    ;       ;movi   145,a0  ;was 100;drone level 10, very mean
+     513                    ;       movi    400,a0  ;sanssnas
+     514                    ;       jruc    ddl_s4
+     515 00005010     09c0  ddl_sr  movi    62,a0   ;was 55
+         00005020     003e  
+     516 00005030     b50e  ddl_s4  move    *a8(OFLAGS),a14,W
+         00005040     0420  
+     517 00005050     1f0e          btst    B_OFSCRN,a14
+     518 00005060     ca01          jrz     ddl_rok                 ;we are on screen, normal mean %
+     519 00005070     2ba0          sra     3,a0                    ;we are off screen mean % /8
+     520 00005080     0d5f  ddl_rok calla   RANDPER
+         00005090 00000000! 
+     521 000050b0     c903          jrnc    ddl9
+     522 000050c0     1820          movk    1,a0
+     523 000050d0     b006          move    a0,*a6(POF_DRONE_MEANSTATE),W
+         000050e0     0ac0  
+     524 000050f0     09af  ddl9    mmfm    sp,a0,a10
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+         00005100     0401  
+     525 00005110     0960          rets
+     526 00005120           ddl1    ;callr  get_our_human_stats
+     527 00005120     aec0          movb    *a6(POF_NUMBER),a0
+         00005130     0000  
+     528 00005140     05a1          move    @PUCK_CONTROL,a1,W
+         00005150 00000000! 
+     529 00005170     ca00          jrz     drone_nobodys_puck
+         00005180     0087  
+     530 00005190     4801          cmp     a0,a1
+     531 000051a0     ca09          jrz     drone_we_have_puck
+     532 000051b0     4c0e          move    a0,a14
+     533 000051c0     142e          dec     a14
+     534 000051d0     1421          dec     a1
+     535 000051e0     2bce          sra     2,a14
+     536 000051f0     2bc1          sra     2,a1
+     537 00005200     49c1          cmp     a14,a1
+     538 00005210     ca2f          jrz     drone_team_has_puck
+     539 00005220     c000          jruc    drone_opponents_puck
+         00005230     012b  
+     540                    
+     541 00005240           drone_we_have_puck
+     542 00005240     57ce          clr     a14
+     543 00005250     b1c6          move    a14,*a6(POF_DRONE_MEANNESS),W
+         00005260     0ab0  
+     544 00005270     b1c6          move    a14,*a6(POF_DRONE_MEANSTATE),W
+         00005280     0ac0  
+     545 00005290     0d3f          callr   are_we_signalled
+         000052a0     0314  
+     546 000052b0     4c21          move    a1,a1
+     547 000052c0     ca08          jrz     dwh1
+     548 000052d0     0b41          cmpi    1,a1
+         000052e0     fffe  
+     549 000052f0     ca00          jrz     ndrone_pass_puck
+         00005300     08a7  
+     550 00005310     0b41          cmpi    2,a1
+         00005320     fffd  
+     551 00005330     ca00          jrz     ndrone_shoot_puck
+         00005340     08a7  
+     552 00005350     0d3f  dwh1    callr   get_time_left
+         00005360     032e  
+     553 00005370     c900          jrnc    ndrone_shoot_puck_most
+         00005380     08b0  
+     554 00005390     0d3f          callr   get_our_zone
+         000053a0     0246  
+     555 000053b0     0b41          cmpi    2,a1
+         000053c0     fffd  
+     556 000053d0     ca06          jrz     dw_az           ;in attack zone
+     557 000053e0     0d3f          callr   maybe_pick_pass
+         000053f0     07e4  
+     558 00005400     0d3f          callr   get_safe_teammates_alt_z
+         00005410     016b  
+     559 00005420     c000          jruc    move_forward_to_z
+         00005430     04d3  
+     560 00005440     0d3f  dw_az   callr   are_we_from_outside     ;(or is pattern over)
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+         00005450     0642  
+     561 00005460     c905          jrnc    dw_nos
+     562 00005470     0d5f          calla   maybe_pick_pass_shoot_os
+         00005480 0000d360' 
+     563 000054a0     c000          jruc    pick_or_run_pattern
+         000054b0     017c  
+     564 000054c0     0d5f  dw_nos  calla   maybe_pick_pass_shoot
+         000054d0 0000d360' 
+     565 000054f0     c000          jruc    drone_set_up_shot
+         00005500     09de  
+     566                    
+     567 00005510           drone_team_has_puck
+     568 00005510     57ce          clr     a14
+     569 00005520     b1c6          move    a14,*a6(POF_DRONE_MEANNESS),W
+         00005530     0ab0  
+     570 00005540     b1c6          move    a14,*a6(POF_DRONE_MEANSTATE),W
+         00005550     0ac0  
+     571 00005560     05a1          move    @PUCK_CONTROL,a1,W
+         00005570 00000000! 
+     572 00005590     0b41          cmpi    4,a1
+         000055a0     fffb  
+     573 000055b0     ca17          jrz     drone_goalie_has_puck
+     574 000055c0     0b41          cmpi    8,a1
+         000055d0     fff7  
+     575 000055e0     ca14          jrz     drone_goalie_has_puck
+     576 000055f0     0d3f          callr   get_our_zone
+         00005600     0220  
+     577 00005610     0b41          cmpi    2,a1
+         00005620     fffd  
+     578 00005630     ca04          jrz     dth_az                  ;attack zone
+     579 00005640     0d3f          callr   get_safe_teammates_alt_z
+         00005650     0147  
+     580 00005660     c000          jruc    move_forward_to_z_kx
+         00005670     0494  
+     581 00005680     0d3f  dth_az  callr   are_we_from_outside     ;(or is pattern over)
+         00005690     061e  
+     582 000056a0     c902          jrnc    dthnos
+     583 000056b0     c000          jruc    pick_or_run_pattern
+         000056c0     015b  
+     584 000056d0     0d3f  dthnos  callr   is_enemy_close_checkable
+         000056e0     01bf  
+     585 000056f0     c800          jrc     check_enemy
+         00005700     0231  
+     586 00005710     c000          jruc    move_base_teammate
+         00005720     04b7  
+     587                    
+     588 00005730           drone_goalie_has_puck
+     589 00005730     0d3f          callr   are_we_open
+         00005740     02c3  
+     590 00005750     c91c          jrnc    dg_no                   ;not open
+     591 00005760     0d5f          calla   get_our_human_stats
+         00005770 0000f130' 
+     592 00005790     cb14          jrnz    icc2
+     593 000057a0     0d3f          callr   get_our_zone
+         000057b0     0205  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     594 000057c0     0b41          cmpi    2,a1
+         000057d0     fffd  
+     595 000057e0     ca80          jaz     signal_to_pass
+         000057f0 00000000! 
+     596 00005810     0d3f  icc1    callr   is_enemy_close_checkable
+         00005820     01ab  
+     597 00005830     c800          jrc     check_enemy
+         00005840     021d  
+     598 00005850     0d5f          calla   get_our_human_stats
+         00005860 0000f130' 
+     599 00005880     cb05          jrnz    icc2
+     600 00005890     0d3f          callr   are_we_moving_forward
+         000058a0     0196  
+     601 000058b0     c880          jac     signal_to_pass
+         000058c0 00000000! 
+     602 000058e0     0d3f  icc2    callr   get_safe_teammates_alt_z
+         000058f0     011d  
+     603 00005900     c000          jruc    move_forward_to_z_kx
+         00005910     046a  
+     604 00005920     0d3f  dg_no   callr   is_enemy_close_checkable
+         00005930     019a  
+     605 00005940     c800          jrc     check_enemy
+         00005950     020c  
+     606 00005960     0d3f          callr   get_our_zone
+         00005970     01e9  
+     607 00005980     0b41          cmpi    2,a1
+         00005990     fffd  
+     608 000059a0     ca00          jrz     move_away_from_closest_enemy
+         000059b0     057e  
+     609 000059c0     0d3f          callr   get_safe_teammates_alt_z
+         000059d0     010f  
+     610 000059e0     c000          jruc    move_forward_to_z_kx
+         000059f0     045c  
+     611                    
+     612 00005a00           drone_nobodys_puck
+     613 00005a00     05a1          move    @PUCK_MODE,a1,W
+         00005a10 00000000! 
+     614 00005a30     09e2          movi    dnpl1,a2
+         00005a40 00005ae0' 
+     615 00005a60     944e  dnp_1   move    *a2+,a14,W
+     616 00005a70     ce2f          jrn     dnp_open
+     617 00005a80     49c1          cmp     a14,a1
+     618 00005a90     cb02          jrnz    dnp_2
+     619 00005aa0     8642          move    *a2,a2,L
+     620 00005ab0     0162          jump    a2
+     621 00005ac0     1002  dnp_2   addk    32,a2
+     622 00005ad0     c0f8          jruc    dnp_1
+     623                    
+     624 00005ae0           dnpl1   WL      PUM_OPEN,dnp_open
+     625 00005b10                   WL      PUM_PASS,dnp_pass
+     626 00005b40                   WL      PUM_TPASS,dnp_pass
+     627 00005b70                   WL      PUM_SHOT,dnp_shot
+     628 00005ba0                   WL      PUM_SSHOT,dnp_shot
+     629 00005bd0                   WL      PUM_ONETIME,dnp_shot
+     630 00005c00                   WL      PUM_DUMP,dnp_open
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     631 00005c30                   WL      PUM_SCORE,dnp_to_center
+     632 00005c60                   WL      PUM_ENDPER,dnp_to_center
+     633 00005c90     ffff          .word   -1
+     634                    
+     635 00005ca0           dnp_to_center
+     636 00005ca0     5600          clr     a0
+     637 00005cb0     09c1          movi    339,a1
+         00005cc0     0153  
+     638 00005cd0     09c4          movi    500,a4
+         00005ce0     01f4  
+     639 00005cf0     09e5          movi    DUMRETS,a5
+         00005d00 00000000! 
+     640 00005d20     c000          jruc    move_range_stop_face
+         00005d30     0510  
+     641                    
+     642 00005d40           dnp_stop
+     643 00005d40     c080          jauc    stop_player
+         00005d50 00000000! 
+     644                    
+     645 00005d70           dnp_open
+     646 00005d70     0d3f          callr   get_other_human_stats
+         00005d80     029e  
+     647 00005d90     0b41          cmpi    1,a1                    ;any humans?
+         00005da0     fffe  
+     648 00005db0     c919          jrhs    po_ah
+     649 00005dc0     0d3f          callr   are_enemies_closer_to_puck
+         00005dd0     00f1  
+     650 00005de0     c80e          jrc     po_ec                   ;enemies are closer than us
+     651 00005df0     0d3f          callr   are_we_closer_to_puck   ;is our teammate closer?
+         00005e00     0118  
+     652 00005e10     c800          jrc     seek_out_puck           ;go get the puck
+         00005e20     02c2  
+     653 00005e30     0d3f          callr   is_enemy_close_checkable
+         00005e40     0149  
+     654 00005e50     c800          jrc     check_enemy
+         00005e60     01bb  
+     655 00005e70     0d3f          callr   get_puck_otime
+         00005e80     036f  
+     656 00005e90     c900          jrnc    move_base_teammate
+         00005ea0     043f  
+     657 00005eb0     c000          jruc    seek_out_puck
+         00005ec0     02b8  
+     658 00005ed0     0d3f  po_ec   callr   is_enemy_close_checkable
+         00005ee0     013f  
+     659 00005ef0     c800          jrc     check_enemy
+         00005f00     01b1  
+     660 00005f10     0d3f          callr   pick_our_man
+         00005f20     01e9  
+     661 00005f30     c000          jruc    seek_out_our_man_d
+         00005f40     02d8  
+     662 00005f50     0d3f  po_ah   callr   are_we_closer_to_puck
+         00005f60     0102  
+     663 00005f70     c907          jrnc    nsa
+     664 00005f80     b4ce          move    *a6(POF_DRONE_LEVEL),a14,W
+         00005f90     0be0  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     665 00005fa0     0b41          cmpi    2,a1
+         00005fb0     fffd  
+     666 00005fc0     c206          jrls    nsa2            ;drone level 0-2, delay on all puck chases
+     667 00005fd0     c000          jruc    seek_out_puck
+         00005fe0     02a6  
+     668 00005ff0     0d3f  nsa     callr   is_enemy_close_checkable
+         00006000     012d  
+     669 00006010     c800          jrc     check_enemy
+         00006020     019f  
+     670 00006030     0d3f  nsa2    callr   get_puck_otime
+         00006040     0353  
+     671 00006050     c900          jrnc    move_base_teammate
+         00006060     0423  
+     672 00006070     c000          jruc    seek_out_puck
+         00006080     029c  
+     673                    
+     674 00006090           dnp_pass
+     675 00006090     05a1          move    @PUCK_INTENDED,a1,W
+         000060a0 00000000! 
+     676 000060c0     4820          cmp     a1,a0
+     677 000060d0     ca13          jrz     dm_tous         ;it is passed to us
+     678 000060e0     4c0e          move    a0,a14
+     679 000060f0     1421          dec     a1
+     680 00006100     2fc1          srl     2,a1
+     681 00006110     142e          dec     a14
+     682 00006120     2fce          srl     2,a14
+     683 00006130     482e          cmp     a1,a14
+     684 00006140     ca18          jrz     dm_totm         ;it is passed to our teammate
+     685 00006150     0d3f  dm_toen callr   is_enemy_close_checkable
+         00006160     0117  
+     686 00006170     c800          jrc     check_enemy
+         00006180     0189  
+     687 00006190     0d3f          callr   can_we_intercept_pass
+         000061a0     0707  
+     688 000061b0     c800          jrc     block_pass
+         000061c0     056a  
+     689 000061d0     0d3f          callr   pick_our_man
+         000061e0     01bd  
+     690 000061f0     c000          jruc    seek_out_our_man_d
+         00006200     02ac  
+     691 00006210     0d3f  dm_tous callr   are_we_signalled
+         00006220     021c  
+     692 00006230     0b41          cmpi    2,a1
+         00006240     fffd  
+     693 00006250     ca00          jrz     prepare_for_onetimer
+         00006260     02fe  
+     694 00006270     0d3f          callr   are_we_in_shot_position         ;enable this on drone only team
+         00006280     06d9  
+     695 00006290     c800          jrc     prepare_for_onetimer
+         000062a0     02fa  
+     696 000062b0     c000          jruc    prepare_for_no_onetimer
+         000062c0     0303  
+     697 000062d0     c000  dm_totm jruc    move_base_teammate
+         000062e0     03fb  
+     698                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     699 000062f0           dnp_shot
+     700 000062f0     05a1          move    @PUCK_LAST_CONTROL,a1,W
+         00006300 00000000! 
+     701 00006320     4c0e          move    a0,a14
+     702 00006330     142e          dec     a14
+     703 00006340     2fce          srl     2,a14
+     704 00006350     1421          dec     a1
+     705 00006360     2fc1          srl     2,a1
+     706 00006370     482e          cmp     a1,a14
+     707 00006380     ca10          jrz     dnp_os          ;our teams shot
+     708 00006390     0d3f          callr   can_we_intercept_shot
+         000063a0     06e7  
+     709 000063b0     c800          jrc     intercept_shot
+         000063c0     054a  
+     710 000063d0     0d3f          callr   is_enemy_close_checkable
+         000063e0     00ef  
+     711 000063f0     c800          jrc     check_enemy
+         00006400     0161  
+     712 00006410     0d3f          callr   are_we_near_our_goal
+         00006420     01d3  
+     713 00006430     c800          jrc     position_for_rebound
+         00006440     02f6  
+     714 00006450     0d3f          callr   pick_our_man
+         00006460     0195  
+     715 00006470     c000          jruc    seek_out_our_man_d
+         00006480     0284  
+     716 00006490     0d3f  dnp_os  callr   is_enemy_close_checkable
+         000064a0     00e3  
+     717 000064b0     c800          jrc     check_enemy
+         000064c0     0155  
+     718 000064d0     c000          jruc    position_for_rebound
+         000064e0     02ec  
+     719                    
+     720 000064f0           drone_opponents_puck
+     721 000064f0     0d3f          callr   pick_our_man
+         00006500     018b  
+     722 00006510     05ae          move    @PUCK_CONTROL,a14
+         00006520 00000000! 
+     723 00006540     486e          cmp     a3,a14
+     724 00006550     ca22          jrz     do_om                   ;our man has puck
+     725 00006560     098f          mmtm    sp,a3
+         00006570     1000  
+     726 00006580     0d3f          callr   is_enemy_close_checkable
+         00006590     00d4  
+     727 000065a0     09af          mmfm    sp,a14
+         000065b0     4000  
+     728 000065c0     c800          jrc     check_enemy
+         000065d0     0144  
+     729 000065e0     4dc3          move    a14,a3
+     730 000065f0     0d3f          callr   get_our_mans_zone
+         00006600     0115  
+     731 00006610     0b41          cmpi    2,a1
+         00006620     fffd  
+     732 00006630     ca06          jrz     dop_1                   ;our man is in attack zone
+     733 00006640     0d3f          callr   are_we_mean
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+         00006650     0695  
+     734 00006660     c800          jrc     seek_out_our_man
+         00006670     0280  
+     735 00006680     c000          jruc    match_posdir_our_man
+         00006690     0323  
+     736 000066a0     0d3f  dop_1   callr   are_we_mean
+         000066b0     068f  
+     737 000066c0     c800          jrc     seek_out_our_man
+         000066d0     027a  
+     738                            ;callr  is_our_man_behind_net
+     739                            ;jrc    seek_out_our_man_d
+     740 000066e0     0d3f          callr   is_other_man_shooting
+         000066f0     0225  
+     741 00006700     c900          jrnc    seek_out_our_man_d
+         00006710     025b  
+     742 00006720     0d3f          callr   can_we_get_in_way
+         00006730     06ae  
+     743 00006740     c800          jrc     get_in_way
+         00006750     0511  
+     744 00006760     c000          jruc    position_for_rebound
+         00006770     02c3  
+     745 00006780     098f  do_om   mmtm    sp,a3
+         00006790     1000  
+     746 000067a0     0d3f          callr   is_enemy_close_checkable
+         000067b0     00b2  
+     747 000067c0     09af          mmfm    sp,a14
+         000067d0     4000  
+     748 000067e0     c800          jrc     check_enemy
+         000067f0     0122  
+     749 00006800     4dc3          move    a14,a3
+     750 00006810     0d3f          callr   get_our_mans_zone
+         00006820     00f3  
+     751 00006830     0b41          cmpi    2,a1
+         00006840     fffd  
+     752 00006850     ca0a          jrz     dop_2                   ;our man is in attack zone
+     753 00006860     0d3f          callr   is_enemy_on_screen
+         00006870     00b3  
+     754 00006880     c900          jrnc    seek_out_our_man_d
+         00006890     0243  
+     755 000068a0     0d3f          callr   are_we_mean
+         000068b0     066f  
+     756 000068c0     c800          jrc     seek_out_our_man
+         000068d0     025a  
+     757 000068e0     c000          jruc    match_posdir_our_man
+         000068f0     02fd  
+     758 00006900     0d3f  dop_2   callr   are_we_mean
+         00006910     0669  
+     759 00006920     c800          jrc     seek_out_our_man
+         00006930     0254  
+     760 00006940     0d3f          callr   is_our_man_behind_net
+         00006950     026f  
+     761 00006960     c910          jrnc    dop_3
+     762 00006970     0d3f          callr   has_he_behind_awhile
+         00006980     02e6  
+     763 00006990     c800          jrc     seek_out_our_man_d
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+         000069a0     0232  
+     764 000069b0     c000          jruc    match_safe_position_of_our_man
+         000069c0     02f0  
+     765 000069d0     b4ee          move    *a7(POF_MODE),a14,W
+         000069e0     0210  
+     766 000069f0     0b4e          cmpi    PM_PASS,a14
+         00006a00     fffd  
+     767 00006a10     c805          jrc     dop_3                   ;he is passing
+     768 00006a20     0b4e          cmpi    PM_SHOOT,a14
+         00006a30     fffc  
+     769 00006a40     c802          jrc     dop_3                   ;he is shooting
+     770 00006a50     c000          jruc    seek_out_our_man_d
+         00006a60     0226  
+     771 00006a70     0d3f  dop_3   callr   can_we_get_in_way
+         00006a80     0679  
+     772 00006a90     c800          jrc     get_in_way
+         00006aa0     04dc  
+     773 00006ab0     c000          jruc    seek_out_our_man_d
+         00006ac0     0220  
+     774                    
+     775 00006ad0           get_safe_teammates_alt_z
+     776 00006ad0     0d3f          callr   get_teammates_alt_z
+         00006ae0     0005  
+     777 00006af0     0d3f          callr   does_z_approach_enemy
+         00006b00     0484  
+     778 00006b10     c800          jrc     pick_z_to_avoid_enemy
+         00006b20     04af  
+     779 00006b30     0960          rets
+     780 00006b40           get_teammates_alt_z
+     781 00006b40     0d3f          callr   get_teammates_z
+         00006b50     0108  
+     782 00006b60           get_alt_z
+     783 00006b60     4c22          move    a1,a2
+     784 00006b70     0b41          cmpi    339,a1
+         00006b80     feac  
+     785 00006b90     c202          jrls    ga1
+     786 00006ba0     0be1          subi    339*2,a1
+         00006bb0     fd59  
+     787 00006bc0     0b01  ga1     addi    339,a1          ;a1 is our corresponding opposite z
+         00006bd0     0153  
+     788 00006be0     0b41          cmpi    30,a1
+         00006bf0     ffe1  
+     789 00006c00     c701          jrgt    ga2
+     790 00006c10     1bc1          movk    30,a1
+     791 00006c20     0b41  ga2     cmpi    649,a1
+         00006c30     fd76  
+     792 00006c40     c402          jrlt    ga3
+     793 00006c50     09c1          movi    649,a1
+         00006c60     0289  
+     794 00006c70     0960  ga3     rets
+     795                    
+     796 00006c80           pick_or_run_pattern
+     797 00006c80     0d3f          callr   have_we_picked_pattern
+         00006c90     04c9  
+     798 00006ca0     c802          jrc     por2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+     799 00006cb0     0d3f          callr   pick_offensive_pattern
+         00006cc0     04cd  
+     800 00006cd0     c000  por2    jruc    run_offensive_pattern
+         00006ce0     0599  
+     801                    
+     802 00006cf0           are_enemies_closer_to_puck      ;check for much closer
+     803 00006cf0     4c0e          move    a0,a14
+     804 00006d00     142e          dec     a14
+     805 00006d10     2fce          srl     2,a14
+     806 00006d20     142e          subk    1,a14
+     807 00006d30     038e          abs     a14
+     808 00006d40     244e          sll     2,a14
+     809 00006d50     102e          inc     a14             ;a14 is now 1st of other team
+     810 00006d60                   GBLOCK  a14,a14
+     811 00006da0     b5c2          move    *a14(POF_D_PUCK),a2,W
+         00006db0     0680  
+     812 00006dc0     b5c4          move    *a14(PLAYER_BLOCK_SIZE+POF_D_PUCK),a4,W
+         00006dd0     1680  
+     813 00006de0     b5c5          move    *a14((3*PLAYER_BLOCK_SIZE)+POF_FLAGS),a5,W
+         00006df0     3200  
+     814 00006e00     1fa5          btst    B_PF_GOALIE,a5
+     815 00006e10     ca03          jrz     aexc1
+     816 00006e20     09c5          movi    30000,a5
+         00006e30     7530  
+     817 00006e40     c002          jruc    aexc2
+     818 00006e50     b5c5  aexc1   move    *a14((3*PLAYER_BLOCK_SIZE)+POF_D_PUCK),a5,W
+         00006e60     3680  
+     819 00006e70     b4ce  aexc2   move    *a6(POF_D_PUCK),a14,W
+         00006e80     0680  
+     820 00006e90     0b02          addi    60,a2
+         00006ea0     003c  
+     821 00006eb0     0b04          addi    60,a4
+         00006ec0     003c  
+     822 00006ed0     0b05          addi    60,a5
+         00006ee0     003c  
+     823 00006ef0     484e          cmp     a2,a14
+     824 00006f00     c306          jrhi    aecpy
+     825 00006f10     488e          cmp     a4,a14
+     826 00006f20     c304          jrhi    aecpy
+     827 00006f30     48ae          cmp     a5,a14
+     828 00006f40     c302          jrhi    aecpy
+     829 00006f50     0320          clrc
+     830 00006f60     0960          rets
+     831 00006f70     0de0  aecpy   setc
+     832 00006f80     0960          rets
+     833                    
+     834 00006f90           are_we_closer_to_puck
+     835 00006f90     4c0e          move    a0,a14
+     836 00006fa0     142e          dec     a14
+     837 00006fb0     2fce          srl     2,a14
+     838 00006fc0     244e          sll     2,a14
+     839 00006fd0     102e          inc     a14             ;a14 is now 1st of our team
+     840 00006fe0                   GBLOCK  a14,a14
+     841 00007020     b5c2          move    *a14(POF_D_PUCK),a2,W
+         00007030     0680  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+     842 00007040     b5c4          move    *a14(PLAYER_BLOCK_SIZE+POF_D_PUCK),a4,W
+         00007050     1680  
+     843 00007060     b5c5          move    *a14((2*PLAYER_BLOCK_SIZE)+POF_FLAGS),a5,W
+         00007070     2200  
+     844 00007080     1fa5          btst    B_PF_GOALIE,a5
+     845 00007090     ca03          jrz     bexc1
+     846 000070a0     09c5          movi    30000,a5
+         000070b0     7530  
+     847 000070c0     c002          jruc    bexc2
+     848 000070d0     b5c5  bexc1   move    *a14((2*PLAYER_BLOCK_SIZE)+POF_D_PUCK),a5,W
+         000070e0     2680  
+     849 000070f0     b4ce  bexc2   move    *a6(POF_D_PUCK),a14,W
+         00007100     0680  
+     850 00007110     0b02          addi    60,a2           ;these adds
+         00007120     003c  
+     851 00007130     0b04          addi    60,a4           ;will ensure our check to ourselves
+         00007140     003c  
+     852 00007150     0b05          addi    60,a5           ;doesn't fuck us up
+         00007160     003c  
+     853 00007170     484e          cmp     a2,a14
+     854 00007180     c306          jrhi    becpy
+     855 00007190     488e          cmp     a4,a14
+     856 000071a0     c304          jrhi    becpy
+     857 000071b0     48ae          cmp     a5,a14
+     858 000071c0     c302          jrhi    becpy
+     859 000071d0     0320          clrc
+     860 000071e0     0960          rets
+     861 000071f0     0de0  becpy   setc
+     862 00007200     0960          rets
+     863                    
+     864 00007210           are_we_moving_forward
+     865 00007210     b702          move    *a8(OXVEL),a2,L
+         00007220     0100  
+     866 00007230     4c0e          move    a0,a14
+     867 00007240     142e          dec     a14
+     868 00007250     2bce          sra     2,a14
+     869 00007260     ca01          jrz     awm1
+     870 00007270     03a2          neg     a2
+     871 00007280     4c42  awm1    move    a2,a2
+     872 00007290     c102          jrp     awmy
+     873 000072a0     0320          clrc
+     874 000072b0     0960          rets
+     875 000072c0     0de0  awmy    setc
+     876 000072d0     0960          rets
+     877                    
+     878 000072e0           is_enemy_close_checkable
+     879 000072e0     0d3f          callr   are_we_close_to_enemy           ;returns a3
+         000072f0     001a  
+     880 00007300     c906          jrnc    ieccn
+     881 00007310     0d3f          callr   is_enemy_on_screen
+         00007320     0008  
+     882 00007330     c903          jrnc    ieccn
+     883 00007340     0d3f          callr   are_we_ready_to_check
+         00007350     0561  
+     884 00007360     c802          jrc     ieccy
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+     885 00007370     0320  ieccn   clrc            ;redundant
+     886 00007380     0960          rets
+     887 00007390     0de0  ieccy   setc
+     888 000073a0     0960          rets
+     889                    
+     890 000073b0           is_enemy_on_screen
+     891 000073b0                   GBLOCK  a3,a14
+     892 00007400     b7ce          move    *a14(POF_OBJECT),a14,L
+         00007410     0280  
+     893 00007420     b5ce          move    *a14(OFLAGS),a14,W
+         00007430     0420  
+     894 00007440     1f0e          btst    B_OFSCRN,a14
+     895 00007450     cb02          jrnz    ieos_n
+     896 00007460     0de0          setc
+     897 00007470     0960          rets
+     898 00007480     0320  ieos_n  clrc
+     899 00007490     0960          rets
+     900                    
+     901 000074a0           are_we_close_to_enemy
+     902 000074a0     4c04          move    a0,a4
+     903 000074b0     1424          dec     a4
+     904 000074c0     2fc4          srl     2,a4
+     905 000074d0     03a4          neg     a4
+     906 000074e0     1024          inc     a4
+     907 000074f0     4c87          move    a4,a7
+     908 00007500     2447          sll     2,a7
+     909 00007510     1027          inc     a7
+     910 00007520     24c4          sll     6,a4
+     911 00007530     0b04          addi    POF_D_1P,a4
+         00007540     0600  
+     912 00007550     1842          movk    2,a2
+     913 00007560     09c5          movi    600,a5
+         00007570     0258  
+     914 00007580     40c4          add     a6,a4
+     915 00007590     948e  amnc    move    *a4+,a14,W
+     916 000075a0     48ae          cmp     a5,a14
+     917 000075b0     c902          jrhs    choad
+     918 000075c0     4dc5          move    a14,a5
+     919 000075d0     4ce3          move    a7,a3
+     920 000075e0     1027  choad   inc     a7
+     921 000075f0     3ce2          dsjs    a2,amnc
+     922 00007600     1027          inc     a7
+     923 00007610                   GBLOCK  a7,a7
+     924 00007650     b4e7          move    *a7(POF_FLAGS),a7
+         00007660     0200  
+     925 00007670     1fa7          btst    B_PF_GOALIE,a7
+     926 00007680     cb06          jrnz    chod2
+     927 00007690     1204          addk    16,a4
+     928 000076a0     948e          move    *a4+,a14,W
+     929 000076b0     48ae          cmp     a5,a14
+     930 000076c0     c902          jrhs    chod2
+     931 000076d0     4dc5          move    a14,a5
+     932 000076e0     4ce3          move    a7,a3
+     933 000076f0     0b45  chod2   cmpi    100,a5
+         00007700     ff9b  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+     934 00007710     c402          jrlt    awcy
+     935 00007720     0320          clrc
+     936 00007730     0960          rets
+     937 00007740     0de0  awcy    setc
+     938 00007750     0960          rets
+     939                    
+     940 00007760           get_our_mans_zone
+     941 00007760                   GBLOCK  a3,a14
+     942 000077b0     b7ce          move    *a14(POF_OBJECT),a14,L
+         000077c0     0280  
+     943 000077d0     b7c2          move    *a14(OXVAL),a2,L
+         000077e0     0140  
+     944 000077f0     03a2          neg     a2                      ;we check using us, we want it useing them
+     945 00007800     c00e          jruc    goz_v
+     946 00007810           get_our_zone
+     947 00007810     b702          move    *a8(OXVAL),a2,L
+         00007820     0140  
+     948 00007830     0d3f          callr   goz_v
+         00007840     000a  
+     949 00007850     0b41          cmpi    2,a1
+         00007860     fffd  
+     950 00007870     ca06          jrz     goz_z
+     951 00007880     182e          movk    1,a14
+     952 00007890     b1c6          move    a14,*a6(POF_DRONE_OUTSIDE),W
+         000078a0     0ad0  
+     953 000078b0     57ce          clr     a14
+     954 000078c0     b1c6          move    a14,*a6(POF_DRONE_PATTERN),W
+         000078d0     0ae0  
+     955 000078e0     0960  goz_z   rets
+     956                    
+     957 000078f0     0b22  goz_v   addi    08000h,a2
+         00007900 00008000  
+     958 00007920     2a02          sra     16,a2
+     959 00007930     4c0e          move    a0,a14
+     960 00007940     142e          dec     a14
+     961 00007950     2bce          sra     2,a14
+     962 00007960     ca01          jrz     goz1
+     963 00007970     03a2          neg     a2
+     964 00007980     1841  goz1    movk    2,a1
+     965 00007990     0b42          cmpi    233,a2
+         000079a0     ff16  
+     966 000079b0     c705          jrgt    goz_8
+     967 000079c0     1821          movk    1,a1
+     968 000079d0     0b42          cmpi    -233,a2
+         000079e0     00e8  
+     969 000079f0     c701          jrgt    goz_8
+     970 00007a00     5621          clr     a1
+     971 00007a10     0960  goz_8   rets
+     972                    
+     973 00007a20           check_enemy
+     974 00007a20     07ae          move    @WAVEIRQS,a14,L
+         00007a30 00000000! 
+     975 00007a50     b3c6          move    a14,*a6(POF_DRONE_CTIME),L
+         00007a60     0b10  
+     976 00007a70                   GBLOCK  a3,a7
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+     977 00007ac0     b6e9          move    *a7(POF_OBJECT),a9,L
+         00007ad0     0280  
+     978 00007ae0     b720          move    *a9(OXVAL),a0,L
+         00007af0     0140  
+     979 00007b00     b721          move    *a9(OZVAL),a1,L
+         00007b10     0180  
+     980 00007b20     b702          move    *a8(OXVAL),a2,L
+         00007b30     0140  
+     981 00007b40     b703          move    *a8(OZVAL),a3,L
+         00007b50     0180  
+     982 00007b60     0d5f          calla   find_dir_to_point_18
+         00007b70 00000000! 
+     983 00007b90     ac06          movb    a0,*a6(POF_DIRECTION)
+         00007ba0     0390  
+     984 00007bb0     c080          jauc    skater_push
+         00007bc0 00000000! 
+     985                    
+     986 00007be0           get_teammates_z
+     987 00007be0     0b40          cmpi    4,a0
+         00007bf0     fffb  
+     988 00007c00     ca17          jrz     gtz_g1
+     989 00007c10     0b40          cmpi    8,a0
+         00007c20     fff7  
+     990 00007c30     ca16          jrz     gtz_g2
+     991 00007c40     4c0e          move    a0,a14
+     992 00007c50     142e  gtz_2   dec     a14
+     993 00007c60     0bce          xori    1,a14
+         00007c70 00000001  
+     994 00007c90     102e          inc     a14
+     995 00007ca0                   GBLOCK  a14,a14
+     996 00007ce0     b7ce          move    *a14(POF_OBJECT),a14,L
+         00007cf0     0280  
+     997 00007d00     b5c1          move    *a14(OZPOS),a1,W
+         00007d10     0190  
+     998 00007d20     b7ce          move    *a14(OXVAL),a14,L
+         00007d30     0140  
+     999 00007d40     078e          move    a14,@drone_temp_1,L
+         00007d50 00000020- 
+    1000 00007d70     0960          rets
+    1001 00007d80     182e  gtz_g1  movk    1,a14
+    1002 00007d90     c0eb          jruc    gtz_2
+    1003 00007da0     18ae  gtz_g2  movk    5,a14
+    1004 00007db0     c0e9          jruc    gtz_2
+    1005                    
+    1006 00007dc0           pick_our_man
+    1007 00007dc0     0b40          cmpi    4,a0
+         00007dd0     fffb  
+    1008 00007de0     ca03          jrz     pom_g
+    1009 00007df0     0b40          cmpi    8,a0
+         00007e00     fff7  
+    1010 00007e10     cb03          jrnz    pom_ng
+    1011 00007e20     4c0e  pom_g   move    a0,a14
+    1012 00007e30     146e          subk    3,a14
+    1013 00007e40     c001          jruc    pom_a
+    1014 00007e50     4c0e  pom_ng  move    a0,a14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+    1015 00007e60     4dc4  pom_a   move    a14,a4
+    1016 00007e70     142e          dec     a14
+    1017 00007e80     0bce          xori    1,a14
+         00007e90 00000001  
+    1018 00007eb0     102e          inc     a14             ;our teammate
+    1019 00007ec0                   GBLOCK  a14,a14
+    1020 00007f00     1424          dec     a4
+    1021 00007f10     2fc4          srl     2,a4
+    1022 00007f20     03a4          neg     a4
+    1023 00007f30     1024          inc     a4              ;0/1 of other team
+    1024 00007f40     4c85          move    a4,a5
+    1025 00007f50     24c4          sll     6,a4
+    1026 00007f60     0b04          addi    POF_D_1P,a4
+         00007f70     0600  
+    1027 00007f80     41c4          add     a14,a4          ;a4 = start of distance blocks for our teammates enemy
+    1028 00007f90     1821          movk    1,a1
+    1029 00007fa0     848e          move    *a4,a14,W
+    1030 00007fb0     b482          move    *a4(10h),a2,W
+         00007fc0     0010  
+    1031 00007fd0     49c2          cmp     a14,a2
+    1032 00007fe0     c402          jrlt    pom_1
+    1033 00007ff0     4dc2          move    a14,a2
+    1034 00008000     1841          movk    2,a1
+    1035 00008010     2445  pom_1   sll     2,a5
+    1036 00008020     1085          addk    4,a5            ;other teams goalie
+    1037 00008030                   GBLOCK  a5,a5
+    1038 00008070     b4ae          move    *a5(POF_FLAGS),a14,W
+         00008080     0200  
+    1039 00008090     1fae          btst    B_PF_GOALIE,a14
+    1040 000080a0     cb05          jrnz    pom_2
+    1041 000080b0     b48e          move    *a4(30h),a14,W
+         000080c0     0030  
+    1042 000080d0     49c2          cmp     a14,a2
+    1043 000080e0     c401          jrlt    pom_2
+    1044 000080f0     1881          movk    4,a1
+    1045 00008100     0b40  pom_2   cmpi    4,a0
+         00008110     fffb  
+    1046 00008120     c301          jrhi    pom_3
+    1047 00008130     1081          addk    4,a1            ;other team
+    1048 00008140     4c23  pom_3   move    a1,a3
+    1049 00008150     0960          rets
+    1050                    
+    1051 00008160           are_we_near_our_goal
+    1052 00008160     b702          move    *a8(OXVAL),a2,L
+         00008170     0140  
+    1053 00008180     0b22          addi    08000h,a2
+         00008190 00008000  
+    1054 000081b0     2a02          sra     16,a2
+    1055 000081c0     0b40          cmpi    4,a0
+         000081d0     fffb  
+    1056 000081e0     c201          jrls    awng1
+    1057 000081f0     03a2          neg     a2
+    1058 00008200     0b42  awng1   cmpi    250,a2
+         00008210     ff05  
+    1059 00008220     c413          jrlt    awngn
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   27
+
+    1060 00008230     098f          mmtm    sp,a0
+         00008240     8000  
+    1061 00008250     4c40          move    a2,a0
+    1062 00008260     b501          move    *a8(OZPOS),a1,W
+         00008270     0190  
+    1063 00008280     09c2          movi    688,a2
+         00008290     02b0  
+    1064 000082a0     09c3          movi    339,a3
+         000082b0     0153  
+    1065 000082c0     0d5f          calla   find_dist_quick
+         000082d0 00000000! 
+    1066 000082f0     09af          mmfm    sp,a0
+         00008300     0001  
+    1067 00008310     0b44          cmpi    300,a4
+         00008320     fed3  
+    1068 00008330     c902          jrhs    awngn
+    1069 00008340     0de0          setc
+    1070 00008350     0960          rets
+    1071 00008360     0320  awngn   clrc
+    1072 00008370     0960          rets
+    1073                    
+    1074 00008380           are_we_open
+    1075 00008380     0d3f          callr   are_we_close_to_enemy
+         00008390     ff10  
+    1076 000083a0     c802          jrc     awon
+    1077 000083b0     0de0          setc
+    1078 000083c0     0960          rets
+    1079 000083d0     0320  awon    clrc
+    1080 000083e0     0960          rets
+    1081                    
+    1082 000083f0           are_we_signalled
+    1083 000083f0     5621          clr     a1
+    1084 00008400     4c02          move    a0,a2
+    1085 00008410     1422          dec     a2
+    1086 00008420     2fc2          srl     2,a2
+    1087 00008430     2442          sll     2,a2
+    1088 00008440     1022          inc     a2
+    1089 00008450     0d3f          callr   csig
+         00008460     0001  
+    1090 00008470     1022          inc     a2
+    1091                    ;       callr   csig
+    1092                    ;       addk    2,a2
+    1093 00008480     4840  csig    cmp     a2,a0
+    1094 00008490     ca16          jrz     csg9
+    1095 000084a0     0b41          cmpi    2,a1
+         000084b0     fffd  
+    1096 000084c0     ca13          jrz     csg9
+    1097 000084d0                   GBLOCK  a2,a4
+    1098 00008520     b48e          move    *a4(POF_FLAGS),a14,W
+         00008530     0200  
+    1099 00008540     1f0e          btst    B_PF_SIG_PASS,a14
+    1100 00008550     cb0b          jrnz    cs_2
+    1101 00008560     1f2e          btst    B_PF_SIG_SHOOT,a14
+    1102 00008570     cb0b          jrnz    cs_3
+    1103 00008580     05ae          move    @PUCK_LAST_CONTROL,a14,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   28
+
+         00008590 00000000! 
+    1104 000085b0     ca04          jrz     csg9
+    1105                    ;       GBLOCK  a4,a4
+    1106 000085c0     b48e          move    *a4(POF_BUTTONS),a14,W
+         000085d0     0380  
+    1107 000085e0     1fee          btst    0,a14
+    1108 000085f0     cb03          jrnz    cs_3                    ;read button state for who just passed to us
+    1109 00008600     0960  csg9    rets
+    1110 00008610     1821  cs_2    movk    1,a1
+    1111 00008620     0960          rets
+    1112 00008630     1841  cs_3    movk    2,a1
+    1113 00008640     0960          rets
+    1114                    
+    1115 00008650           get_time_left
+    1116 00008650     05ae          move    @minutes,a14,W
+         00008660 00000000! 
+    1117 00008680     cb0c          jrnz    gtl_y
+    1118 00008690     05ae          move    @tenseconds,a14,W
+         000086a0 00000000! 
+    1119 000086c0     cb08          jrnz    gtl_y
+    1120 000086d0     05ae          move    @seconds,a14,W
+         000086e0 00000000! 
+    1121 00008700     0b4e          cmpi    3,a14
+         00008710     fffc  
+    1122 00008720     c902          jrhs    gtl_y
+    1123 00008730     0320          clrc
+    1124 00008740     0960          rets
+    1125 00008750     0de0  gtl_y   setc
+    1126 00008760     0960          rets
+    1127                    
+    1128 00008770           get_other_human_stats
+    1129 00008770     5621          clr     a1
+    1130 00008780     4c0e          move    a0,a14
+    1131 00008790     142e          dec     a14
+    1132 000087a0     2fce          srl     2,a14
+    1133 000087b0     142e          subk    1,a14
+    1134 000087c0     038e          abs     a14
+    1135 000087d0     244e          sll     2,a14
+    1136 000087e0     102e          inc     a14             ;a14 is now 1st of other team
+    1137 000087f0                   GBLOCK  a14,a2
+    1138 00008840     b444          move    *a2(POF_FLAGS),a4,W
+         00008850     0200  
+    1139 00008860     1fe4          btst    B_PF_HUMAN,a4
+    1140 00008870     ca01          jrz     gohs1
+    1141 00008880     1021          inc     a1
+    1142 00008890     102e  gohs1   inc     a14             ;a14 is now 1st of other team
+    1143 000088a0                   GBLOCK  a14,a2
+    1144 000088f0     b444          move    *a2(POF_FLAGS),a4,W
+         00008900     0200  
+    1145 00008910     1fe4          btst    B_PF_HUMAN,a4
+    1146 00008920     ca01          jrz     gohs2
+    1147 00008930     1021          inc     a1
+    1148 00008940     0960  gohs2   rets
+    1149                    
+    1150 00008950           is_other_man_shooting
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   29
+
+    1151 00008950     05ae          move    @PUCK_CONTROL,a14,W
+         00008960 00000000! 
+    1152 00008980                   GBLOCK  a14,a14
+    1153 000089c0     b5ce          move    *a14(POF_MODE),a14,W
+         000089d0     0210  
+    1154 000089e0     0b4e          cmpi    PM_SHOOT,a14
+         000089f0     fffc  
+    1155 00008a00     ca02          jrz     ioms_t
+    1156 00008a10     0320          clrc
+    1157 00008a20     0960          rets
+    1158 00008a30     0de0  ioms_t  setc
+    1159 00008a40     0960          rets
+    1160                    
+    1161 00008a50           seek_out_puck                   ;level 1-4 slow, level 8-10 fast, level 4-7 fast in 2,3,ot
+    1162 00008a50     098f          mmtm    sp,a0
+         00008a60     8000  
+    1163 00008a70     07a9          move    @PUCK_OBJECT,a9,L
+         00008a80 00000000! 
+    1164 00008aa0     b720          move    *a9(OXVAL),a0,L
+         00008ab0     0140  
+    1165 00008ac0     b721          move    *a9(OZVAL),a1,L
+         00008ad0     0180  
+    1166 00008ae0     b702          move    *a8(OXVAL),a2,L
+         00008af0     0140  
+    1167 00008b00     b703          move    *a8(OZVAL),a3,L
+         00008b10     0180  
+    1168                    
+    1169 00008b20     0d3f          callr   adjust_for_safe_move
+         00008b30     01c0  
+    1170                    
+    1171 00008b40     0d5f          calla   find_dir_to_point
+         00008b50 00000000! 
+    1172 00008b70     5621          clr     a1
+    1173 00008b80     b4ce          move    *a6(POF_DRONE_LEVEL),a14,W
+         00008b90     0be0  
+    1174 00008ba0     0b4e          cmpi    4,a14
+         00008bb0     fffb  
+    1175 00008bc0     c20a          jrls    alslo
+    1176 00008bd0     0b4e          cmpi    8,a14
+         00008be0     fff7  
+    1177 00008bf0     c906          jrhs    alsf
+    1178 00008c00     05ae          move    @period,a14,W
+         00008c10 00000000! 
+    1179 00008c30     0b4e          cmpi    1,a14
+         00008c40     fffe  
+    1180 00008c50     ca01          jrz     alslo
+    1181 00008c60     1821  alsf    movk    1,a1
+    1182 00008c70     0d5f  alslo   calla   move_player_dir
+         00008c80 00000000! 
+    1183 00008ca0     09af          mmfm    sp,a0
+         00008cb0     0001  
+    1184 00008cc0     0960          rets
+    1185                    
+    1186 00008cd0           seek_out_our_man_d
+    1187 00008cd0     098f          mmtm    sp,a0,a3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   30
+
+         00008ce0     9000  
+    1188 00008cf0                   GBLOCK  a3,a7
+    1189 00008d40     b6e9          move    *a7(POF_OBJECT),a9,L
+         00008d50     0280  
+    1190 00008d60     b720          move    *a9(OXVAL),a0,L
+         00008d70     0140  
+    1191 00008d80     0b20          addi    [0,08000h],a0
+         00008d90 00008000  
+    1192 00008db0     2a00          sra     16,a0
+    1193 00008dc0     b521          move    *a9(OZPOS),a1,W
+         00008dd0     0190  
+    1194 00008de0     09c4          movi    160,a4
+         00008df0     00a0  
+    1195 00008e00     09e5          movi    DUMRETS,a5
+         00008e10 00000000! 
+    1196 00008e30     0d3f          callr   move_range_stop_face
+         00008e40     01ff  
+    1197 00008e50     09af          mmfm    sp,a0,a3
+         00008e60     0009  
+    1198 00008e70     0960          rets
+    1199                    
+    1200 00008e80           seek_out_our_man
+    1201 00008e80     098f          mmtm    sp,a0,a3
+         00008e90     9000  
+    1202 00008ea0                   GBLOCK  a3,a7
+    1203 00008ef0     b6e9          move    *a7(POF_OBJECT),a9,L
+         00008f00     0280  
+    1204 00008f10     b720          move    *a9(OXVAL),a0,L
+         00008f20     0140  
+    1205 00008f30     b721          move    *a9(OZVAL),a1,L
+         00008f40     0180  
+    1206 00008f50     b702          move    *a8(OXVAL),a2,L
+         00008f60     0140  
+    1207 00008f70     b703          move    *a8(OZVAL),a3,L
+         00008f80     0180  
+    1208 00008f90     0d3f          callr   adjust_for_safe_move
+         00008fa0     0179  
+    1209 00008fb0     0d5f          calla   find_dir_to_point
+         00008fc0 00000000! 
+    1210 00008fe0     5621          clr     a1
+    1211 00008ff0     0d5f          calla   move_player_dir
+         00009000 00000000! 
+    1212 00009020     09af          mmfm    sp,a0,a3
+         00009030     0009  
+    1213 00009040     0960          rets
+    1214                    
+    1215 00009050           is_our_man_behind_net
+    1216 00009050                   GBLOCK  a3,a7
+    1217 000090a0     b6e9          move    *a7(POF_OBJECT),a9,L
+         000090b0     0280  
+    1218 000090c0     b721          move    *a9(OXVAL),a1,L
+         000090d0     0140  
+    1219 000090e0     0b21          addi    08000h,a1
+         000090f0 00008000  
+    1220 00009110     4c6e          move    a3,a14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   31
+
+    1221 00009120     142e          dec     a14
+    1222 00009130     2bce          sra     2,a14
+    1223 00009140     cb01          jrnz    iomb1
+    1224 00009150     03a1          neg     a1
+    1225 00009160     0b41  iomb1   cmpi    688,a1
+         00009170     fd4f  
+    1226 00009180     c407          jrlt    iombn
+    1227 00009190     b4ee  iomby   move    *a7(POF_DRONE_NETTIME),a14,W
+         000091a0     09e0  
+    1228 000091b0     102e          inc     a14
+    1229 000091c0     b1c7          move    a14,*a7(POF_DRONE_NETTIME),W
+         000091d0     09e0  
+    1230 000091e0     0de0          setc
+    1231 000091f0     0960          rets
+    1232 00009200     57ce  iombn   clr     a14
+    1233 00009210     b1c7          move    a14,*a7(POF_DRONE_NETTIME),W
+         00009220     09e0  
+    1234 00009230     0320          clrc
+    1235 00009240     0960          rets
+    1236                    
+    1237 00009250           prepare_for_onetimer
+    1238 00009250     098f          mmtm    sp,a0
+         00009260     8000  
+    1239 00009270     182e          movk    1,a14
+    1240 00009280     b1c6          move    a14,*a6(POF_DRONE_BUTTONS),W
+         00009290     09d0  
+    1241 000092a0     0d5f          calla   line_up_for_pass
+         000092b0 00000000! 
+    1242 000092d0     09af          mmfm    sp,a0
+         000092e0     0001  
+    1243 000092f0     0960          rets
+    1244                    
+    1245 00009300           prepare_for_no_onetimer
+    1246 00009300     098f          mmtm    sp,a0
+         00009310     8000  
+    1247 00009320     57ce          clr     a14
+    1248 00009330     b1c6          move    a14,*a6(POF_DRONE_BUTTONS),W
+         00009340     09d0  
+    1249 00009350     0d5f          calla   line_up_for_pass
+         00009360 00000000! 
+    1250 00009380     09af          mmfm    sp,a0
+         00009390     0001  
+    1251 000093a0     0960          rets
+    1252                    
+    1253 000093b0           position_for_rebound
+    1254 000093b0     098f          mmtm    sp,a0
+         000093c0     8000  
+    1255 000093d0     05a1          move    @PUCK_LAST_CONTROL,a1,W
+         000093e0 00000000! 
+    1256 00009400     09e0          movi    [688,0],a0
+         00009410 02b00000  
+    1257 00009430     1421          dec     a1
+    1258 00009440     2fc1          srl     2,a1
+    1259 00009450     ca01          jrz     pfr1
+    1260 00009460     03a0          neg     a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   32
+
+    1261 00009470     09e1  pfr1    movi    [339,0],a1
+         00009480 01530000  
+    1262 000094a0     b702          move    *a8(OXVAL),a2,L
+         000094b0     0140  
+    1263 000094c0     b703          move    *a8(OZVAL),a3,L
+         000094d0     0180  
+    1264 000094e0     0d5f          calla   find_dir_to_point
+         000094f0 00000000! 
+    1265 00009510     5621          clr     a1
+    1266 00009520     0d5f          calla   move_player_dir
+         00009530 00000000! 
+    1267 00009550     09af          mmfm    sp,a0
+         00009560     0001  
+    1268 00009570     0960          rets
+    1269                    
+    1270 00009580           get_puck_otime
+    1271 00009580     0d5f          calla   get_our_human_stats
+         00009590 0000f130' 
+    1272 000095b0     cb1f          jrnz    gpo_y           ;chase down if we have a teammate
+    1273 000095c0     05ae          move    @GAME_STATE,a14,W
+         000095d0 00000000! 
+    1274 000095f0     0b4e          cmpi    INAMODE,a14
+         00009600     ffcf  
+    1275 00009610     ca19          jrz     gpo_y           ;chase down if attract mode
+    1276 00009620     07a2          move    @PUCK_CONTROL_START,a2,L
+         00009630 00000000! 
+    1277 00009650     07ae          move    @WAVEIRQS,a14,L
+         00009660 00000000! 
+    1278 00009680     444e          sub     a2,a14
+    1279 00009690     b4c2          move    *a6(POF_DRONE_LEVEL),a2,W
+         000096a0     0be0  
+    1280 000096b0     0b42          cmpi    2,a2
+         000096c0     fffd  
+    1281 000096d0     c206          jrls    gpol            ;drone level 0-2, delay on puck chases
+    1282 000096e0     0b42          cmpi    7,a2
+         000096f0     fff8  
+    1283 00009700     0300          jrlt    gpon            ;drone level 3-6, regular delay
+    1284 00009710     09c2  gpon    movi    2,a2            ;drone level 7-10, chase down all
+         00009720     0002  
+    1285 00009730     c005          jruc    gpoi
+    1286 00009740     09c2  gpol    movi    400,a2
+         00009750     0190  
+    1287 00009760     c002          jruc    gpoi
+    1288 00009770     09c2  gpor    movi    100,a2          ;regular time
+         00009780     0064  
+    1289 00009790     484e  gpoi    cmp     a2,a14
+    1290 000097a0     c202          jrls    gpo_n
+    1291 000097b0     0de0  gpo_y   setc
+    1292 000097c0     0960          rets
+    1293 000097d0     0320  gpo_n   clrc
+    1294 000097e0     0960          rets
+    1295                    
+    1296 000097f0           has_he_behind_awhile
+    1297 000097f0                   GBLOCK  a3,a7
+    1298 00009840     b4ee          move    *a7(POF_DRONE_NETTIME),a14,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   33
+
+         00009850     09e0  
+    1299 00009860     0b4e          cmpi    300,a14
+         00009870     fed3  
+    1300 00009880     c202          jrls    hhbn
+    1301 00009890     0de0  hhby    setc
+    1302 000098a0     0960          rets
+    1303 000098b0     0320  hhbn    clrc
+    1304 000098c0     0960          rets
+    1305                    
+    1306 000098d0           match_safe_position_of_our_man
+    1307 000098d0           match_posdir_our_man
+    1308 000098d0     098f          mmtm    sp,a0,a3
+         000098e0     9000  
+    1309 000098f0                   GBLOCK  a3,a7
+    1310 00009940     b6e9          move    *a7(POF_OBJECT),a9,L
+         00009950     0280  
+    1311 00009960     b720          move    *a9(OXVAL),a0,L
+         00009970     0140  
+    1312 00009980     09e1          movi    [130,0],a1
+         00009990 00820000  
+    1313 000099b0     b4ce          move    *a6(POF_DRONE_LEVEL),a14,W
+         000099c0     0be0  
+    1314 000099d0     0b4e          cmpi    3,a14
+         000099e0     fffc  
+    1315 000099f0     c304          jrhi    mpodx1
+    1316 00009a00     09e1          movi    [220,0],a1      ;drone level 0-3, greater distance
+         00009a10 00dc0000  
+    1317 00009a30     c012          jruc    mpodxx
+    1318 00009a40     0b4e  mpodx1  cmpi    10,a14
+         00009a50     fff5  
+    1319                    ;       jrnz    mpodxx
+    1320 00009a60     c80f          jrlo    mpodxx
+    1321 00009a70     09e1          movi    [100,0],a1      ;drone level 10, tighten distance when following
+         00009a80 00640000  
+    1322 00009aa0     0b4e          cmpi    11,a14
+         00009ab0     fff4  
+    1323 00009ac0     c809          jrlo    mpodxx
+    1324 00009ad0     09e1          movi    [65,0],a1       ;level 11
+         00009ae0 00410000  
+    1325 00009b00     0b4e          cmpi    12,a14
+         00009b10     fff3  
+    1326 00009b20     c803          jrlo    mpodxx
+    1327 00009b30     09e1          movi    [20,0],a1       ;level 12
+         00009b40 00140000  
+    1328 00009b60     0b43  mpodxx  cmpi    4,a3
+         00009b70     fffb  
+    1329 00009b80     c201          jrls    mpom1
+    1330 00009b90     03a1          neg     a1
+    1331 00009ba0     4020  mpom1   add     a1,a0           ;a0 is x desired
+    1332 00009bb0     b721          move    *a9(OZVAL),a1,L ;a1 is z desired
+         00009bc0     0180  
+    1333 00009bd0     b702          move    *a8(OXVAL),a2,L ;our x
+         00009be0     0140  
+    1334 00009bf0     b703          move    *a8(OZVAL),a3,L ;our z
+         00009c00     0180  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   34
+
+    1335 00009c10     098f          mmtm    sp,a0,a1
+         00009c20     c000  
+    1336 00009c30     0d5f          calla   find_dist_quick
+         00009c40 00000000! 
+    1337 00009c60     09af          mmfm    sp,a0,a1
+         00009c70     0003  
+    1338 00009c80     b4ce          move    *a6(POF_DRONE_LEVEL),a14,W
+         00009c90     0be0  
+    1339 00009ca0     0b4e          cmpi    3,a14
+         00009cb0     fffc  
+    1340 00009cc0     c304          jrhi    mpomu1
+    1341 00009cd0     0b64          cmpi    [70,0],a4
+         00009ce0 ffb9ffff  
+    1342 00009d00     c003          jruc    mpomu2
+    1343 00009d10     0b64  mpomu1  cmpi    [45,0],a4
+         00009d20 ffd2ffff  
+    1344 00009d40     c210  mpomu2  jrls    mpom_m
+    1345 00009d50     0d5f          calla   find_dir_to_point
+         00009d60 00000000! 
+    1346 00009d80     5621          clr     a1
+    1347 00009d90     b4ce          move    *a6(POF_DRONE_LEVEL),a14,W
+         00009da0     0be0  
+    1348 00009db0     0b4e          cmpi    10,a14
+         00009dc0     fff5  
+    1349 00009dd0     c201          jrls    mjsd
+    1350 00009de0     1821          movk    1,a1            ;drone 11 or 12 is always fast when far away
+    1351 00009df0     0d5f  mjsd    calla   move_player_dir
+         00009e00 00000000! 
+    1352 00009e20     09af          mmfm    sp,a0,a3
+         00009e30     0009  
+    1353 00009e40     0960          rets
+    1354 00009e50     b720  mpom_m  move    *a9(ODT_VEL),a0,L
+         00009e60     04d0  
+    1355 00009e70     ca09          jrz     mpom_a
+    1356 00009e80     b720          move    *a9(ODT_DIR),a0,L
+         00009e90     04b0  
+    1357 00009ea0     5621          clr     a1
+    1358 00009eb0     0d5f          calla   move_player_dir
+         00009ec0 00000000! 
+    1359 00009ee0     09af          mmfm    sp,a0,a3
+         00009ef0     0009  
+    1360 00009f00     0960          rets
+    1361 00009f10     0d5f  mpom_a  calla   stop_player
+         00009f20 00000000! 
+    1362 00009f40     b700          move    *a8(ODT_VEL),a0,L
+         00009f50     04d0  
+    1363 00009f60     cb02          jrnz    mpoma9
+    1364 00009f70     0d3f          callr   face_37
+         00009f80     0071  
+    1365 00009f90     09af  mpoma9  mmfm    sp,a0,a3
+         00009fa0     0009  
+    1366 00009fb0     0960          rets
+    1367                    
+    1368 00009fc0           move_forward_to_z_kx
+    1369 00009fc0     098f          mmtm    sp,a0,a3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   35
+
+         00009fd0     9000  
+    1370 00009fe0     07ae          move    @drone_temp_1,a14,L
+         00009ff0 00000020- 
+    1371 0000a010     0b2e          addi    [0,08000h],a14
+         0000a020 00008000  
+    1372 0000a040     2a0e          sra     16,a14
+    1373 0000a050     09c3          movi    180,a3
+         0000a060     00b4  
+    1374 0000a070     0b40          cmpi    4,a0
+         0000a080     fffb  
+    1375 0000a090     c201          jrls    mkxz1
+    1376 0000a0a0     03a3          neg     a3
+    1377 0000a0b0     41c3  mkxz1   add     a14,a3
+    1378 0000a0c0     4c60          move    a3,a0
+    1379 0000a0d0     09c4          movi    25,a4
+         0000a0e0     0019  
+    1380 0000a0f0     09e5          movi    DUMRETS,a5
+         0000a100 00000000! 
+    1381 0000a120     0d3f          callr   move_range_stop_face
+         0000a130     00d0  
+    1382 0000a140     09af          mmfm    sp,a0,a3
+         0000a150     0009  
+    1383 0000a160     0960          rets
+    1384                    
+    1385 0000a170           move_forward_to_z
+    1386 0000a170     098f          mmtm    sp,a0,a3
+         0000a180     9000  
+    1387 0000a190     09c3          movi    687,a3
+         0000a1a0     02af  
+    1388 0000a1b0     0b40          cmpi    4,a0
+         0000a1c0     fffb  
+    1389 0000a1d0     c201          jrls    mftz1
+    1390 0000a1e0     03a3          neg     a3
+    1391 0000a1f0     4c60  mftz1   move    a3,a0
+    1392                    
+    1393 0000a200     09c4          movi    25,a4
+         0000a210     0019  
+    1394 0000a220     09e5          movi    DUMRETS,a5
+         0000a230 00000000! 
+    1395 0000a250     0d3f          callr   move_range_stop_face
+         0000a260     00bd  
+    1396 0000a270     09af          mmfm    sp,a0,a3
+         0000a280     0009  
+    1397 0000a290     0960          rets
+    1398                    
+    1399 0000a2a0           move_base_teammate
+    1400 0000a2a0     098f          mmtm    sp,a0,a3
+         0000a2b0     9000  
+    1401 0000a2c0     0b40          cmpi    4,a0
+         0000a2d0     fffb  
+    1402 0000a2e0     cb02          jrnz    mbt1
+    1403 0000a2f0     1820          movk    1,a0
+    1404 0000a300     c004          jruc    mbt3
+    1405 0000a310     0b40  mbt1    cmpi    8,a0
+         0000a320     fff7  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   36
+
+    1406 0000a330     cb01          jrnz    mbt3
+    1407 0000a340     1880          movk    4,a0
+    1408 0000a350     1420  mbt3    dec     a0
+    1409 0000a360     0bc0          xori    1,a0
+         0000a370 00000001  
+    1410 0000a390     1020          inc     a0
+    1411 0000a3a0                   GBLOCK  a0,a5
+    1412 0000a3f0     b6a5          move    *a5(POF_OBJECT),a5,L
+         0000a400     0280  
+    1413 0000a410     b6a0          move    *a5(OXVAL),a0,L
+         0000a420     0140  
+    1414 0000a430     0b20          addi    [0,08000h],a0
+         0000a440 00008000  
+    1415 0000a460     2a00          sra     16,a0
+    1416 0000a470     b4a1          move    *a5(OZPOS),a1,W
+         0000a480     0190  
+    1417 0000a490     0d3f          callr   get_dest_point
+         0000a4a0     03cd  
+    1418 0000a4b0     1b24          movk    25,a4
+    1419 0000a4c0     09e5          movi    face_37,a5
+         0000a4d0 0000a6a0' 
+    1420 0000a4f0     0d3f          callr   move_range_stop_face
+         0000a500     0093  
+    1421 0000a510     b6ce          move    *a6(POF_DRONE_OP_TIME),a14,L
+         0000a520     0a90  
+    1422 0000a530     07a0          move    @WAVEIRQS,a0,L
+         0000a540 00000000! 
+    1423 0000a560     45c0          sub     a14,a0
+    1424 0000a570     0b40          cmpi    240,a0
+         0000a580     ff0f  
+    1425 0000a590     c20d          jrls    mbt99
+    1426 0000a5a0     09c0          movi    10,a0
+         0000a5b0     000a  
+    1427 0000a5c0     0d5f          calla   RANDPER
+         0000a5d0 00000000! 
+    1428 0000a5f0     c907          jrnc    mbt99
+    1429 0000a600     5600          clr     a0
+    1430 0000a610     b4ce          move    *a6(POF_DRONE_OP_STATE),a14,W
+         0000a620     0a70  
+    1431 0000a630     cb01          jrnz    mbt_67
+    1432 0000a640     1020          inc     a0
+    1433 0000a650     b006  mbt_67  move    a0,*a6(POF_DRONE_OP_STATE),W
+         0000a660     0a70  
+    1434 0000a670     09af  mbt99   mmfm    sp,a0,a3
+         0000a680     0009  
+    1435 0000a690     0960          rets
+    1436                    
+    1437 0000a6a0     1860  face_37 movk    3,a0
+    1438 0000a6b0     aece          movb    *a6(POF_NUMBER),a14
+         0000a6c0     0000  
+    1439 0000a6d0     0b4e          cmpi    4,a14
+         0000a6e0     fffb  
+    1440 0000a6f0     c201          jrls    f372
+    1441 0000a700     18e0          movk    7,a0
+    1442 0000a710     ac06  f372    movb    a0,*a6(POF_DIRECTION)
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   37
+
+         0000a720     0390  
+    1443 0000a730     0960          rets
+    1444                    
+    1445                    ;if we are behind front of net
+    1446                    ; if destination is in front of net
+    1447                    ;  if we are on same z side as destination
+    1448                    ;   * move normally
+    1449                    ;  if we are directly behind znet
+    1450                    ;   * move to our x, z closest to our destination
+    1451                    ;  if destination is directly in front of znet
+    1452                    ;   * move to destination x, our z
+    1453                    ;  else (destination is on opposite z)
+    1454                    ;   * move to destination x, our z
+    1455                    ; else (destination is behind front of net)
+    1456                    ;  if we are on same z side as destination
+    1457                    ;   * move normally
+    1458                    ;  if we are directly behind znet
+    1459                    ;   * move normally
+    1460                    ;  if destination is directly behind znet
+    1461                    ;   * move normally
+    1462                    ;  else (destination is on opposize z from us)
+    1463                    ;   * move to destination z, x behind center znet
+    1464                    ;else (we are in front of net)
+    1465                    ; if destination is behind front of net
+    1466                    ;  if we are on same z side as destination
+    1467                    ;   * move normally
+    1468                    ;  if we are directly in front of znet
+    1469                    ;   * move to our x, z closest to our destination
+    1470                    ;  if destination is directly behind znet
+    1471                    ;   * move to destination x, our z
+    1472                    ;  else (destination is on opposite z)
+    1473                    ;   * move to destination x, our z
+    1474                    ; else (destination is front of net)
+    1475                    ;  * move normally
+    1476                    
+    1477 0000a740           adjust_for_safe_move
+    1478 0000a740     0d3f          callr   are_we_in_front_net
+         0000a750     004c  
+    1479 0000a760     c814          jrc     nbhn1                           ;not behind net
+    1480 0000a770     0d3f          callr   is_destination_in_front_net
+         0000a780     004b  
+    1481 0000a790     c907          jrnc    bhndhn                          ;were behind, destination behind
+    1482 0000a7a0     0d3f          callr   are_z_matching
+         0000a7b0     0031  
+    1483 0000a7c0     c866          jrc     mnormal                         ;we are on matching z, ok to move
+    1484 0000a7d0     0d3f          callr   are_we_znet
+         0000a7e0     0016  
+    1485 0000a7f0     c84e          jrc     move_our_x_close_z              ;we are behind z of net
+    1486 0000a800     c058          jruc    move_dest_x_our_z               ;destination is in front of z net, of opposite z
+    1487 0000a810     0d3f  bhndhn  callr   are_z_matching
+         0000a820     002a  
+    1488 0000a830     c85f          jrc     mnormal
+    1489 0000a840     0d3f          callr   are_we_znet
+         0000a850     000f  
+    1490 0000a860     c85c          jrc     mnormal
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   38
+
+    1491 0000a870     0d3f          callr   is_dest_znet
+         0000a880     0018  
+    1492 0000a890     c859          jrc     mnormal
+    1493 0000a8a0     c050          jruc    move_back_x_dest_z
+    1494 0000a8b0     0d3f  nbhn1   callr   is_destination_in_front_net
+         0000a8c0     0037  
+    1495 0000a8d0     c855          jrc     mnormal
+    1496 0000a8e0     0d3f          callr   are_z_matching
+         0000a8f0     001d  
+    1497 0000a900     c852          jrc     mnormal
+    1498 0000a910     0d3f          callr   are_we_znet
+         0000a920     0002  
+    1499 0000a930     c83a          jrc     move_our_x_close_z
+    1500 0000a940     c044          jruc    move_dest_x_our_z               ;destination is behind znet or opposite z
+    1501                    
+    1502 0000a950           are_we_znet
+    1503 0000a950     0b63          cmpi    [261,0],a3
+         0000a960 fefaffff  
+    1504 0000a980     c406          jrlt    awzn
+    1505 0000a990     0b63          cmpi    [418,0],a3
+         0000a9a0 fe5dffff  
+    1506 0000a9c0     c702          jrgt    awzn
+    1507 0000a9d0     0de0          setc
+    1508 0000a9e0     0960          rets
+    1509 0000a9f0     0320  awzn    clrc
+    1510 0000aa00     0960          rets
+    1511                    
+    1512 0000aa10           is_dest_znet
+    1513 0000aa10     0b61          cmpi    [261,0],a1
+         0000aa20 fefaffff  
+    1514 0000aa40     c406          jrlt    idzn
+    1515 0000aa50     0b61          cmpi    [418,0],a1
+         0000aa60 fe5dffff  
+    1516 0000aa80     c702          jrgt    idzn
+    1517 0000aa90     0de0          setc
+    1518 0000aaa0     0960          rets
+    1519 0000aab0     0320  idzn    clrc
+    1520 0000aac0     0960          rets
+    1521                    
+    1522 0000aad0           are_z_matching
+    1523 0000aad0     0b61          cmpi    [261,0],a1
+         0000aae0 fefaffff  
+    1524 0000ab00     c409          jrlt    azml
+    1525 0000ab10     0b61          cmpi    [418,0],a1
+         0000ab20 fe5dffff  
+    1526 0000ab40     c60b          jrle    azmn
+    1527 0000ab50     0b63          cmpi    [418,0],a3
+         0000ab60 fe5dffff  
+    1528 0000ab80     c705          jrgt    azmy
+    1529 0000ab90     c006          jruc    azmn
+    1530 0000aba0     0b63  azml    cmpi    [261,0],a3
+         0000abb0 fefaffff  
+    1531 0000abd0     c502          jrge    azmn
+    1532 0000abe0     0de0  azmy    setc
+    1533 0000abf0     0960          rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   39
+
+    1534 0000ac00     0320  azmn    clrc
+    1535 0000ac10     0960          rets
+    1536                    
+    1537 0000ac20           are_we_in_front_net
+    1538 0000ac20     4c4e          move    a2,a14
+    1539 0000ac30     c001          jruc    idf1
+    1540 0000ac40           is_destination_in_front_net
+    1541 0000ac40     4c0e          move    a0,a14
+    1542 0000ac50     038e  idf1    abs     a14
+    1543 0000ac60     0b6e          cmpi    [688,0],a14
+         0000ac70 fd4fffff  
+    1544 0000ac90     c402          jrlt    idfy
+    1545 0000aca0     0320          clrc
+    1546 0000acb0     0960          rets
+    1547 0000acc0     0de0  idfy    setc
+    1548 0000acd0     0960          rets
+    1549                    
+    1550 0000ace0           move_our_x_close_z
+    1551 0000ace0     09ee          movi    [679,0],a14
+         0000acf0 02a70000  
+    1552 0000ad10     0b61          cmpi    [339,0],a1
+         0000ad20 feacffff  
+    1553 0000ad40     c701          jrgt    tgt1
+    1554 0000ad50     57ce          clr     a14
+    1555 0000ad60     4dc1  tgt1    move    a14,a1
+    1556 0000ad70     4c40          move    a2,a0
+    1557 0000ad80     c00a          jruc    mnormal
+    1558 0000ad90           move_dest_x_our_z
+    1559 0000ad90     4c61          move    a3,a1
+    1560 0000ada0     c008          jruc    mnormal
+    1561 0000adb0           move_back_x_dest_z
+    1562 0000adb0     09ee          movi    [750,0],a14
+         0000adc0 02ee0000  
+    1563 0000ade0     4c42          move    a2,a2
+    1564 0000adf0     cf01          jrnn    mbx1
+    1565 0000ae00     03ae          neg     a14
+    1566 0000ae10     4dc2  mbx1    move    a14,a2
+    1567 0000ae20           move_our_x_dest_z
+    1568 0000ae20     4c40          move    a2,a0
+    1569 0000ae30     0960  mnormal rets
+    1570                    
+    1571                    **************************************************************************
+    1572                    *                                                                        *
+    1573                    * move_range_stop_face                                                   *
+    1574                    *                                                                        *
+    1575                    **************************************************************************
+    1576 0000ae40           move_range_stop_face
+    1577 0000ae40     2604          sll     16,a4
+    1578 0000ae50     2600          sll     16,a0
+    1579 0000ae60     2601          sll     16,a1
+    1580 0000ae70     b702          move    *a8(OXVAL),a2,L
+         0000ae80     0140  
+    1581 0000ae90     0b22          addi    [0,08000h],a2
+         0000aea0 00008000  
+    1582 0000aec0     b703          move    *a8(OZVAL),a3,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   40
+
+         0000aed0     0180  
+    1583 0000aee0     0d3f          callr   adjust_for_safe_move
+         0000aef0     ff84  
+    1584 0000af00     0d5f          calla   find_dirdis_to_point
+         0000af10 00000000! 
+    1585 0000af30     4881          cmp     a4,a1
+    1586 0000af40     c21c          jrls    mrs_stp
+    1587 0000af50     05a2          move    @hot_player,a2,W
+         0000af60 00000000! 
+    1588 0000af80     aece          movb    *a6(POF_NUMBER),a14
+         0000af90     0000  
+    1589 0000afa0     484e          cmp     a2,a14
+    1590 0000afb0     ca0d          jrz     msgaf           ;he is on fire, always turbo
+    1591 0000afc0     b4ce          move    *a6(POF_DRONE_LEVEL),a14,W
+         0000afd0     0be0  
+    1592 0000afe0     0b4e          cmpi    8,a14
+         0000aff0     fff7  
+    1593 0000b000     c908          jrhs    msgaf           ;level 8-10 always turbo
+    1594 0000b010     2424          sll     1,a4
+    1595 0000b020     4881          cmp     a4,a1
+    1596 0000b030     c207          jrls    mgs
+    1597 0000b040     b4c1          move    *a6(POF_DRONE_LEVEL),a1,W
+         0000b050     0be0  
+    1598 0000b060     0b41          cmpi    1,a1
+         0000b070     fffe  
+    1599 0000b080     c202          jrls    mgs             ;drone level 0-1, only go slow
+    1600 0000b090     1821  msgaf   movk    1,a1
+    1601 0000b0a0     c001          jruc    mgs1
+    1602 0000b0b0     5621  mgs     clr     a1
+    1603 0000b0c0     0d5f  mgs1    calla   move_player_dir
+         0000b0d0 00000000! 
+    1604 0000b0f0     0320          clrc
+    1605 0000b100     0960          rets
+    1606 0000b110     0d5f  mrs_stp calla   stop_player
+         0000b120 00000000! 
+    1607 0000b140     b70e          move    *a8(ODT_VEL),a14,L
+         0000b150     04d0  
+    1608 0000b160     cb01          jrnz    mrsf1
+    1609 0000b170     0925          call    a5
+    1610 0000b180     0de0  mrsf1   setc
+    1611 0000b190     0960          rets
+    1612                    
+    1613 0000b1a0           move_away_from_closest_enemy
+    1614 0000b1a0     098f          mmtm    sp,a0
+         0000b1b0     8000  
+    1615 0000b1c0                   GBLOCK  a3,a7
+    1616 0000b210     b6e9          move    *a7(POF_OBJECT),a9,L
+         0000b220     0280  
+    1617 0000b230     b722          move    *a9(OXVAL),a2,L
+         0000b240     0140  
+    1618 0000b250     b723          move    *a9(OZVAL),a3,L
+         0000b260     0180  
+    1619 0000b270     b700          move    *a8(OXVAL),a0,L
+         0000b280     0140  
+    1620 0000b290     b701          move    *a8(OZVAL),a1,L         ;we reverse our normal order
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   41
+
+         0000b2a0     0180  
+    1621 0000b2b0     0d5f          calla   find_dir_to_point
+         0000b2c0 00000000! 
+    1622 0000b2e0     5621          clr     a1
+    1623 0000b2f0     0d5f          calla   move_player_dir
+         0000b300 00000000! 
+    1624 0000b320     09af          mmfm    sp,a0
+         0000b330     0001  
+    1625 0000b340     0960          rets
+    1626                    
+    1627 0000b350           does_z_approach_enemy
+    1628 0000b350     098f          mmtm    sp,a3,a7
+         0000b360     1100  
+    1629 0000b370     aec3          movb    *a6(POF_NUMBER),a3
+         0000b380     0000  
+    1630 0000b390     1423          dec     a3
+    1631 0000b3a0     2fc3          srl     2,a3
+    1632 0000b3b0     1423          dec     a3
+    1633 0000b3c0     03a3          neg     a3
+    1634 0000b3d0     2443          sll     2,a3
+    1635 0000b3e0     1023          inc     a3
+    1636 0000b3f0     0d3f          callr   dzae1
+         0000b400     000b  
+    1637 0000b410     c807          jrc     dzae5
+    1638 0000b420     1023          inc     a3
+    1639 0000b430     0d3f          callr   dzae1
+         0000b440     0007  
+    1640 0000b450     c803          jrc     dzae5
+    1641 0000b460     1023          inc     a3
+    1642 0000b470     0d3f          callr   dzae1
+         0000b480     0003  
+    1643 0000b490     09af  dzae5   mmfm    sp,a3,a7
+         0000b4a0     0088  
+    1644 0000b4b0     0960          rets
+    1645 0000b4c0           dzae1   GBLOCK  a3,a7
+    1646 0000b510     b4ee          move    *a7(POF_FLAGS),a14,W
+         0000b520     0200  
+    1647 0000b530     1fae          btst    B_PF_GOALIE,a14
+    1648 0000b540     cb09          jrnz    dzanc
+    1649 0000b550     b6e9          move    *a7(POF_OBJECT),a9,L
+         0000b560     0280  
+    1650 0000b570     b727          move    *a9(OZPOS),a7,L
+         0000b580     0190  
+    1651 0000b590     4427          sub     a1,a7
+    1652 0000b5a0     0387          abs     a7
+    1653 0000b5b0     0b47          cmpi    60,a7
+         0000b5c0     ffc3  
+    1654 0000b5d0     c202          jrls    dey
+    1655 0000b5e0     0320  dzanc   clrc
+    1656 0000b5f0     0960          rets
+    1657 0000b600     0de0  dey     setc
+    1658 0000b610     0960          rets
+    1659                    
+    1660 0000b620           pick_z_to_avoid_enemy
+    1661 0000b620     4c27          move    a1,a7
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   42
+
+    1662 0000b630     0b01          addi    100,a1
+         0000b640     0064  
+    1663 0000b650     0d3f          callr   pzt
+         0000b660     0015  
+    1664 0000b670     c913          jrnc    pzta9
+    1665 0000b680     4ce1          move    a7,a1
+    1666 0000b690     0be1          subi    100,a1
+         0000b6a0     ff9b  
+    1667 0000b6b0     0d3f          callr   pzt
+         0000b6c0     000f  
+    1668 0000b6d0     c90d          jrnc    pzta9
+    1669 0000b6e0     4ce1          move    a7,a1
+    1670 0000b6f0     0b01          addi    200,a1
+         0000b700     00c8  
+    1671 0000b710     0d3f          callr   pzt
+         0000b720     0009  
+    1672 0000b730     c907          jrnc    pzta9
+    1673 0000b740     4ce1          move    a7,a1
+    1674 0000b750     0be1          subi    200,a1
+         0000b760     ff37  
+    1675 0000b770     0d3f          callr   pzt
+         0000b780     0003  
+    1676 0000b790     cb01          jrnz    pzta9
+    1677 0000b7a0     4ce1          move    a7,a1
+    1678 0000b7b0     0960  pzta9   rets
+    1679 0000b7c0     0b41  pzt     cmpi    660,a1
+         0000b7d0     fd6b  
+    1680 0000b7e0     c403          jrlt    pzt1
+    1681 0000b7f0     09c1          movi    660,a1
+         0000b800     0294  
+    1682 0000b810     c004          jruc    pzt3
+    1683 0000b820     0b41  pzt1    cmpi    20,a1
+         0000b830     ffeb  
+    1684 0000b840     c701          jrgt    pzt3
+    1685 0000b850     1a81          movk    20,a1
+    1686 0000b860     c0ae  pzt3    jruc    does_z_approach_enemy
+    1687                    
+    1688 0000b870           block_pass              ;
+    1689 0000b870           get_in_way              ;unimplemented
+    1690 0000b870           intercept_shot          ;
+    1691 0000b870     0960          rets
+    1692                    
+    1693 0000b880           are_we_from_outside
+    1694 0000b880     b4ce          move    *a6(POF_DRONE_OUTSIDE),a14,W
+         0000b890     0ad0  
+    1695 0000b8a0     ca06          jrz     awf_n
+    1696 0000b8b0     07ae          move    @global_control_slow,a14,L
+         0000b8c0 00000000! 
+    1697 0000b8e0     cb02          jrnz    awf_n
+    1698 0000b8f0     0de0  awf_y   setc
+    1699 0000b900     0960          rets
+    1700 0000b910     0320  awf_n   clrc
+    1701 0000b920     0960          rets
+    1702                    
+    1703 0000b930           have_we_picked_pattern
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   43
+
+    1704 0000b930     b4ce          move    *a6(POF_DRONE_PATTERN),a14,W
+         0000b940     0ae0  
+    1705 0000b950     ca02          jrz     hwppn
+    1706 0000b960     0de0  hwppy   setc
+    1707 0000b970     0960          rets
+    1708 0000b980     0320  hwppn   clrc
+    1709 0000b990     0960          rets
+    1710                    
+    1711 0000b9a0           pick_offensive_pattern
+    1712 0000b9a0     098f          mmtm    sp,a0
+         0000b9b0     8000  
+    1713 0000b9c0     1940          movk    10,a0
+    1714 0000b9d0     0d5f          calla   RANDU
+         0000b9e0 00000000! 
+    1715 0000ba00     b006          move    a0,*a6(POF_DRONE_PATTERN),W
+         0000ba10     0ae0  
+    1716 0000ba20     24a0          sll     5,a0
+    1717 0000ba30     0b20          addi    popl_a-32,a0
+         0000ba40 0000baa0' 
+    1718 0000ba60     8600          move    *a0,a0,L
+    1719 0000ba70     b206          move    a0,*a6(POF_DRONE_PADDR),L
+         0000ba80     0af0  
+    1720 0000ba90     09af          mmfm    sp,a0
+         0000baa0     0001  
+    1721 0000bab0     0960          rets
+    1722                    
+    1723 0000bac0 0000bc00' popl_a  .long   pad_cut_to_right
+    1724 0000bae0 0000bd40'         .long   pad_cut_to_left
+    1725 0000bb00 0000be80'         .long   pad_cut_wide_to_right
+    1726 0000bb20 0000c000'         .long   pad_cut_wide_to_left
+    1727 0000bb40 0000c180'         .long   pad_cut_across_right
+    1728 0000bb60 0000c240'         .long   pad_cut_across_left
+    1729 0000bb80 0000c300'         .long   pad_cut_around_right
+    1730 0000bba0 0000c3e0'         .long   pad_cut_around_left
+    1731 0000bbc0 0000c4c0'         .long   pad_cut_spin_right
+    1732 0000bbe0 0000c5a0'         .long   pad_cut_spin_left
+    1733                    
+    1734 0000bc00           pad_cut_to_right
+    1735 0000bc00     0179          .word   377,164
+    1736 0000bc20     020a          .word   522,286
+    1737 0000bc40     020a          .word   522,393
+    1738 0000bc60     01f4          .word   500,494
+    1739 0000bc80     0258          .word   600,579
+    1740 0000bca0     030c          .word   780,479
+    1741 0000bcc0     030c          .word   780,229
+    1742 0000bce0     0212          .word   530,99
+    1743 0000bd00     017c          .word   380,279
+    1744 0000bd20     0000          .word   0,0
+    1745 0000bd40           pad_cut_to_left
+    1746 0000bd40     0179          .word   377,515
+    1747 0000bd60     020a          .word   522,393
+    1748 0000bd80     020a          .word   522,286
+    1749 0000bda0     01f4          .word   500,185
+    1750 0000bdc0     0258          .word   600,100
+    1751 0000bde0     030c          .word   780,200
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   44
+
+    1752 0000be00     030c          .word   780,450
+    1753 0000be20     0212          .word   530,580
+    1754 0000be40     017c          .word   380,400
+    1755 0000be60     0000          .word   0,0
+    1756 0000be80           pad_cut_wide_to_right
+    1757 0000be80     01f4          .word   500,129
+    1758 0000bea0     0258          .word   600,99
+    1759 0000bec0     0262          .word   610,179
+    1760 0000bee0     0208          .word   520,279
+    1761 0000bf00     01c2          .word   450,340
+    1762 0000bf20     020a          .word   522,515
+    1763 0000bf40     0258          .word   600,579
+    1764 0000bf60     030c          .word   780,479
+    1765 0000bf80     030c          .word   780,229
+    1766 0000bfa0     0212          .word   530,99
+    1767 0000bfc0     017c          .word   380,279
+    1768 0000bfe0     0000          .word   0,0
+    1769 0000c000           pad_cut_wide_to_left
+    1770 0000c000     01f4          .word   500,550
+    1771 0000c020     0258          .word   600,580
+    1772 0000c040     0262          .word   610,500
+    1773 0000c060     0208          .word   520,400
+    1774 0000c080     01c2          .word   450,339
+    1775 0000c0a0     020a          .word   522,164
+    1776 0000c0c0     0258          .word   600,100
+    1777 0000c0e0     030c          .word   780,200
+    1778 0000c100     030c          .word   780,450
+    1779 0000c120     0212          .word   530,580
+    1780 0000c140     017c          .word   380,400
+    1781 0000c160     0000          .word   0,0
+    1782 0000c180           pad_cut_across_right
+    1783 0000c180     01f4          .word   500,164
+    1784 0000c1a0     01ae          .word   430,264
+    1785 0000c1c0     01f4          .word   500,364
+    1786 0000c1e0     01ae          .word   430,464
+    1787 0000c200     01f4          .word   500,564
+    1788 0000c220     0000          .word   0,0
+    1789 0000c240           pad_cut_across_left
+    1790 0000c240     01f4          .word   500,515
+    1791 0000c260     01ae          .word   430,415
+    1792 0000c280     01f4          .word   500,315
+    1793 0000c2a0     01ae          .word   430,215
+    1794 0000c2c0     01f4          .word   500,115
+    1795 0000c2e0     0000          .word   0,0
+    1796 0000c300           pad_cut_around_right
+    1797 0000c300     01f4          .word   500,229
+    1798 0000c320     0244          .word   580,129
+    1799 0000c340     02bc          .word   700,164
+    1800 0000c360     02f8          .word   760,515
+    1801 0000c380     020a          .word   522,639
+    1802 0000c3a0     0179          .word   377,639
+    1803 0000c3c0     0000          .word   0,0
+    1804 0000c3e0           pad_cut_around_left
+    1805 0000c3e0     01f4          .word   500,450
+    1806 0000c400     0244          .word   580,550
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   45
+
+    1807 0000c420     02bc          .word   700,515
+    1808 0000c440     02f8          .word   760,164
+    1809 0000c460     020a          .word   522,40
+    1810 0000c480     0179          .word   377,40
+    1811 0000c4a0     0000          .word   0,0
+    1812 0000c4c0           pad_cut_spin_right
+    1813 0000c4c0     01f4          .word   500,279
+    1814 0000c4e0     021c          .word   540,179
+    1815 0000c500     0258          .word   600,149
+    1816 0000c520     0212          .word   530,79
+    1817 0000c540     01f4          .word   500,129
+    1818 0000c560     01f4          .word   500,597
+    1819 0000c580     0000          .word   0,0
+    1820 0000c5a0           pad_cut_spin_left
+    1821 0000c5a0     01f4          .word   500,400
+    1822 0000c5c0     021c          .word   540,500
+    1823 0000c5e0     0258          .word   600,530
+    1824 0000c600     0212          .word   530,600
+    1825 0000c620     01f4          .word   500,550
+    1826 0000c640     01f4          .word   500,82
+    1827 0000c660     0000          .word   0,0
+    1828                    
+    1829 0000c680           run_offensive_pattern
+    1830 0000c680     098f          mmtm    sp,a0
+         0000c690     8000  
+    1831 0000c6a0     b6c7          move    *a6(POF_DRONE_PADDR),a7,L
+         0000c6b0     0af0  
+    1832 0000c6c0     94ee          move    *a7+,a14,W
+    1833 0000c6d0     ca1f          jrz     rop_9n
+    1834 0000c6e0     0b40          cmpi    4,a0
+         0000c6f0     fffb  
+    1835 0000c700     c201          jrls    rop_1
+    1836 0000c710     03ae          neg     a14
+    1837 0000c720     4dc0  rop_1   move    a14,a0
+    1838 0000c730     94e1          move    *a7+,a1,W
+    1839 0000c740     b4ce          move    *a6(POF_DRONECT),a14,W
+         0000c750     0750  
+    1840 0000c760     0b4e          cmpi    10,a14
+         0000c770     fff5  
+    1841 0000c780     c90c          jrhs    riop1
+    1842 0000c790     09c4          movi    50,a4
+         0000c7a0     0032  
+    1843 0000c7b0     09e5          movi    DUMRETS,a5
+         0000c7c0 00000000! 
+    1844 0000c7e0     098f          mmtm    sp,a7
+         0000c7f0     0100  
+    1845 0000c800     0d3f          callr   move_range_stop_face
+         0000c810     fe62  
+    1846 0000c820     09af          mmfm    sp,a7
+         0000c830     0080  
+    1847 0000c840     c905          jrnc    rop_9
+    1848 0000c850     b2e6  riop1   move    a7,*a6(POF_DRONE_PADDR),L
+         0000c860     0af0  
+    1849 0000c870     57ce          clr     a14
+    1850 0000c880     b1c6          move    a14,*a6(POF_DRONECT),W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   46
+
+         0000c890     0750  
+    1851 0000c8a0     09af  rop_9   mmfm    sp,a0
+         0000c8b0     0001  
+    1852 0000c8c0     0960          rets
+    1853 0000c8d0     57ce  rop_9n  clr     a14
+    1854 0000c8e0     b3c6          move    a14,*a6(POF_DRONE_PADDR),L
+         0000c8f0     0af0  
+    1855 0000c900     b1c6          move    a14,*a6(POF_DRONE_PATTERN),W
+         0000c910     0ae0  
+    1856 0000c920     b1c6          move    a14,*a6(POF_DRONE_OUTSIDE),W
+         0000c930     0ad0  
+    1857 0000c940     09af          mmfm    sp,a0
+         0000c950     0001  
+    1858 0000c960     0960          rets
+    1859                    
+    1860 0000c970           are_we_ready_to_check
+    1861 0000c970     098f          mmtm    sp,a0
+         0000c980     8000  
+    1862 0000c990     05ae          move    @PUCK_MODE,a14,W
+         0000c9a0 00000000! 
+    1863 0000c9c0     0b4e          cmpi    PUM_FACEOFF,a14
+         0000c9d0     ff9b  
+    1864 0000c9e0     ca35          jrz     awtc_n
+    1865 0000c9f0     b4c2          move    *a6(POF_DRONE_LEVEL),a2,W
+         0000ca00     0be0  
+    1866 0000ca10     cb0d          jrnz    awrto1
+    1867                    
+    1868 0000ca20     05ae          move    @PUCK_CONTROL,a14,W
+         0000ca30 00000000! 
+    1869 0000ca50     ca04          jrz     ddl_1nx
+    1870 0000ca60     05ae          move    @global_control_slow,a14,W
+         0000ca70 00000000! 
+    1871 0000ca90     cb05          jrnz    awrto1  ;if we are slowing puck carrier down, drones can get mean
+    1872 0000caa0     0d3f  ddl_1nx callr   get_our_score_diff
+         0000cab0     f7f7  
+    1873 0000cac0     0b42          cmpi    -4,a2
+         0000cad0     0003  
+    1874 0000cae0     c725          jrgt    awtc_n          ;drone difficulty 0, not behind by 4, no check
+    1875 0000caf0     07a0  awrto1  move    @WAVEIRQS,a0,L
+         0000cb00 00000000! 
+    1876 0000cb20     b6ce          move    *a6(POF_DRONE_NO_CHECK),a14,L
+         0000cb30     0c60  
+    1877 0000cb40     480e          cmp     a0,a14
+    1878 0000cb50     c91e          jrhs    awtc_n          ;do not check yet
+    1879 0000cb60     0d5f          calla   are_we_mean
+         0000cb70 0000cfb0' 
+    1880 0000cb90     c822          jrc     awtcm
+    1881 0000cba0     b6c2          move    *a6(POF_DRONE_CTIME),a2,L
+         0000cbb0     0b10  
+    1882 0000cbc0     4440          sub     a2,a0
+    1883 0000cbd0     0b40          cmpi    120,a0
+         0000cbe0     ff87  
+    1884 0000cbf0     c214          jrls    awtc_n
+    1885 0000cc00     2fc0          srl     2,a0
+    1886 0000cc10     b4c2          move    *a6(POF_DRONE_LEVEL),a2,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   47
+
+         0000cc20     0be0  
+    1887 0000cc30     0b42          cmpi    2,a2
+         0000cc40     fffd  
+    1888 0000cc50     c302          jrhi    awrto2          ;drone level 0,1,2 - lower prob of check
+    1889 0000cc60     2fc0          srl     2,a0
+    1890 0000cc70     c008          jruc    awrtzg
+    1891 0000cc80     0b42  awrto2  cmpi    9,a2
+         0000cc90     fff6  
+    1892 0000cca0     c405          jrlt    awrtzg
+    1893 0000ccb0     2440          sll     2,a0    ;was 1  ;level 9,10 drone - increase percentage
+    1894 0000ccc0     0b42          cmpi    10,a2
+         0000ccd0     fff5  
+    1895 0000cce0     c401          jrlt    awrtzg
+    1896 0000ccf0     2440          sll     2,a0            ;level 10 drone, even more percentage
+    1897 0000cd00     0d5f  awrtzg  calla   RANDPER
+         0000cd10 00000000! 
+    1898 0000cd30     c804          jrc     awtc_y
+    1899 0000cd40     0320  awtc_n  clrc
+    1900 0000cd50     09af          mmfm    sp,a0
+         0000cd60     0001  
+    1901 0000cd70     0960          rets
+    1902 0000cd80     0de0  awtc_y  setc
+    1903 0000cd90     09af          mmfm    sp,a0
+         0000cda0     0001  
+    1904 0000cdb0     0960          rets
+    1905 0000cdc0     b6c2  awtcm   move    *a6(POF_DRONE_CTIME),a2,L
+         0000cdd0     0b10  
+    1906 0000cde0     07a0          move    @WAVEIRQS,a0,L
+         0000cdf0 00000000! 
+    1907 0000ce10     4440          sub     a2,a0
+    1908                    
+    1909 0000ce20     09ce          movi    60,a14
+         0000ce30     003c  
+    1910 0000ce40     b4c2          move    *a6(POF_DRONE_LEVEL),a2,W
+         0000ce50     0be0  
+    1911 0000ce60     0b42          cmpi    11,a2
+         0000ce70     fff4  
+    1912 0000ce80     c807          jrlo    awcooo
+    1913 0000ce90     09ce          movi    30,a14          ;half a second level 11
+         0000cea0     001e  
+    1914 0000ceb0     0b42          cmpi    12,a2
+         0000cec0     fff3  
+    1915 0000ced0     c802          jrlo    awcooo
+    1916 0000cee0     09ce          movi    10,a14          ;no time level 12
+         0000cef0     000a  
+    1917 0000cf00     49c0  awcooo  cmp     a14,a0
+    1918                    ;       cmpi    60,a0
+    1919 0000cf10     c2e2          jrls    awtc_n
+    1920 0000cf20     2fc0          srl     2,a0
+    1921 0000cf30     4c0e          move    a0,a14
+    1922 0000cf40     2fee          srl     1,a14
+    1923 0000cf50     41c0          add     a14,a0
+    1924 0000cf60     0d5f          calla   RANDPER
+         0000cf70 00000000! 
+    1925 0000cf90     c8de          jrc     awtc_y
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   48
+
+    1926 0000cfa0     c0d9          jruc    awtc_n
+    1927                    
+    1928 0000cfb0           are_we_mean
+    1929 0000cfb0     b4ce          move    *a6(POF_DRONE_MEANSTATE),a14,W
+         0000cfc0     0ac0  
+    1930 0000cfd0     cb02          jrnz    awm_y
+    1931 0000cfe0     0320  awm_n   clrc
+    1932 0000cff0     0960          rets
+    1933 0000d000     0de0  awm_y   setc
+    1934 0000d010     0960          rets
+    1935                    
+    1936 0000d020           are_we_in_shot_position
+    1937 0000d020     098f          mmtm    sp,a0
+         0000d030     8000  
+    1938 0000d040     b70e          move    *a8(OXVAL),a14,L
+         0000d050     0140  
+    1939 0000d060     0b40          cmpi    4,a0
+         0000d070     fffb  
+    1940 0000d080     c201          jrls    awisj
+    1941 0000d090     03ae          neg     a14
+    1942 0000d0a0     0b6e  awisj   cmpi    [750,0],a14
+         0000d0b0 fd11ffff  
+    1943 0000d0d0     c710          jrgt    awisn
+    1944 0000d0e0     0b6e          cmpi    [223,0],a14
+         0000d0f0 ff20ffff  
+    1945 0000d110     c40c          jrlt    awisn
+    1946 0000d120     0d5f          calla   get_our_human_stats
+         0000d130 0000f130' 
+    1947 0000d150     cb08          jrnz    awisn
+    1948 0000d160     09c0          movi    140,a0
+         0000d170     008c  
+    1949 0000d180     0d5f          calla   RANDPER         ;returns carry
+         0000d190 00000000! 
+    1950 0000d1b0     09af          mmfm    sp,a0
+         0000d1c0     0001  
+    1951 0000d1d0     0960          rets
+    1952 0000d1e0     0320  awisn   clrc
+    1953 0000d1f0     09af          mmfm    sp,a0
+         0000d200     0001  
+    1954 0000d210     0960          rets
+    1955                    
+    1956 0000d220           can_we_get_in_way
+    1957 0000d220           can_we_intercept_pass
+    1958 0000d220           can_we_intercept_shot
+    1959 0000d220     0320          clrc
+    1960 0000d230     0960          rets
+    1961                    
+    1962 0000d240           maybe_pick_pass
+    1963 0000d240     098f          mmtm    sp,a0
+         0000d250     8000  
+    1964 0000d260     4c01          move    a0,a1
+    1965 0000d270     0d3f          callr   get_pass_randper
+         0000d280     0056  
+    1966 0000d290     0d5f          calla   RANDPER
+         0000d2a0 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   49
+
+    1967 0000d2c0     c906          jrnc    mpq1
+    1968 0000d2d0     4c20          move    a1,a0
+    1969 0000d2e0     0d3f          callr   is_teammate_much_behind
+         0000d2f0     007f  
+    1970 0000d300     c802          jrc     mpq1
+    1971 0000d310     0d3f          callr   ndrone_pass_puck_most_safe
+         0000d320     00ba  
+    1972 0000d330     09af  mpq1    mmfm    sp,a0
+         0000d340     0001  
+    1973 0000d350     0960          rets
+    1974 0000d360           maybe_pick_pass_shoot_os
+    1975 0000d360           maybe_pick_pass_shoot
+    1976 0000d360     098f          mmtm    sp,a0
+         0000d370     8000  
+    1977 0000d380     4c01          move    a0,a1
+    1978 0000d390     0d3f          callr   get_pass_randper
+         0000d3a0     0044  
+    1979 0000d3b0     0d5f          calla   RANDPER
+         0000d3c0 00000000! 
+    1980 0000d3e0     c907          jrnc    mpps1
+    1981 0000d3f0     4c20          move    a1,a0
+    1982 0000d400     0d3f          callr   is_teammate_much_behind
+         0000d410     006d  
+    1983 0000d420     c80f          jrc     mpps9
+    1984 0000d430     0d3f          callr   ndrone_pass_puck_most_safe
+         0000d440     00a8  
+    1985 0000d450     c00c          jruc    mpps9
+    1986 0000d460     0d3f  mpps1   callr   get_shoot_randper
+         0000d470     0026  
+    1987 0000d480     0d5f          calla   RANDPER
+         0000d490 00000000! 
+    1988 0000d4b0     c906          jrnc    mpps9
+    1989 0000d4c0     0d3f          callr   are_we_behind_net
+         0000d4d0     0007  
+    1990 0000d4e0     c803          jrc     mpps9
+    1991 0000d4f0     4c20          move    a1,a0
+    1992 0000d500     0d3f          callr   ndrone_shoot_puck_most_safe
+         0000d510     0093  
+    1993 0000d520     09af  mpps9   mmfm    sp,a0
+         0000d530     0001  
+    1994 0000d540     0960          rets
+    1995                    
+    1996 0000d550           are_we_behind_net
+    1997 0000d550     098f          mmtm    sp,a1
+         0000d560     4000  
+    1998 0000d570     b701          move    *a8(OXVAL),a1,L
+         0000d580     0140  
+    1999 0000d590     0b21          addi    [0,08000h],a1
+         0000d5a0 00008000  
+    2000 0000d5c0     aece          movb    *a6(POF_NUMBER),a14
+         0000d5d0     0000  
+    2001 0000d5e0     142e          dec     a14
+    2002 0000d5f0     2bce          sra     2,a14
+    2003 0000d600     ca01          jrz     awbh1
+    2004 0000d610     03a1          neg     a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   50
+
+    2005 0000d620     0b61  awbh1   cmpi    [688,0],a1
+         0000d630 fd4fffff  
+    2006 0000d650     c404          jrlt    awbhn
+    2007 0000d660     0de0  awbhy   setc
+    2008 0000d670     09af          mmfm    sp,a1
+         0000d680     0002  
+    2009 0000d690     0960          rets
+    2010 0000d6a0     0320  awbhn   clrc
+    2011 0000d6b0     09af          mmfm    sp,a1
+         0000d6c0     0002  
+    2012 0000d6d0     0960          rets
+    2013                    
+    2014 0000d6e0           get_shoot_randper
+    2015 0000d6e0     b4ce          move    *a6(POF_DRONE_LEVEL),a14,W
+         0000d6f0     0be0  
+    2016 0000d700     0b4e          cmpi    3,a14
+         0000d710     fffc  
+    2017 0000d720     c206          jrls    gsrl
+    2018 0000d730     0b4e          cmpi    7,a14
+         0000d740     fff8  
+    2019 0000d750     c206          jrls    gsrn
+    2020 0000d760     09c0  gsrh    movi    100,a0
+         0000d770     0064  
+    2021 0000d780     0960          rets
+    2022 0000d790     09c0  gsrl    movi    48,a0
+         0000d7a0     0030  
+    2023 0000d7b0     0960          rets
+    2024 0000d7c0     09c0  gsrn    movi    65,a0
+         0000d7d0     0041  
+    2025 0000d7e0     0960          rets
+    2026                    
+    2027 0000d7f0           get_pass_randper
+    2028 0000d7f0     b4ce          move    *a6(POF_DRONE_LEVEL),a14,W
+         0000d800     0be0  
+    2029 0000d810     0b4e          cmpi    8,a14
+         0000d820     fff7  
+    2030 0000d830     c219          jrls    gprpr
+    2031 0000d840     0d3f          callr   are_we_close_to_enemy
+         0000d850     f9c4  
+    2032 0000d860     c916          jrnc    gprpr
+    2033 0000d870                   GBLOCK  a3,a14
+    2034 0000d8c0     b5ce          move    *a14(POF_MODE),a14,W
+         0000d8d0     0210  
+    2035 0000d8e0     0b4e          cmpi    PM_STEAL,a14
+         0000d8f0     fffa  
+    2036 0000d900     ca0e          jrz     gprpy
+    2037 0000d910     0b4e          cmpi    PM_CROSSCHECK,a14
+         0000d920     fff9  
+    2038 0000d930     ca0b          jrz     gprpy
+    2039 0000d940     0b4e          cmpi    PM_HIGHSTICK,a14
+         0000d950     fff1  
+    2040 0000d960     ca08          jrz     gprpy
+    2041 0000d970     0b4e          cmpi    PM_SLASH,a14
+         0000d980     fff0  
+    2042 0000d990     ca05          jrz     gprpy
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   51
+
+    2043 0000d9a0     0b4e          cmpi    PM_SWING,a14
+         0000d9b0     ffef  
+    2044 0000d9c0     ca02          jrz     gprpy
+    2045 0000d9d0     1bc0  gprpr   movk    30,a0
+    2046 0000d9e0     0960          rets
+    2047 0000d9f0           gprpy   ;movi   200,a0
+    2048 0000d9f0     b4ce          move    *a6(POF_DRONE_LEVEL),a14,W
+         0000da00     0be0  
+    2049 0000da10     0b4e          cmpi    10,a14
+         0000da20     fff5  
+    2050 0000da30     c208          jrls    ccgt
+    2051 0000da40     09c0          movi    600,a0
+         0000da50     0258  
+    2052 0000da60     0b4e          cmpi    11,a14
+         0000da70     fff4  
+    2053 0000da80     c205          jrls    ccgtx
+    2054 0000da90     09c0          movi    800,a0
+         0000daa0     0320  
+    2055 0000dab0     c002          jruc    ccgtx
+    2056 0000dac0     09c0  ccgt    movi    400,a0  ;sanssnas
+         0000dad0     0190  
+    2057 0000dae0     0960  ccgtx   rets
+    2058                    
+    2059 0000daf0           is_teammate_much_behind
+    2060 0000daf0     b704          move    *a8(OXVAL),a4,L
+         0000db00     0140  
+    2061 0000db10     aece          movb    *a6(POF_NUMBER),a14
+         0000db20     0000  
+    2062 0000db30     142e          dec     a14
+    2063 0000db40     0bce          xori    1,a14
+         0000db50 00000001  
+    2064 0000db70     102e          inc     a14
+    2065 0000db80                   GBLOCK  a14,a14
+    2066 0000dbc0     b5c5          move    *a14(POF_FLAGS),a5,W
+         0000dbd0     0200  
+    2067 0000dbe0     1fc5          btst    B_PF_CONTROL,a5
+    2068 0000dbf0     ca16          jrz     itmby9                  ;he is probably falling, don't pass to him
+    2069 0000dc00     b7ce          move    *a14(POF_OBJECT),a14,L
+         0000dc10     0280  
+    2070 0000dc20     b7c5          move    *a14(OXVAL),a5,L
+         0000dc30     0140  
+    2071 0000dc40     aece          movb    *a6(POF_NUMBER),a14
+         0000dc50     0000  
+    2072 0000dc60     0b40          cmpi    4,a0
+         0000dc70     fffb  
+    2073 0000dc80     c202          jrls    itmb1
+    2074 0000dc90     03a4          neg     a4
+    2075 0000dca0     03a5          neg     a5
+    2076 0000dcb0     0b65  itmb1   cmpi    [233,0],a5
+         0000dcc0 ff16ffff  
+    2077 0000dce0     c705          jrgt    itmbn9
+    2078 0000dcf0     0b25          addi    [140,0],a5
+         0000dd00 008c0000  
+    2079 0000dd20     48a4          cmp     a5,a4
+    2080 0000dd30     c702          jrgt    itmby9
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   52
+
+    2081 0000dd40     0320  itmbn9  clrc
+    2082 0000dd50     0960          rets
+    2083 0000dd60     0de0  itmby9  setc
+    2084 0000dd70     0960          rets
+    2085                    
+    2086 0000dd80           ndrone_pass_puck
+    2087 0000dd80     1821  ntpp1   movk    1,a1            ;turbo on
+    2088 0000dd90     c080          jauc    pass_puck
+         0000dda0 00000000! 
+    2089 0000ddc0           ndrone_shoot_puck
+    2090 0000ddc0     07ae  ntsp1   move    @WAVEIRQS,a14,L
+         0000ddd0 00000000! 
+    2091 0000ddf0     b3c6          move    a14,*a6(POF_DRONE_STIME),L
+         0000de00     0b30  
+    2092 0000de10     1821          movk    1,a1            ;turbo on
+    2093 0000de20     c080          jauc    shoot_puck
+         0000de30 00000000! 
+    2094 0000de50           ndrone_shoot_puck_most_safe
+    2095 0000de50     0d5f          calla   get_our_human_stats
+         0000de60 0000f130' 
+    2096 0000de80     cb03          jrnz    nspm9
+    2097 0000de90           ndrone_shoot_puck_most
+    2098 0000de90     0d3f          callr   puck_long_enough_s
+         0000dea0     000a  
+    2099 0000deb0     c8f0          jrc     ntsp1
+    2100 0000dec0     0960  nspm9   rets
+    2101 0000ded0           ndrone_pass_puck_most_safe
+    2102 0000ded0     0d5f          calla   get_our_human_stats
+         0000dee0 0000f130' 
+    2103 0000df00     cb03          jrnz    nppm9
+    2104 0000df10           ndrone_pass_puck_most
+    2105 0000df10     0d3f          callr   puck_long_enough
+         0000df20     0011  
+    2106 0000df30     c8e4          jrc     ntpp1
+    2107 0000df40     0960  nppm9   rets
+    2108                    
+    2109 0000df50           puck_long_enough_s
+    2110 0000df50     098f          mmtm    sp,a0
+         0000df60     8000  
+    2111 0000df70     07a0          move    @WAVEIRQS,a0,L
+         0000df80 00000000! 
+    2112 0000dfa0     b6ce          move    *a6(POF_DRONE_STIME),a14,L
+         0000dfb0     0b30  
+    2113 0000dfc0     45c0          sub     a14,a0
+    2114 0000dfd0     0b40          cmpi    400,a0
+         0000dfe0     fe6f  
+    2115 0000dff0     c710          jrgt    hwh_y
+    2116 0000e000     c005          jruc    ple_1
+    2117 0000e010     09af          mmfm    sp,a0
+         0000e020     0001  
+    2118 0000e030     0960          rets
+    2119 0000e040           puck_long_enough
+    2120 0000e040     098f          mmtm    sp,a0
+         0000e050     8000  
+    2121 0000e060     07a0  ple_1   move    @WAVEIRQS,a0,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   53
+
+         0000e070 00000000! 
+    2122 0000e090     05ae          move    @PUCK_CONTROL_START,a14
+         0000e0a0 00000000! 
+    2123 0000e0c0     45c0          sub     a14,a0
+    2124 0000e0d0     0b40          cmpi    20,a0
+         0000e0e0     ffeb  
+    2125 0000e0f0     c404          jrlt    hwh_n
+    2126 0000e100     0de0  hwh_y   setc
+    2127 0000e110     09af          mmfm    sp,a0
+         0000e120     0001  
+    2128 0000e130     0960          rets
+    2129 0000e140     0320  hwh_n   clrc
+    2130 0000e150     09af          mmfm    sp,a0
+         0000e160     0001  
+    2131 0000e170     0960          rets
+    2132                    
+    2133                    **************************************************************************
+    2134                    *                                                                        *
+    2135                    * get_dest_point                                                         *
+    2136                    *       input   a0 = teammate x                                          *
+    2137                    *               a1 = teammate z                                          *
+    2138                    *       output  a0 = new x                                               *
+    2139                    *               a1 = new z                                               *
+    2140                    *                                                                        *
+    2141                    **************************************************************************
+    2142 0000e180           get_dest_point
+    2143 0000e180     098f          mmtm    sp,a9,a11
+         0000e190     0050  
+    2144 0000e1a0     4c00          move    a0,a0
+    2145 0000e1b0     c112          jrp     gdp_1           ;positive x
+    2146 0000e1c0     03a0          neg     a0
+    2147 0000e1d0     0b41          cmpi    339,a1
+         0000e1e0     feac  
+    2148 0000e1f0     c40a          jrlt    gdp_2
+    2149 0000e200     0be1          subi    679,a1          ;negative x, high z
+         0000e210     fd58  
+    2150 0000e220     03a1          neg     a1
+    2151 0000e230     0d3f          callr   gdp_a
+         0000e240     001a  
+    2152 0000e250     0be1          subi    679,a1
+         0000e260     fd58  
+    2153 0000e270     03a1          neg     a1
+    2154 0000e280     03a0          neg     a0
+    2155 0000e290     c012          jruc    gdp_9
+    2156 0000e2a0     0d3f  gdp_2   callr   gdp_a           ;negative x, low z
+         0000e2b0     0013  
+    2157 0000e2c0     03a0          neg     a0
+    2158 0000e2d0     c00e          jruc    gdp_9
+    2159 0000e2e0     0b41  gdp_1   cmpi    339,a1
+         0000e2f0     feac  
+    2160 0000e300     c409          jrlt    gdp_3
+    2161 0000e310     0be1          subi    679,a1          ;positive x, high z
+         0000e320     fd58  
+    2162 0000e330     03a1          neg     a1
+    2163 0000e340     0d3f          callr   gdp_a
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   54
+
+         0000e350     0009  
+    2164 0000e360     0be1          subi    679,a1
+         0000e370     fd58  
+    2165 0000e380     03a1          neg     a1
+    2166 0000e390     c002          jruc    gdp_9
+    2167 0000e3a0     0d3f  gdp_3   callr   gdp_a           ;positive_x, low z
+         0000e3b0     0003  
+    2168 0000e3c0     09af  gdp_9   mmfm    sp,a9,a11
+         0000e3d0     0a00  
+    2169 0000e3e0     0960          rets
+    2170 0000e3f0     4c0b  gdp_a   move    a0,a11
+    2171 0000e400     260b          sll     16,a11
+    2172 0000e410     0b40          cmpi    RGHT_GOALLINE_X>016H,a0
+         0000e420     fffe  
+    2173 0000e430     c723          jrgt    gdp_beh
+    2174 0000e440     0b40          cmpi    522,a0
+         0000e450     fdf5  
+    2175 0000e460     c710          jrgt    gdp_cls
+    2176 0000e470     0d0b  gdp_far subi    RGHT_BLUELINE_X,a11
+         0000e480 ff16ffff  
+    2177 0000e4a0     09c9          movi    522-(RGHT_BLUELINE_X>016H),a9
+         0000e4b0     0209  
+    2178 0000e4c0     592b          divs    a9,a11
+    2179 0000e4d0     4d6a          move    a11,a10
+    2180 0000e4e0     4c2b          move    a1,a11
+    2181 0000e4f0     260b          sll     16,a11
+    2182 0000e500     09c9          movi    340,a9
+         0000e510     0154  
+    2183 0000e520     592b          divs    a9,a11
+    2184 0000e530     09e9          movi    ort_5,a9
+         0000e540 0000ed70' 
+    2185 0000e560     c039          jruc    gdp_8
+    2186 0000e570     0d0b  gdp_cls subi    [522,0],a11
+         0000e580 fdf5ffff  
+    2187 0000e5a0     09c9          movi    (RGHT_GOALLINE_X>016H)-522,a9
+         0000e5b0     fdf7  
+    2188 0000e5c0     592b          divs    a9,a11
+    2189 0000e5d0     4d6a          move    a11,a10
+    2190 0000e5e0     4c2b          move    a1,a11
+    2191 0000e5f0     260b          sll     16,a11
+    2192 0000e600     09c9          movi    340,a9
+         0000e610     0154  
+    2193 0000e620     592b          divs    a9,a11
+    2194 0000e630     09e9          movi    ort_4,a9
+         0000e640 0000ecf0' 
+    2195 0000e660     c029          jruc    gdp_8
+    2196 0000e670     0d0b  gdp_beh subi    RGHT_GOALLINE_X,a11
+         0000e680 fd4fffff  
+    2197 0000e6a0     09c9          movi    (RGHT_ENDBOARD_X-RGHT_GOALLINE_X)>016H,A9
+         0000e6b0     0001  
+    2198 0000e6c0     592b          divs    a9,a11
+    2199 0000e6d0     4d6a          move    a11,a10
+    2200 0000e6e0     4c2b          move    a1,a11
+    2201 0000e6f0     260b          sll     16,a11
+    2202 0000e700     0b41          cmpi    150,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   55
+
+         0000e710     ff69  
+    2203 0000e720     c417          jrlt    gdp_bz1
+    2204 0000e730     0b41          cmpi    220,a1
+         0000e740     ff23  
+    2205 0000e750     c40a          jrlt    gdp_bz2
+    2206 0000e760     0d0b  gdp_bz3 subi    [220,0],a11
+         0000e770 ff23ffff  
+    2207 0000e790     09c9          movi    340-220,a9
+         0000e7a0     0078  
+    2208 0000e7b0     592b          divs    a9,a11
+    2209 0000e7c0     09e9          movi    ort_3,a9
+         0000e7d0 0000eb70' 
+    2210 0000e7f0     c010          jruc    gdp_8
+    2211 0000e800     0d0b  gdp_bz2 subi    [150,0],a11
+         0000e810 ff69ffff  
+    2212 0000e830     09c9          movi    220-150,a9
+         0000e840     0046  
+    2213 0000e850     592b          divs    a9,a11
+    2214 0000e860     09e9          movi    ort_2,a9
+         0000e870 0000ea70' 
+    2215 0000e890     c006          jruc    gdp_8
+    2216 0000e8a0     09c9  gdp_bz1 movi    150,a9
+         0000e8b0     0096  
+    2217 0000e8c0     592b          divs    a9,a11
+    2218 0000e8d0     09e9          movi    ort_1,a9
+         0000e8e0 0000e970' 
+    2219 0000e900     b4ce  gdp_8   move    *a6(POF_DRONE_OP_STATE),a14,W
+         0000e910     0a70  
+    2220 0000e920     ca54          jrz     get_pt_from_pct
+    2221 0000e930     0b29          addi    OP_SIZE,a9
+         0000e940 00000080  
+    2222 0000e960     c050          jruc    get_pt_from_pct
+    2223                    
+    2224              0080  OP_SIZE .set    128     ;ort to prt size
+    2225                    
+    2226 0000e970     01ae  ort_1   .word   430,319         ;x = goalline to endboard
+    2227 0000e990     01ae          .word   430,359         ;z = bottom to 150
+    2228 0000e9b0     0226          .word   550,319
+    2229 0000e9d0     0226          .word   550,359
+    2230 0000e9f0     0226  prt_1   .word   550,400         ;alternate set of points
+    2231 0000ea10     015e          .word   350,400
+    2232 0000ea30     0226          .word   550,660
+    2233 0000ea50     015e          .word   350,660
+    2234 0000ea70     0186  ort_2   .word   390,500         ;x = goalline to endboard
+    2235 0000ea90     0186          .word   390,250         ;z = 150 to 220
+    2236 0000eab0     01c2          .word   450,500
+    2237 0000ead0     01c2          .word   450,250
+    2238 0000eaf0     015e  prt_2   .word   350,200         ;alternate set of points
+    2239 0000eb10     0258          .word   600,200
+    2240 0000eb30     015e          .word   350,600
+    2241 0000eb50     0258          .word   600,600
+    2242 0000eb70     0186  ort_3   .word   390,250         ;x = goalline to endboard
+    2243 0000eb90     01d6          .word   470,100         ;z = 150 to 340
+    2244 0000ebb0     01c2          .word   450,250
+    2245 0000ebd0     0226          .word   550,200
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   56
+
+    2246 0000ebf0     0258  prt_3   .word   600,250         ;alternate set of points
+    2247 0000ec10     0258          .word   600, 40
+    2248 0000ec30     01e0          .word   480,250
+    2249 0000ec50     01e0          .word   480, 40
+    2250 0000ec70     0226  prt_4   .word   550,360         ;alternate set of points
+    2251 0000ec90     017c          .word   380,360
+    2252 0000ecb0     0226          .word   550,650
+    2253 0000ecd0     017c          .word   380,650
+    2254 0000ecf0     0258  ort_4   .word   600,400         ;x = 522 to goalline
+    2255 0000ed10     0190          .word   400,400         ;z = 0 to 340
+    2256 0000ed30     028a          .word   650,440
+    2257 0000ed50     01f4          .word   500,520
+    2258 0000ed70     0276  ort_5   .word   630,420         ;x = blueline to 522
+    2259 0000ed90     023a          .word   570,550         ;z = 0 to 340
+    2260 0000edb0     01ae          .word   430,300
+    2261 0000edd0     017c          .word   380,500
+    2262 0000edf0     0226  prt_5   .word   550,360         ;alternate set of points
+    2263 0000ee10     017c          .word   380,360
+    2264 0000ee30     0226          .word   550,650
+    2265 0000ee50     017c          .word   380,650
+    2266                    
+    2267                    **************************************************************************
+    2268                    *                                                                        *
+    2269                    * get_pt_from_pct                                                        *
+    2270                    *       input   a11 = pt0-pt1, pt2-pt3 %                                 *
+    2271                    *               a10 = pt0-pt2, pt1-pt3 %                                 *
+    2272                    *               a9 = table of pts                                        *
+    2273                    *       output  a0 = new x                                               *
+    2274                    *               a1 = new z                                               *
+    2275                    *                                                                        *
+    2276                    **************************************************************************
+    2277 0000ee70           get_pt_from_pct
+    2278 0000ee70     098f          mmtm    sp,a2,a3,a4,a5,a7,a9
+         0000ee80     3d40  
+    2279 0000ee90     9520          move    *a9+,a0,W
+    2280 0000eea0     9522          move    *a9+,a2,W
+    2281 0000eeb0     9521          move    *a9+,a1,W
+    2282 0000eec0     9523          move    *a9+,a3,W
+    2283 0000eed0     4d64          move    a11,a4
+    2284 0000eee0     0d3f          callr   find_point_between
+         0000eef0     0014  
+    2285 0000ef00     098f          mmtm    sp,a5,a7
+         0000ef10     0500  
+    2286 0000ef20     9520          move    *a9+,a0,W
+    2287 0000ef30     9522          move    *a9+,a2,W
+    2288 0000ef40     9521          move    *a9+,a1,W
+    2289 0000ef50     9523          move    *a9+,a3,W
+    2290 0000ef60     0d3f          callr   find_point_between
+         0000ef70     000c  
+    2291 0000ef80     4ca1          move    a5,a1
+    2292 0000ef90     4ce3          move    a7,a3
+    2293 0000efa0     09af          mmfm    sp,a0,a2
+         0000efb0     0005  
+    2294 0000efc0     4d44          move    a10,a4
+    2295 0000efd0     0d3f          callr   find_point_between
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   57
+
+         0000efe0     0005  
+    2296 0000eff0     4ca0          move    a5,a0
+    2297 0000f000     4ce1          move    a7,a1
+    2298 0000f010     09af          mmfm    sp,a2,a3,a4,a5,a7,a9
+         0000f020     02bc  
+    2299 0000f030     0960          rets
+    2300                    
+    2301                    **************************************************************************
+    2302                    *                                                                        *
+    2303                    * find_point_between                                                     *
+    2304                    *       input   a1 = x2                                                  *
+    2305                    *               a3 = z2                                                  *
+    2306                    *               a0 = x1                                                  *
+    2307                    *               a2 = z1                                                  *
+    2308                    *               a4 = s15:16 %                                            *
+    2309                    *       output  a5 = new x                                               *
+    2310                    *               a7 = new z                                               *
+    2311                    *                                                                        *
+    2312                    **************************************************************************
+    2313 0000f040           find_point_between
+    2314 0000f040     098f          mmtm    sp,a1,a3
+         0000f050     5000  
+    2315 0000f060     4401          sub     a0,a1
+    2316 0000f070     4443          sub     a2,a3
+    2317 0000f080     5c81          mpys    a4,a1
+    2318 0000f090     2a01          sra     16,a1
+    2319 0000f0a0     5c83          mpys    a4,a3
+    2320 0000f0b0     2a03          sra     16,a3
+    2321 0000f0c0     4001          add     a0,a1
+    2322 0000f0d0     4043          add     a2,a3
+    2323 0000f0e0     4c25          move    a1,a5
+    2324 0000f0f0     4c67          move    a3,a7
+    2325 0000f100     09af          mmfm    sp,a1,a3
+         0000f110     000a  
+    2326 0000f120     0960          rets
+    2327                    
+    2328                    **************************************************************************
+    2329                    *                                                                        *
+    2330                    * get_our_human_stats                                                    *
+    2331                    *       input   a0 = player number                                       *
+    2332                    *       output  a2 = # humans on our team                                *
+    2333                    *               Z  = a2 state                                            *
+    2334                    *                                                                        *
+    2335                    **************************************************************************
+    2336 0000f130           get_our_human_stats
+    2337 0000f130     4c0e          move    a0,a14
+    2338 0000f140     142e          dec     a14
+    2339 0000f150     2fce          srl     2,a14
+    2340 0000f160     ca0a          jrz     go_t1
+    2341 0000f170     05ae  go_t2   move    @PLAYER_BITS,a14,W
+         0000f180 00000000! 
+    2342 0000f1a0     2fce          srl     2,a14
+    2343 0000f1b0     248e          sll     4,a14
+    2344 0000f1c0     0b2e          addi    gnl,a14
+         0000f1d0 0000f2b0' 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   58
+
+    2345 0000f1f0     85c2          move    *a14,a2,W               ;a2 is number of humans on our team
+    2346 0000f200     0960          rets
+    2347 0000f210     05ae  go_t1   move    @PLAYER_BITS,a14,W
+         0000f220 00000000! 
+    2348 0000f240     27ce          sll     30,a14
+    2349 0000f250     2cce          srl     26,a14
+    2350 0000f260     0b2e          addi    gnl,a14
+         0000f270 0000f2b0' 
+    2351 0000f290     85c2          move    *a14,a2,W               ;a2 is number of humans on our team
+    2352 0000f2a0     0960          rets
+    2353                    
+    2354 0000f2b0     0000  gnl     .word   0,1,1,2
+    2355                    
+    2356 0000f2f0           drone_set_up_shot
+    2357 0000f2f0     b4c0          move    *a6(POF_DRONEC),a0,W
+         0000f300     0720  
+    2358 0000f310     ca0f          jrz     dss_4
+    2359 0000f320     5600          clr     a0
+    2360 0000f330     b006          move    a0,*a6(POF_DRONEC),W
+         0000f340     0720  
+    2361 0000f350     b4c0          move    *a6(POF_DRONECT),a0,W
+         0000f360     0750  
+    2362 0000f370     1020          inc     a0
+    2363 0000f380     b006          move    a0,*a6(POF_DRONECT),W
+         0000f390     0750  
+    2364 0000f3a0     0b40          cmpi    10,a0
+         0000f3b0     fff5  
+    2365 0000f3c0     c204          jrls    dss_4
+    2366 0000f3d0     b4c5          move    *a6(POF_DRONE1),a5,W
+         0000f3e0     0700  
+    2367 0000f3f0     4ca7          move    a5,a7
+    2368 0000f400     c023          jruc    dssf
+    2369                    
+    2370 0000f410     b702  dss_4   move    *a8(OXVAL),a2,L
+         0000f420     0140  
+    2371 0000f430     0b22          addi    [0,08000h],a2
+         0000f440 00008000  
+    2372 0000f460     2a02          sra     16,a2
+    2373 0000f470     b503          move    *a8(OZPOS),a3,W
+         0000f480     0190  
+    2374 0000f490     b4c0  dss1    move    *a6(POF_DRONE1),a0,W
+         0000f4a0     0700  
+    2375 0000f4b0     cb0a          jrnz    dss2
+    2376 0000f4c0     1920          movk    9,a0
+    2377 0000f4d0     b006          move    a0,*a6(POF_DRONE2),W
+         0000f4e0     0710  
+    2378 0000f4f0     1900          movk    8,a0
+    2379 0000f500     b006          move    a0,*a6(POF_DRONE1),W
+         0000f510     0700  
+    2380 0000f520     0d3f          callr   grandp
+         0000f530     005a  
+    2381 0000f540     b4c0          move    *a6(POF_DRONE1),a0,W
+         0000f550     0700  
+    2382 0000f560     4c05  dss2    move    a0,a5
+    2383 0000f570     4c07          move    a0,a7
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   59
+
+    2384 0000f580     b4c0          move    *a6(POF_DRONE_PX),a0,W
+         0000f590     0730  
+    2385 0000f5a0     b4c1          move    *a6(POF_DRONE_PZ),a1,W
+         0000f5b0     0740  
+    2386 0000f5c0     0d3f          callr   team_modify_xz
+         0000f5d0     03e8  
+    2387 0000f5e0     0d5f          calla   find_dist_quick
+         0000f5f0 00000000! 
+    2388 0000f610     0b44          cmpi    30,a4
+         0000f620     ffe1  
+    2389 0000f630     c337          jrhi    dss_ny
+    2390 0000f640     5600  dssf    clr     a0
+    2391 0000f650     b006          move    a0,*a6(POF_DRONEC),W
+         0000f660     0720  
+    2392 0000f670     b006          move    a0,*a6(POF_DRONECT),W
+         0000f680     0750  
+    2393 0000f690     b4c0          move    *a6(POF_DRONE_OM),a0,W
+         0000f6a0     0770  
+    2394 0000f6b0     ca0f          jrz     dssf1
+    2395 0000f6c0     1420          dec     a0              ;don't pass/shoot unless we have gone enough
+    2396 0000f6d0     b4ce          move    *a6(POF_DRONE1),a14,W
+         0000f6e0     0700  
+    2397 0000f6f0     0b4e          cmpi    6,a14
+         0000f700     fff9  
+    2398 0000f710     ca06          jrz     dssf0
+    2399 0000f720     0b4e          cmpi    8,a14           ;if we hit points 6,8 or 12, we can always pass/shoot
+         0000f730     fff7  
+    2400 0000f740     ca03          jrz     dssf0
+    2401 0000f750     0b4e          cmpi    12,a14
+         0000f760     fff3  
+    2402 0000f770     cb01          jrnz    dssf2
+    2403 0000f780     5600  dssf0   clr     a0
+    2404 0000f790     b006  dssf2   move    a0,*a6(POF_DRONE_OM),W
+         0000f7a0     0770  
+    2405 0000f7b0     b4c0  dssf1   move    *a6(POF_DRONE2),a0,W
+         0000f7c0     0710  
+    2406 0000f7d0     24a0          sll     5,a0
+    2407 0000f7e0     0b20          addi    trans_trans_table-32,a0
+         0000f7f0 0000fe60' 
+    2408 0000f810     8600          move    *a0,a0,L
+    2409 0000f820     24a5          sll     5,a5
+    2410 0000f830     1405          subk    32,a5
+    2411 0000f840     40a0          add     a5,a0
+    2412 0000f850     8600          move    *a0,a0,L
+    2413 0000f860     cb05          jrnz    ds_ne
+    2414 0000f870     1a00          movk    16,a0
+    2415 0000f880     0d5f          calla   RANDU
+         0000f890 00000000! 
+    2416 0000f8b0     c008          jruc    ds_n1a
+    2417 0000f8c0     4c05  ds_ne   move    a0,a5
+    2418 0000f8d0     94a0          move    *a5+,a0,W
+    2419 0000f8e0     0d5f          calla   RAND0
+         0000f8f0 00000000! 
+    2420 0000f910     2480  ds_n1   sll     4,a0
+    2421 0000f920     40a0          add     a5,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   60
+
+    2422 0000f930     8400          move    *a0,a0,W
+    2423 0000f940     b0e6  ds_n1a  move    a7,*a6(POF_DRONE2),W
+         0000f950     0710  
+    2424 0000f960     b006          move    a0,*a6(POF_DRONE1),W
+         0000f970     0700  
+    2425 0000f980     0d3f          callr   grandp
+         0000f990     0014  
+    2426 0000f9a0     c0ae          jruc    dss1
+    2427 0000f9b0     b702  dss_ny  move    *a8(OXVAL),a2,L
+         0000f9c0     0140  
+    2428 0000f9d0     b703          move    *a8(OZVAL),a3,L
+         0000f9e0     0180  
+    2429 0000f9f0     b4c0          move    *a6(POF_DRONE_PX),a0,W
+         0000fa00     0730  
+    2430 0000fa10     b4c1          move    *a6(POF_DRONE_PZ),a1,W
+         0000fa20     0740  
+    2431 0000fa30     0d3f          callr   team_modify_xz
+         0000fa40     03a1  
+    2432 0000fa50     2600          sll     16,a0
+    2433 0000fa60     2601          sll     16,a1
+    2434 0000fa70     0d5f          calla   find_dir_to_point
+         0000fa80 00000000! 
+    2435 0000faa0     5621          clr     a1
+    2436 0000fab0     c080          jauc    move_player_dir
+         0000fac0 00000000! 
+    2437                    
+    2438 0000fae0     24a0  grandp  sll     5,a0
+    2439 0000faf0     0b20          addi    trpos_list-32,a0
+         0000fb00 0000fc60' 
+    2440 0000fb20     b401          move    *a0(16),a1,W
+         0000fb30     0010  
+    2441 0000fb40     8404          move    *a0,a4,W
+    2442 0000fb50     09c0          movi    31,a0
+         0000fb60     001f  
+    2443 0000fb70     0d5f          calla   RAND0
+         0000fb80 00000000! 
+    2444 0000fba0     15e0          subk    15,a0
+    2445 0000fbb0     4001          add     a0,a1
+    2446 0000fbc0     09c0          movi    31,a0
+         0000fbd0     001f  
+    2447 0000fbe0     0d5f          calla   RAND0
+         0000fbf0 00000000! 
+    2448 0000fc10     15e0          subk    15,a0
+    2449 0000fc20     4080          add     a4,a0
+    2450 0000fc30     b006          move    a0,*a6(POF_DRONE_PX),W
+         0000fc40     0730  
+    2451 0000fc50     b026          move    a1,*a6(POF_DRONE_PZ),W
+         0000fc60     0740  
+    2452 0000fc70     0960          rets
+    2453                    
+    2454 0000fc80           trpos_list
+    2455 0000fc80     020a          .word   522,597
+    2456 0000fca0     0179          .word   377,597
+    2457 0000fcc0     02b0          .word   688,515
+    2458 0000fce0     0179          .word   377,515
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   61
+
+    2459 0000fd00     02fc          .word   764,427
+    2460 0000fd20     025d          .word   605,427
+    2461 0000fd40     02fc          .word   764,339
+    2462 0000fd60     026c          .word   620,339
+    2463 0000fd80     01d6          .word   470,339
+    2464 0000fda0     0179          .word   377,339
+    2465 0000fdc0     02fc          .word   764,251
+    2466 0000fde0     025d          .word   605,251
+    2467 0000fe00     02b0          .word   688,164
+    2468 0000fe20     0179          .word   377,164
+    2469 0000fe40     020a          .word   522,82
+    2470 0000fe60     0179          .word   377,82
+    2471                    
+    2472 0000fe80           trans_trans_table
+    2473 0000fe80 00010080'         .long   one_trans_tab
+    2474 0000fea0 00010400'         .long   two_trans_tab
+    2475 0000fec0 00010760'         .long   three_trans_tab
+    2476 0000fee0 00010a70'         .long   four_trans_tab
+    2477 0000ff00 00010dc0'         .long   five_trans_tab
+    2478 0000ff20 00011080'         .long   six_trans_tab
+    2479 0000ff40 000113b0'         .long   seven_trans_tab
+    2480 0000ff60 00011610'         .long   eight_trans_tab
+    2481 0000ff80 00011910'         .long   nine_trans_tab
+    2482 0000ffa0 00011d30'         .long   ten_trans_tab
+    2483 0000ffc0 00012130'         .long   eleven_trans_tab
+    2484 0000ffe0 000123f0'         .long   twelve_trans_tab
+    2485 00010000 00012720'         .long   thirteen_trans_tab
+    2486 00010020 00012a30'         .long   fourteen_trans_tab
+    2487 00010040 00012d80'         .long   fifteen_trans_tab
+    2488 00010060 00013100'         .long   sixteen_trans_tab
+    2489                    
+    2490 00010080           one_trans_tab
+    2491 00010080 00000000          .long   0,t12,t13,t14,0,t16,0,0
+    2492 00010180 00010360'         .long   t19,t110,0,0,0,0,0,0
+    2493                    
+    2494 00010280     0002  t12     .word   2,4,10
+    2495 000102b0     0002  t13     .word   2,5,6
+    2496 000102e0     0002  t14     .word   2,9,10
+    2497 00010310     0004  t16     .word   4,5,8,9,10
+    2498 00010360     0005  t19     .word   5,8,12,14,15,16
+    2499 000103c0     0003  t110    .word   3,12,14,15
+    2500                    
+    2501 00010400           two_trans_tab
+    2502 00010400 00010600'         .long   t21,0,0,t24,0,t26,0,0
+    2503 00010500 000106d0'         .long   t29,t210,0,0,0,0,0,0
+    2504                    
+    2505 00010600     0003  t21     .word   3,3,6,9
+    2506 00010640     0004  t24     .word   4,3,6,9,10
+    2507 00010690     0003  t26     .word   3,3,5,8
+    2508 000106d0     0003  t29     .word   3,12,14,15
+    2509 00010710     0004  t210    .word   4,9,12,14,15
+    2510                    
+    2511 00010760           three_trans_tab
+    2512 00010760 00010960'         .long   t31,0,0,t34,t35,t36,0,0
+    2513 00010860 00000000          .long   0,t310,0,0,0,0,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   62
+
+    2514                    
+    2515 00010960     0003  t31     .word   3,2,4,10
+    2516 000109a0     0002  t34     .word   2,2,10
+    2517 000109d0     0001  t35     .word   1,7
+    2518 000109f0     0005  t36     .word   5,2,4,8,9,10
+    2519 00010a50     0001  t310    .word   1,14
+    2520                    
+    2521 00010a70           four_trans_tab
+    2522 00010a70 00010c70'         .long   t41,t42,t43,0,0,t46,0,0
+    2523 00010b70 00010d10'         .long   t49,t410,0,0,0,0,0,0
+    2524                    
+    2525 00010c70     0001  t41     .word   1,3
+    2526 00010c90     0001  t42     .word   1,1
+    2527 00010cb0     0001  t43     .word   1,5
+    2528 00010cd0     0003  t46     .word   3,3,5,8
+    2529 00010d10     0005  t49     .word   5,8,12,14,15,16
+    2530 00010d70     0004  t410    .word   4,9,12,14,15
+    2531                    
+    2532 00010dc0           five_trans_tab
+    2533 00010dc0 00000000          .long   0,0,t53,0,0,t56,t57,0
+    2534 00010ec0 00000000          .long   0,0,0,0,0,0,0,0
+    2535                    
+    2536 00010fc0     0003  t53     .word   3,1,4,10
+    2537 00011000     0005  t56     .word   5,1,2,4,9,10
+    2538 00011060     0001  t57     .word   1,11
+    2539                    
+    2540 00011080           six_trans_tab
+    2541 00011080 00011280'         .long   t61,t62,t63,t64,t65,0,0,t68
+    2542 00011180 00011350'         .long   t69,t610,0,0,0,0,0,0
+    2543                    
+    2544 00011280     0001  t61     .word   1,2
+    2545 000112a0     0002  t62     .word   2,1,4
+    2546 000112d0     0001  t63     .word   1,1
+    2547 000112f0     0001  t64     .word   1,2
+    2548 00011310     0001  t65     .word   1,7
+    2549 00011330     0001  t68     .word   1,12
+    2550 00011350     0003  t69     .word   3,10,14,16
+    2551 00011390     0001  t610    .word   1,14
+    2552                    
+    2553 000113b0           seven_trans_tab
+    2554 000113b0 00000000          .long   0,0,0,0,t75,0,0,0
+    2555 000114b0 00000000          .long   0,0,t711,0,0,0,0,0
+    2556                    
+    2557 000115b0     0002  t75     .word   2,3,6
+    2558 000115e0     0001  t711    .word   1,12,13
+    2559                    
+    2560 00011610           eight_trans_tab
+    2561 00011610 00000000          .long   0,0,0,0,0,t86,0,0
+    2562 00011710 00011860'         .long   t89,0,0,t812,0,0,0,0
+    2563                    
+    2564 00011810     0004  t86     .word   4,1,2,3,4
+    2565 00011860     0005  t89     .word   5,2,4,10,14,16
+    2566 000118c0     0004  t812    .word   4,13,14,15,16
+    2567                    
+    2568 00011910           nine_trans_tab
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   63
+
+    2569 00011910 00011b10'         .long   t91,t92,0,t94,0,t96,0,t98
+    2570 00011a10 00000000          .long   0,t910,0,t912,0,t914,t915,t916
+    2571                    
+    2572 00011b10     0002  t91     .word   2,2,3
+    2573 00011b40     0002  t92     .word   2,1,4
+    2574 00011b70     0002  t94     .word   2,1,2
+    2575 00011ba0     0003  t96     .word   3,1,3,5
+    2576 00011be0     0002  t98     .word   2,6,12
+    2577 00011c10     0004  t910    .word   4,2,4,14,16
+    2578 00011c60     0003  t912    .word   3,11,13,15
+    2579 00011ca0     0002  t914    .word   2,15,16
+    2580 00011cd0     0002  t915    .word   2,13,16
+    2581 00011d00     0002  t916    .word   2,15,14
+    2582                    
+    2583 00011d30           ten_trans_tab
+    2584 00011d30 00011f30'         .long   t101,t102,t103,t104,0,t106,0,0
+    2585 00011e30 00012020'         .long   t109,0,0,t1012,0,t1014,t1015,0
+    2586                    
+    2587 00011f30     0002  t101    .word   2,2,3
+    2588 00011f60     0001  t102    .word   1,1
+    2589 00011f80     0001  t103    .word   1,5
+    2590 00011fa0     0003  t104    .word   3,1,2,3
+    2591 00011fe0     0003  t106    .word   3,1,3,5
+    2592 00012020     0005  t109    .word   5,1,6,8,12,15
+    2593 00012080     0003  t1012   .word   3,11,13,15
+    2594 000120c0     0003  t1014   .word   3,13,15,16
+    2595 00012100     0002  t1015   .word   2,13,16
+    2596                    
+    2597 00012130           eleven_trans_tab
+    2598 00012130 00000000          .long   0,0,0,0,0,0,t117,0
+    2599 00012230 00000000          .long   0,0,0,t1112,t1113,0,0,0
+    2600                    
+    2601 00012330     0001  t117    .word   1,5
+    2602 00012350     0005  t1112   .word   5,9,10,14,15,16
+    2603 000123b0     0003  t1113   .word   3,10,14,15
+    2604                    
+    2605 000123f0           twelve_trans_tab
+    2606 000123f0 00000000          .long   0,0,0,0,0,0,0,t128
+    2607 000124f0 00012610'         .long   t129,t1210,t1211,0,t1213,t1214,t1215,t1216
+    2608                    
+    2609 000125f0     0001  t128    .word   1,6
+    2610 00012610     0003  t129    .word   3,2,4,10
+    2611 00012650     0001  t1210   .word   1,4
+    2612 00012670     0001  t1211   .word   1,7
+    2613 00012690     0001  t1213   .word   1,15
+    2614 000126b0     0001  t1214   .word   1,16
+    2615 000126d0     0001  t1215   .word   1,16
+    2616 000126f0     0002  t1216   .word   2,14,15
+    2617                    
+    2618 00012720           thirteen_trans_tab
+    2619 00012720 00000000          .long   0,0,0,0,0,0,0,0
+    2620 00012820 00000000          .long   0,t1310,t1311,t1312,0,t1314,t1315,0
+    2621                    
+    2622 00012920     0001  t1310   .word   1,4
+    2623 00012940     0001  t1311   .word   1,7
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:27 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   64
+
+    2624 00012960     0005  t1312   .word   5,8,9,10,14,16
+    2625 000129c0     0002  t1314   .word   2,10,16
+    2626 000129f0     0003  t1315   .word   3,10,14,16
+    2627                    
+    2628 00012a30           fourteen_trans_tab
+    2629 00012a30 00000000          .long   0,0,0,0,0,0,0,0
+    2630 00012b30 00012c30'         .long   t149,t1410,0,t1412,t1413,0,t1415,t1416
+    2631                    
+    2632 00012c30     0005  t149    .word   5,1,2,4,6,8
+    2633 00012c90     0004  t1410   .word   4,1,4,6,9
+    2634 00012ce0     0003  t1412   .word   3,8,11,13
+    2635 00012d20     0001  t1413   .word   1,11
+    2636 00012d40     0001  t1415   .word   1,13
+    2637 00012d60     0001  t1416   .word   1,15
+    2638                    
+    2639 00012d80           fifteen_trans_tab
+    2640 00012d80 00000000          .long   0,0,0,0,0,0,0,0
+    2641 00012e80 00012f80'         .long   t159,t1510,0,t1512,t1513,t1514,0,t1516
+    2642                    
+    2643 00012f80     0005  t159    .word   5,1,2,4,6,8
+    2644 00012fe0     0003  t1510   .word   3,1,4,6
+    2645 00013020     0004  t1512   .word   4,8,9,10,11
+    2646 00013070     0002  t1513   .word   2,11,12
+    2647 000130a0     0002  t1514   .word   2,9,10
+    2648 000130d0     0002  t1516   .word   2,10,14
+    2649                    
+    2650 00013100           sixteen_trans_tab
+    2651 00013100 00000000          .long   0,0,0,0,0,0,0,0
+    2652 00013200 00013300'         .long   t169,t1610,0,t1612,0,t1614,t1615,0
+    2653                    
+    2654 00013300     0003  t169    .word   3,1,4,6
+    2655 00013340     0004  t1610   .word   4,1,4,6,9
+    2656 00013390     0003  t1612   .word   3,8,11,13
+    2657 000133d0     0004  t1614   .word   4,9,10,12,13
+    2658 00013420     0003  t1615   .word   3,9,12,13
+    2659                    
+    2660                    **************************************************************************
+    2661                    *                                                                        *
+    2662                    * team_modify_xz                                                         *
+    2663                    *       input   a0 = x                                                   *
+    2664                    *               a6 = player block                                        *
+    2665                    *       output  a0 = x (same (player 1-4) or inverted (player 5-8))      *
+    2666                    *                                                                        *
+    2667                    **************************************************************************
+    2668 00013460           team_modify_xz
+    2669 00013460     aece          movb    *a6(POF_NUMBER),a14
+         00013470     0000  
+    2670 00013480     142e          dec     a14
+    2671 00013490     2fce          srl     2,a14
+    2672 000134a0     ca01          jrz     tmx
+    2673 000134b0     03a0          neg     a0
+    2674 000134c0     0960  tmx     rets
+    2675                    
+
+ No Errors,  No Warnings

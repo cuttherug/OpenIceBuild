@@ -1,0 +1,1885 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHSND.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    **************************************************************************
+       8                    *                                                                        *
+       9                    *       COPYRIGHT (C) 1994 MIDWAY MANUFACTURING COMPANY.                 *
+      10                    *                      ALL RIGHTS RESERVED.                              *
+      11                    *                                                                        *
+      12                    **************************************************************************
+      13                    
+      14                            .INCLUDE        "HH.INC"                ;Game equates
+      15                            .include        "hhsnd.e"
+      16                            .include        "hhproc.g"
+      17                            .include        "hhram.g"
+      18                            .include        "hhcmos.g"
+      19                            .include        "hhd.g"
+      20                            .include        "hhdutl.g"
+      21                            .include        "hhmisc.g"
+      22                            .include        "hhuart.g"
+      23                            .include        "hhutil.g"
+      24                            .include        "hhgame.g"
+      25                            .include        "hhcontr2.g"
+      26                    
+      27                    ; end of include files
+      28                    
+      29                    **************************************************************************
+      30                    *                                                                        *
+      31                    * INCTR inc register, wrapping around tracks                             *
+      32                    *                                                                        *
+      33                    **************************************************************************
+      34                    INCTR   .macro  REG
+      35                            inc     :REG:
+      36                            cmpi    HIGHEST_TRACK,:REG:
+      37                            jrls    it1?
+      38                            movk    1,:REG:
+      39                    it1?
+      40                            .endm
+      41                    
+      42 00000000                   .bss    track_0_pri,16
+      43 00000010                   .bss    track_0_time,16
+      44 00000020                   .bss    track_0_last,16
+      45 00000030                   .bss    track_0_volume,16
+      46 00000040                   .bss    track_1_pri,16
+      47 00000050                   .bss    track_1_time,16
+      48 00000060                   .bss    track_1_last,16
+      49 00000070                   .bss    track_1_volume,16
+      50 00000080                   .bss    track_2_pri,16
+      51 00000090                   .bss    track_2_time,16
+      52 000000a0                   .bss    track_2_last,16
+      53 000000b0                   .bss    track_2_volume,16
+      54 000000c0                   .bss    track_3_pri,16
+      55 000000d0                   .bss    track_3_time,16
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56 000000e0                   .bss    track_3_last,16
+      57 000000f0                   .bss    track_3_volume,16
+      58 00000100                   .bss    track_4_pri,16
+      59 00000110                   .bss    track_4_time,16
+      60 00000120                   .bss    track_4_last,16
+      61 00000130                   .bss    track_4_volume,16
+      62 00000140                   .bss    track_5_pri,16
+      63 00000150                   .bss    track_5_time,16
+      64 00000160                   .bss    track_5_last,16
+      65 00000170                   .bss    track_5_volume,16
+      66 00000180                   .bss    last_track_used,16
+      67 00000190                   .bss    current_tune,16
+      68 000001a0                   .bss    puck_ice_track,16
+      69 000001b0                   .bss    puck_bounce_track,16
+      70 000001c0                   .bss    ice_skate_track,16
+      71 000001d0                   .bss    organ_track,16
+      72 000001e0                   .bss    crowd_track,16
+      73 000001f0                   .bss    tune_address_1,32
+      74 00000210                   .bss    tune_address_2,32
+      75 00000230                   .bss    tune_address_3,32
+      76 00000250                   .bss    tune_address_4,32
+      77 00000270                   .bss    tune_address_5,32
+      78                    
+      79 00000290                   .bss    speech_buffer,16*40
+      80 00000510                   .bss    speech_buffer_end,0
+      81 00000510                   .bss    speech_buffer_head,32
+      82 00000530                   .bss    speech_buffer_tail,32
+      83 00000550                   .bss    speech_buffer_time,16
+      84 00000560                   .bss    SOUND_RX,16
+      85 00000570                   .bss    raw_sound_buffer,16*1000
+      86 000043f0                   .bss    raw_sound_pointer,32
+      87                    
+      88                    
+      89 00000000                   .TEXT
+      90                    
+      91              0004  NUMBER_OF_SOUND_ROMS    EQU     4
+      92                    
+      93              0004  HIGHEST_TRACK   .equ    4       ;reserve 5 for pat foley
+      94                    
+      95              00ff  FULL_VOLUME     .EQU    00FFH   ;This would be full volume
+      96                    
+      97              003f  FACTORY_VOLUME  .EQU    3FH     ;This is the factory volume level.  It will
+      98                                                    ;be set at powerup, for poweron tests.  As
+      99                    
+     100                                                    ;soon as CMOS is validated, the volume will
+     101                                                    ;be set according to the value stored.  If
+     102                                                    ;CMOS is, for some reason, invalid then this
+     103                                                    ;will be the default level.
+     104                    
+     105              001f  FACTORY_MINVOL  .EQU    1FH     ;This is the lowest volume allowed. It is
+     106                                                    ;factory adjustable.
+     107              0000  MIN_VOLUME      .EQU    0       ;Minimum allowable volume level
+     108              00ff  MAX_VOLUME      .EQU    255     ;Maximum allowable volume level
+     109                    
+     110                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     111                    *                                                                        *
+     112                    * SOUND ENTRY FORMAT                                                     *
+     113                    *                                                                        *
+     114                    *       .WORD   SOUND CALL INDEX, TIME, PRIORITY                         *
+     115                    *                                                                        *
+     116                    * TIME     = DURATION IN 16msec INTERVALS                                *
+     117                    *                                                                        *
+     118                    * PRIORITY = 0000 000I PPPP PPPP                                         *
+     119                    *            THE P FIELD IS THE ACTUAL PRIORITY.                         *
+     120                    *            THE I BIT ALLOWS INTERRUPTION WITH SOUNDS OF EQUAL          *
+     121                    *            PRIORITY.                                                   *
+     122                    *                                                                        *
+     123                    **************************************************************************
+     124                    
+     125 00000000           sound_table
+     126 00000000     0064          .word   0064h,53,0110h  ;s_board_crash_10
+     127 00000030     0069          .word   0069h,51,0110h  ;s_board_crash_4
+     128 00000060     006e          .word   006eh,53,0110h  ;s_board_crash_5
+     129 00000090     0073          .word   0073h,40,0110h  ;s_board_crash_8
+     130 000000c0     0078          .word   0078h,48,0110h  ;s_board_crash_9
+     131 000000f0     0546          .word   0546h,96,0110h  ;s_board_crash_j1       ;removed ;unusable
+     132 00000120     0546          .word   0546h,19,0110h  ;s_skates_upended       ;removed 
+     133 00000150     0546          .word   0546h,17,0110h  ;s_goalie_mitt_1        ;removed 
+     134 00000180     0546          .word   0546h,26,0110h  ;s_goalie_mitt_2        ;removed 
+     135 000001b0     0091          .word   0091h,16,0110h  ;s_goalie_mitt_5
+     136 000001e0     0096          .word   0096H,15,0110h  ;s_goalie_mitt_7
+     137 00000210     009b          .word   009BH,28,0110h  ;s_goalie_pad_1
+     138 00000240     00a0          .word   00A0H,38,0110h  ;s_goalie_pad_2
+     139 00000270     0546          .word   0546h,60,0110h  ;s_goalie_skate_1       ;removed ;possible corner
+     140 000002a0     0546          .word   0546h,41,0110h  ;s_goalie_skate_2       ;removed 
+     141 000002d0     0546          .word   0546h,52,0110h  ;s_goalie_skate_3       ;removed 
+     142 00000300     0546          .word   0546h,58,0110h  ;s_goalie_skate_4       ;removed 
+     143 00000330     0546          .word   0546h,50,0110h  ;s_goalie_skate_5       ;removed 
+     144 00000360     0546          .word   0546h,42,0110h  ;s_goalie_skate_6       ;removed 
+     145 00000390     00c3          .word   00c3h,32,0110h  ;s_goalie_stick_1
+     146 000003c0     0546          .word   0546h, 6,0110h  ;s_goalie_stick_2       ;removed 
+     147 000003f0     00cd          .word   00CDH,16,0110h  ;s_goalie_stick_3
+     148 00000420     00d2          .word   00d2h,34,0110h  ;s_goalie_stick_4       ;good stick sound
+     149 00000450     0546          .word   0546h,40,0110h  ;s_hard_skate_stop_1    ;removed 
+     150 00000480     00dc          .word   00dch,33,0110h  ;s_hard_skate_stop_2
+     151 000004b0     00e1          .word   00e1h,43,0110h  ;s_hard_skate_stop_3
+     152 000004e0     0546          .word   0546h,43,0110h  ;s_hard_skate_stop_4    ;removed 
+     153 00000510     00eb          .word   00ebh,26,0110h  ;s_hard_skate_stop_5
+     154 00000540     0546          .word   0546h,20,0110h  ;s_ice_crunch_1         ;removed 
+     155 00000570     00f5          .word   00f5h,28,0110h  ;s_ice_crunch_2
+     156 000005a0     00fa          .word   00fah,38,0110h  ;s_loud_board_1
+     157 000005d0     00ff          .word   00ffh,30,0110h  ;s_loud_board_2
+     158 00000600     0104          .word   0104h,33,0110h  ;s_loud_board_3
+     159 00000630     0546          .word   0546h,54,0110h  ;s_long_skate_1         ;removed 
+     160 00000660     0546          .word   0546h,67,0110h  ;s_long_skate_2         ;removed 
+     161 00000690     0546          .word   0546h,89,0110h  ;s_long_skate_3         ;removed 
+     162 000006c0     0546          .word   0546h,60,0110h  ;s_long_skate_4         ;removed 
+     163 000006f0     0546          .word   0546h,64,0110h  ;s_long_skate_5         ;removed 
+     164 00000720     0546          .word   0546h,65,0110h  ;s_long_skate_6         ;removed 
+     165 00000750     0546          .word   0546h,91,0110h  ;s_long_skate_7         ;removed 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     166 00000780     0546          .word   0546h,56,0110h  ;s_puck_to_board_score_1;removed        ;unusable
+     167 000007b0     0131          .word   0131h,23,0110h  ;s_puck_drop_1
+     168 000007e0     0136          .word   0136h,15,0110h  ;s_puck_drop_2
+     169 00000810     013b          .word   013bh,10,0110h  ;s_puck_drop_3
+     170 00000840     0140          .word   0140H,21,0110h  ;s_puck_to_goalie_mask_1
+     171 00000870     0145          .word   0145h,20,0110h  ;s_puck_hit_board_1
+     172 000008a0     014a          .word   014ah,21,0110h  ;s_puck_hit_board_2
+     173 000008d0     014f          .word   014fh,26,0110h  ;s_puck_hit_board_3
+     174 00000900     0154          .word   0154h, 8,0110h  ;s_puck_drop_in_net
+     175 00000930     0546          .word   0546h,15,0110h  ;s_puck_in_net_1        ;removed 
+     176 00000960     0546          .word   0546h,13,0110h  ;s_puck_in_net_2        ;removed 
+     177 00000990     0546          .word   0546h,18,0110h  ;s_puck_in_net_3        ;removed ;possible net sound
+     178 000009c0     0546          .word   0546h,23,0110h  ;s_puck_in_net_4        ;removed ;possible puck on ice sound
+     179 000009f0     0546          .word   0546h,18,0110h  ;s_puck_in_net_5        ;removed ;possible puck on ground in corner of n
+     180 00000a20     0172          .word   0172h,32,0110h  ;s_puck_in_net_6        ;start of sound is net sound
+     181 00000a50     0177          .word   0177h,33,0110h  ;s_plastic_impact_1
+     182 00000a80     017c          .word   017ch,26,0110h  ;s_plastic_impact_2
+     183 00000ab0     0181          .word   0181h,21,0110h  ;s_plastic_board_hit_1
+     184 00000ae0     0186          .word   0186h,55,0110h  ;s_plastic_board_hit_2
+     185 00000b10     018b          .word   018bh,27,0110h  ;s_puck_to_metal_0
+     186 00000b40     0190          .word   0190h,36,0110h  ;s_puck_to_metal_1
+     187 00000b70     0195          .word   0195h,12,0110h  ;s_puck_to_metal_2
+     188 00000ba0     0546          .word   0546h,32,0110h  ;s_puck_pass_1          ;removed 
+     189 00000bd0     0546          .word   0546h,35,0110h  ;s_puck_pass_2          ;removed 
+     190 00000c00     0546          .word   0546h,40,0110h  ;s_puck_pass_3          ;removed 
+     191 00000c30     0546          .word   0546h,31,0110h  ;s_puck_pass_4          ;removed 
+     192 00000c60     0546          .word   0546h,57,0110h  ;s_puck_pass_5          ;removed 
+     193 00000c90     0546          .word   0546h,58,0110h  ;s_puck_ricochet_1      ;removed 
+     194 00000cc0     0546          .word   0546h,46,0110h  ;s_puck_ricochet_2      ;removed 
+     195 00000cf0     01bd          .word   01bdh,56,0110h  ;s_puck_ricochet_3
+     196 00000d20     0546          .word   0546h,58,0110h  ;s_puck_slide_2         ;removed 
+     197 00000d50     0546          .word   0546h,51,010eh  ;s_puck_slide_3         ;removed 
+     198 00000d80     0546          .word   0546h,36,0110h  ;s_puck_slide_4         ;removed 
+     199 00000db0     0546          .word   0546h,50,010eh  ;s_puck_slide_6         ;removed 
+     200 00000de0     0546          .word   0546h,28,0110h  ;s_skate_1              ;removed 
+     201 00000e10     01db          .word   01dbh,44,0110h  ;s_skate_2
+     202 00000e40     0546          .word   0546h,27,0110h  ;s_skate_3              ;removed 
+     203 00000e70     0546          .word   0546h,15,0110h  ;s_skate_4              ;removed 
+     204 00000ea0     0546          .word   0546h,42,0110h  ;s_skate_5              ;removed 
+     205 00000ed0     0546          .word   0546h,46,0110h  ;s_skate_6              ;removed 
+     206 00000f00     0546          .word   0546h,30,0110h  ;s_skate_7              ;removed 
+     207 00000f30     01f9          .word   01f9h,20,0110h  ;s_skate_8
+     208 00000f60     01fe          .word   01feh,24,0110h  ;s_skate_9
+     209 00000f90     0203          .word   0203h,28,0110h  ;s_skate_10
+     210 00000fc0     0208          .word   0208h,26,0110h  ;s_skate_11
+     211 00000ff0     0546          .word   0546h,24,0110h  ;s_skate_12             ;removed 
+     212 00001020     0546          .word   0546h,22,0110h  ;s_skate_13             ;removed 
+     213 00001050     0546          .word   0546h,19,0110h  ;s_skate_14             ;removed 
+     214 00001080     0546          .word   0546h,21,0110h  ;s_skate_15             ;removed 
+     215 000010b0     0546          .word   0546h,14,0110h  ;s_skate_16             ;removed 
+     216 000010e0     0546          .word   0546h,49,0110h  ;s_skate_17             ;removed 
+     217 00001110     022b          .word   022bh,17,0110h  ;s_skate_18
+     218 00001140     0230          .word   0230h,20,0110h  ;s_skate_19
+     219 00001170     0235          .word   0235h,19,0110h  ;s_skate_20
+     220 000011a0     023a          .word   023ah,10,0110h  ;s_skate_21
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     221 000011d0     023f          .word   023fh,15,0110h  ;s_skate_22
+     222 00001200     0546          .word   0546h,27,0110h  ;s_skate_23             ;removed 
+     223 00001230     0249          .word   0249h,23,0110h  ;s_skate_24
+     224 00001260     024e          .word   024eh,23,0110h  ;s_skate_25
+     225 00001290     0253          .word   0253h,19,0110h  ;s_skate_26
+     226 000012c0     0546          .word   0546h,61,0110h  ;s_skate_27     unusable;removed        same as 1b7
+     227 000012f0     0546          .word   0546h,25,0110h  ;s_skate_28             ;removed 
+     228 00001320     0262          .word   0262h,43,0110h  ;s_skate_29
+     229 00001350     0546          .word   0546h,41,0110h  ;s_skate_30             ;removed 
+     230 00001380     0546          .word   0546h,44,0110h  ;s_skate_31             ;removed 
+     231 000013b0     0546          .word   0546h,49,0110h  ;s_skate_32             ;removed 
+     232 000013e0     0276          .word   0276h,38,0110h  ;s_skate_33
+     233 00001410     0546          .word   0546h,23,0110h  ;s_skate_34             ;removed 
+     234 00001440     0280          .word   0280h,43,0110h  ;s_skate_35
+     235 00001470     0285          .word   0285h,15,0110h  ;s_skate_36
+     236 000014a0     028a          .word   028ah,33,0110h  ;s_skate_37
+     237 000014d0     0546          .word   0546h,38,0110h  ;s_skate_up_foreground  ;removed 
+     238 00001500     0546          .word   0546h,49,0110h  ;s_run_on_skates_1      ;removed unusable
+     239 00001530     0546          .word   0546h,61,0110h  ;s_run_on_skates_2      ;removed unusable
+     240 00001560     029e          .word   029eh,41,0110h  ;s_slapshot_1
+     241 00001590     0546          .word   0546h,22,0110h  ;s_slapshot_2           ;removed 
+     242 000015c0     0546          .word   0546h,44,0110h  ;s_slapshot_3           ;removed 
+     243 000015f0     0546          .word   0546h,36,0110h  ;s_slapshot_4           ;removed 
+     244 00001620     02b2          .word   02b2h,31,0110h  ;s_slapshot_6
+     245 00001650     02b7          .word   02b7h,35,0110h  ;s_slapshot_7
+     246 00001680     02bc          .word   02bch,34,0110h  ;s_stick_sound_1
+     247 000016b0     0546          .word   0546h,34,0110h  ;s_stick_to_pad_1       ;removed 
+     248 000016e0     0546          .word   0546h,61,0110h  ;s_stick_bounce_1       ;removed 
+     249 00001710     0546          .word   0546h,45,0110h  ;s_stick_slide_1        ;removed 
+     250 00001740     02d0          .word   02d0h,32,0110h  ;s_skate_stop_or_turn_1
+     251 00001770     0546          .word   0546h,25,0110h  ;s_skate_stop_or_turn_2 ;removed 
+     252 000017a0     0546          .word   0546h,32,0110h  ;s_skate_stop_or_turn_3 ;removed 
+     253 000017d0     02df          .word   02dfh,38,0110h  ;s_skate_stop_or_turn_4
+     254 00001800     0546          .word   0546h,40,0110h  ;s_skate_stop_or_turn_5 ;removed same as above
+     255 00001830     0546          .word   0546h,49,0110h  ;s_skate_stop_or_turn_6 ;removed 
+     256 00001860     0546          .word   0546h,118,0110h ;s_long puck slide 5    ;removed 
+     257 00001890     0311          .word   0311h,157,0110h ;s_long puck slide 6
+     258 000018c0     0316          .word   0316h,123,0110h ;s_long puck slide 7
+     259                    
+     260 000018f0     031b          .word   031bh,56,0110h  ;score_net_1
+     261 00001920     0320          .word   0320h,56,0110h  ;score_net_11 .
+     262 00001950     0325          .word   0325h,41,0110h  ;score_net_10b
+     263 00001980     0546          .word   0546h,47,0110h  ;body_crash_1           ;removed 
+     264 000019b0     0546          .word   0546h,38,0110h  ;body_crash_2           ;removed 
+     265 000019e0     0546          .word   0546h,44,0110h  ;body_crash_3           ;removed 
+     266 00001a10     0546          .word   0546h,48,0110h  ;body_crash_5           ;removed 
+     267 00001a40     033e          .word   033eh,45,0110h  ;body_fall_1
+     268 00001a70     0343          .word   0343h,42,0110h  ;body_fall_2
+     269 00001aa0     0348          .word   0348h,55,0110h  ;body_fall_3
+     270 00001ad0     034d          .word   034dh,37,0110h  ;body_fall_4
+     271 00001b00     0352          .word   0352h,51,0110h  ;body_fall_5
+     272 00001b30     0546          .word   0546h,50,0110h  ;body_fall_6            ;removed 
+     273 00001b60     035c          .word   035ch,49,0110h  ;body_fall_7
+     274 00001b90     0361          .word   0361h,67,0110h  ;body_fall_8
+     275 00001bc0     0366          .word   0366h,40,0110h  ;body_fall_9
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     276 00001bf0     036b          .word   036bh,38,0110h  ;body_fall_11
+     277 00001c20     0370          .word   0370h,49,0110h  ;body_fall_12
+     278 00001c50     0375          .word   0375h,45,0110h  ;body_fall_13
+     279 00001c80     0546          .word   0546h,52,0110h  ;body_fall_14           ;removed 
+     280 00001cb0     037f          .word   037fh,49,0110h  ;body_fall_15 .
+     281 00001ce0     0384          .word   0384h,42,0110h  ;body_slam_1
+     282 00001d10     0389          .word   0389h,38,0110h  ;body_slam_2  .
+     283 00001d40     038e          .word   038eh,43,0110h  ;body_slam_3
+     284 00001d70     0393          .word   0393h,45,0110h  ;body_slam_4
+     285 00001da0     0398          .word   0398h,41,0110h  ;body_slam_5
+     286 00001dd0     039d          .word   039dh,38,0110h  ;body_slam_6
+     287 00001e00     03a2          .word   03a2h,25,0110h  ;body_slam_7
+     288 00001e30     03a7          .word   03a7h,25,0110h  ;body_slam_7b
+     289 00001e60     03ac          .word   03ach,38,0110h  ;body_slam_8
+     290 00001e90     03b1          .word   03b1h,42,0110h  ;body_slam_9  .
+     291 00001ec0     03b6          .word   03b6h,44,0110h  ;body_slam_10
+     292 00001ef0     0546          .word   0546h,31,0110h  ;body_slam_11           ;removed 
+     293 00001f20     03c0          .word   03c0h,60,0110h  ;body_slam_vince7
+     294 00001f50     03c5          .word   03c5h,57,0110h  ;body_slam_vince8
+     295 00001f80     0546          .word   0546h,94,0110h  ;Organ_dah-DAH-dah_F    ;removed 
+     296 00001fb0     0546          .word   0546h,86,0110h  ;Organ_dah-DAH-dah_FS   ;removed 
+     297 00001fe0     0546          .word   0546h,92,0110h  ;Organ_dah-DAH-dah_G    ;removed 
+     298 00002010     0546          .word   0546h,162,0110h ;Organ_charge_C         ;removed 
+     299 00002040     0546          .word   0546h,109,0110h ;Organ_line_G_          ;removed 
+     300 00002070     0546          .word   0546h,108,0110h ;Organ_line_Ab          ;removed 
+     301 000020a0     0546          .word   0546h,105,0110h ;Organ_line_A_          ;removed 
+     302 000020d0     0546          .word   0546h,162,0110h ;Organ_charge_A         ;removed 
+     303 00002100     0546          .word   0546h,163,0110h ;Organ_charge_Bb        ;removed 
+     304 00002130     0546          .word   0546h,163,0110h ;Organ_charge_B         ;removed 
+     305 00002160     0546          .word   0546h,20,0110h  ;player_grunt_bill_10   ;removed 
+     306 00002190     0546          .word   0546h,29,0110h  ;player_grunt_bill_16   ;removed 
+     307 000021c0     0546          .word   0546h,14,0110h  ;player_grunt_bill_18   ;removed 
+     308 000021f0     0546          .word   0546h,23,0110h  ;player_grunt_bill_19   ;removed 
+     309 00002220     0546          .word   0546h,18,0110h  ;player_grunt_bill_21   ;removed 
+     310 00002250     0546          .word   0546h,13,0110h  ;player_grunt_bill_23   ;removed 
+     311 00002280     0546          .word   0546h,21,0110h  ;player_grunt_bill_24   ;removed 
+     312 000022b0     0546          .word   0546h,17,0110h  ;player_grunt_bill_26   ;removed 
+     313 000022e0     0442          .word   0442h,21,0110h  ;player_grunt_carlos_05
+     314 00002310     0447          .word   0447h,23,0110h  ;player_grunt_carlos_10
+     315 00002340     044c          .word   044ch,23,0110h  ;player_grunt_carlos_11
+     316 00002370     0451          .word   0451h,23,0110h  ;player_grunt_carlos_12
+     317 000023a0     0456          .word   0456h,19,0110h  ;player_grunt_carlos_16
+     318 000023d0     045b          .word   045bh,17,0110h  ;player_grunt_carlos_21
+     319 00002400     0460          .word   0460h,33,0110h  ;player_grunt_carlos_23
+     320 00002430     0465          .word   0465h,15,0110h  ;player_grunt_carlos_25
+     321 00002460     046a          .word   046ah,14,0110h  ;player_grunt_carlos_26
+     322 00002490     046f          .word   046fh,33,0110h  ;player_grunt_carlos_29
+     323 000024c0     0474          .word   0474h,24,0110h  ;player_grunt_carlos_31
+     324 000024f0     0479          .word   0479h,13,0110h  ;player_grunt_carlos_32
+     325 00002520     047e          .word   047eh,18,0110h  ;player_grunt_jackh_01
+     326 00002550     0483          .word   0483h,19,0110h  ;player_grunt_jackh_03
+     327 00002580     0488          .word   0488h,33,0110h  ;player_grunt_jackh_06
+     328 000025b0     048d          .word   048dh,57,0110h  ;player_grunt_jackh_08
+     329 000025e0     0492          .word   0492h,31,0110h  ;player_grunt_jackh_13
+     330 00002610     0497          .word   0497h,28,0110h  ;player_grunt_jackh_17
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     331 00002640     049c          .word   049ch,23,0110h  ;player_grunt_jackh_34
+     332 00002670     04a1          .word   04a1h,8,0110h   ;player_grunt_jackh_45
+     333 000026a0     04a6          .word   04a6h,26,0110h  ;player_grunt_jackh_47
+     334 000026d0     04ab          .word   04abh,10,0110h  ;player_grunt_markp_01
+     335 00002700     04b0          .word   04b0h,9,0110h   ;player_grunt_markp_02
+     336 00002730     04b5          .word   04b5h,10,0110h  ;player_grunt_markp_07
+     337 00002760     04ba          .word   04bah,33,0110h  ;player_grunt_marty_05
+     338 00002790     04bf          .word   04bfh,40,0110h  ;player_grunt_marty_07
+     339 000027c0     04c4          .word   04c4h,29,0110h  ;player_grunt_marty_10
+     340 000027f0     04c9          .word   04c9h,31,0110h  ;player_grunt_marty_11
+     341 00002820     04ce          .word   04ceh,38,0110h  ;player_grunt_marty_14
+     342 00002850     04d3          .word   04d3h,31,0110h  ;player_grunt_marty_15
+     343 00002880     04d8          .word   04d8h,27,0110h  ;player_grunt_marty_20
+     344 000028b0     04dd          .word   04ddh,29,0110h  ;player_grunt_marty_33
+     345 000028e0     04e2          .word   04e2h,31,0110h  ;player_grunt_marty_34
+     346 00002910     04e7          .word   04e7h,45,0110h  ;player_grunt_marty_40
+     347 00002940     04ec          .word   04ech,30,0110h  ;player_grunt_marty_45
+     348 00002970     04f1          .word   04f1h,11,0110h  ;player_grunt_marty_49
+     349 000029a0     04f6          .word   04f6h,22,0110h  ;player_grunt_marty_51
+     350 000029d0     04fb          .word   04fbh,21,0110h  ;player_grunt_marty_53
+     351 00002a00     0500          .word   0500h,11,0110h  ;player_grunt_marty_62
+     352 00002a30     0505          .word   0505h,202,0128h ;crowd_noise_1 noise
+     353 00002a60     050a          .word   050ah,224,0138h ;crowd_noise_2 low noise
+     354 00002a90     050f          .word   050fh,135,0128h ;crowd_noise_3 applause with cheers
+     355 00002ac0     0514          .word   0514h,127,0128h ;crowd_noise_4 cheers
+     356 00002af0     0519          .word   0519h,107,0128h ;crowd_noise_5 cheers
+     357 00002b20     051e          .word   051eh,227,0128h ;crowd_noise_6 cheers with yelling
+     358 00002b50     0523          .word   0523h,161,0138h ;crowd_noise_7 boos
+     359 00002b80     0528          .word   0528h,69,0128h  ;crowd_noise_8 ohhh (just missed)
+     360 00002bb0     052d          .word   052dh,101,0128h ;crowd_noise_9 awww
+     361 00002be0     0532          .word   0532h,306,0128h ;crowd_noise_10 low noise
+     362 00002c10     0537          .word   0537h,237,0128h ;crowd_noise_11 bunch of fuckin' girls
+     363 00002c40     053c          .word   053ch,254,0128h ;crowd_noise_12 noise
+     364 00002c70     0541          .word   0541h,178,0128h ;crowd_noise_13 noise
+     365 00002ca0     0546          .word   0546h,59,0080h  ;air_horn_blast
+     366 00002cd0     03e8          .word   03e8H,94,0120H  ;Organ dah-DAH-dah in F
+     367 00002d00     03ed          .word   03edH,87,0120H  ;Organ dah-DAH-dah in F#
+     368 00002d30     03f2          .word   03f2H,92,0120H  ;Organ dah-DAH-dah in G
+     369 00002d60     03f7          .word   03f7H,162,0120H ;Organ charge in C
+     370 00002d90     03fc          .word   03fcH,109,0120H ;Organ line in G
+     371 00002dc0     0401          .word   0401H,109,0120H ;Organ line in Ab
+     372 00002df0     0406          .word   0406H,106,0120H ;Organ line in A
+     373 00002e20     040b          .word   040bH,163,0120H ;Organ charge in A
+     374 00002e50     0410          .word   0410H,164,0120H ;Organ charge in Bb
+     375 00002e80     0415          .word   0415H,164,0120H ;Organ charge in B
+     376                    
+     377 00002eb0     0505          .word   0505h,202,0138h ;crowd_noise_1 noise
+     378 00002ee0     050a          .word   050ah,224,0138h ;crowd_noise_2 low noise
+     379 00002f10     050f          .word   050fh,135,0138h ;crowd_noise_3 applause with cheers
+     380 00002f40     0514          .word   0514h,127,0138h ;crowd_noise_4 cheers
+     381 00002f70     0519          .word   0519h,107,0138h ;crowd_noise_5 cheers
+     382 00002fa0     051e          .word   051eh,227,0138h ;crowd_noise_6 cheers with yelling
+     383 00002fd0     0523          .word   0523h,161,0138h ;crowd_noise_7 boos
+     384 00003000     0528          .word   0528h,69,0138h  ;crowd_noise_8 ohhh (just missed)
+     385 00003030     052d          .word   052dh,101,0138h ;crowd_noise_9 awww
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     386 00003060     0532          .word   0532h,306,0138h ;crowd_noise_10 low noise
+     387 00003090     0537          .word   0537h,237,0138h ;crowd_noise_11 bunch of fuckin' girls
+     388 000030c0     053c          .word   053ch,254,0138h ;crowd_noise_12 noise
+     389 000030f0     0541          .word   0541h,178,0138h ;crowd_noise_13 noise
+     390 00003120                   WL      -1,tune_down_knees
+     391 00003150     139c          .WORD   0139CH,26,0180H ;CURSOR MOVE
+     392 00003180     13bc          .WORD   013BCH,12,0181H ;CURSOR SELECT
+     393 000031b0     13c0          .WORD   013C0H,13,0181H ;CURSOR SWAP
+     394 000031e0     13a4          .WORD   013A4H, 5,0181H ;SIDE TOGGLE
+     395 00003210     13e4          .WORD   013E4H,10,0190H ;TIMER TICK
+     396 00003240     00d2          .WORD   000D2H,35,01F0H ;CREDIT
+     397 00003270     032a          .WORD   0032AH,47,01E0H ;PERIOD PAID
+     398 000032a0     13b4          .WORD   013B4H,44,01A1H ;FULL GAME
+     399 000032d0     13d0          .WORD   013D0H,21,0198H ;TOP TEN PLAYER
+     400 00003300     13f0          .word   013f0h,30,0040h ;referee's whistle
+     401 00003330     13ec          .word   013ech, 8,0140h ;time running out
+     402 00003360     13f4          .word   013F4H,212,0128H ;CROWD 1,  HM Y
+     403 00003390     13f8          .word   013F8H,243,0128H ;CROWD 2,  M  N ;REMOVED
+     404 000033c0     13fc          .word   013FCH,180,0128H ;CROWD 3,  ML Y
+     405 000033f0     1400          .word   01400H,314,0128H ;CROWD 4,  HM Y
+     406 00003420     1404          .word   01404H,194,0138H ;CROWD 5,  H  Y
+     407 00003450     1408          .word   01408H,294,0128H ;CROWD 6,  HL N ;REMOVED
+     408 00003480     140c          .word   0140CH,269,0128H ;CROWD 7,  M  Y
+     409 000034b0     1410          .word   01410H,170,0128H ;CROWD 8,  HL N ;REMOVED
+     410 000034e0     1414          .word   01414H,264,0138H ;CROWD 9,  H  Y
+     411 00003510     1418          .word   01418H,157,0128H ;CROWD 10, ML Y
+     412 00003540     1438          .word   01438H,118,01F1H ;EXPLOSION 4
+     413 00003570     13d8          .word   013D8H, 31,01F1H ;SLIDE SWISH 1
+     414 000035a0     1380          .word   01380h,187,0081h ;  Scoring horn (#8)
+     415 000035d0     13e8          .WORD   013E8H, 11,01F0H ;PUCK POINT
+     416 00003600     1324          .WORD   01324H, 28,0100H ;STAT HILITE
+     417 00003630     1328          .WORD   01328H,  4,01D0H ;P1 POWERUP
+     418 00003660     132c          .WORD   0132CH,  4,01D0H ;P2 POWERUP
+     419 00003690     1330          .WORD   01330H,  4,01D0H ;P3 POWERUP
+     420 000036c0     1334          .WORD   01334H,  4,01D0H ;P4 POWERUP
+     421 000036f0     1338          .WORD   01338H, 66,01D0H ;POWERUP REPORT
+     422 00003720     133c          .WORD   0133CH, 25,0100H ;FLASHBULB
+     423 00003750     142c          .WORD   0142CH, 34,01F1H ;HELMETS STARTUP
+     424 00003780     1384          .WORD   01384H,136,01E0H ;NET IGNITE
+     425 000037b0     137c          .word   0137ch, 90,  28h ;Glass Board Crash-Break
+     426 000037e0     13d8          .word   013d8h, 30,0111h ;whoosh sound 1
+     427 00003810     13dc          .word   013dch, 41,0111h ;whoosh sound 2
+     428 00003840     13e0          .word   013e0h, 41,0111h ;whoosh sound 3
+     429 00003870     1448          .word   01448h,113,0112h ;Big whoosh 2
+     430 000038a0     1340          .word   01340H, 35,01E0H ;SPECIAL CHARACTER SELECTED
+     431 000038d0     1378          .word   01378h,13,0110h  ;Steal or Swipe 1 (miss)
+     432 00003900     133c          .word   0133ch,36,0110h  ;steal made
+     433 00003930     143c          .word   0143CH,118,01E0H ;LOUD NET EXPLOSION 4
+     434                    
+     435                    ;tune_test_1
+     436                    ;       .word   10h             ;priority
+     437                    ;       .word   03fdh,-69       ;Organ dah-DAH-dah in F
+     438                    ;       .word   03fdh,-69       ;Organ dah-DAH-dah in F
+     439                    ;       .word   03feh,-65       ;Organ dah-DAH-dah in F#
+     440                    ;       .word   03feh,-65       ;Organ dah-DAH-dah in F#
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     441                    ;       .word   03ffh,-61       ;Organ dah-DAH-dah in G
+     442                    ;       .word   03ffh,-61       ;Organ dah-DAH-dah in G
+     443                    ;       .word   03f7h,-162      ;Organ charge 1 in C
+     444                    ;
+     445                    ;       .word   03e8h,-60       ;Organ line 1 in G
+     446                    ;       .word   03e8h,-60       ;Organ line 1 in G
+     447                    ;       .word   03eah,-60       ;Organ line 1 in Ab
+     448                    ;       .word   03eah,-60       ;Organ line 1 in Ab
+     449                    ;       .word   03ech,-60       ;Organ line 1 in A
+     450                    ;       .word   03ech,-60       ;Organ line 1 in A
+     451                    ;       .word   03edh,-120      ;Organ charge 1 in A
+     452                    ;       .word   03efh,-120      ;Organ charge 1 in Bb
+     453                    ;       .word   03f1h,-163      ;Organ charge 1 in B
+     454                    ;       .word   0
+     455                    
+     456 00003960           tune_down_knees
+     457 00003960     0010          .word   10h
+     458 00003970     00b9          .word   00b9h,-15
+     459 00003990     03a2          .word   03a2h,25
+     460 000039b0     0000          .word   0
+     461                    
+     462 000039c0           kill_all_but_speech_tune
+     463 000039c0     098f          mmtm    sp,a0,a4,a10,a11
+         000039d0     8830  
+     464 000039e0     188b          movk    4,a11
+     465 000039f0     5600          clr     a0
+     466 00003a00     0580          move    a0,@puck_ice_track,W
+         00003a10 000001a0- 
+     467 00003a30     0580          move    a0,@puck_bounce_track,W
+         00003a40 000001b0- 
+     468 00003a60     0580          move    a0,@ice_skate_track,W
+         00003a70 000001c0- 
+     469 00003a90     0580          move    a0,@organ_track,W
+         00003aa0 000001d0- 
+     470 00003ac0     0580          move    a0,@crowd_track,W
+         00003ad0 000001e0- 
+     471 00003af0     09ca          movi    03deh+1,a10
+         00003b00     03df  
+     472 00003b10     c01e          jruc    kas_1
+     473 00003b20           kill_all_sound_but_speech
+     474 00003b20     098f          mmtm    sp,a0,a4,a10,a11
+         00003b30     8830  
+     475 00003b40     18ab          movk    5,a11
+     476 00003b50     c005          jruc    kas_121
+     477 00003b60           kill_all_sound
+     478 00003b60     098f          mmtm    sp,a0,a4,a10,a11
+         00003b70     8830  
+     479 00003b80     0d3f          callr   empty_speech_buffer
+         00003b90     018e  
+     480 00003ba0     18cb          movk    6,a11
+     481 00003bb0     5600  kas_121 clr     a0
+     482 00003bc0     0580          move    a0,@current_tune,W
+         00003bd0 00000190- 
+     483 00003bf0     0580          move    a0,@puck_ice_track,W
+         00003c00 000001a0- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     484 00003c20     0580          move    a0,@puck_bounce_track,W
+         00003c30 000001b0- 
+     485 00003c50     0580          move    a0,@ice_skate_track,W
+         00003c60 000001c0- 
+     486 00003c80     0580          move    a0,@organ_track,W
+         00003c90 000001d0- 
+     487 00003cb0     0580          move    a0,@crowd_track,W
+         00003cc0 000001e0- 
+     488 00003ce0     09ca          movi    03deh,a10
+         00003cf0     03de  
+     489 00003d00     4d44  kas_1   move    a10,a4
+     490 00003d10     0d3f          callr   SEND_RAW_SOUND
+         00003d20     01ad  
+     491 00003d30     102a          inc     a10
+     492 00003d40     3cab          dsjs    a11,kas_1
+     493 00003d50     09af          mmfm    sp,a0,a4,a10,a11
+         00003d60     0c11  
+     494 00003d70     0960          rets
+     495                    
+     496 00003d80           set_intermission_tune
+     497 00003d80     1a00          movk    16,a0
+     498 00003d90     c026          jruc    set_tune_a0_safe
+     499                    
+     500 00003da0           END_INTERMISSION_TUNE
+     501 00003da0     1a60          movk    19,a0
+     502 00003db0     c024          jruc    set_tune_a0_safe
+     503                    
+     504 00003dc0           set_game_over_tune
+     505 00003dc0     1aa0          movk    21,a0
+     506 00003dd0     c022          jruc    set_tune_a0_safe
+     507                    
+     508 00003de0           set_select_tune
+     509 00003de0     1880          MOVK    4,A0                            ;ESPN SHIT
+     510 00003df0     c020          jruc    set_tune_a0_safe
+     511                    
+     512 00003e00           set_background_tune
+     513 00003e00     098f          mmtm    sp,a0,a4
+         00003e10     8800  
+     514 00003e20     05ae          move    @hot_player,a14
+         00003e30 00000000! 
+     515 00003e50     cb0f          jrnz    sgtnr
+     516 00003e60     05ae          move    @period,a14,W
+         00003e70 00000000! 
+     517 00003e90     0b4e          cmpi    4,a14
+         00003ea0     fffb  
+     518 00003eb0     cb07          jrnz    sgtn
+     519 00003ec0     1ac0          movk    ADJPAYOT,a0
+     520 00003ed0     0d5f          calla   GET_ADJ                         ;CHECK FOR FULL OVERTIME
+         00003ee0 00000000! 
+     521 00003f00     cb02          jrnz    sgtn
+     522 00003f10     1ac0          movk    22,a0
+     523 00003f20     c003          jruc    sgta
+     524 00003f30     1820  sgtn    movk    1,a0
+     525 00003f40     c001          jruc    sgta
+     526 00003f50     1ae0  sgtnr   movk    23,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     527 00003f60     0d3f  sgta    callr   set_tune_a0_safe
+         00003f70     0008  
+     528 00003f80     09af          mmfm    sp,a0,a4
+         00003f90     0011  
+     529 00003fa0     0960          rets
+     530                    
+     531                    ;       mmtm    sp,a0,a4
+     532                    ;       move    @period,a0,W
+     533                    ;       sll     4,a0
+     534                    ;       addi    sbt_l,a0
+     535                    ;       move    *a0,a0,W
+     536                    ;       callr   set_tune_a0
+     537                    ;       mmfm    sp,a0,a4
+     538                    ;       rets
+     539                    
+     540 00003fb0     0001  sbt_l   .word   1       ;0
+     541 00003fc0     0001          .word   1       ;1st period
+     542 00003fd0     0001          .word   1       ;2nd period
+     543 00003fe0     0001          .word   1       ;3rd period
+     544 00003ff0     0001          .word   1       ;overtime
+     545                    
+     546 00004000           set_tune_a0_safe
+     547 00004000     05ae          move    @SOUNDSUP,a14,W
+         00004010 00000000! 
+     548 00004030     cb1e          jrnz    st9
+     549 00004040     05ae          move    @current_tune,a14,W
+         00004050 00000190- 
+     550 00004070     480e          cmp     a0,a14
+     551 00004080     ca19          jrz     st9
+     552 00004090     098f          mmtm    sp,a0
+         000040a0     8000  
+     553 000040b0     09c0          movi    03d4h,a0
+         000040c0     03d4  
+     554 000040d0     0d5f          calla   SEND_RAW_SOUND
+         000040e0 00005800' 
+     555 00004100     09af          mmfm    sp,a0
+         00004110     0001  
+     556 00004120     c009          jruc    sty1
+     557 00004130           set_tune_a0
+     558 00004130     05ae          move    @SOUNDSUP,a14,W
+         00004140 00000000! 
+     559 00004160     cb0b          jrnz    st9
+     560 00004170     05ae          move    @current_tune,a14,W
+         00004180 00000190- 
+     561 000041a0     480e          cmp     a0,a14
+     562 000041b0     ca06          jrz     st9
+     563 000041c0     0580  sty1    move    a0,@current_tune,W
+         000041d0 00000190- 
+     564 000041f0     4c04          move    a0,a4
+     565 00004200     c000          jruc    SEND_RAW_SOUND
+         00004210     015e  
+     566 00004220     0960  st9     rets
+     567                    
+     568                    ;00 kill sound on all tracks
+     569                    ;01 music : Buyin or Game over or ?
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     570                    ;02 music : Buyin or Game over or ? for fadeout
+     571                    ;03 music : background tune for now
+     572                    ;04 music : espn style tune loops
+     573                    ;05 music : espn style tune ends
+     574                    ;06 music : espn style tune ends fast
+     575                    ;07 music : espn style tune ends fastest
+     576                    ;08 music : attract mode drums (loops)
+     577                    ;09 music : attract mode drum ending
+     578                    ;10 music : a new tune (loops)
+     579                    ;11 music : new tune ending
+     580                    ;12 music : new tune short ending
+     581                    ;13 music : initials/select (variation on espn tune)
+     582                    ;14 music : initials/select loops w/ rhythm only
+     583                    ;15 music : initials/select rhythm only
+     584                    ;16 music : buyin horns w start
+     585                    ;17 music : buyin horns w start ENDS
+     586                    ;18 music : buyin ending only ENDS
+     587                    ;19 music : buyin drum ending only ENDS
+     588                    ;20 music : ESPN style tune ending
+     589                    ;21 music : WIN THE GAME / GAME OVER
+     590                    
+     591                    **************************************************************************
+     592                    *                                                                        *
+     593                    * do_sound_at_volume                                                     *
+     594                    *       input   a4 = sound offset #                                      *
+     595                    *               a1 = volume to send at                                   *
+     596                    *                                                                        *
+     597                    **************************************************************************
+     598 00004230           do_sound_at_volume
+     599 00004230     098f          mmtm    sp,a10
+         00004240     0020  
+     600 00004250     4c2a          move    a1,a10
+     601 00004260     0b4a          cmpi    255,a10
+         00004270     ff00  
+     602 00004280     c202          jrls    dsav1
+     603 00004290     09ca          movi    255,a10
+         000042a0     00ff  
+     604 000042b0     0d3f  dsav1   callr   ds_1
+         000042c0     0003  
+     605 000042d0     09af          mmfm    sp,a10
+         000042e0     0400  
+     606 000042f0     0960          rets
+     607                    
+     608                    **************************************************************************
+     609                    *                                                                        *
+     610                    * do_sound                                                               *
+     611                    *       input   a4 = sound offset #                                      *
+     612                    *       output  c  = sound was made                                      *
+     613                    *                 a4 = track made on                                     *
+     614                    *               nc = sound not made                                      *
+     615                    *                                                                        *
+     616                    **************************************************************************
+     617 00004300     098f  ds_1    mmtm    sp,a0,a1,a2,a3,a5,a6,a7,a8,a9,a10
+         00004310     f7e0  
+     618 00004320     c004          jruc    ds_2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     619 00004330           do_sound
+     620 00004330     098f          mmtm    sp,a0,a1,a2,a3,a5,a6,a7,a8,a9,a10
+         00004340     f7e0  
+     621 00004350     09ca          movi    255,a10         ;full volume
+         00004360     00ff  
+     622 00004370     05ae  ds_2    MOVE    @SOUNDSUP,A14,W
+         00004380 00000000! 
+     623 000043a0     cb17          JRNZ    DS_ABORT                                ;BR=NO SOUNDS ALLOWED
+     624 000043b0     2484          sll     4,a4
+     625 000043c0     4c85          move    a4,a5
+     626 000043d0     2425          sll     1,a5
+     627 000043e0     4085          add     a4,a5
+     628 000043f0     0b25          addi    sound_table,a5
+         00004400 00000000' 
+     629 00004420     94a4          move    *a5+,a4,W       ;sound
+     630 00004430     ce07          jrn     ds_tn           ;negative means tune
+     631 00004440     94a9          move    *a5+,a9,W       ;time
+     632 00004450     94a8          move    *a5+,a8,W       ;priority
+     633 00004460     0d3f          callr   do_sound_at_priority
+         00004470     000e  
+     634 00004480     09af          mmfm    sp,a0,a1,a2,a3,a5,a6,a7,a8,a9,a10
+         00004490     07ef  
+     635 000044a0     0960          rets
+     636 000044b0     96a4  ds_tn   move    *a5+,a4,L       ;get tune address
+     637 000044c0     9488          move    *a4+,a8,W
+     638 000044d0     0d3f          callr   do_sound_at_priority
+         000044e0     0007  
+     639 000044f0     09af          mmfm    sp,a0,a1,a2,a3,a5,a6,a7,a8,a9,a10
+         00004500     07ef  
+     640 00004510     0960          rets
+     641 00004520           DS_ABORT
+     642 00004520     0320          clrc
+     643 00004530     09af          mmfm    sp,a0,a1,a2,a3,a5,a6,a7,a8,a9,a10
+         00004540     07ef  
+     644 00004550     0960          rets
+     645                    
+     646                    
+     647                    **************************************************************************
+     648                    *                                                                        *
+     649                    * do_sound_at_priority                                                   *
+     650                    *       input   a4 = raw sound code (or tune address)                    *
+     651                    *               a8 = priority + bits                                     *
+     652                    *               a9 = sound time                                          *
+     653                    *               a10= volume                                              *
+     654                    *       output  c  = sound was made                                      *
+     655                    *                 a4 = track made on                                     *
+     656                    *               nc = sound not made                                      *
+     657                    *                                                                        *
+     658                    **************************************************************************
+     659 00004560           do_sound_at_priority
+     660 00004560     4d03          move    a8,a3
+     661 00004570     2703          sll     24,a3                   ;remove bits from priority, saving original
+     662 00004580     2d03          srl     24,a3
+     663 00004590     05a0          move    @last_track_used,a0,W
+         000045a0 00000180- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     664 000045c0     1882          movk    HIGHEST_TRACK,a2
+     665 000045d0           dsap1   INCTR   a0                      ;next track
+     666 00004620     0d3f          callr   get_track_time          ;first check for an empty track
+         00004630     0086  
+     667 00004640     4c21          move    a1,a1
+     668 00004650     ca0e          jrz     ds_go
+     669 00004660     3d42          dsjs    a2,dsap1
+     670 00004670     1882          movk    HIGHEST_TRACK,a2
+     671 00004680           dsap2   INCTR   a0
+     672 000046d0     0d3f          callr   get_track_priority
+         000046e0     006d  
+     673 000046f0     4861          cmp     a3,a1
+     674 00004700     c803          jrlo    ds_go
+     675 00004710     3d42          dsjs    a2,dsap2
+     676 00004720     0320          clrc
+     677 00004730     0960          rets
+     678 00004740     1ee8  ds_go   btst    8,a8            ;check equal
+     679 00004750     ca01          jrz     dsg1
+     680 00004760     1423          dec     a3
+     681 00004770           dsg1            ;a0 = track
+     682                                    ;a3 = priority
+     683                                    ;a4 = sound code to send (or tune address)
+     684                                    ;a9 = time
+     685                                    ;a10 = volume
+     686 00004770     4c84          move    a4,a4
+     687 00004780     cf09          jrnn    ds_reg          ;regular sound call
+     688 00004790     4c61  ds_tune move    a3,a1
+     689 000047a0     0d3f          callr   set_track_priority
+         000047b0     0067  
+     690 000047c0     4d41          move    a10,a1
+     691 000047d0     0d3f          callr   set_track_volume
+         000047e0     0091  
+     692 000047f0     0d3f          callr   start_run_tune  ;a4 = address, a0 = channel
+         00004800     0040  
+     693 00004810     c00d          jruc    dsee
+     694 00004820     4c61  ds_reg  move    a3,a1
+     695 00004830     0d3f          callr   set_track_priority
+         00004840     005e  
+     696 00004850     4d21          move    a9,a1
+     697 00004860     0d3f          callr   set_track_time
+         00004870     0069  
+     698 00004880     4d41          move    a10,a1
+     699 00004890     0d3f          callr   set_track_volume
+         000048a0     0085  
+     700 000048b0     4004          add     a0,a4           ;add offset to raw code
+     701 000048c0     1424          dec     a4              ;our base is track 1, not 0
+     702 000048d0     0d3f          callr   SEND_RAW_SOUND
+         000048e0     00f1  
+     703 000048f0     4c81  dsee    move    a4,a1
+     704 00004900     0d3f          callr   set_track_last
+         00004910     0066  
+     705 00004920     0580          move    a0,@last_track_used,W
+         00004930 00000180- 
+     706 00004950     5621          clr     a1
+     707 00004960     05a4          move    @puck_ice_track,a4,W            ;zero any special tracks
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+         00004970 000001a0- 
+     708 00004990     4804          cmp     a0,a4                           ;we may have stomped on
+     709 000049a0     cb03          jrnz    co1
+     710 000049b0     0581          move    a1,@puck_ice_track,W
+         000049c0 000001a0- 
+     711 000049e0     05a4  co1     move    @puck_bounce_track,a4,W
+         000049f0 000001b0- 
+     712 00004a10     4804          cmp     a0,a4
+     713 00004a20     cb03          jrnz    co2
+     714 00004a30     0581          move    a1,@puck_bounce_track,W
+         00004a40 000001b0- 
+     715 00004a60     05a4  co2     move    @ice_skate_track,a4,W
+         00004a70 000001c0- 
+     716 00004a90     4804          cmp     a0,a4
+     717 00004aa0     cb03          jrnz    co3
+     718 00004ab0     0581          move    a1,@ice_skate_track,W
+         00004ac0 000001c0- 
+     719 00004ae0     05a4  co3     move    @organ_track,a4,W
+         00004af0 000001d0- 
+     720 00004b10     4804          cmp     a0,a4
+     721 00004b20     cb03          jrnz    co4
+     722 00004b30     0581          move    a1,@organ_track,W
+         00004b40 000001d0- 
+     723 00004b60     05a4  co4     move    @crowd_track,a4,W
+         00004b70 000001e0- 
+     724 00004b90     4804          cmp     a0,a4
+     725 00004ba0     cb03          jrnz    co5
+     726 00004bb0     0581          move    a1,@crowd_track,W
+         00004bc0 000001e0- 
+     727 00004be0     4c04  co5     move    a0,a4                           ;return our track in a4
+     728 00004bf0     0de0          setc
+     729 00004c00     0960          rets
+     730                    
+     731 00004c10           start_run_tune  ;a4 = tune address, a0 = track#
+     732 00004c10     4c85          move    a4,a5
+     733 00004c20     4c07          move    a0,a7
+     734 00004c30     4c01          move    a0,a1
+     735 00004c40     24c1          sll     6,a1
+     736 00004c50     0b21          addi    track_0_time,a1
+         00004c60 00000010- 
+     737 00004c80     24a7          sll     5,a7
+     738 00004c90     0b27          addi    tune_address_1-32,a7
+         00004ca0 000001d0- 
+     739 00004cc0           run_tune        ;a5 = tune address, a0 = track#
+     740 00004cc0     94a4  rt_1    move    *a5+,a4,W
+     741 00004cd0     ca0a          jrz     rt_9
+     742 00004ce0     ce05          jrn     rt_t            ;negative is time
+     743 00004cf0     4004          add     a0,a4
+     744 00004d00     1424          dec     a4
+     745 00004d10     0d3f          callr   SEND_RAW_SOUND
+         00004d20     00ad  
+     746 00004d30     c0f8          jruc    rt_1
+     747 00004d40     03a4  rt_t    neg     a4
+     748 00004d50     8081          move    a4,*a1,W        ;set time
+     749 00004d60     82a7          move    a5,*a7,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     750 00004d70     0960          rets
+     751 00004d80     5684  rt_9    clr     a4
+     752 00004d90     8081          move    a4,*a1,W        ;set time
+     753 00004da0     8287          move    a4,*a7,L
+     754 00004db0     0960          rets
+     755                    
+     756                    **************************************************************************
+     757                    *                                                                        *
+     758                    * get_track_priority                                                     *
+     759                    *       input   a0 = track                                               *
+     760                    *       output  a1 = priority                                            *
+     761                    *                                                                        *
+     762                    **************************************************************************
+     763 00004dc0           get_track_priority
+     764 00004dc0     4c01          move    a0,a1
+     765 00004dd0     24c1          sll     6,a1
+     766 00004de0     0b21          addi    track_0_pri,a1
+         00004df0 00000000- 
+     767 00004e10     8421          move    *a1,a1,W
+     768 00004e20     0960          rets
+     769                    
+     770                    **************************************************************************
+     771                    *                                                                        *
+     772                    * set_track_priority                                                     *
+     773                    *       input   a0 = track                                               *
+     774                    *               a1 = priority                                            *
+     775                    *                                                                        *
+     776                    **************************************************************************
+     777 00004e30           set_track_priority
+     778 00004e30     4c0e          move    a0,a14
+     779 00004e40     24ce          sll     6,a14
+     780 00004e50     0b2e          addi    track_0_pri,a14
+         00004e60 00000000- 
+     781 00004e80     802e          move    a1,*a14,W
+     782 00004e90     0960          rets
+     783                    
+     784                    **************************************************************************
+     785                    *                                                                        *
+     786                    * get_track_time                                                         *
+     787                    *       input   a0 = track                                               *
+     788                    *       output  a1 = time                                                *
+     789                    *                                                                        *
+     790                    **************************************************************************
+     791 00004ea0           get_track_time
+     792 00004ea0     4c01          move    a0,a1
+     793 00004eb0     24c1          sll     6,a1
+     794 00004ec0     0b21          addi    track_0_time,a1
+         00004ed0 00000010- 
+     795 00004ef0     8421          move    *a1,a1,W
+     796 00004f00     0960          rets
+     797                    
+     798                    **************************************************************************
+     799                    *                                                                        *
+     800                    * set_track_time                                                         *
+     801                    *       input   a0 = track                                               *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     802                    *               a1 = time                                                *
+     803                    *                                                                        *
+     804                    **************************************************************************
+     805 00004f10           set_track_time
+     806 00004f10     4c0e          move    a0,a14
+     807 00004f20     24ce          sll     6,a14
+     808 00004f30     0b2e          addi    track_0_time,a14
+         00004f40 00000010- 
+     809 00004f60     802e          move    a1,*a14,W
+     810 00004f70     0960          rets
+     811                    
+     812                    **************************************************************************
+     813                    *                                                                        *
+     814                    * set_track_last                                                         *
+     815                    *       input   a0 = track                                               *
+     816                    *               a1 = code to store                                       *
+     817                    *                                                                        *
+     818                    **************************************************************************
+     819 00004f80           set_track_last
+     820 00004f80     4c0e          move    a0,a14
+     821 00004f90     24ce          sll     6,a14
+     822 00004fa0     0b2e          addi    track_0_last,a14
+         00004fb0 00000020- 
+     823 00004fd0     802e          move    a1,*a14,W
+     824 00004fe0     0960          rets
+     825                    
+     826                    **************************************************************************
+     827                    *                                                                        *
+     828                    * cancel_track_sound                                                     *
+     829                    *       input   a0 = track                                               *
+     830                    *                                                                        *
+     831                    **************************************************************************
+     832 00004ff0           cancel_track_sound
+     833 00004ff0     098f          mmtm    sp,a1
+         00005000     4000  
+     834 00005010     5621          clr     a1
+     835 00005020     0d3f          callr   set_track_volume
+         00005030     000c  
+     836 00005040     0d3f          callr   set_track_time
+         00005050     ffeb  
+     837 00005060     09af          mmfm    sp,a1
+         00005070     0002  
+     838 00005080     0960          rets
+     839                    
+     840                    **************************************************************************
+     841                    *                                                                        *
+     842                    * get_track_volume                                                       *
+     843                    *       input   a0 = track                                               *
+     844                    *       output  a1 = volume                                              *
+     845                    *                                                                        *
+     846                    **************************************************************************
+     847 00005090           get_track_volume
+     848 00005090     4c01          move    a0,a1
+     849 000050a0     24c1          sll     6,a1
+     850 000050b0     0b21          addi    track_0_volume,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+         000050c0 00000030- 
+     851 000050e0     8421          move    *a1,a1,W
+     852 000050f0     0960          rets
+     853                    
+     854                    **************************************************************************
+     855                    *                                                                        *
+     856                    * set_track_volume                                                       *
+     857                    *       input   a0 = track                                               *
+     858                    *               a1 = volume                                              *
+     859                    *                                                                        *
+     860                    **************************************************************************
+     861 00005100           set_track_volume
+     862 00005100     098f          mmtm    sp,a2,a4
+         00005110     2800  
+     863 00005120     4c22          move    a1,a2
+     864 00005130     0d3f          callr   get_track_volume
+         00005140     fff4  
+     865 00005150     4822          cmp     a1,a2
+     866 00005160     ca09          jrz     stv_9
+     867 00005170     4c0e          move    a0,a14
+     868 00005180     24ce          sll     6,a14
+     869 00005190     0b2e          addi    track_0_volume,a14
+         000051a0 00000030- 
+     870 000051c0     4c41          move    a2,a1
+     871 000051d0     802e          move    a1,*a14,W
+     872 000051e0     0d3f          callr   send_track_volume
+         000051f0     0003  
+     873 00005200     09af  stv_9   mmfm    sp,a2,a4
+         00005210     0014  
+     874 00005220     0960          rets
+     875                    
+     876                    **************************************************************************
+     877                    *                                                                        *
+     878                    * send_track_volume                                                      *
+     879                    *       input   a0 = track                                               *
+     880                    *       input   a1 = volume                                              *
+     881                    *                                                                        *
+     882                    **************************************************************************
+     883 00005230           send_track_volume
+     884 00005230     4c04          move    a0,a4
+     885 00005240     0b04          addi    055abh,a4               ;add 1 so our zero offset is track 1 (0 is tune)
+         00005250     55ab  
+     886 00005260     0d3f          callr   SEND_RAW_SOUND
+         00005270     0058  
+     887 00005280     4c24          move    a1,a4
+     888 00005290     03e4          not     a4
+     889 000052a0     2504          sll     8,a4
+     890 000052b0     4024          add     a1,a4
+     891 000052c0     03e4          not     a4
+     892 000052d0     2604          sll     16,a4
+     893 000052e0     2e04          srl     16,a4
+     894 000052f0     c050          jruc    SEND_RAW_SOUND
+     895                    
+     896 00005300           sound_exec
+     897 00005300     09e1          movi    track_4_time,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+         00005310 00000110- 
+     898 00005330     09c0          movi    HIGHEST_TRACK,a0
+         00005340     0004  
+     899 00005350     842e  se_1    move    *a1,a14,W
+     900 00005360     ca03          jrz     se_2
+     901 00005370     142e          dec     a14
+     902 00005380     ca05          jrz     se_3
+     903 00005390     81c1  se_4    move    a14,*a1,W
+     904 000053a0     0be1  se_2    subi    track_2_time-track_1_time,a1
+         000053b0     ffbf  
+     905 000053c0     3d00          dsjs    a0,se_1
+     906 000053d0     0960          rets
+     907 000053e0     4c07  se_3    move    a0,a7
+     908 000053f0     24a7          sll     5,a7
+     909 00005400     0b27          addi    tune_address_1-32,a7
+         00005410 000001d0- 
+     910 00005430     86e5          move    *a7,a5,L
+     911 00005440     caf4          jrz     se_4
+     912 00005450     0d3f          callr   run_tune
+         00005460     ff85  
+     913 00005470     c0f2          jruc    se_2
+     914                    
+     915 00005480           empty_speech_buffer
+     916 00005480     01e0          PUSHST
+     917 00005490     0360          dint
+     918 000054a0     07c0          move    @speech_buffer_head,@speech_buffer_tail,L
+         000054b0 00000510- 
+         000054d0 00000530- 
+     919 000054f0     01c0          POPST
+     920 00005500     0960          rets
+     921                    
+     922 00005510           speech_irq
+     923 00005510     05ae          move    @speech_buffer_time,a14,W
+         00005520 00000550- 
+     924 00005540     ca08          jrz     se_01   ;was empty
+     925 00005550     142e          dec     a14
+     926 00005560     058e          move    a14,@speech_buffer_time,W       ;stuff it here in case we end on a call (no time)
+         00005570 00000550- 
+     927 00005590     ca04          jrz     se_dsp
+     928 000055a0     058e          move    a14,@speech_buffer_time,W
+         000055b0 00000550- 
+     929 000055d0     0960  se_01   rets
+     930                    
+     931 000055e0     0d3f  se_dsp  callr   pull_speech_from_buffer
+         000055f0     0164  
+     932 00005600     c9fc          jrnc    se_01
+     933 00005610     4c84          move    a4,a4
+     934 00005620     ca09          jrz     se_sbr
+     935 00005630     ce03          jrn     se_dst
+     936 00005640     0d3f          callr   SEND_RAW_SOUND
+         00005650     001a  
+     937 00005660     c0f7          jruc    se_dsp
+     938 00005670     03a4  se_dst  neg     a4
+     939 00005680     0584          move    a4,@speech_buffer_time,W
+         00005690 00000550- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+     940 000056b0     c0f1          jruc    se_01
+     941 000056c0     0d3f  se_sbr  callr   pull_speech_from_buffer
+         000056d0     0156  
+     942 000056e0     4c83          move    a4,a3
+     943 000056f0     0d3f          callr   pull_speech_from_buffer
+         00005700     0153  
+     944 00005710     2604          sll     16,a4
+     945 00005720     ec64          movx    a3,a4
+     946 00005730     0164          jump    a4
+     947                    
+     948                    
+     949                    **************************************************************************
+     950                    *                                                                        *
+     951                    *       SEND_RAW_SOUND                                                   *
+     952                    *                                                                        *
+     953                    *       Send a sound code to the sound board at the most basic level.    *
+     954                    *                                                                        *
+     955                    *       A4 = 16 bit sound code to send.                                  *
+     956                    *                                                                        *
+     957                    *       Note: Trashes A14                                                *
+     958                    *                                                                        *
+     959                    **************************************************************************
+     960                            .align
+     961                    
+     962 00005800           SEND_RAW_SOUND
+     963                            .if     XUNIT=1
+     964                    
+     965                            mmtm    sp,a0,a5
+     966                            rl      24,a4
+     967                            movi    UART,a0
+     968                            movi    20000,a5                ;load time-out value
+     969                    stxw    move    *a0(UART_IMR),a14,W     ;read isr register from uart
+     970                            btst    0,a14                   ;is it ready to transmit?
+     971                            jrnz    stxf
+     972                            dsjs    a5,stxw                 ;click down another for timeout
+     973                    stxf    move    a4,*a0(UART_THR),W      ;send the high byte first
+     974                            movi    20000,a5                ;load time-out value
+     975                    stxw2   move    *a0(UART_IMR),a14,W     ;read isr register from uart
+     976                            btst    0,a14                   ;is it ready to transmit?
+     977                            jrnz    stxs
+     978                            dsjs    a5,stxw2                ;click down another for timeout
+     979                    stxs    rl      8,a4
+     980                            move    a4,*a0(UART_THR),W      ;then send the low byte
+     981                            mmfm    sp,a0,a5
+     982                    
+     983                            .else
+     984                    
+     985 00005800     098f          mmtm    sp,a0,a1,a2,a3,a4
+         00005810     f800  
+     986                    
+     987 00005820     07a0          move    @raw_sound_pointer,a0,L
+         00005830 000043f0- 
+     988 00005850     0b60          cmpi    raw_sound_buffer,a0
+         00005860 fffffa8f- 
+     989 00005880     c804          jrlo    sxrb
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+     990 00005890     0b60          cmpi    raw_sound_pointer,a0
+         000058a0 ffffbc0f- 
+     991 000058c0     c803          jrlo    sxrc
+     992 000058d0     09e0  sxrb    movi    raw_sound_buffer,a0
+         000058e0 00000570- 
+     993 00005900     9080  sxrc    move    a4,*a0+,W
+     994 00005910     0780          move    a0,@raw_sound_pointer,L
+         00005920 000043f0- 
+     995                    
+     996 00005940     4c80          move    a4,a0
+     997 00005950     2604          sll     32-16,a4
+     998 00005960     2d04          srl     32-8,a4                 ; a3 = high byte
+     999 00005970     0d3f          callr   poll_sirq
+         00005980     000e  
+    1000 00005990     cf0a          JRNN    sendx                   ;BR = SOUND BOARD BUSY TIME OUT
+    1001 000059a0     0584          move    a4,@SOUND,W             ; hit sound (low)
+         000059b0 01680000  
+    1002                    
+    1003                            ;DELAY WHEN TO READ IRQ? 20ns.
+    1004                    
+    1005 000059d0     2700          sll     32-8,a0
+    1006 000059e0     2d00          srl     32-8,a0                 ; a3 = low byte
+    1007 000059f0     0d3f          callr   poll_sirq
+         00005a00     0006  
+    1008 00005a10     0580          move    a0,@SOUND,W             ; hit sound (low)
+         00005a20 01680000  
+    1009                    
+    1010 00005a40     09af  sendx   mmfm    sp,a0,a1,a2,a3,a4
+         00005a50     001f  
+    1011                    
+    1012                            .endif
+    1013                    
+    1014 00005a60     0960          rets
+    1015                    
+    1016                            .if     XUNIT=0
+    1017                    *****************************************************************************
+    1018                    * Poll sound IRQ.  When IRQ goes high, sound board is ready for next call.
+    1019                    * Do timeout so sound board can't screw things up.
+    1020                    *
+    1021                    
+    1022 00005a70           poll_sirq
+    1023                    ;       MOVI    108000000/(MACHINE_CYCLE*10),A3 ;108 MILLISECONDS TIL TIME OUT
+    1024 00005a70     1943          movk    10,a3
+    1025 00005a80     07e1  poll3   movb    @SOUNDIRQ+B_SIRQ-7,a1
+         00005a90 01860044  
+    1026 00005ab0     ce02          jrn     poll9                   ; done?
+    1027 00005ac0     3ca3          dsj     a3,poll3
+    1028 00005ad0     2be3          SRA     1,A3                    ;TIME OUT -> CLEAR N FLAG
+    1029 00005ae0     0960  poll9   rets
+    1030                            .endif
+    1031                    
+    1032                    **************************************************************************
+    1033                    *                                                                        *
+    1034                    *       LINT2_SERVICE                                                    *
+    1035                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+    1036                    *       Interrupt service for all of the user of LINT2.                  *
+    1037                    *                                                                        *
+    1038                    *       As of 10/28/93 the only thing serviced is the sound UART.        *
+    1039                    *                                                                        *
+    1040                    **************************************************************************
+    1041 00005af0           LINT2_SERVICE
+    1042                            .if     XUNIT=1
+    1043                            MMTM    SP,A0,A1
+    1044                            MOVE    @UART+UART_IMR,A0,W
+    1045                            BTST    2,A0
+    1046                            JRZ     L2_X                    ;BR = Not a receive interrupt
+    1047                            MOVE    @UART+UART_THR,@SOUND_RX,W
+    1048                    L2_X    MMFM    SP,A0,A1
+    1049                            .else
+    1050                    
+    1051                    **************************************************************************
+    1052                    *                                                                        *
+    1053                    *       NOTE! THIS SHOULD AUDIT IN PRODUCTION CODE.                      *
+    1054                    *                                                                        *
+    1055                    **************************************************************************
+    1056                    
+    1057                            .if     DEBUG
+    1058                    
+    1059                            MOVE    @SYSCTRL,A0,W
+    1060                            XORI    CLR_WRROMINT,A0         ;CLEAR WRITE TO ROM INTERRUPT
+    1061                            MOVE    A0,@SYSCTRL,W
+    1062                            ORI     CLR_WRROMINT,A0         ;CLEAR WRITE TO ROM INTERRUPT
+    1063                            MOVE    A0,@SYSCTRL,W
+    1064                    
+    1065                            JRUC    $
+    1066                    
+    1067                            .else
+    1068                    
+    1069 00005af0                   PUSH    A0
+    1070 00005b00     05a0          MOVE    @SYSCTRL,A0,W
+         00005b10 01b00000  
+    1071 00005b30     0bc0          XORI    CLR_WRROMINT,A0         ;CLEAR WRITE TO ROM INTERRUPT
+         00005b40 00002000  
+    1072 00005b60     0580          MOVE    A0,@SYSCTRL,W
+         00005b70 01b00000  
+    1073 00005b90     0ba0          ORI     CLR_WRROMINT,A0         ;CLEAR WRITE TO ROM INTERRUPT
+         00005ba0 00002000  
+    1074 00005bc0     0580          MOVE    A0,@SYSCTRL,W
+         00005bd0 01b00000  
+    1075 00005bf0                   PULLQ   A0
+    1076                    
+    1077 00005c00                   PUSH    B14
+    1078 00005c10     b7fe          MOVE    *SP(040H),B14,L ;Grab the return address for dump
+         00005c20     0040  
+    1079                    
+    1080 00005c30                   PUSH    A0
+    1081 00005c40                   AUDIT   AUD_WARNING
+    1082 00005c90                   PULLQ   A0
+    1083                    
+    1084 00005ca0                   PUSH    A14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+    1085 00005cb0     186e          MOVK    3,A14
+    1086 00005cc0     0d5f          CALLA   DUMP_IT
+         00005cd0 00000000! 
+    1087 00005cf0                   PULLQ   A14
+    1088                    
+    1089 00005d00                   PULLQ   B14
+    1090                    
+    1091                            .endif
+    1092                    
+    1093                            .endif
+    1094                    
+    1095 00005d10     0940          RETI
+    1096                    
+    1097                    **************************************************************************
+    1098                    *                                                                        *
+    1099                    *       SNDRES                                                           *
+    1100                    *                                                                        *
+    1101                    *       Full sound board reset.  Checksum dings are reported.            *
+    1102                    *                                                                        *
+    1103                    *       Must be called with process system initialized or                *
+    1104                    *       the board volume will not be set correctly and this              *
+    1105                    *       could be dangerous.                                              *
+    1106                    *                                                                        *
+    1107                    * NOTE: TRASHES A14                                                      *
+    1108                    *                                                                        *
+    1109                    **************************************************************************
+    1110 00005d20           SNDRES:
+    1111                            .if     XUNIT=1
+    1112                            MMTM    SP,A0,A1,A7,A8,A13
+    1113                    
+    1114                            GETST   A0
+    1115                            DINT
+    1116                            ORIM    SND_RESET<<8,@SYSCOPY,W ;Tug on sound board reset line
+    1117                            SRL     8,A14
+    1118                            MOVE    A14,@SYSCTRL1,W         ;And really assert it here
+    1119                            PUTST   A0
+    1120                            MSECWT  10                      ;Wait for sound board to catch it
+    1121                            GETST   A0
+    1122                            DINT
+    1123                            ANDNIM  SND_RESET<<8,@SYSCOPY,W ;Release the reset line
+    1124                            SRL     8,A14
+    1125                            MOVE    A14,@SYSCTRL1,W         ;And really release it here
+    1126                            PUTST   A0
+    1127                    
+    1128                    ;       MOVI    120,A8                  ;Delay this much before resetting
+    1129                    ;       CREATE  PID_VOLRESET,PROC_RESET_VOLUME
+    1130                    ;       CLRM    @VOLUME_SET,W           ;Mark the volume as not being set
+    1131                    
+    1132                            CALLA   INITIALIZE_UART         ;Initialize the UART
+    1133                            MMFM    SP,A0,A1,A7,A8,A13
+    1134                    
+    1135                            .else
+    1136                    
+    1137 00005d20                   push    a0              ;Need an extra reggie
+    1138 00005d30     09c0          movi    SNDRSTBIT|IORSTBIT,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+         00005d40     0030  
+    1139 00005d50     0580          move    a0,@COIN_COUNTERS
+         00005d60 01860010  
+    1140                    
+    1141 00005d80                   MSECWT  110             ;Wait for sound board to catch it
+    1142                    
+    1143 00005db0     09c0          movi    IORSTBIT,a0
+         00005dc0     0020  
+    1144 00005dd0     0580          move    a0,@COIN_COUNTERS
+         00005de0 01860010  
+    1145 00005e00                   pullq   a0              ; Restore the reggies
+    1146                    
+    1147 00005e10     09c8          MOVI    NUMBER_OF_SOUND_ROMS*60,A8      ;SOUND BOARD OK DELAY
+         00005e20     00f0  
+    1148 00005e30                   CREATE  PID_VOLRESET,PROC_RESET_VOLUME
+    1149 00005ec0                   CLRM    @VOLUME_SET,W           ;Mark the volume as not being set
+    1150                    
+    1151                            .endif
+    1152 00005f00     0960          rets
+    1153                    
+    1154                    **************************************************************************
+    1155                    *                                                                        *
+    1156                    * QSNDRST - QUIET SOUND RESET, NO DIAGNOSTIC DONGERS                     *
+    1157                    *                                                                        *
+    1158                    **************************************************************************
+    1159 00005f10           QSNDRST
+    1160 00005f10     098f          MMTM    SP,A0,A3,A4,A5
+         00005f20     9c00  
+    1161 00005f30     0d3f          CALLR   SNDRES          ;RESET THE BOARD
+         00005f40     ffdd  
+    1162 00005f50                   MSECWT  50000           ;The dong takes so long
+    1163                    
+    1164 00005f90     5684          CLR     A4
+    1165 00005fa0     0d3f          CALLR   SEND_RAW_SOUND
+         00005fb0     ff84  
+    1166                    
+    1167 00005fc0     09e0          MOVI    PID_VOLRESET,A0
+         00005fd0 00008f09  
+    1168 00005ff0     0d5f          CALLA   KILLPROC_ALL
+         00006000 00000000! 
+    1169 00006020                   MSECWT  50000                   ;WAIT FOR READY
+    1170 00006060     0d3f          CALLR   SET_VOLUME
+         00006070     0014  
+    1171                    
+    1172 00006080     09af          MMFM    SP,A0,A3,A4,A5
+         00006090     0039  
+    1173 000060a0     0960          RETS
+    1174                    
+    1175                    **************************************************************************
+    1176                    *                                                                        *
+    1177                    *       DEBUG_SNDRST                                                     *
+    1178                    *                                                                        *
+    1179                    *       Routine to be used by Toddview only.  Just sends an              *
+    1180                    *       off code to the sound board.  It's best not to call              *
+    1181                    *       any normal game routines from here.  If you do, beware           *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+    1182                    *       when setting a breakpoint in those routines.                     *
+    1183                    *                                                                        *
+    1184                    **************************************************************************
+    1185 000060b0           DEBUG_SNDRST
+    1186                            .if     XUNIT=1
+    1187                            MMTM    SP,A0,A4,A5
+    1188                            CLR     A4
+    1189                            MOVI    20000,A5                ;Load time-out value
+    1190                            MOVI    UART,A0
+    1191                    DS_Tx_WAIT
+    1192                            MOVE    *A0(UART_IMR),A14,W     ;Read ISR register from UART
+    1193                            BTST    0,A14                   ;Is it ready to transmit?
+    1194                            JRNZ    DS_Tx_BYTE1             ;BR = Yes
+    1195                            DSJS    A5,DS_Tx_WAIT           ;Click down another for timeout
+    1196                    DS_Tx_BYTE1
+    1197                            MOVE    A4,*A0(UART_THR),W      ;Send the High byte first
+    1198                            MOVI    20000,A5                ;Reload time-out value
+    1199                    DS_Tx_WAIT2
+    1200                            MOVE    *A0(UART_IMR),A14,W     ;Read ISR register from UART
+    1201                            BTST    0,A14                   ;Is it ready to transmit?
+    1202                            JRNZ    DS_Tx_BYTE2             ;BR = Yes
+    1203                            DSJS    A5,DS_Tx_WAIT2
+    1204                    DS_Tx_BYTE2
+    1205                            MOVE    A4,*A0(UART_THR),W      ;Then send the Low byte
+    1206                            MMFM    SP,A0,A4,A5
+    1207                            .else
+    1208                    
+    1209                    ;       RETS                            ;USE TO DEBUG SEND_RAW_SOUND
+    1210                    
+    1211 000060b0     098f          mmtm    sp,a4
+         000060c0     0800  
+    1212 000060d0     5684          clr     a4
+    1213 000060e0     0d3f          callr   SEND_RAW_SOUND
+         000060f0     ff70  
+    1214 00006100     09af          mmfm    sp,a4
+         00006110     0010  
+    1215                    
+    1216                            .endif
+    1217 00006120     0960          RETS
+    1218                    
+    1219                    **************************************************************************
+    1220                    *                                                                        *
+    1221                    *               Software volume control code                             *
+    1222                    *                                                                        *
+    1223                    **************************************************************************
+    1224                    
+    1225              55aa  MASTER_VOLUME_CODE      .EQU    055AAH  ;Code for setting the master volume
+    1226              000b  VOLDN_SWITCH            .EQU    11      ;Switch # of volume down
+    1227              000c  VOLUP_SWITCH            .EQU    12      ;Switch # of volume up
+    1228                    
+    1229                    **************************************************************************
+    1230                    *                                                                        *
+    1231                    *       PROC_RESET_VOLUME                                                *
+    1232                    *                                                                        *
+    1233                    *               Process to set the volume after a 2 second delay.        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+    1234                    *               This is used in conjunction with SNDRES so that          *
+    1235                    *               the dings may be heard. It would be wise not to          *
+    1236                    *               make a sound call that results in output until this      *
+    1237                    *               process has set the volume.                              *
+    1238                    *                                                                        *
+    1239                    *       A8 = Sleep time before reset.                                    *
+    1240                    *                                                                        *
+    1241                    **************************************************************************
+    1242 00006130           PROC_RESET_VOLUME
+    1243 00006130                   SLEEPR  A8
+    1244 00006170     0d3f          CALLR   SET_VOLUME
+         00006180     0003  
+    1245 00006190                   DIE
+    1246                    
+    1247                    **************************************************************************
+    1248                    *                                                                        *
+    1249                    *       SET_VOLUME                                                       *
+    1250                    *                                                                        *
+    1251                    *       Set the sound board volume based on the value stored in          *
+    1252                    *       CMOS RAM.  If the value is corrupt, then the value               *
+    1253                    *       FACTORY_VOLUME is used.                                          *
+    1254                    *                                                                        *
+    1255                    **************************************************************************
+    1256 000061c0           SET_VOLUME
+    1257 000061c0     098f          MMTM    SP,A0,A1,A4
+         000061d0     c800  
+    1258 000061e0                   ADJUST  ADJVOLUME               ;Get the current volume
+    1259 00006230     4c01          MOVE    A0,A1
+    1260 00006240                   ADJUST  ADJMINVOL               ;Get the minimum volume allowed
+    1261 00006290     4801          CMP     A0,A1                   ;Are we lower than the minimum?
+    1262 000062a0     c901          JRHS    SV_OK                   ;BR = No, we are O.K.
+    1263 000062b0     4c01          MOVE    A0,A1                   ;Otherwise, set minimum.
+    1264 000062c0           SV_OK
+    1265 000062c0     09c4          MOVI    MASTER_VOLUME_CODE,A4
+         000062d0     55aa  
+    1266 000062e0     0d3f          CALLR   SEND_RAW_SOUND          ;Yo! Master volume is on it's way.
+         000062f0     ff50  
+    1267 00006300     4c24          MOVE    A1,A4
+    1268 00006310     03e1          NOT     A1                      ;I have a complement for you
+    1269 00006320     2504          SLL     8,A4
+    1270 00006330     2701          sll     32-8,a1
+    1271 00006340     2d01          srl     32-8,a1
+    1272 00006350     4024          ADD     A1,A4                   ;Put 'em together for the send
+    1273                    
+    1274 00006360     0d3f          CALLR   SEND_RAW_SOUND          ;Behold the master!
+         00006370     ff48  
+    1275                    
+    1276 00006380                   MOVKM   1,@VOLUME_SET,W         ;The volume has been set
+    1277                    
+    1278 000063c0     09af          MMFM    SP,A0,A1,A4
+         000063d0     0013  
+    1279 000063e0     0960          RETS
+    1280                    
+    1281                    
+    1282                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   27
+
+    1283                    *                                                                        *
+    1284                    *       SWITCH_VOLUME_UP                                                 *
+    1285                    *                                                                        *
+    1286                    *       Switch triggered process to increase the sound board volume.     *
+    1287                    *                                                                        *
+    1288                    **************************************************************************
+    1289 000063f0           SWITCH_VOLUME_UP
+    1290 000063f0     05ae          MOVE    @COINS,A14,W
+         00006400 01860030  
+    1291 00006420     1e4e          BTST    13,A14
+    1292 00006430     ca80          JAZ     SUCIDE                  ;BR=COIN DOOR INTERLOCK OPEN
+         00006440 00000000! 
+    1293                    
+    1294 00006460     1828          MOVK    1,A8                    ;Increment   WBD
+    1295 00006470     198a          MOVK    VOLUP_SWITCH,A10
+    1296 00006480     c00a          JRUC    SWITCH_VOLUME_CONTROL
+    1297                    
+    1298                    **************************************************************************
+    1299                    *                                                                        *
+    1300                    *       SWITCH_VOLUME_DOWN                                               *
+    1301                    *                                                                        *
+    1302                    *       Switch triggered process to decrease the sound board volume.     *
+    1303                    *                                                                        *
+    1304                    **************************************************************************
+    1305 00006490           SWITCH_VOLUME_DOWN
+    1306 00006490     05ae          MOVE    @COINS,A14,W
+         000064a0 01860030  
+    1307 000064c0     1e4e          BTST    13,A14
+    1308 000064d0     ca80          JAZ     SUCIDE                  ;BR=COIN DOOR INTERLOCK OPEN
+         000064e0 00000000! 
+    1309                    
+    1310 00006500     09c8          MOVI    -1,A8                   ;Decrement   WBD
+         00006510     ffff  
+    1311 00006520     196a          MOVK    VOLDN_SWITCH,A10
+    1312                    
+    1313                    **************************************************************************
+    1314                    *                                                                        *
+    1315                    *       SWITCH_VOLUME_CONTROL                                            *
+    1316                    *                                                                        *
+    1317                    *       Process to adjust volume                                         *
+    1318                    *                                                                        *
+    1319                    *       A8 = Change value                                                *
+    1320                    *       A10 = Switch number to check                                     *
+    1321                    *                                                                        *
+    1322                    **************************************************************************
+    1323 00006530           SWITCH_VOLUME_CONTROL
+    1324 00006530     05ae          MOVE    @GAME_STATE,A14,W
+         00006540 00000000! 
+    1325 00006560     0b4e          CMPI    INDIAG,A14
+         00006570     ffbf  
+    1326 00006580     ca80          JAEQ    SUCIDE
+         00006590 00000000! 
+    1327                    
+    1328 000065b0     09e0          MOVI    PID_VOLUME,A0
+         000065c0 00008f07  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   28
+
+    1329 000065e0     0d5f          CALLA   EXISTP_ALL              ;Does this thing already exist?
+         000065f0 00000000! 
+    1330 00006610     cb2c          JRNZ    SVC_RESET_AND_DIE       ;BR = Yes, so bail on this one.
+    1331                    
+    1332                    ;       MOVI    PID_VOLUME_DISP,A0
+    1333                    ;       CALLA   KILLPROC_ALL            ;Kill display deleter
+    1334                    ;
+    1335                    ;       MOVKM   1,@SUPRESS_PAGE_FLIP,W  ;Shut down all writes to DPYST
+    1336                    ;       MOVIM   DPYSTRT3,@DPYST,L       ;Rock on to the volume page
+    1337                    
+    1338 00006620           SVC_CLICK
+    1339 00006620                   ADJUST  ADJMINVOL
+    1340 00006670     4c04          MOVE    A0,A4                   ;Grab the minimum volume allowed
+    1341                    
+    1342 00006680                   ADJUST  ADJVOLUME               ;Get the current volume.
+    1343 000066d0     4100          ADD     A8,A0                   ;Adjust it the right way.
+    1344                    
+    1345 000066e0     4880          CMP     A4,A0
+    1346 000066f0     c501          JRGE    SVC_CK_MAX              ;BR = we are not a adjusted minimum
+    1347                    
+    1348 00006700     4c80          MOVE    A4,A0                   ;Force minimum
+    1349                    
+    1350 00006710           SVC_CK_MAX
+    1351 00006710     0b40          CMPI    MAX_VOLUME,A0           ;Are we too high? (Too high? Is this possible?)
+         00006720     ff00  
+    1352 00006730     c602          JRLE    SVC_NEW_VOL             ;BR = No, take another hit
+    1353                    
+    1354 00006740     09c0          MOVI    MAX_VOLUME,A0           ;Cut that sucka off
+         00006750     00ff  
+    1355                    
+    1356 00006760           SVC_NEW_VOL
+    1357 00006760     4c01          MOVE    A0,A1
+    1358 00006770     09c0          MOVI    ADJVOLUME,A0
+         00006780     001c  
+    1359 00006790     0d5f          CALLA   PUT_ADJ                 ;Store the new volume in CMOS
+         000067a0 00000000! 
+    1360 000067c0     0d5f          CALLA   F_ADC_S                 ;And checksum it.
+         000067d0 00000000! 
+    1361 000067f0     0d3f          CALLR   SET_VOLUME              ;And set it.
+         00006800     ff9b  
+    1362                    
+    1363                    ;       MOVE    @DISPLAYON,A7,W
+    1364                    ;       CLR     A14
+    1365                    ;       MOVE    A14,@DISPLAYON,W
+    1366                    ;       CALLA   DMAQWAIT                ;WAIT ON DMA
+    1367                    ;       CLR     A14
+    1368                    ;       MOVE    A14,@CMAPSEL,W          ;SELECT COLOR MAP 0
+    1369                    ;
+    1370                    ;       MMTM    SP,B11,B12,B13          ;Protect DMA Queue regs
+    1371                    ;
+    1372                    ;       calla   draw_volume_scale1
+    1373                    ;
+    1374                    ;       MMFM    SP,B11,B12,B13          ;Restore DMA Queue regs
+    1375                    ;
+    1376                    ;       MOVE    A7,@DISPLAYON,W         ;and let display system run
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   29
+
+    1377                    
+    1378 00006810           SVC_WAIT
+    1379 00006810                   SLEEP   1
+    1380 00006850     05ae          MOVE    @COINS,A14,W
+         00006860 01860030  
+    1381 00006880     4b4e          BTST    A10,A14                 ;Still holding the volume switch?
+    1382 00006890     cb01          JRNZ    SVC_BAIL                ;BR = No, then let's bail
+    1383 000068a0     c0d7          JRUC    SVC_CLICK               ;Click the volume again
+    1384 000068b0           SVC_BAIL
+    1385                    ;       MOVIM   PID_VOLUME_DISP,*A13(PROCID),W
+    1386                    ;       SLEEP   25
+    1387                    ;       CLRM    @SUPRESS_PAGE_FLIP,W    ;Restore writes to DPYST
+    1388 000068b0                   DIE
+    1389                    
+    1390 000068e0           SVC_RESET_AND_DIE
+    1391                    
+    1392 000068e0                   SLEEP   5
+    1393 00006920     5600          CLR     A0
+    1394 00006930                   BSET    A10,A0
+    1395 00006960                   ORM     A0,@SW2TEMP1,L
+    1396 000069d0                   ORM     A0,@SW2TEMP2,L          ;Clear the debounce RAM to re-trigger
+    1397 00006a40                   DIE
+    1398                    
+    1399                    
+    1400                    **************************************************************************
+    1401                    *                                                                        *
+    1402                    * init_speech_buffer                                                     *
+    1403                    *       input   nothing                                                  *
+    1404                    *       output  nothing                                                  *
+    1405                    *                                                                        *
+    1406                    **************************************************************************
+    1407 00006a70           init_speech_buffer
+    1408 00006a70     09ee          movi    speech_buffer,a14
+         00006a80 00000290- 
+    1409 00006aa0     078e          move    a14,@speech_buffer_head,L
+         00006ab0 00000510- 
+    1410 00006ad0     078e          move    a14,@speech_buffer_tail,L
+         00006ae0 00000530- 
+    1411 00006b00     57ce          clr     a14
+    1412 00006b10     058e          move    a14,@speech_buffer_time,W
+         00006b20 00000550- 
+    1413 00006b40     0960          rets
+    1414                    
+    1415                    **************************************************************************
+    1416                    *                                                                        *
+    1417                    * add_speech_into_buffer                                                 *
+    1418                    *       input   a4 = number to add into speech buffer                    *
+    1419                    *       output  nothing                                                  *
+    1420                    *                                                                        *
+    1421                    **************************************************************************
+    1422 00006b50           add_speech_into_buffer
+    1423 00006b50     07ae          move    @speech_buffer_head,a14,L
+         00006b60 00000510- 
+    1424 00006b80     908e          move    a4,*a14+,W
+    1425 00006b90     0b6e          cmpi    speech_buffer_end,a14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   30
+
+         00006ba0 fffffaef- 
+    1426 00006bc0     cb03          jrnz    asib1
+    1427 00006bd0     09ee          movi    speech_buffer,a14
+         00006be0 00000290- 
+    1428 00006c00     078e  asib1   move    a14,@speech_buffer_head,L
+         00006c10 00000510- 
+    1429 00006c30     0960          rets
+    1430                    
+    1431                    **************************************************************************
+    1432                    *                                                                        *
+    1433                    * pull_speech_from_buffer                                                *
+    1434                    *       input   nothing                                                  *
+    1435                    *       output  c  = buffer was non-empty                                *
+    1436                    *                a4= code pulled from buffer                             *
+    1437                    *               nc = buffer was empty, nothing pulled                    *
+    1438                    *                                                                        *
+    1439                    **************************************************************************
+    1440 00006c40           pull_speech_from_buffer
+    1441 00006c40     07a1          move    @speech_buffer_tail,a1,L
+         00006c50 00000530- 
+    1442 00006c70     07ae          move    @speech_buffer_head,a14,L
+         00006c80 00000510- 
+    1443 00006ca0     482e          cmp     a1,a14
+    1444 00006cb0     ca0d          jrz     psb_n
+    1445 00006cc0     9424          move    *a1+,a4,W
+    1446 00006cd0     0b61          cmpi    speech_buffer_end,a1
+         00006ce0 fffffaef- 
+    1447 00006d00     cb03          jrnz    psb_2
+    1448 00006d10     09e1          movi    speech_buffer,a1
+         00006d20 00000290- 
+    1449 00006d40     0781  psb_2   move    a1,@speech_buffer_tail,L
+         00006d50 00000530- 
+    1450 00006d70     0de0          setc
+    1451 00006d80     0960          rets
+    1452 00006d90     0320  psb_n   clrc
+    1453 00006da0     0960          rets
+    1454                    
+    1455                    **************************************************************************
+    1456                    *                                                                        *
+    1457                    * is_speech_buffer_empty                                                 *
+    1458                    *       input   nothing                                                  *
+    1459                    *       output  z  = buffer empty                                        *
+    1460                    *               nz = buffer non empty                                    *
+    1461                    *                                                                        *
+    1462                    **************************************************************************
+    1463 00006db0           is_speech_buffer_empty
+    1464 00006db0     07a1          move    @speech_buffer_tail,a1,L
+         00006dc0 00000530- 
+    1465 00006de0     07ae          move    @speech_buffer_head,a14,L
+         00006df0 00000510- 
+    1466 00006e10     482e          cmp     a1,a14
+    1467 00006e20     0960          rets
+    1468                    
+    1469                    **************************************************************************
+    1470                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   31
+
+    1471                    * get_speech_time_remaining                                              *
+    1472                    *       input   nothing                                                  *
+    1473                    *       output  a0 = time left in current sound and buffer               *
+    1474                    *                                                                        *
+    1475                    **************************************************************************
+    1476 00006e30           get_speech_time_remaining
+    1477 00006e30     098f          mmtm    sp,a1,a2
+         00006e40     6000  
+    1478 00006e50     5600          clr     a0
+    1479 00006e60     07a1          move    @speech_buffer_tail,a1,L
+         00006e70 00000530- 
+    1480 00006e90     07ae          move    @speech_buffer_head,a14,L
+         00006ea0 00000510- 
+    1481 00006ec0     482e  gtr2    cmp     a1,a14
+    1482 00006ed0     ca0c          jrz     gtr_8
+    1483 00006ee0     9422          move    *a1+,a2,W
+    1484 00006ef0     0b61          cmpi    speech_buffer_end,a1
+         00006f00 fffffaef- 
+    1485 00006f20     cb03          jrnz    gtr1
+    1486 00006f30     09e1          movi    speech_buffer,a1
+         00006f40 00000290- 
+    1487 00006f60     4c42  gtr1    move    a2,a2
+    1488 00006f70     cff4          jrnn    gtr2
+    1489 00006f80     4440          sub     a2,a0
+    1490 00006f90     c0f2          jruc    gtr2
+    1491 00006fa0     05ae  gtr_8   move    @speech_buffer_time,a14
+         00006fb0 00000550- 
+    1492 00006fd0     41c0          add     a14,a0
+    1493 00006fe0     09af          mmfm    sp,a1,a2
+         00006ff0     0006  
+    1494 00007000     0960          rets
+    1495                    
+    1496                    **************************************************************************
+    1497                    *                                                                        *
+    1498                    * add_speech_sound_or_time                                               *
+    1499                    *       input   a4 = sound(+) or time(-)                                 *
+    1500                    *       output  nothing                                                  *
+    1501                    *                                                                        *
+    1502                    **************************************************************************
+    1503 00007010           add_speech_sound_or_time
+    1504 00007010     4c84          move    a4,a4
+    1505 00007020     ce06          jrn     add_speech_time
+    1506                            ;
+    1507                    **************************************************************************
+    1508                    *                                                                        *
+    1509                    * add_speech_sound                                                       *
+    1510                    *       input   a4 = sound                                               *
+    1511                    *       output  nothing                                                  *
+    1512                    *                                                                        *
+    1513                    **************************************************************************
+    1514 00007030           add_speech_sound
+    1515 00007030     05ae          move    @speech_buffer_time,a14,W
+         00007040 00000550- 
+    1516 00007060     cbae          jrnz    add_speech_into_buffer
+    1517 00007070     c000          jruc    SEND_RAW_SOUND
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:19 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   32
+
+         00007080     fe77  
+    1518                    
+    1519                    **************************************************************************
+    1520                    *                                                                        *
+    1521                    * add_speech_time                                                        *
+    1522                    *       input   a4 = -time                                               *
+    1523                    *       output  nothing                                                  *
+    1524                    *                                                                        *
+    1525                    **************************************************************************
+    1526 00007090           add_speech_time
+    1527 00007090     05ae          move    @speech_buffer_time,a14,W
+         000070a0 00000550- 
+    1528 000070c0     cba8          jrnz    add_speech_into_buffer
+    1529 000070d0     03a4          neg     a4
+    1530 000070e0     0584          move    a4,@speech_buffer_time,W
+         000070f0 00000550- 
+    1531 00007110     0960          rets
+    1532                    
+
+ No Errors,  No Warnings

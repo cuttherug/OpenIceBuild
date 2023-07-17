@@ -1,0 +1,512 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:37 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHFIX.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                            .INCLUDE        "HH.INC"
+      11                            .INCLUDE        "HHSTRING.H"
+      12                            .INCLUDE        "IMGTBL.GLO"
+      13                            .include        "hhfix.e"
+      14                            .include        "hhcmos.g"
+      15                            .include        "hhgame.g"
+      16                            .include        "hhpick.g"
+      17                            .include        "hhproc.g"
+      18                            .include        "hhplayer.g"
+      19                    
+      20                    ; end of include files
+      21                    
+      22 00000000                   .bss    cdronemod,16
+      23                    
+      24 00000000                   .TEXT
+      25 00000000                   .EVEN
+      26                    
+      27                    ;game over, no winner
+      28                    ; cdronemod = 0
+      29                    ;game over, 1p
+      30                    ; if >= 6 pts, cdronemod +=3
+      31                    ; if >= 5 pts, cdronemod +=2
+      32                    ; cdronemod +=1
+      33                    ;game over, 2p, same team
+      34                    ; if >= 6 pts, cdronemod +=3
+      35                    ; if >= 5 pts, cdronemod +=2
+      36                    ; cdronemod +=1
+      37                    ;game over, 2p, different team
+      38                    ; cdronemod = 2
+      39                    ;game over, 3p
+      40                    ; cdronemod = 2
+      41                    ;game over, 4p
+      42                    ; cdronemod = 2
+      43                    
+      44 00000000           check_restart_gameover
+      45 00000000     0d3f          callr   do_we_restart_winners
+         00000010     0057  
+      46 00000020     c910          jrnc    crgo_9
+      47 00000030     0d3f          callr   update_cdronemod
+         00000040     0015  
+      48 00000050     0d3f          callr   restart_winners
+         00000060     0073  
+      49 00000070                   CREATE  PID_RESTART_WINNER,strtgr
+      50 00000100     c080          jauc    SUCIDE
+         00000110 00000000! 
+      51 00000130     5600  crgo_9  clr     a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:37 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      52 00000140     0580          move    a0,@cdronemod,W
+         00000150 00000000- 
+      53 00000170     c080          jauc    GO_MESS
+         00000180 00000000! 
+      54                    
+      55 000001a0           update_cdronemod
+      56 000001a0     0d3f          callr   get_mode_challenge
+         000001b0     0152  
+      57 000001c0     0b40          cmpi    2,a0
+         000001d0     fffd  
+      58 000001e0     cb1b          jrnz    ucd_99
+      59 000001f0     05a1          move    @period,a1,W
+         00000200 00000000! 
+      60 00000220     0d3f          callr   count_period_players
+         00000230     01ae  
+      61 00000240     0b41          cmpi    1,a1
+         00000250     fffe  
+      62 00000260     ca14          jrz     inc_cdronemod
+      63 00000270     0b41          cmpi    2,a1
+         00000280     fffd  
+      64 00000290     cb0c          jrnz    ucd_9
+      65 000002a0     05a1          move    @period,a1,W
+         000002b0 00000000! 
+      66 000002d0     0d5f          calla   get_period_players
+         000002e0 00000000! 
+      67 00000300     0b41          cmpi    0011b,a1
+         00000310     fffc  
+      68 00000320     ca08          jrz     inc_cdronemod
+      69 00000330     0b41          cmpi    1100b,a1
+         00000340     fff3  
+      70 00000350     ca05          jrz     inc_cdronemod
+      71 00000360     1840  ucd_9   movk    2,a0
+      72 00000370     0580          move    a0,@cdronemod,W
+         00000380 00000000- 
+      73 000003a0     0960  ucd_99  rets
+      74 000003b0           inc_cdronemod
+      75 000003b0     05a0          move    @team1_score,a0,W
+         000003c0 00000000! 
+      76 000003e0     05a1          move    @team2_score,a1,W
+         000003f0 00000000! 
+      77 00000410     4401          sub     a0,a1
+      78 00000420     0381          abs     a1
+      79 00000430     05a0          move    @cdronemod,a0,W
+         00000440 00000000- 
+      80 00000460     1080          addk    4,a0
+      81 00000470     0b41          cmpi    5,a1    ;5 or more
+         00000480     fffa  
+      82 00000490     c805          jrlo    icd9
+      83 000004a0     1040          addk    2,a0
+      84 000004b0     0b41          cmpi    6,a1    ;6 or more
+         000004c0     fff9  
+      85 000004d0     c801          jrlo    icd9
+      86 000004e0     1040          addk    2,a0
+      87 000004f0     0580  icd9    move    a0,@cdronemod,W
+         00000500 00000000- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:37 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+      88 00000520     0960          rets
+      89                    
+      90 00000530     0d5f  strtgr  calla   start_game_force_new_initials
+         00000540 00000000! 
+      91 00000560     c080          jauc    SUCIDE
+         00000570 00000000! 
+      92                    
+      93 00000590           do_we_restart_winners
+      94 00000590     0d3f          callr   get_mode_challenge
+         000005a0     0113  
+      95 000005b0     24a0          sll     5,a0
+      96 000005c0     0b20          addi    dwrw_l,a0
+         000005d0 00000610' 
+      97 000005f0     8600          move    *a0,a0,L
+      98 00000600     0160          jump    a0
+      99                    
+     100 00000610 00000690' dwrw_l  .long   dwrm_off        ;mode is off, we don't restart anyone
+     101 00000630 000006b0'         .long   dwrm_4pf        ;mode is for 4 players full game
+     102 00000650 00000720'         .long   dwrm_apg        ;mode is on for game over, all winners
+     103 00000670 00000740'         .long   dwrm_w2t        ;mode is on for human vs. human
+     104                    
+     105 00000690           dwrm_off                        ;mode is off
+     106 00000690     0320          clrc
+     107 000006a0     0960          rets
+     108 000006b0           dwrm_4pf                        ;mode is on 4 players full game
+     109 000006b0     0d3f          callr   is_score_tied
+         000006c0     0105  
+     110 000006d0     c802          jrc     d4pf_n
+     111 000006e0     c000          jruc    is_4_full
+         000006f0     010e  
+     112 00000700     0320  d4pf_n  clrc
+     113 00000710     0960          rets
+     114 00000720           dwrm_apg                        ;mode is on for game over, all winners
+     115 00000720     c000          jruc    is_human_winner
+         00000730     0131  
+     116 00000740           dwrm_w2t
+     117 00000740     0d3f          callr   is_human_winner
+         00000750     012f  
+     118 00000760     c902          jrnc    dw2t9n
+     119 00000770     0d3f          callr   is_human_loser
+         00000780     0113  
+     120 00000790     0960  dw2t9n  rets
+     121                    
+     122 000007a0           restart_winners
+     123 000007a0     0d3f          callr   get_mode_challenge
+         000007b0     00f2  
+     124 000007c0     24a0          sll     5,a0
+     125 000007d0     0b20          addi    rws_l,a0
+         000007e0 00000820' 
+     126 00000800     8600          move    *a0,a0,L
+     127 00000810     0160          jump    a0
+     128                    
+     129 00000820 000008a0' rws_l   .long   rws_off         ;mode is off, we don't restart anyone
+     130 00000840 000008b0'         .long   rws_4pf         ;mode is for 4 players full game
+     131 00000860 00000920'         .long   rws_apg         ;mode is on for game over, all winners
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:37 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     132 00000880 00000920'         .long   rws_apg         ;mode is on for human vs human
+     133                    
+     134 000008a0           rws_off                         ;mode is off (we never get here)
+     135 000008a0     0960          rets
+     136 000008b0           rws_4pf                         ;mode is for 4 players full game
+     137 000008b0     0d3f          callr   get_winning_team        ;1 or 2
+         000008c0     000d  
+     138 000008d0     0d3f          callr   translate_team_to_players
+         000008e0     0016  
+     139 000008f0     0d3f          callr   start_fullgame_a0
+         00000900     002b  
+     140 00000910     c05a          jruc    start_fullgame_a1
+     141 00000920           rws_apg                         ;mode is on for game over, all winners
+     142 00000920     0d3f          callr   get_winning_team
+         00000930     0006  
+     143 00000940     0d3f          callr   translate_team_to_players
+         00000950     000f  
+     144 00000960     0d3f          callr   start_ppaid_a0
+         00000970     0084  
+     145 00000980     c000          jruc    start_ppaid_a1
+         00000990     009b  
+     146                    
+     147 000009a0           get_winning_team
+     148 000009a0     05a2          move    @team1_score,a2,W
+         000009b0 00000000! 
+     149 000009d0     05a3          move    @team2_score,a3,W
+         000009e0 00000000! 
+     150 00000a00     1820          movk    1,a0
+     151 00000a10     4462          sub     a3,a2
+     152 00000a20     c101          jrp     gwt9
+     153 00000a30     1840          movk    2,a0
+     154 00000a40     0960  gwt9    rets
+     155                    
+     156 00000a50           translate_team_to_players
+     157 00000a50     1420          dec     a0
+     158 00000a60     2420          sll     1,a0
+     159 00000a70     4c03          move    a0,a3           ;a3 is bit to test
+     160 00000a80     2420          sll     1,a0
+     161 00000a90     1020          inc     a0
+     162 00000aa0     4c01          move    a0,a1
+     163 00000ab0     1021          inc     a1
+     164 00000ac0     0d3f          callr   is_a3_selector
+         00000ad0     0005  
+     165 00000ae0     c803          jrc     tttp_1
+     166 00000af0                   SWAP    a0,a1
+     167 00000b20     0960  tttp_1  rets
+     168                    
+     169 00000b30           is_a3_selector          ;takes 0123
+     170 00000b30     07ee          movb    @TEAM_SELECT_BITS,a14
+         00000b40 00000000! 
+     171 00000b60     4a60          btst    a3,a0
+     172 00000b70     cb02          jrnz    ia3y
+     173 00000b80     0320  ia3n    clrc
+     174 00000b90     0960          rets
+     175 00000ba0     0de0  ia3y    setc
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:37 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     176 00000bb0     0960          rets
+     177                    
+     178 00000bc0           start_fullgame_a0
+     179 00000bc0     098f          mmtm    sp,a0,a1
+         00000bd0     c000  
+     180 00000be0     4c08          move    a0,a8
+     181 00000bf0                   CREATE  PID_RESTART_WINNER,fill_up_ot
+     182 00000c80                   CREATE  PID_RESTART_WINNER,RESTART_WINNER_PROC
+     183 00000d10                   CREATE  PID_RESTART_WINNER,RESTART_WINNER_PROC
+     184 00000da0                   CREATE  PID_RESTART_WINNER,RESTART_WINNER_PROC
+     185 00000e30     1861          movk    3,a1
+     186 00000e40     09c0          movi    AUD_FREEP,a0
+         00000e50     004e  
+     187 00000e60     0d5f          calla   AUD
+         00000e70 00000000! 
+     188 00000e90     09af          mmfm    sp,a0,a1
+         00000ea0     0003  
+     189 00000eb0     0960          rets
+     190                            
+     191 00000ec0           start_fullgame_a1
+     192 00000ec0     098f          mmtm    sp,a0,a1
+         00000ed0     c000  
+     193 00000ee0     4c28          move    a1,a8
+     194 00000ef0                   CREATE  PID_RESTART_WINNER,fill_up_ot
+     195 00000f80                   CREATE  PID_RESTART_WINNER,RESTART_WINNER_PROC
+     196 00001010                   CREATE  PID_RESTART_WINNER,RESTART_WINNER_PROC
+     197 000010a0                   CREATE  PID_RESTART_WINNER,RESTART_WINNER_PROC
+     198 00001130     1861          movk    3,a1
+     199 00001140     09c0          movi    AUD_FREEP,a0
+         00001150     004e  
+     200 00001160     0d5f          calla   AUD
+         00001170 00000000! 
+     201 00001190     09af          mmfm    sp,a0,a1
+         000011a0     0003  
+     202 000011b0     0960          rets
+     203                    
+     204 000011c0           start_ppaid_a0
+     205 000011c0     0d3f          callr   get_periods_paid_a0
+         000011d0     0030  
+     206 000011e0     4c84          move    a4,a4
+     207 000011f0     ca14          jrz     spp0_9
+     208 00001200     4c08  spp0_1  move    a0,a8
+     209 00001210     098f          mmtm    sp,a0,a1
+         00001220     c000  
+     210 00001230                   CREATE  PID_RESTART_WINNER,RESTART_WINNER_PROC
+     211 000012c0     09c0          movi    AUD_FREEP,a0
+         000012d0     004e  
+     212 000012e0     0d5f          calla   AUD1
+         000012f0 00000000! 
+     213 00001310     09af          mmfm    sp,a0,a1
+         00001320     0003  
+     214 00001330     3e84          dsjs    a4,spp0_1
+     215 00001340     0960  spp0_9  rets
+     216                    
+     217 00001350           start_ppaid_a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:37 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     218 00001350     0d3f          callr   get_periods_paid_a1
+         00001360     001d  
+     219 00001370     4c84          move    a4,a4
+     220 00001380     ca14          jrz     spp1_9
+     221 00001390     4c28  spp1_1  move    a1,a8
+     222 000013a0     098f          mmtm    sp,a0,a1
+         000013b0     c000  
+     223 000013c0                   CREATE  PID_RESTART_WINNER,RESTART_WINNER_PROC
+     224 00001450     09c0          movi    AUD_FREEP,a0
+         00001460     004e  
+     225 00001470     0d5f          calla   AUD1
+         00001480 00000000! 
+     226 000014a0     09af          mmfm    sp,a0,a1
+         000014b0     0003  
+     227 000014c0     3e84          dsjs    a4,spp1_1
+     228 000014d0     0960  spp1_9  rets
+     229                    
+     230 000014e0           get_periods_paid_a0
+     231 000014e0                   GBLOCK  a0,a6
+     232 00001530     c005          jruc    gppa
+     233 00001540           get_periods_paid_a1
+     234 00001540                   GBLOCK  a1,a6
+     235 00001590     aece  gppa    movb    *a6(POF_PERIODS_PAID),a14
+         000015a0     0900  
+     236 000015b0     5684          clr     a4
+     237 000015c0     05a5          move    @period,a5,W
+         000015d0 00000000! 
+     238 000015f0     ca01          jrz     gppb
+     239 00001600     1425          dec     a5
+     240 00001610     4aae  gppb    btst    a5,a14
+     241 00001620     ca06          jrz     gppa9           ;none if not played last period
+     242 00001630     1888  gppc3   movk    4,a8
+     243 00001640     1fee  gppa2   btst    0,a14
+     244 00001650     ca01          jrz     gppa1
+     245 00001660     1024          inc     a4
+     246 00001670     2fee  gppa1   srl     1,a14
+     247 00001680     3ca8          dsjs    a8,gppa2
+     248 00001690     0960  gppa9   rets
+     249                    
+     250                    **************************************************************************
+     251                    *                                                                        *
+     252                    * RESTART_WINNER_PROC                                                    *
+     253                    *                                                                        *
+     254                    * PASS:                                                                  *
+     255                    * A8 = PLAYER NUMBER (1, 2, 5, OR 6)                                     *
+     256                    *                                                                        *
+     257                    **************************************************************************
+     258 000016a0           RESTART_WINNER_PROC
+     259 000016a0     4d00          MOVE    A8,A0
+     260 000016b0     c080          JAUC    player_start
+         000016c0 00000000! 
+     261                    
+     262                    **************************************************************************
+     263                    *                                                                        *
+     264                    * get_mode_challenge                                                     *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:37 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     265                    *       output  a0 = 0 - no challenge mode                               *
+     266                    *                    1 - challenge mode on for 4 player full game        *
+     267                    *                    2 - challenge mode on for any player game           *
+     268                    *                    3 - challenge mode on for human vs. human           *
+     269                    *                                                                        *
+     270                    **************************************************************************
+     271 000016e0           get_mode_challenge      ;just read adjustment
+     272 000016e0     19e0          movk    ADJCHALMODE,a0
+     273 000016f0     c080          jauc    GET_ADJ
+         00001700 00000000! 
+     274                    
+     275 00001720           is_score_tied
+     276 00001720     05a2          move    @team1_score,a2,W
+         00001730 00000000! 
+     277 00001750     05a3          move    @team2_score,a3,W
+         00001760 00000000! 
+     278 00001780     4843          cmp     a2,a3
+     279 00001790     cb02          jrnz    ist_n
+     280 000017a0     0de0  ist_y   setc
+     281 000017b0     0960          rets
+     282 000017c0     0320  ist_n   clrc
+     283 000017d0     0960          rets
+     284                    
+     285 000017e0           is_4_full
+     286 000017e0     05a1          move    @period,a1,W    ;get period # (3 or 4, if overtime)
+         000017f0 00000000! 
+     287 00001810     0d5f  i4f_1   calla   get_period_players
+         00001820 00000000! 
+     288 00001840     0b40          cmpi    01111b,a0
+         00001850     fff0  
+     289 00001860     cb03          jrnz    i4f_n
+     290 00001870     3ce1          dsjs    a1,i4f_1
+     291 00001880     0de0          setc
+     292 00001890     0960          rets
+     293 000018a0     0320  i4f_n   clrc
+     294 000018b0     0960          rets
+     295                    
+     296 000018c0           is_human_loser
+     297 000018c0     0d3f          callr   is_score_tied
+         000018d0     ffe4  
+     298 000018e0     c812          jrc     ihl_n
+     299 000018f0     1843          movk    2,a3
+     300 00001900     05a2          move    @team1_score,a2,W
+         00001910 00000000! 
+     301 00001930     05ae          move    @team2_score,a14,W
+         00001940 00000000! 
+     302 00001960     45c2          sub     a14,a2          ;a2 is difference from p1 view
+     303 00001970     c102          jrp     ihl1
+     304 00001980     03a2          neg     a2
+     305 00001990     5663          clr     a3
+     306 000019a0     0d3f  ihl1    callr   is_player_human_lp
+         000019b0     0047  
+     307 000019c0     c806          jrc     ihl_y
+     308 000019d0     1023          inc     a3
+     309 000019e0     0d3f          callr   is_player_human_lp
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:37 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+         000019f0     0043  
+     310 00001a00     c802          jrc     ihl_y
+     311 00001a10     0320  ihl_n   clrc
+     312 00001a20     0960          rets
+     313 00001a30     0de0  ihl_y   setc
+     314 00001a40     0960          rets
+     315                    
+     316 00001a50           is_human_winner
+     317 00001a50     0d3f          callr   is_score_tied
+         00001a60     ffcb  
+     318 00001a70     c812          jrc     ihw_n           ;score is tied, so no winner
+     319 00001a80     5663          clr     a3
+     320 00001a90     05a2          move    @team1_score,a2,W
+         00001aa0 00000000! 
+     321 00001ac0     05ae          move    @team2_score,a14,W
+         00001ad0 00000000! 
+     322 00001af0     45c2          sub     a14,a2          ;a2 is difference from p1 view
+     323 00001b00     c102          jrp     ihw1
+     324 00001b10     03a2          neg     a2
+     325 00001b20     1843          movk    2,a3
+     326 00001b30     0d3f  ihw1    callr   is_player_human_lp
+         00001b40     002e  
+     327 00001b50     c806          jrc     ihw_my
+     328 00001b60     1023          inc     a3
+     329 00001b70     0d3f          callr   is_player_human_lp
+         00001b80     002a  
+     330 00001b90     c802          jrc     ihw_my
+     331 00001ba0     0320  ihw_n   clrc
+     332 00001bb0     0960          rets
+     333 00001bc0     05a1  ihw_my  move    @period,a1,W
+         00001bd0 00000000! 
+     334 00001bf0     0d3f          callr   count_period_players
+         00001c00     0011  
+     335 00001c10     0b41          cmpi    1,a1
+         00001c20     fffe  
+     336 00001c30     ca09          jrz     ck_3p           ;check for 3 pt victory on 1p
+     337 00001c40     0b41          cmpi    3,a1
+         00001c50     fffc  
+     338 00001c60     c909          jrhs    ihw_y           ;3 or more players, we win
+     339 00001c70     0b40          cmpi    0011b,a0
+         00001c80     fffc  
+     340 00001c90     ca03          jrz     ck_3p           ;3 pt victory, 2p on 1 team
+     341 00001ca0     0b40          cmpi    1100b,a0
+         00001cb0     fff3  
+     342 00001cc0     cb03          jrnz    ihw_y           ;no 3pt victory needed, on different teams
+     343 00001cd0     0b42  ck_3p   cmpi    3,a2            ;3 or more point victory
+         00001ce0     fffc  
+     344 00001cf0     c8ea          jrlo    ihw_n           ;for 1p game required to continue
+     345 00001d00     0de0  ihw_y   setc
+     346 00001d10     0960          rets
+     347                    
+     348 00001d20           count_period_players            ;return a1 = count, a0 = players
+     349 00001d20     0d5f          calla   get_period_players
+         00001d30 00000000! 
+     350 00001d50     5621          clr     a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:37 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     351 00001d60     1fe0          btst    0,a0
+     352 00001d70     ca01          jrz     cpp1
+     353 00001d80     1021          inc     a1
+     354 00001d90     1fc0  cpp1    btst    1,a0
+     355 00001da0     ca01          jrz     cpp2
+     356 00001db0     1021          inc     a1
+     357 00001dc0     1fa0  cpp2    btst    2,a0
+     358 00001dd0     ca01          jrz     cpp3
+     359 00001de0     1021          inc     a1
+     360 00001df0     1f80  cpp3    btst    3,a0
+     361 00001e00     ca01          jrz     cpp4
+     362 00001e10     1021          inc     a1
+     363 00001e20     0960  cpp4    rets
+     364                    
+     365 00001e30           is_player_human_lp
+     366 00001e30     05a1          move    @period,a1,W
+         00001e40 00000000! 
+     367 00001e60     0d5f          calla   get_period_players
+         00001e70 00000000! 
+     368 00001e90     4a60          btst    a3,a0
+     369 00001ea0     ca02          jrz     iph_n
+     370 00001eb0     0de0  iph_y   setc
+     371 00001ec0     0960          rets
+     372 00001ed0     0320  iph_n   clrc
+     373 00001ee0     0960          rets
+
+ No Errors,  No Warnings

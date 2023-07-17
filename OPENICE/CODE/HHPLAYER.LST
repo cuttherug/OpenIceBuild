@@ -1,0 +1,1549 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHPLAYER.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                    
+      11                            .INCLUDE        "HH.INC"
+      12                            .INCLUDE        "HHSTRING.H"
+      13                            .INCLUDE        "IMGTBL.GLO"
+      14                            .include        "player.tbl"
+      15                            .include        "newnums.tbl"
+      16                            .include        "hhplayer.e"
+      17                            .include        "hhproc.g"
+      18                            .include        "hhram.g"
+      19                            .include        "hhmisc.g"
+      20                            .include        "hhd.g"
+      21                            .include        "hhpuck.g"
+      22                            .include        "hhcontrl.g"
+      23                            .include        "hhpall.g"
+      24                            .include        "hhtables.g"
+      25                            .include        "hhutil.g"
+      26                            .include        "hhc.g"
+      27                            .include        "hhmath.g"
+      28                            .include        "hhgame.g"
+      29                            .include        "hhcontr2.g"
+      30                            .include        "hhtext.g"
+      31                    
+      32                    ; end of include files
+      33                    
+      34 00000000                   .bss    PLAYER_1_BLOCK,PLAYER_BLOCK_SIZE        ;player 1
+      35 00001000                   .bss    PLAYER_2_BLOCK,PLAYER_BLOCK_SIZE        ;player 2
+      36 00002000                   .bss    PLAYER_3_BLOCK,PLAYER_BLOCK_SIZE        ;drone, team 1
+      37 00003000                   .bss    PLAYER_4_BLOCK,PLAYER_BLOCK_SIZE        ;goalie/drone, team 1
+      38 00004000                   .bss    PLAYER_5_BLOCK,PLAYER_BLOCK_SIZE        ;player 3
+      39 00005000                   .bss    PLAYER_6_BLOCK,PLAYER_BLOCK_SIZE        ;player 4
+      40 00006000                   .bss    PLAYER_7_BLOCK,PLAYER_BLOCK_SIZE        ;drone, team 2
+      41 00007000                   .bss    PLAYER_8_BLOCK,PLAYER_BLOCK_SIZE        ;goalie/drone, team 2
+      42                    
+      43 00008000                   .bss    pass_our_blue_status,16
+      44 00008010                   .bss    pass_receiver_1_number,16
+      45 00008020                   .bss    pass_receiver_1_status,16
+      46 00008030                   .bss    pass_receiver_1_angle,32
+      47 00008050                   .bss    pass_receiver_1_object,32
+      48 00008070                   .bss    pass_receiver_2_number,16
+      49 00008080                   .bss    pass_receiver_2_status,16
+      50 00008090                   .bss    pass_receiver_2_angle,32
+      51 000080b0                   .bss    pass_receiver_2_object,32
+      52 000080d0                   .bss    pass_receiver_3_number,16
+      53 000080e0                   .bss    pass_receiver_3_status,16
+      54 000080f0                   .bss    pass_receiver_3_angle,32
+      55 00008110                   .bss    pass_receiver_3_object,32
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56                    
+      57 00000000                   .TEXT
+      58 00000000                   .EVEN
+      59                    
+      60 00000000           turn_all_arrows_long
+      61 00000000     1900          movk    8,a0
+      62 00000010     0b40  toap2   cmpi    3,a0
+         00000020     fffc  
+      63 00000030     ca03          jrz     toapx
+      64 00000040     0b40          cmpi    7,a0
+         00000050     fff8  
+      65 00000060     cb01          jrnz    toapnx
+      66 00000070     1420  toapx   dec     a0
+      67 00000080           toapnx  GBLOCK  a0,a14
+      68 000000d0     b5ce          move    *a14(POF_FLAGS),a14,W
+         000000e0     0200  
+      69 000000f0     1fae          btst    B_PF_GOALIE,a14
+      70 00000100     cb02          jrnz    toapl
+      71 00000110     0d3f          callr   turn_on_a0_arrow_long
+         00000120     000c  
+      72 00000130     3e60  toapl   dsjs    a0,toap2
+      73 00000140     0960          rets
+      74                    
+      75 00000150           turn_on_players_arrow
+      76 00000150     b4c1          move    *a6(POF_ARROW_TIME),a1,W
+         00000160     0560  
+      77 00000170     0b41          cmpi    50,a1           ;150
+         00000180     ffcd  
+      78 00000190     c904          jrhs    topa1
+      79 000001a0     09c1          movi    50,a1           ;150
+         000001b0     0032  
+      80 000001c0     b026          move    a1,*a6(POF_ARROW_TIME),W
+         000001d0     0560  
+      81 000001e0     0960  topa1   rets
+      82 000001f0           turn_on_a0_arrow_long
+      83 000001f0     098f          mmtm    sp,a6
+         00000200     0200  
+      84 00000210                   GBLOCK  a0,a6
+      85 00000260     09c1          movi    50,a1           ;320
+         00000270     0032  
+      86 00000280     c00e          jruc    tora2
+      87 00000290           turn_on_a0_arrow
+      88 00000290           turn_on_receivers_arrow
+      89 00000290     098f          mmtm    sp,a6
+         000002a0     0200  
+      90 000002b0                   GBLOCK  a0,a6
+      91 00000300     b4c1          move    *a6(POF_ARROW_TIME),a1,W
+         00000310     0560  
+      92 00000320     0b41          cmpi    50,a1           ;150
+         00000330     ffcd  
+      93 00000340     c904          jrhs    tora1
+      94 00000350     09c1          movi    50,a1           ;150
+         00000360     0032  
+      95 00000370     b026  tora2   move    a1,*a6(POF_ARROW_TIME),W
+         00000380     0560  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+      96 00000390     09af  tora1   mmfm    sp,a6
+         000003a0     0040  
+      97 000003b0     0960          rets
+      98                    
+      99 000003c0     001a          .word   26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26
+     100 000004e0     001a  xp_ofst .word   26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8
+     101 00000610     0007          .word   7,6,5,4,3,2,1,0
+     102 00000690     0000          .word   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+     103 000007b0     0000          .word   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+     104                    
+     105 000008d0     0054          .word   84,84,84,84,84,84,84,84,84
+     106 00000960     0054  zbtab   .word   84,83,82,81,80,79,79,78,77,76,75,74,74,73,72,72
+     107 00000a60     0047          .word   71,70,69,69,68,68,67,66,66,65,65,64,63,63,62,62
+     108 00000b60     003d          .word   61,61,60,60,59,59,58,58,57,57,56
+     109 00000c10     0038          .word   56,56,56,56,56,56,56,56,56
+     110                    
+     111 00000ca0 00000120" fpalst  .long   arrow1t,arrow1l,arrow1r,0
+     112 00000d20 000002d0"         .long   arrow2t,arrow2l,arrow2r,0
+     113 00000da0 000002d0"         .long   arrow2t,arrow2l,arrow2r,0
+     114 00000e20 000002d0"         .long   arrow2t,arrow2l,arrow2r,0
+     115 00000ea0 00000480"         .long   arrow3t,arrow3l,arrow3r,0
+     116 00000f20 00000630"         .long   arrow4t,arrow4l,arrow4r,0
+     117 00000fa0 00000630"         .long   arrow4t,arrow4l,arrow4r,0
+     118 00001020 00000630"         .long   arrow4t,arrow4l,arrow4r,0
+     119                    
+     120 000010a0           fpalst2p
+     121 000010a0 00000120"         .long   arrow1t,arrow1l,arrow1r,0
+     122 00001120 00000480"         .long   arrow3t,arrow3l,arrow3r,0
+     123 000011a0 00000480"         .long   arrow3t,arrow3l,arrow3r,0
+     124 00001220 00000480"         .long   arrow3t,arrow3l,arrow3r,0
+     125 000012a0 00000630"         .long   arrow4t,arrow4l,arrow4r,0
+     126 00001320 000002d0"         .long   arrow2t,arrow2l,arrow2r,0
+     127 000013a0 00000630"         .long   arrow4t,arrow4l,arrow4r,0
+     128 00001420 00000630"         .long   arrow4t,arrow4l,arrow4r,0
+     129                    
+     130 000014a0           fix_players_arrow
+     131 000014a0           do_players_arrow
+     132 000014a0     b6c9          move    *a6(POF_OBJECT),a9,L
+         000014b0     0280  
+     133 000014c0     b6c8          move    *a6(POF_ARROW),a8,L
+         000014d0     02e0  
+     134 000014e0     05ae          move    @GAME_STATE,a14,W
+         000014f0 00000000! 
+     135 00001510     0b4e          cmpi    INAMODE,a14
+         00001520     ffcf  
+     136 00001530     ca00          jrz     aof
+         00001540     00df  
+     137 00001550     b6c7          move    *a6(POF_ARROW_CPU),a7,L
+         00001560     0360  
+     138 00001570     ca09          jrz     ncpca
+     139 00001580     b4ce          move    *a6(POF_FLAGS),a14,W
+         00001590     0200  
+     140 000015a0     1fee          btst    B_PF_HUMAN,a14
+     141 000015b0     cb03          jrnz    notcpua
+     142 000015c0     0d3f          callr   cpu_arrow_on                    ;if cpuarrow present (cpu player), turn off arrow, turn 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+         000015d0     00dc  
+     143 000015e0     c002          jruc    ncpca
+     144 000015f0     0d3f  notcpua callr   cpu_human_arrow
+         00001600     00f7  
+     145 00001610     aecb  ncpca   movb    *a6(POF_NUMBER),a11
+         00001620     0000  
+     146 00001630     24eb          sll     7,a11
+     147 00001640                   KITN    4
+     148 00001680     ca04          jrz     dora4
+     149 00001690     0b2b          addi    fpalst2p-128,a11
+         000016a0 00001020' 
+     150 000016c0     c003          jruc    dorax
+     151 000016d0     0b2b  dora4   addi    fpalst-128,a11          ;a11 points to our arrow list
+         000016e0 00000c20' 
+     152 00001700     b524  dorax   move    *a9(OFLAGS),a4,W
+         00001710     0420  
+     153 00001720     1f04          btst    B_OFSCRN,a4
+     154 00001730     cb17          jrnz    place_arrow_off_screen_player   ;if he is off the screen, then he always has off screen 
+     155 00001740     aec1          movb    *a6(POF_ARROW_HYST),a1
+         00001750     05a0  
+     156 00001760     ca6f          jrz     place_arrow_on_screen_player    ;he is on screen, no hysteresis
+     157 00001770     1421          dec     a1
+     158 00001780     ac26          movb    a1,*a6(POF_ARROW_HYST)
+         00001790     05a0  
+     159 000017a0     b52e          move    *a9(ODAGX),a14,W
+         000017b0     0220  
+     160 000017c0     b520          move    *a9(OSIZEX),a0,W
+         000017d0     0260  
+     161 000017e0     b521          move    *a9(OCTRL),a1,W
+         000017f0     01f0  
+     162 00001800     1f61          btst    B_FLIPH,a1
+     163 00001810     ca01          jrz     nfl1
+     164 00001820     440e          sub     a0,a14                  ;adjust for flip to make dag left edge
+     165 00001830     0b4e  nfl1    cmpi    375,a14
+         00001840     fe88  
+     166 00001850     c709          jrgt    place_arrow_off_on_screen_player ;he is on screen, but we are near edge, with hysteresis
+     167 00001860     400e          add     a0,a14
+     168 00001870     0b4e          cmpi    25,a14
+         00001880     ffe6  
+     169 00001890     c55c          jrge    place_arrow_on_screen_player    ;he is near center of screen, put on screen
+     170 000018a0     c004          jruc    place_arrow_off_on_screen_player ;he is on screen, but we are near edge, with hysteresis
+     171                    
+     172 000018b0           place_arrow_off_screen_player   ;(a8 placed with a9)
+     173 000018b0     09ce          movi    255,a14                         ;hysteresis of 1/2 second to arrow
+         000018c0     00ff  
+     174 000018d0     adc6          movb    a14,*a6(POF_ARROW_HYST)
+         000018e0     05a0  
+     175 000018f0           place_arrow_off_on_screen_player ;(a8 placed with a9) (when near edge, but still on screen)
+     176 000018f0     09c4          movi    150,a4                  ;he is off screen, set his time for when he gets back on
+         00001900     0096  
+     177 00001910     b086          move    a4,*a6(POF_ARROW_TIME),W
+         00001920     0560  
+     178 00001930     b504          move    *a8(OFLAGS),a4,W
+         00001940     0420  
+     179 00001950     0ba4          ori     M_SCRNOBJ,a4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+         00001960 00008000  
+     180 00001980     b088          move    a4,*a8(OFLAGS),W
+         00001990     0420  
+     181 000019a0     05a1          move    @WORLDX+010h,a1,W
+         000019b0 00000010! 
+     182 000019d0     b520          move    *a9(OXPOS),a0,W
+         000019e0     0150  
+     183 000019f0     4420          sub     a1,a0
+     184 00001a00     c10d          jrp     fpp_dos
+     185 00001a10     03a0  fpl_dos neg     a0
+     186 00001a20     0be0          subi    200,a0
+         00001a30     ff37  
+     187 00001a40     2b60          sra     5,a0
+     188 00001a50     2480          sll     4,a0
+     189 00001a60     0b20          addi    xp_ofst,a0
+         00001a70 000004e0' 
+     190 00001a90     8400          move    *a0,a0,W
+     191 00001aa0     1080          addk    4,a0
+     192 00001ab0     b761          move    *a11(32),a1,L
+         00001ac0     0020  
+     193 00001ad0     c00d          jruc    fpp1
+     194 00001ae0     0be0  fpp_dos subi    200,a0
+         00001af0     ff37  
+     195 00001b00     2b60          sra     5,a0
+     196 00001b10     2480          sll     4,a0
+     197 00001b20     0b20          addi    xp_ofst,a0
+         00001b30 000004e0' 
+     198 00001b50     8400          move    *a0,a0,W
+     199 00001b60     0be0          subi    360,a0
+         00001b70     fe97  
+     200 00001b80     03a0          neg     a0
+     201 00001b90     b761          move    *a11(64),a1,L
+         00001ba0     0040  
+     202 00001bb0     b504  fpp1    move    *a8(OCTRL),a4,W
+         00001bc0     01f0  
+     203 00001bd0     0ba4          ori     DMAWNZ,a4
+         00001be0 00008002  
+     204 00001c00     0d5f          calla   maybe_ani
+         00001c10 00000000! 
+     205 00001c30     b008          move    a0,*a8(OXPOS),W
+         00001c40     0150  
+     206 00001c50     b721          move    *a9(OZVAL),a1,L
+         00001c60     0180  
+     207 00001c70     09e2          movi    [-40,0],a2
+         00001c80 ffd80000  
+     208 00001ca0     0d5f          calla   find_screen_from_world
+         00001cb0 00000000! 
+     209 00001cd0     b228          move    a1,*a8(OYVAL),L
+         00001ce0     0160  
+     210 00001cf0     5621          clr     a1
+     211 00001d00     b228          move    a1,*a8(OXVEL),L
+         00001d10     0100  
+     212 00001d20     b228          move    a1,*a8(OYVEL),L
+         00001d30     0120  
+     213 00001d40     b228          move    a1,*a8(OZVEL),L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+         00001d50     00e0  
+     214 00001d60     b4ce          move    *a6(POF_FREEZE_OFFTIME),a14,W
+         00001d70     0c10  
+     215 00001d80     102e          inc     a14
+     216 00001d90     b1c6          move    a14,*a6(POF_FREEZE_OFFTIME),W
+         00001da0     0c10  
+     217 00001db0     0b4e          cmpi    140,a14
+         00001dc0     ff73  
+     218 00001dd0     cb07          jrnz    fppt9
+     219 00001de0     098f          mmtm    sp,a2,a9,a10
+         00001df0     2060  
+     220 00001e00     0d5f          calla   check_freeze_offscreen
+         00001e10 00000000! 
+     221 00001e30     09af          mmfm    sp,a2,a9,a10
+         00001e40     0604  
+     222 00001e50     0960  fppt9   rets
+     223                    
+     224 00001e60           place_arrow_on_screen_player    ;(a8 placed with a9)
+     225                    ;;;     move    *a6(POF_ARROW_CPU),a7,L
+     226                    ;;;     jrnz    aof                     ;don't put arrows on screen for cpu players
+     227 00001e60     b4ce          move    *a6(POF_FLAGS),a14,W
+         00001e70     0200  
+     228 00001e80     1fee          btst    B_PF_HUMAN,a14
+     229 00001e90     ca4a          jrz     aof                     ;don't put arrows on screen for cpu players
+     230                    
+     231 00001ea0     b4ce          move    *a6(POF_ARROW_TIME),a14,W
+         00001eb0     0560  
+     232 00001ec0     ca47          jrz     aof
+     233 00001ed0     142e          dec     a14
+     234 00001ee0     b1c6          move    a14,*a6(POF_ARROW_TIME),W
+         00001ef0     0560  
+     235 00001f00     57ce          clr     a14                     ;clear out our hysteresis
+     236 00001f10     adc6          movb    a14,*a6(POF_ARROW_HYST)
+         00001f20     05a0  
+     237 00001f30     b1c6          move    a14,*a6(POF_FREEZE_OFFTIME),W
+         00001f40     0c10  
+     238 00001f50     b504          move    *a8(OFLAGS),a4,W
+         00001f60     0420  
+     239 00001f70     0b84          andni   M_SCRNOBJ,a4
+         00001f80 00008000  
+     240 00001fa0     b088          move    a4,*a8(OFLAGS),W
+         00001fb0     0420  
+     241 00001fc0     09e4          movi    DMAWNZ,a4
+         00001fd0 00008002  
+     242 00001ff0     aec1          movb    *a6(POF_NUMBER),a1
+         00002000     0000  
+     243 00002010     05ae          move    @PUCK_CONTROL,a14,W
+         00002020 00000000! 
+     244 00002040     49c1          cmp     a14,a1
+     245 00002050     cb0d          jrnz    pcosp
+     246 00002060     05ae          move    @puck_control_blink,a14,W
+         00002070 00000000! 
+     247 00002090     ca09          jrz     pcosp
+     248 000020a0     142e          dec     a14
+     249 000020b0     058e          move    a14,@puck_control_blink
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+         000020c0 00000000! 
+     250 000020e0     2bce          sra     2,a14
+     251 000020f0     c803          jrc     pcosp
+     252 00002100     09e4          movi    DMACNZ,a4
+         00002110 00008008  
+     253 00002130     8761  pcosp   move    *a11,a1,L
+     254 00002140     0d5f          calla   maybe_ani
+         00002150 00000000! 
+     255 00002170     bb28          move    *a9(OXVAL),*a8(OXVAL),L
+         00002180     0140  
+         00002190     0140  
+     256 000021a0     b720          move    *a9(OZVAL),a0,L
+         000021b0     0180  
+     257 000021c0     b208          move    a0,*a8(OZVAL),L
+         000021d0     0180  
+     258 000021e0     2980          sra     20,a0
+     259 000021f0     2480          sll     4,a0
+     260 00002200     0b20          addi    zbtab,a0
+         00002210 00000960' 
+     261 00002230     8400          move    *a0,a0,W
+     262 00002240     2600          sll     16,a0
+     263 00002250     b722          move    *a9(OYVAL),a2,L
+         00002260     0160  
+     264 00002270     4402          sub     a0,a2
+     265 00002280     b248          move    a2,*a8(OYVAL),L
+         00002290     0160  
+     266 000022a0     bb28          move    *a9(OXVEL),*a8(OXVEL),L
+         000022b0     0100  
+         000022c0     0100  
+     267 000022d0     bb28          move    *a9(OZVEL),*a8(OZVEL),L
+         000022e0     00e0  
+         000022f0     00e0  
+     268 00002300     bb28          move    *a9(OYVEL),*a8(OYVEL),L
+         00002310     0120  
+         00002320     0120  
+     269 00002330     0960          rets
+     270 00002340     09e0  aof     movi    DMAGO,a0
+         00002350 00008000  
+     271 00002370     b008          move    a0,*a8(OCTRL),W
+         00002380     01f0  
+     272 00002390     0960  aof9    rets
+     273                    
+     274 000023a0           cpu_arrow_on    ;a7 = cpuarrow
+     275 000023a0     bb27          move    *a9(OXVAL),*a7(OXVAL),L
+         000023b0     0140  
+         000023c0     0140  
+     276 000023d0     b720          move    *a9(OZVAL),a0,L
+         000023e0     0180  
+     277 000023f0     0d00          subi    [3,0],a0
+         00002400 fffcffff  
+     278 00002420     b207          move    a0,*a7(OZVAL),L
+         00002430     0180  
+     279 00002440     2980          sra     20,a0
+     280 00002450     2480          sll     4,a0
+     281 00002460     0b20          addi    zbtab+48,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+         00002470 00000990' 
+     282 00002490     8400          move    *a0,a0,W
+     283 000024a0     25e0          sll     15,a0
+     284 000024b0     4c01          move    a0,a1
+     285 000024c0     2bc1          sra     2,a1
+     286 000024d0     4020          add     a1,a0
+     287 000024e0     03a0          neg     a0
+     288 000024f0     b207          move    a0,*a7(OYVAL),L
+         00002500     0160  
+     289 00002510     bb27          move    *a9(OXVEL),*a7(OXVEL),L
+         00002520     0100  
+         00002530     0100  
+     290 00002540     bb27          move    *a9(OZVEL),*a7(OZVEL),L
+         00002550     00e0  
+         00002560     00e0  
+     291 00002570     0960          rets
+     292                    
+     293 00002580           cpu_human_arrow
+     294 00002580     aec0          movb    *a6(POF_NUMBER),a0
+         00002590     0000  
+     295 000025a0     4c0e          move    a0,a14
+     296 000025b0     24ae          sll     5,a14
+     297 000025c0     0b2e          addi    caolll,a14
+         000025d0 00002940' 
+     298 000025f0     05a1          move    @PUCK_CONTROL,a1,W
+         00002600 00000000! 
+     299 00002620     4801          cmp     a0,a1
+     300 00002630     cb03          jrnz    cpa112
+     301 00002640     0b2e          addi    caopll-caolll,a14
+         00002650 000001a0  
+     302 00002670     87ce  cpa112  move    *a14,a14,L
+     303 00002680     b3c7          move    a14,*a7(OIMG),L
+         00002690     02c0  
+     304 000026a0     b7c0          move    *a14(ISIZE),a0,L
+         000026b0     0010  
+     305 000026c0     b207          move    a0,*a7(OSIZE),L
+         000026d0     0260  
+     306 000026e0     b207          move    a0,*a7(OUSIZE),L
+         000026f0     0240  
+     307 00002700     bbc7          move    *a14(ISAG),*a7(OSAG),L
+         00002710     0030  
+         00002720     0200  
+     308 00002730     bbc7          move    *a14(IANIOFF),*a7(OANIOFF),L
+         00002740     0050  
+         00002750     01c0  
+     309                    
+     310 00002760     bb27          move    *a9(OXVAL),*a7(OXVAL),L
+         00002770     0140  
+         00002780     0140  
+     311 00002790     b720          move    *a9(OZVAL),a0,L
+         000027a0     0180  
+     312 000027b0     0d00          subi    [3,0],a0
+         000027c0 fffcffff  
+     313 000027e0     b207          move    a0,*a7(OZVAL),L
+         000027f0     0180  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     314 00002800     2980          sra     20,a0
+     315 00002810     2480          sll     4,a0
+     316 00002820     0b20          addi    zbtab+48,a0
+         00002830 00000990' 
+     317 00002850     8400          move    *a0,a0,W
+     318 00002860     25e0          sll     15,a0
+     319 00002870     4c01          move    a0,a1
+     320 00002880     2bc1          sra     2,a1
+     321 00002890     4020          add     a1,a0
+     322 000028a0     03a0          neg     a0
+     323 000028b0     b207          move    a0,*a7(OYVAL),L
+         000028c0     0160  
+     324 000028d0     bb27          move    *a9(OXVEL),*a7(OXVEL),L
+         000028e0     0100  
+         000028f0     0100  
+     325 00002900     bb27          move    *a9(OZVEL),*a7(OZVEL),L
+         00002910     00e0  
+         00002920     00e0  
+     326 00002930     0960          rets
+     327                    
+     328                    ;caolll .long   FONT100,FONT101,FONT102,FONT103,FONT104
+     329                    ;       .long   FONT105,FONT106,FONT107,FONT108,FONT109
+     330                    ;       .long   FONT100,FONT100,FONT100
+     331                    
+     332 00002940 00000000! caolll  .long   FONT100,FONT101,FONT102,FONT100,FONT100
+     333 000029e0 00000000!         .long   FONT103,FONT104,FONT100,FONT100,FONT100
+     334 00002a80 00000000!         .long   FONT100,FONT100,FONT100
+     335                    
+     336 00002ae0 00000000! caopll  .long   FONT100,P01,P02,FONT100,FONT100
+     337 00002b80 00000870"         .long   P03,P04,FONT100,FONT100,FONT100
+     338 00002c20 00000000!         .long   FONT100,FONT100,FONT100
+     339                    
+     340                    
+     341                    
+     342                    **************************************************************************
+     343                    *                                                                        *
+     344                    * move_player_to_puckpoint                                               *
+     345                    *       input   a0 = x pos of puckpoint                                  *
+     346                    *               a1 = z pos of puckpoint                                  *
+     347                    *               a8 = object                                              *
+     348                    *       output  puts object at a position, so that's its puckpoint       *
+     349                    *               is at x and z (y=0)                                      *
+     350                    *                                                                        *
+     351                    **************************************************************************
+     352 00002c80           move_player_to_puckpoint
+     353 00002c80     4c02          move    a0,a2
+     354 00002c90     4c23          move    a1,a3
+     355 00002ca0     0d3f          callr   get_players_puck_point_o                ;we have object already
+         00002cb0     002c  
+     356 00002cc0     b704          move    *a8(OXVAL),a4,L
+         00002cd0     0140  
+     357 00002ce0     b705          move    *a8(OZVAL),a5,L
+         00002cf0     0180  
+     358 00002d00     4480          sub     a4,a0
+     359 00002d10     44a1          sub     a5,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     360 00002d20     4402          sub     a0,a2
+     361 00002d30     4423          sub     a1,a3
+     362 00002d40     b704          move    *a8(OXVAL),a4,L
+         00002d50     0140  
+     363 00002d60     4444          sub     a2,a4
+     364 00002d70     0384          abs     a4
+     365 00002d80     2e04          srl     16,a4
+     366 00002d90     0b44          cmpi    1,a4
+         00002da0     fffe  
+     367 00002db0     c202          jrls    mptp1
+     368 00002dc0     b248          move    a2,*a8(OXVAL),L
+         00002dd0     0140  
+     369 00002de0     b704  mptp1   move    *a8(OZVAL),a4,L
+         00002df0     0180  
+     370 00002e00     4464          sub     a3,a4
+     371 00002e10     0384          abs     a4
+     372 00002e20     2e04          srl     16,a4
+     373 00002e30     0b44          cmpi    1,a4
+         00002e40     fffe  
+     374 00002e50     c202          jrls    mptp2
+     375 00002e60     b268          move    a3,*a8(OZVAL),L
+         00002e70     0180  
+     376 00002e80     5684  mptp2   clr     a4
+     377 00002e90     b288          move    a4,*a8(OYVAL),L
+         00002ea0     0160  
+     378 00002eb0     0960          rets
+     379                    
+     380                    **************************************************************************
+     381                    *                                                                        *
+     382                    * get_players_puck_point                                                 *
+     383                    * get_players_puck_point_b                                               *
+     384                    * get_players_puck_point_o                                               *
+     385                    *                                                                        *
+     386                    * PASS:                                                                  *
+     387                    * VARIOUS                                                                *
+     388                    * RETURN:                                                                *
+     389                    * A0 = X POSITION                                                        *
+     390                    * A1 = Z POSITION                                                        *
+     391                    *                                                                        *
+     392                    **************************************************************************
+     393 00002ec0           get_players_destination_point   ;takes a6 = us
+     394 00002ec0                   PUSH    a6
+     395 00002ed0     0d3f          callr   get_players_puck_point
+         00002ee0     0002  
+     396 00002ef0                   PULLQ   a6
+     397 00002f00     0960          rets
+     398 00002f10           get_players_puck_point
+     399 00002f10                   GBLOCK  a0,a6
+     400 00002f60           get_players_puck_point_b
+     401 00002f60     b6c8          move    *a6(POF_OBJECT),a8,L
+         00002f70     0280  
+     402 00002f80           get_players_puck_point_o
+     403 00002f80     098f          mmtm    sp,a2,a3,a4,a5,a7,a11
+         00002f90     3d10  
+     404 00002fa0     b700          move    *a8(OXVAL),a0,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+         00002fb0     0140  
+     405 00002fc0     b702          move    *a8(OYVAL),a2,L
+         00002fd0     0160  
+     406 00002fe0     b701          move    *a8(OZVAL),a1,L
+         00002ff0     0180  
+     407 00003000     0d5f          calla   find_screen_from_world  ;get our current point
+         00003010 00000000! 
+     408 00003030     2e00          srl     16,a0
+     409 00003040     4c05          move    a0,a5
+     410 00003050     ee25          movy    a1,a5                   ;make a5 [y,x]
+     411 00003060     b504          move    *a8(OZPOS),a4,W
+         00003070     0190  
+     412 00003080     2fc4          srl     2,a4            ;new osctab
+     413 00003090     24a4          sll     5,a4
+     414 000030a0     b70e          move    *a8(OSCTAB),a14,L       ;get scale table for player
+         000030b0     0470  
+     415 000030c0     408e          add     a4,a14
+     416 000030d0     87ce          move    *a14,a14,L
+     417 000030e0     4dc3          move    a14,a3
+     418 000030f0     2e03          srl     16,a3
+     419 00003100     2483          sll     4,a3
+     420 00003110     0b23          addi    invscale_table,a3
+         00003120 00000000! 
+     421 00003140     8462          move    *a3,a2,W        ;y
+     422 00003150     260e          sll     16,a14
+     423 00003160     2e8e          srl     12,a14
+     424 00003170     0b2e          addi    invscale_table,a14
+         00003180 00000000! 
+     425 000031a0     85c3          move    *a14,a3,W       ;x
+     426 000031b0     b50e          move    *a8(OCTRL),a14,W
+         000031c0     01f0  
+     427 000031d0     b707          move    *a8(OIMG),a7,L          ;we need to look in image directly
+         000031e0     02c0  
+     428 000031f0     b6e1          move    *a7(IANIOFF),a1,L               ;uanioff
+         00003200     0050  
+     429 00003210     0d3f          callr   scale_anioff
+         00003220     00c1  
+     430 00003230     e225          subxy   a1,a5                   ;go back to top
+     431 00003240     b6e1          move    *a7(ICPUCK),a1,L                ;extra animation point (puck position)
+         00003250     0070  
+     432 00003260     0d3f          callr   scale_anioff
+         00003270     00bc  
+     433 00003280     e025          addxy   a1,a5                   ;back to puck position [y,x]
+     434 00003290     4ca1          move    a5,a1                   ;to y
+     435 000032a0     4ca0          move    a5,a0
+     436 000032b0     2600          sll     16,a0                   ;to x
+     437 000032c0     0d5f          calla   find_world_from_screen
+         000032d0 00000000! 
+     438                    ;       inc     a0              ;half   ;shift right 1 pixel to account for all our truncates
+     439 000032f0     09af          mmfm    sp,a2,a3,a4,a5,a7,a11
+         00003300     08bc  
+     440 00003310     0960          rets
+     441                    
+     442 00003320           get_players_puck_point_rz       ;ref
+     443 00003320     098f          mmtm    sp,a3,a4,a5,a7,a11
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+         00003330     1d10  
+     444 00003340     b700          move    *a8(OXVAL),a0,L
+         00003350     0140  
+     445 00003360     b702          move    *a8(OYVAL),a2,L
+         00003370     0160  
+     446 00003380     b701          move    *a8(OZVAL),a1,L
+         00003390     0180  
+     447 000033a0     0d5f          calla   find_screen_from_world  ;get our current point
+         000033b0 00000000! 
+     448 000033d0     2e00          srl     16,a0
+     449 000033e0     4c05          move    a0,a5
+     450 000033f0     ee25          movy    a1,a5                   ;make a5 [y,x]
+     451 00003400     b504          move    *a8(OZPOS),a4,W
+         00003410     0190  
+     452 00003420     2fc4          srl     2,a4            ;new osctab
+     453 00003430     24a4          sll     5,a4
+     454 00003440     b70e          move    *a8(OSCTAB),a14,L       ;get scale table for player
+         00003450     0470  
+     455 00003460     408e          add     a4,a14
+     456 00003470     87ce          move    *a14,a14,L
+     457 00003480     4dc3          move    a14,a3
+     458 00003490     2e03          srl     16,a3
+     459 000034a0     2483          sll     4,a3
+     460 000034b0     0b23          addi    invscale_table,a3
+         000034c0 00000000! 
+     461 000034e0     8462          move    *a3,a2,W        ;y
+     462 000034f0     260e          sll     16,a14
+     463 00003500     2e8e          srl     12,a14
+     464 00003510     0b2e          addi    invscale_table,a14
+         00003520 00000000! 
+     465 00003540     85c3          move    *a14,a3,W       ;x
+     466 00003550     b50e          move    *a8(OCTRL),a14,W
+         00003560     01f0  
+     467 00003570     b707          move    *a8(OIMG),a7,L          ;we need to look in image directly
+         00003580     02c0  
+     468 00003590     b6ee          move    *a7(IANIOFF),a14,L              ;uanioff
+         000035a0     0050  
+     469 000035b0     b6e1          move    *a7(ICPUCK),a1,L                ;extra animation point (puck position)
+         000035c0     0070  
+     470 000035d0     e3c1          subxy   a14,a1
+     471 000035e0     e025          addxy   a1,a5                   ;back to puck position [y,x]
+     472 000035f0     4ca1          move    a5,a1                   ;to y
+     473 00003600     4ca0          move    a5,a0
+     474 00003610     2600          sll     16,a0                   ;to x
+     475 00003620     b702          move    *a8(OZVAL),a2,L
+         00003630     0180  
+     476 00003640     0d5f          calla   find_world_from_screen_z
+         00003650 00000000! 
+     477 00003670     09af          mmfm    sp,a3,a4,a5,a7,a11
+         00003680     08b8  
+     478 00003690     0960          rets
+     479                    
+     480 000036a0           get_players_puck_point_bz
+     481 000036a0     b6c8          move    *a6(POF_OBJECT),a8,L
+         000036b0     0280  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     482 000036c0           get_players_puck_point_oz
+     483 000036c0     098f          mmtm    sp,a3,a4,a5,a7,a11
+         000036d0     1d10  
+     484 000036e0     b700          move    *a8(OXVAL),a0,L
+         000036f0     0140  
+     485 00003700     b702          move    *a8(OYVAL),a2,L
+         00003710     0160  
+     486 00003720     b701          move    *a8(OZVAL),a1,L
+         00003730     0180  
+     487 00003740     0d5f          calla   find_screen_from_world  ;get our current point
+         00003750 00000000! 
+     488 00003770     2e00          srl     16,a0
+     489 00003780     4c05          move    a0,a5
+     490 00003790     ee25          movy    a1,a5                   ;make a5 [y,x]
+     491 000037a0     b504          move    *a8(OZPOS),a4,W
+         000037b0     0190  
+     492 000037c0     2fc4          srl     2,a4            ;new osctab
+     493 000037d0     24a4          sll     5,a4
+     494 000037e0     b70e          move    *a8(OSCTAB),a14,L       ;get scale table for player
+         000037f0     0470  
+     495 00003800     408e          add     a4,a14
+     496 00003810     87ce          move    *a14,a14,L
+     497 00003820     4dc3          move    a14,a3
+     498 00003830     2e03          srl     16,a3
+     499 00003840     2483          sll     4,a3
+     500 00003850     0b23          addi    invscale_table,a3
+         00003860 00000000! 
+     501 00003880     8462          move    *a3,a2,W        ;y
+     502 00003890     260e          sll     16,a14
+     503 000038a0     2e8e          srl     12,a14
+     504 000038b0     0b2e          addi    invscale_table,a14
+         000038c0 00000000! 
+     505 000038e0     85c3          move    *a14,a3,W       ;x
+     506 000038f0     b50e          move    *a8(OCTRL),a14,W
+         00003900     01f0  
+     507 00003910     b707          move    *a8(OIMG),a7,L          ;we need to look in image directly
+         00003920     02c0  
+     508 00003930     b6e1          move    *a7(IANIOFF),a1,L               ;uanioff
+         00003940     0050  
+     509 00003950     0d3f          callr   scale_anioff
+         00003960     004d  
+     510 00003970     e225          subxy   a1,a5                   ;go back to top
+     511 00003980     b6e1          move    *a7(ICPUCK),a1,L                ;extra animation point (puck position)
+         00003990     0070  
+     512 000039a0     0d3f          callr   scale_anioff
+         000039b0     0048  
+     513 000039c0     e025          addxy   a1,a5                   ;back to puck position [y,x]
+     514 000039d0     4ca1          move    a5,a1                   ;to y
+     515 000039e0     4ca0          move    a5,a0
+     516 000039f0     2600          sll     16,a0                   ;to x
+     517 00003a00     b702          move    *a8(OZVAL),a2,L
+         00003a10     0180  
+     518 00003a20     0d5f          calla   find_world_from_screen_z
+         00003a30 00000000! 
+     519 00003a50     09af          mmfm    sp,a3,a4,a5,a7,a11
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+         00003a60     08b8  
+     520 00003a70     0960          rets
+     521                    
+     522                    **************************************************************************
+     523                    *                                                                        *
+     524                    * get_supplied_offset_point                                              *
+     525                    *       just like get_puck_point_o                                       *
+     526                    *       except takes animation offset as an input                        *
+     527                    *       input   a1 = animation point offset [y,x]                        *
+     528                    *         (assumes y will be 0)                                          *
+     529                    *                                                                        *
+     530                    **************************************************************************
+     531 00003a80           get_supplied_offset_point
+     532 00003a80     098f          mmtm    sp,a2,a3,a4,a5,a7,a11
+         00003a90     3d10  
+     533 00003aa0     098f          mmtm    sp,a1                   ;push our point
+         00003ab0     4000  
+     534 00003ac0     b700          move    *a8(OXVAL),a0,L
+         00003ad0     0140  
+     535 00003ae0     b702          move    *a8(OYVAL),a2,L
+         00003af0     0160  
+     536 00003b00     b701          move    *a8(OZVAL),a1,L
+         00003b10     0180  
+     537 00003b20     0d5f          calla   find_screen_from_world  ;get our current point
+         00003b30 00000000! 
+     538 00003b50     2e00          srl     16,a0
+     539 00003b60     4c05          move    a0,a5
+     540 00003b70     ee25          movy    a1,a5                   ;make a5 [y,x]
+     541 00003b80     b504          move    *a8(OZPOS),a4,W
+         00003b90     0190  
+     542 00003ba0     2fc4          srl     2,a4            ;new osctab
+     543 00003bb0     24a4          sll     5,a4
+     544 00003bc0     b70e          move    *a8(OSCTAB),a14,L       ;get scale table for player
+         00003bd0     0470  
+     545 00003be0     408e          add     a4,a14
+     546 00003bf0     87ce          move    *a14,a14,L
+     547 00003c00     4dc3          move    a14,a3
+     548 00003c10     2e03          srl     16,a3
+     549 00003c20     2483          sll     4,a3
+     550 00003c30     0b23          addi    invscale_table,a3
+         00003c40 00000000! 
+     551 00003c60     8462          move    *a3,a2,W        ;y
+     552 00003c70     260e          sll     16,a14
+     553 00003c80     2e8e          srl     12,a14
+     554 00003c90     0b2e          addi    invscale_table,a14
+         00003ca0 00000000! 
+     555 00003cc0     85c3          move    *a14,a3,W       ;x
+     556 00003cd0     b50e          move    *a8(OCTRL),a14,W
+         00003ce0     01f0  
+     557 00003cf0     b707          move    *a8(OIMG),a7,L          ;we need to look in image directly
+         00003d00     02c0  
+     558 00003d10     b6e1          move    *a7(IANIOFF),a1,L               ;uanioff
+         00003d20     0050  
+     559 00003d30     0d3f          callr   scale_anioff
+         00003d40     000f  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     560 00003d50     e225          subxy   a1,a5                   ;go back to top
+     561 00003d60     09af          mmfm    sp,a1                   ;get our point back
+         00003d70     0002  
+     562 00003d80     0d3f          callr   scale_anioff
+         00003d90     000a  
+     563 00003da0     e025          addxy   a1,a5                   ;back to puck position [y,x]
+     564 00003db0     4ca1          move    a5,a1                   ;to y
+     565 00003dc0     4ca0          move    a5,a0
+     566 00003dd0     2600          sll     16,a0                   ;to x
+     567 00003de0     0d5f          calla   find_world_from_screen
+         00003df0 00000000! 
+     568 00003e10     09af          mmfm    sp,a2,a3,a4,a5,a7,a11
+         00003e20     08bc  
+     569 00003e30     0960          rets
+     570                    
+     571                    **************************************************************************
+     572                    *                                                                        *
+     573                    * scale_anioff                                                           *
+     574                    *       input   a14 = octrl                                              *
+     575                    *               a1  = uanioff                                            *
+     576                    *               a2,a3 = scales                                           *
+     577                    *       output  a1  = scaled anioff                                      *
+     578                    *                                                                        *
+     579                    **************************************************************************
+     580 00003e40           scale_anioff                            ;this is adapted straight from
+     581 00003e40     076c          setf    12,1,1                  ;scale_mama
+     582 00003e50     1f6e          btst    B_FLIPH,a14
+     583 00003e60     ca04          jrz     ppwp_1
+     584 00003e70     ec24          movx    a1,a4
+     585 00003e80     0504          sext    a4
+     586 00003e90     03a4          neg     a4
+     587 00003ea0     ec81          movx    a4,a1
+     588 00003eb0     4c2b  ppwp_1  move    a1,a11
+     589 00003ec0     050b          sext    a11
+     590 00003ed0     5c6b          mpys    a3,a11
+     591 00003ee0     2b0b          sra     8,a11
+     592 00003ef0     2a01          sra     16,a1
+     593 00003f00     5c41          mpys    a2,a1
+     594 00003f10     2501          sll     8,a1
+     595 00003f20     ed61          movx    a11,a1          ;a1 is scaled anioff
+     596 00003f30     0740          setf    32,0,1          ; restore FS1    !!!
+     597 00003f40     0960          rets
+     598                    
+     599                    **************************************************************************
+     600                    *                                                                        *
+     601                    * get_pass_receiver                                                      *
+     602                    *       input   a0 = player number                                       *
+     603                    *       output  a0 = player to pass to                                   *
+     604                    *                                                                        *
+     605                    *       if all teammates on same side of blue line                       *
+     606                    *          pass to joystick player direction                             *
+     607                    *       if some teammates on same side of blue line                      *
+     608                    *          if joystick points to a player on same side of blue line      *
+     609                    *             pass to joystick player direction                          *
+     610                    *          if joystick is reasonably close to player on same side of lin *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     611                    *             pass to that player                                        *
+     612                    *          else                                                          *
+     613                    *             pass to joystick player                                    *
+     614                    *       if none on same side of blue line                                *
+     615                    *          pass to joystick player direction                             *
+     616                    *       or, pass to player if they are pressing pass                     *
+     617                    *                                                                        *
+     618                    **************************************************************************
+     619 00003f50           get_pass_receiver
+     620 00003f50     098f          mmtm    sp,a1,a2,a6,a8,a10
+         00003f60     62a0  
+     621 00003f70                   GBLOCK  a0,a6
+     622 00003fc0     b4ce          move    *a6(POF_FLAGS),a14,W
+         00003fd0     0200  
+     623 00003fe0     1fae          btst    B_PF_GOALIE,a14
+     624 00003ff0     cb0b          jrnz    gpr_g
+     625 00004000     0d3f          callr   get_eligible_players_list
+         00004010     0048  
+     626 00004020     0d3f          callr   find_angles_to_players
+         00004030     006a  
+     627 00004040     0d3f          callr   find_blue_line_status
+         00004050     0091  
+     628 00004060     0d3f          callr   remove_ineligible_and_pick
+         00004070     00dd  
+     629 00004080     09af          mmfm    sp,a1,a2,a6,a8,a10
+         00004090     0546  
+     630 000040a0     0960          rets
+     631 000040b0     0d3f  gpr_g   callr   get_eligible_players_list
+         000040c0     003d  
+     632 000040d0     0d3f          callr   find_angles_to_players
+         000040e0     005f  
+     633 000040f0     0d3f          callr   find_blue_line_status
+         00004100     0086  
+     634 00004110     0d3f          callr   favor_players_not_behind
+         00004120     0005  
+     635 00004130     0d3f          callr   remove_ineligible_and_pick
+         00004140     00d0  
+     636 00004150     09af          mmfm    sp,a1,a2,a6,a8,a10
+         00004160     0546  
+     637 00004170     0960          rets
+     638                    
+     639 00004180           favor_players_not_behind
+     640 00004180     09e3          movi    pass_receiver_1_number,a3
+         00004190 00008010- 
+     641 000041b0     09e4          movi    pass_receiver_1_angle,a4
+         000041c0 00008030- 
+     642 000041e0     09e5          movi    pass_receiver_1_object,a5
+         000041f0 00008050- 
+     643 00004210     0d3f          callr   fpnb1
+         00004220     0014  
+     644 00004230     09e3          movi    pass_receiver_2_number,a3
+         00004240 00008070- 
+     645 00004260     09e4          movi    pass_receiver_2_angle,a4
+         00004270 00008090- 
+     646 00004290     09e5          movi    pass_receiver_2_object,a5
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+         000042a0 000080b0- 
+     647 000042c0     0d3f          callr   fpnb1
+         000042d0     0009  
+     648 000042e0     09e3          movi    pass_receiver_3_number,a3
+         000042f0 000080d0- 
+     649 00004310     09e4          movi    pass_receiver_3_angle,a4
+         00004320 000080f0- 
+     650 00004340     09e5          movi    pass_receiver_3_object,a5
+         00004350 00008110- 
+     651 00004370     8461  fpnb1   move    *a3,a1,W
+     652 00004380     ca10          jrz     fpnb3
+     653 00004390     86a5          move    *a5,a5,L
+     654 000043a0     b6ae          move    *a5(OXVAL),a14,L
+         000043b0     0140  
+     655 000043c0     0b41          cmpi    4,a1
+         000043d0     fffb  
+     656 000043e0     c201          jrls    fpnb2
+     657 000043f0     03ae          neg     a14
+     658 00004400     0b6e  fpnb2   cmpi    [-600,0],a14
+         00004410 0257ffff  
+     659 00004430     c705          jrgt    fpnb3
+     660 00004440     868e          move    *a4,a14,L
+     661 00004450     0b2e          addi    XD7200,a14
+         00004460 02d00000  
+     662 00004480     83c4          move    a14,*a4,L
+     663 00004490     0960  fpnb3   rets
+     664                    
+     665 000044a0           get_eligible_players_list
+     666 000044a0     4c0a          move    a0,a10
+     667 000044b0     09ee          movi    p_angle_no_pfour_tab-64,a14
+         000044c0 00005ca0' 
+     668 000044e0     4c0a          move    a0,a10
+     669 000044f0     142a          dec     a10
+     670 00004500     2fca          srl     2,a10
+     671 00004510     102a          inc     a10
+     672 00004520     244a          sll     2,a10           ;a10 is now our teams goalie/extra drone
+     673 00004530                   GBLOCK  a10,a10
+     674 00004570     b54a          move    *a10(POF_FLAGS),a10,W
+         00004580     0200  
+     675 00004590     1faa          btst    B_PF_GOALIE,a10
+     676 000045a0     cb03          jrnz    gepl1           ;our goalie is a goalie
+     677 000045b0     09ee          movi    p_angle_pfour_tab-64,a14        ;our goalie is really extra drone
+         000045c0 00005ea0' 
+     678 000045e0     4c0a  gepl1   move    a0,a10
+     679 000045f0     24ca          sll     6,a10
+     680 00004600     41ca          add     a14,a10
+     681 00004610     954e          move    *a10+,a14,W
+     682 00004620     058e          move    a14,@pass_receiver_1_number
+         00004630 00008010- 
+     683 00004650     954e          move    *a10+,a14,W
+     684 00004660     058e          move    a14,@pass_receiver_2_number
+         00004670 00008070- 
+     685 00004690     954e          move    *a10+,a14,W
+     686 000046a0     058e          move    a14,@pass_receiver_3_number
+         000046b0 000080d0- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     687 000046d0     0960          rets
+     688                    
+     689 000046e0           find_angles_to_players
+     690 000046e0     09e3          movi    pass_receiver_1_number,a3
+         000046f0 00008010- 
+     691 00004710     09e4          movi    pass_receiver_1_angle,a4
+         00004720 00008030- 
+     692 00004740     09e5          movi    pass_receiver_1_object,a5
+         00004750 00008050- 
+     693 00004770     0d3f          callr   fafg1
+         00004780     0014  
+     694 00004790     09e3          movi    pass_receiver_2_number,a3
+         000047a0 00008070- 
+     695 000047c0     09e4          movi    pass_receiver_2_angle,a4
+         000047d0 00008090- 
+     696 000047f0     09e5          movi    pass_receiver_2_object,a5
+         00004800 000080b0- 
+     697 00004820     0d3f          callr   fafg1
+         00004830     0009  
+     698 00004840     09e3          movi    pass_receiver_3_number,a3
+         00004850 000080d0- 
+     699 00004870     09e4          movi    pass_receiver_3_angle,a4
+         00004880 000080f0- 
+     700 000048a0     09e5          movi    pass_receiver_3_object,a5
+         000048b0 00008110- 
+     701 000048d0     8461  fafg1   move    *a3,a1,W
+     702 000048e0     ca07          jrz     fafg2
+     703 000048f0     0d3f          callr   find_angle_from_joystick
+         00004900     017d  
+     704 00004910     4c42          move    a2,a2
+     705 00004920     cb01          jrnz    fa4
+     706 00004930     1822          movk    1,a2                    ;don't let our angle be exactly zero
+     707 00004940     8244  fa4     move    a2,*a4,L
+     708 00004950     8325          move    a9,*a5,L
+     709 00004960     0960  fafg2   rets
+     710                    
+     711 00004970           find_blue_line_status
+     712 00004970     aece          movb    *a6(POF_NUMBER),a14
+         00004980     0000  
+     713 00004990     07a3          move    @PUCK_OBJECT,a3,L
+         000049a0 00000000! 
+     714 000049c0     09e4          movi    pass_our_blue_status,a4
+         000049d0 00008000- 
+     715                    
+     716 000049f0     b660          move    *a3(OXVAL),a0,L
+         00004a00     0140  
+     717 00004a10     0b20          addi    [0,08000h],a0
+         00004a20 00008000  
+     718 00004a40     2a00          sra     16,a0
+     719 00004a50     b460          move    *a3(OXPOS),a0,W         ;half
+         00004a60     0150  
+     720                    
+     721 00004a70     0d3f          callr   frba
+         00004a80     0024  
+     722 00004a90     09e3          movi    pass_receiver_1_number,a3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+         00004aa0 00008010- 
+     723 00004ac0     09e4          movi    pass_receiver_1_status,a4
+         00004ad0 00008020- 
+     724 00004af0     0d3f          callr   fbrpp
+         00004b00     000e  
+     725 00004b10     09e3          movi    pass_receiver_2_number,a3
+         00004b20 00008070- 
+     726 00004b40     09e4          movi    pass_receiver_2_status,a4
+         00004b50 00008080- 
+     727 00004b70     0d3f          callr   fbrpp
+         00004b80     0006  
+     728 00004b90     09e3          movi    pass_receiver_3_number,a3
+         00004ba0 000080d0- 
+     729 00004bc0     09e4          movi    pass_receiver_3_status,a4
+         00004bd0 000080e0- 
+     730 00004bf0     8460  fbrpp   move    *a3,a0,W
+     731 00004c00     ca23          jrz     frbl9
+     732 00004c10     098f          mmtm    sp,a6,a8
+         00004c20     0280  
+     733 00004c30     0d3f          callr   get_players_puck_point
+         00004c40     fe2c  
+     734 00004c50     09af          mmfm    sp,a6,a8
+         00004c60     0140  
+     735 00004c70     0b20          addi    [0,08000h],a0           ;half
+         00004c80 00008000  
+     736 00004ca0     2a00          sra     16,a0
+     737 00004cb0     846e          move    *a3,a14,W
+     738 00004cc0     ca17          jrz     frbl9
+     739 00004cd0     142e  frba    dec     a14
+     740 00004ce0     2fce          srl     2,a14
+     741 00004cf0     cb0a          jrnz    fbl48
+     742 00004d00     5621  fbl14   clr     a1
+     743 00004d10     0b40          cmpi    5,a0
+         00004d20     fffa  
+     744 00004d30     c60f          jrle    frbl5
+     745 00004d40     1821          movk    1,a1
+     746 00004d50     0b40          cmpi    233,a0
+         00004d60     ff16  
+     747 00004d70     c60b          jrle    frbl5
+     748 00004d80     1841          movk    2,a1
+     749 00004d90     c009          jruc    frbl5
+     750 00004da0     5621  fbl48   clr     a1
+     751 00004db0     0b40          cmpi    -5,a0
+         00004dc0     0004  
+     752 00004dd0     c505          jrge    frbl5
+     753 00004de0     1821          movk    1,a1
+     754 00004df0     0b40          cmpi    -233,a0
+         00004e00     00e8  
+     755 00004e10     c501          jrge    frbl5
+     756 00004e20     1841          movk    2,a1
+     757 00004e30     8024  frbl5   move    a1,*a4
+     758 00004e40     0960  frbl9   rets
+     759                    
+     760 00004e50           remove_ineligible_and_pick
+     761 00004e50     05a0          move    @pass_receiver_1_status,a0,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+         00004e60 00008020- 
+     762 00004e80     05a1          move    @pass_receiver_2_number,a1,W
+         00004e90 00008070- 
+     763 00004eb0     ca0e          jrz     rip_os
+     764 00004ec0     05a1          move    @pass_receiver_2_status,a1,W
+         00004ed0 00008080- 
+     765 00004ef0     4801          cmp     a0,a1
+     766 00004f00     cb11          jrnz    rip_ns                          ;not all teammates are on 1 side of blue line
+     767 00004f10     05a2          move    @pass_receiver_3_number,a2,W
+         00004f20 000080d0- 
+     768 00004f40     ca05          jrz     rip_os                          ;all teammates are on 1 side, now see if we are
+     769 00004f50     05a2          move    @pass_receiver_3_status,a2,W
+         00004f60 000080e0- 
+     770 00004f80     4802          cmp     a0,a2
+     771 00004f90     cb08          jrnz    rip_ns                          ;not all teammates are on 1 side of blue line
+     772 00004fa0     05a2  rip_os  move    @pass_our_blue_status,a2,W
+         00004fb0 00008000- 
+     773 00004fd0     4840          cmp     a2,a0
+     774 00004fe0     ca05          jrz     rip_p                           ;all teammates on our side, pick 1
+     775 00004ff0     0d3f  rip_aos callr   add_to_angle_if_away_from_blue  ;all are teammates on other side
+         00005000     0023  
+     776 00005010     c002          jruc    rip_p                           ;pick a player
+     777 00005020     0d3f  rip_ns  callr   add_to_angle_if_not_blue        ;not all on blue, just add to angles that are
+         00005030     005b  
+     778 00005040     0d3f  rip_p   callr   subtract_from_angle_if_pressed
+         00005050     0090  
+     779 00005060     05a0          move    @pass_receiver_1_number,a0,W
+         00005070 00008010- 
+     780 00005090     07a1          move    @pass_receiver_1_angle,a1,L
+         000050a0 00008030- 
+     781 000050c0     05ae          move    @pass_receiver_2_number,a14,W
+         000050d0 00008070- 
+     782 000050f0     ca13          jrz     rpp2
+     783 00005100     07a2          move    @pass_receiver_2_angle,a2,L
+         00005110 00008090- 
+     784 00005130     4822          cmp     a1,a2
+     785 00005140     c904          jrhs    rpp1
+     786 00005150     05a0          move    @pass_receiver_2_number,a0,W
+         00005160 00008070- 
+     787 00005180     4c41          move    a2,a1
+     788 00005190     05ae  rpp1    move    @pass_receiver_3_number,a14,W
+         000051a0 000080d0- 
+     789 000051c0     ca06          jrz     rpp2
+     790 000051d0     07a2          move    @pass_receiver_3_angle,a2,L
+         000051e0 000080f0- 
+     791 00005200     4822          cmp     a1,a2
+     792 00005210     c901          jrhs    rpp2
+     793 00005220     4dc0          move    a14,a0
+     794 00005230     0960  rpp2    rets
+     795 00005240           add_to_angle_if_away_from_blue
+     796 00005240     07a8          move    @pass_receiver_1_object,a8,L
+         00005250 00008050- 
+     797 00005270     0d3f          callr   fabc
+         00005280     0028  
+     798 00005290     07a1          move    @pass_receiver_1_angle,a1,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+         000052a0 00008030- 
+     799 000052c0     4001          add     a0,a1
+     800 000052d0     0781          move    a1,@pass_receiver_1_angle,L
+         000052e0 00008030- 
+     801 00005300     05a0          move    @pass_receiver_2_number,a0,W
+         00005310 00008070- 
+     802 00005330     ca1c          jrz     ata9
+     803 00005340     07a8          move    @pass_receiver_2_object,a8,L
+         00005350 000080b0- 
+     804 00005370     0d3f          callr   fabc
+         00005380     0018  
+     805 00005390     07a1          move    @pass_receiver_2_angle,a1,L
+         000053a0 00008090- 
+     806 000053c0     4001          add     a0,a1
+     807 000053d0     0781          move    a1,@pass_receiver_2_angle,L
+         000053e0 00008090- 
+     808 00005400     05a0          move    @pass_receiver_3_number,a0,W
+         00005410 000080d0- 
+     809 00005430     ca0c          jrz     ata9
+     810 00005440     07a8          move    @pass_receiver_3_object,a8,L
+         00005450 00008110- 
+     811 00005470     0d3f          callr   fabc
+         00005480     0008  
+     812 00005490     07a1          move    @pass_receiver_3_angle,a1,L
+         000054a0 000080f0- 
+     813 000054c0     4001          add     a0,a1
+     814 000054d0     0781          move    a1,@pass_receiver_3_angle,L
+         000054e0 000080f0- 
+     815 00005500     0960  ata9    rets
+     816 00005510     5600  fabc    clr     a0
+     817 00005520     b501          move    *a8(OXPOS),a1,W
+         00005530     0150  
+     818 00005540     0381          abs     a1
+     819 00005550     0be1          subi    233,a1
+         00005560     ff16  
+     820 00005570     0381          abs     a1
+     821 00005580     0b41          cmpi    40,a1
+         00005590     ffd7  
+     822 000055a0     c203          jrls    fbc1
+     823 000055b0     09e0          movi    XD0300,a0               ;30 degree penalty for not near line
+         000055c0 001e0000  
+     824 000055e0     0960  fbc1    rets
+     825                    
+     826 000055f0           add_to_angle_if_not_blue
+     827 000055f0     05a2          move    @pass_our_blue_status,a2,W
+         00005600 00008000- 
+     828 00005620     05a1          move    @pass_receiver_1_status,a1,W
+         00005630 00008020- 
+     829 00005650     0d3f          callr   faab
+         00005660     0028  
+     830 00005670     07a1          move    @pass_receiver_1_angle,a1,L
+         00005680 00008030- 
+     831 000056a0     4001          add     a0,a1
+     832 000056b0     0781          move    a1,@pass_receiver_1_angle,L
+         000056c0 00008030- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+     833 000056e0     05a1          move    @pass_receiver_2_number,a1,W
+         000056f0 00008070- 
+     834 00005710     ca1c          jrz     atai1
+     835 00005720     05a1          move    @pass_receiver_2_status,a1,W
+         00005730 00008080- 
+     836 00005750     0d3f          callr   faab
+         00005760     0018  
+     837 00005770     07a1          move    @pass_receiver_2_angle,a1,L
+         00005780 00008090- 
+     838 000057a0     4001          add     a0,a1
+     839 000057b0     0781          move    a1,@pass_receiver_2_angle,L
+         000057c0 00008090- 
+     840 000057e0     05a1          move    @pass_receiver_3_number,a1,W
+         000057f0 000080d0- 
+     841 00005810     ca0c          jrz     atai1
+     842 00005820     05a1          move    @pass_receiver_3_status,a1,W
+         00005830 000080e0- 
+     843 00005850     0d3f          callr   faab
+         00005860     0008  
+     844 00005870     07a1          move    @pass_receiver_3_angle,a1,L
+         00005880 000080f0- 
+     845 000058a0     4001          add     a0,a1
+     846 000058b0     0781          move    a1,@pass_receiver_3_angle,L
+         000058c0 000080f0- 
+     847 000058e0     0960  atai1   rets
+     848 000058f0     5600  faab    clr     a0
+     849 00005900     4822          cmp     a1,a2
+     850 00005910     ca03          jrz     fabb
+     851 00005920     09e0          movi    XD0300,a0
+         00005930 001e0000  
+     852 00005950     0960  fabb    rets
+     853                    
+     854 00005960           subtract_from_angle_if_pressed
+     855 00005960     09e0          movi    pass_receiver_1_number,a0
+         00005970 00008010- 
+     856 00005990     09e2          movi    pass_receiver_1_angle,a2
+         000059a0 00008030- 
+     857 000059c0     0d3f          callr   sfa1
+         000059d0     000e  
+     858 000059e0     09e0          movi    pass_receiver_2_number,a0
+         000059f0 00008070- 
+     859 00005a10     09e2          movi    pass_receiver_2_angle,a2
+         00005a20 00008090- 
+     860 00005a40     0d3f          callr   sfa1
+         00005a50     0006  
+     861 00005a60     09e0          movi    pass_receiver_3_number,a0
+         00005a70 000080d0- 
+     862 00005a90     09e2          movi    pass_receiver_3_angle,a2
+         00005aa0 000080f0- 
+     863 00005ac0     8400  sfa1    move    *a0,a0,W
+     864 00005ad0     ca10          jrz     sfa8
+     865 00005ae0                   GBLOCK  a0,a6
+     866 00005b30     b4ce          move    *a6(POF_FLAGS),a14,W
+         00005b40     0200  
+     867 00005b50     1f0e          btst    B_PF_SIG_PASS,a14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+     868 00005b60     ca07          jrz     sfa8
+     869 00005b70     8640          move    *a2,a0,L
+     870 00005b80     0d00          subi    XD3600,a0
+         00005b90 fe97ffff  
+     871 00005bb0     cf01          jrnn    sfa2
+     872 00005bc0     5600          clr     a0
+     873 00005bd0     8202  sfa2    move    a0,*a2,L
+     874 00005be0     0960  sfa8    rets
+     875                    
+     876                    **************************************************************************
+     877                    *                                                                        *
+     878                    * find_player_to_angle                                                   *
+     879                    *      finds player closest to joystick angle                            *
+     880                    *       input   a10 = address of player check list (3 long)              *
+     881                    *               a6  = player block                                       *
+     882                    *               a8  = player object                                      *
+     883                    *       output  a4  = player closest to joystick angle                   *
+     884                    *               a3  = angle difference to joystick                       *
+     885                    *                                                                        *
+     886                    **************************************************************************
+     887 00005bf0           find_player_to_angle
+     888 00005bf0     186b          movk    3,a11
+     889 00005c00     5684          clr     a4
+     890 00005c10     09e3          movi    [32767,0],a3            ;initial, BIG angle
+         00005c20 7fff0000  
+     891 00005c40     9541  gpr2    move    *a10+,a1
+     892 00005c50     ca06          jrz     gpr3
+     893 00005c60     0d3f          callr   find_angle_from_joystick
+         00005c70     0046  
+     894 00005c80     4862          cmp     a3,a2                   ;are we higher than saved
+     895 00005c90     c902          jrhs    gpr3                    ;yes, don't save it
+     896 00005ca0     4c24          move    a1,a4                   ;save player #
+     897 00005cb0     4c43          move    a2,a3                   ;save angle
+     898 00005cc0     3d2b  gpr3    dsjs    a11,gpr2
+     899 00005cd0     0960          rets
+     900                    
+     901 00005ce0           p_angle_no_pfour_tab                    ;used when goalie is goalie
+     902 00005ce0     0002          .word   2,0,0,0
+     903 00005d20     0001          .word   1,0,0,0
+     904 00005d60     0001          .word   1,2,0,0
+     905 00005da0     0001          .word   1,2,0,0
+     906 00005de0     0006          .word   6,0,0,0
+     907 00005e20     0005          .word   5,0,0,0
+     908 00005e60     0005          .word   5,6,0,0
+     909 00005ea0     0005          .word   5,6,0,0
+     910                    
+     911 00005ee0           p_angle_pfour_tab                               ;used when goalie is fourth player
+     912 00005ee0     0002          .word   2,4,0,0
+     913 00005f20     0001          .word   1,4,0,0
+     914 00005f60     0001          .word   1,1,1,0
+     915 00005fa0     0001          .word   1,2,0,0
+     916 00005fe0     0006          .word   6,8,0,0
+     917 00006020     0005          .word   5,8,0,0
+     918 00006060     0001          .word   1,1,1,0
+     919 000060a0     0005          .word   5,6,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+     920                    
+     921                    **************************************************************************
+     922                    *                                                                        *
+     923                    * find_angle_from_joystick                                               *
+     924                    *       input   a6 = player block                                        *
+     925                    *               a8 = object                                              *
+     926                    *               a1 = player to check                                     *
+     927                    *       output  a2 = difference in angle from direction (abs degrees)    *
+     928                    *               a9 = player to check's object                            *
+     929                    *                                                                        *
+     930                    **************************************************************************
+     931 000060e0           find_angle_from_joystick
+     932 000060e0     098f          mmtm    sp,a0,a1,a3,a5,a7
+         000060f0     d500  
+     933 00006100     b4c0          move    *a6(POF_FLAGS),a0,W
+         00006110     0200  
+     934 00006120     1fe0          btst    B_PF_HUMAN,a0
+     935 00006130     ca03          jrz     fdfc                    ;we are a drone
+     936 00006140     aec0          movb    *a6(POF_JOY),a0
+         00006150     0398  
+     937 00006160     cb02          jrnz    fdf1
+     938 00006170     aec0  fdfc    movb    *a6(POF_DIRECTION),a0
+         00006180     0390  
+     939 00006190     0d5f  fdf1    calla   dir_to_degrees          ;a0 is degrees of our stick
+         000061a0 00000000! 
+     940 000061c0     4c07          move    a0,a7                   ;save ourself to a7
+     941 000061d0                   GBLOCK  a1,a5
+     942 00006220     b6a9          move    *a5(POF_OBJECT),a9,L
+         00006230     0280  
+     943 00006240     b720          move    *a9(OXVAL),a0,L         ;our test player
+         00006250     0140  
+     944 00006260     b721          move    *a9(OZVAL),a1,L
+         00006270     0180  
+     945 00006280     b702          move    *a8(OXVAL),a2,L         ;ourself
+         00006290     0140  
+     946 000062a0     b703          move    *a8(OZVAL),a3,L
+         000062b0     0180  
+     947 000062c0     0d5f          calla   find_dir_to_point
+         000062d0 00000000! 
+     948 000062f0     44e0          sub     a7,a0                   ;difference in angles
+     949 00006300                   THETA_H a0
+     950 00006410     0380          abs     a0
+     951 00006420     4c02          move    a0,a2
+     952 00006430     09af          mmfm    sp,a0,a1,a3,a5,a7
+         00006440     00ab  
+     953 00006450     0960          rets
+     954                    
+     955                    **************************************************************************
+     956                    *                                                                        *
+     957                    * get_offense_mode                                                       *
+     958                    *       input   a0 = player number                                       *
+     959                    *       output  a1 = 0 - offense                                         *
+     960                    *                  = 1 - defense                                         *
+     961                    *                  = 2 - neither                                         *
+     962                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+     963                    **************************************************************************
+     964 00006460           get_offense_mode
+     965 00006460     098f          mmtm    sp,a0
+         00006470     8000  
+     966 00006480     05a1          move    @PUCK_CONTROL,a1,W
+         00006490 00000000! 
+     967 000064b0     cb04          jrnz    awo_a
+     968 000064c0     05a1          move    @PUCK_LAST_CONTROL,a1,W
+         000064d0 00000000! 
+     969 000064f0     ca0e          jrz     awo_2
+     970 00006500     1420  awo_a   dec     a0              ;are a0 and a1 same team
+     971 00006510     2fc0          srl     2,a0
+     972 00006520     1421          dec     a1
+     973 00006530     2fc1          srl     2,a1
+     974 00006540     4801          cmp     a0,a1
+     975 00006550     ca04          jrz     awo_0
+     976 00006560     1821  awo_1   movk    1,a1
+     977 00006570     09af          mmfm    sp,a0
+         00006580     0001  
+     978 00006590     0960          rets
+     979 000065a0     5621  awo_0   clr     a1
+     980 000065b0     09af          mmfm    sp,a0
+         000065c0     0001  
+     981 000065d0     0960          rets
+     982 000065e0     1841  awo_2   movk    2,a1
+     983 000065f0     09af          mmfm    sp,a0
+         00006600     0001  
+     984 00006610     0960          rets
+     985                    
+     986 00006620           reset_players_turbo
+     987 00006620     09e2          movi    [71,0],a2
+         00006630 00470000  
+     988 00006650     5663          clr     a3
+     989 00006660     1900          movk    8,a0
+     990 00006670     0b40  rpt1    cmpi    3,a0
+         00006680     fffc  
+     991 00006690     ca03          jrz     rui_1
+     992 000066a0     0b40          cmpi    7,a0
+         000066b0     fff8  
+     993 000066c0     cb01          jrnz    rui_2
+     994 000066d0     1420  rui_1   dec     a0
+     995 000066e0           rui_2   GBLOCK  a0,a6
+     996 00006730     b066          move    a3,*a6(POF_TURBO_DELAY),W
+         00006740     0570  
+     997 00006750     b246          move    a2,*a6(POF_TURBO_AMOUNT),L
+         00006760     04c0  
+     998 00006770     3e20          dsjs    a0,rpt1
+     999 00006780     0960          rets
+    1000                    
+    1001 00006790           store_players_tired
+    1002 00006790     1900          movk    8,a0
+    1003 000067a0     0b40  spt1    cmpi    3,a0
+         000067b0     fffc  
+    1004 000067c0     ca03          jrz     sui_1
+    1005 000067d0     0b40          cmpi    7,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:11 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+         000067e0     fff8  
+    1006 000067f0     cb01          jrnz    sui_2
+    1007 00006800     1420  sui_1   dec     a0
+    1008 00006810           sui_2   GBLOCK  a0,a6
+    1009 00006860     b4ce          move    *a6(POF_TURBO_AMOUNT),a14
+         00006870     04c0  
+    1010 00006880     1822          movk    1,a2
+    1011 00006890     0b4e          cmpi    35,a14
+         000068a0     ffdc  
+    1012 000068b0     c201          jrls    sui3
+    1013 000068c0     5642          clr     a2
+    1014 000068d0     b246  sui3    move    a2,*a6(POF_TIRED),L
+         000068e0     05e0  
+    1015 000068f0     3ec0          dsj     a0,spt1
+    1016 00006900     0960          rets
+    1017                    
+    1018                    **************************************************************************
+    1019                    *                                                                        *
+    1020                    * check_mode_ok                                                          *
+    1021                    *       input   a3 = address of table for mode checks                    *
+    1022                    *               a6 = player block                                        *
+    1023                    *       output  c  = mode is ok                                          *
+    1024                    *               nc = mode is not ok                                      *
+    1025                    *                                                                        *
+    1026                    **************************************************************************
+    1027 00006910           check_mode_ok
+    1028 00006910     098f          mmtm    sp,a0,a3
+         00006920     9000  
+    1029 00006930     b4ce          move    *a6(POF_MODE),a14,W
+         00006940     0210  
+    1030 00006950     9460  cm1     move    *a3+,a0,W
+    1031 00006960     ce06          jrn     cm8
+    1032 00006970     49c0          cmp     a14,a0
+    1033 00006980     cbfc          jrnz    cm1
+    1034 00006990     0de0          setc
+    1035 000069a0     09af          mmfm    sp,a0,a3
+         000069b0     0009  
+    1036 000069c0     0960          rets
+    1037 000069d0     0320  cm8     clrc
+    1038 000069e0     09af          mmfm    sp,a0,a3
+         000069f0     0009  
+    1039 00006a00     0960          rets
+
+ No Errors,  No Warnings

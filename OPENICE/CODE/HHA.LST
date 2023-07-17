@@ -1,0 +1,391 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:08 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHA.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                            .INCLUDE        "HH.INC"
+      11                            .INCLUDE        "HHSTRING.H"
+      12                            .INCLUDE        "IMGTBL.GLO"
+      13                            .include        "hha.e"
+      14                            .include        "hhproc.g"
+      15                            .include        "hhd.g"
+      16                            .include        "hhmisc.g"
+      17                            .include        "hhplayer.g"
+      18                            .include        "hhram.g"
+      19                            .include        "hhcontrl.g"
+      20                            .include        "hhgame.g"
+      21                            .include        "hhpuck.g"
+      22                            .include        "hhpic.g"
+      23                            .include        "hhscr_ch.g"
+      24                    
+      25                    ; end of include files
+      26                    
+      27 00000000                   .TEXT
+      28 00000000                   .EVEN
+      29                    
+      30 00000000           SW_4                            ;P1 A
+      31 00000000     05b0          move    @GAME_STATE,b0
+         00000010 00000000! 
+      32 00000030     0b50          cmpi    INDIAG,b0
+         00000040     ffbf  
+      33 00000050     ca00          jrz     NO_SWITCH
+         00000060     018e  
+      34 00000070     07c0          MOVE    @WAVEIRQS,@GTIMES1,L
+         00000080 00000000! 
+         000000a0 00000000! 
+      35 000000c0     1820          movk    1,a0
+      36 000000d0     c080          jauc    shoot_puck_sw
+         000000e0 00000000! 
+      37 00000100           SW_5                            ;P1 B
+      38 00000100     05b0          move    @GAME_STATE,b0
+         00000110 00000000! 
+      39 00000130     0b50          cmpi    INDIAG,b0
+         00000140     ffbf  
+      40 00000150     ca00          jrz     NO_SWITCH
+         00000160     017e  
+      41 00000170     07c0          MOVE    @WAVEIRQS,@GTIMEP1,L
+         00000180 00000000! 
+         000001a0 00000000! 
+      42 000001c0     1820          movk    1,a0
+      43 000001d0     c080          jauc    pass_puck_sw
+         000001e0 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:08 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      44 00000200           SW_6                            ;P1 C
+      45 00000200     05b0          move    @GAME_STATE,b0
+         00000210 00000000! 
+      46 00000230     0b50          cmpi    INDIAG,b0
+         00000240     ffbf  
+      47 00000250     ca00          jrz     NO_SWITCH
+         00000260     016e  
+      48 00000270     07c0          MOVE    @WAVEIRQS,@GTIMET1,L
+         00000280 00000000! 
+         000002a0 00000000! 
+      49 000002c0     1820          movk    1,a0
+      50 000002d0     c000          jruc    set_tob
+         000002e0     00de  
+      51 000002f0           SW_7                            ;P1 D
+      52 000002f0     05b0          move    @GAME_STATE,b0
+         00000300 00000000! 
+      53 00000320     0b50          cmpi    INDIAG,b0
+         00000330     ffbf  
+      54 00000340     ca00          jrz     NO_SWITCH
+         00000350     015f  
+      55 00000360     c080          jauc    SUCIDE
+         00000370 00000000! 
+      56                    
+      57 00000390           SW_12                           ;P2 A
+      58 00000390     05b0          move    @GAME_STATE,b0
+         000003a0 00000000! 
+      59 000003c0     0b50          cmpi    INDIAG,b0
+         000003d0     ffbf  
+      60 000003e0     ca00          jrz     NO_SWITCH
+         000003f0     0155  
+      61 00000400                   KITN    2
+      62 00000440     ca00          jrz     zzp2_a
+         00000450     0095  
+      63 00000460     07c0          MOVE    @WAVEIRQS,@GTIMES2,L
+         00000470 00000000! 
+         00000490 00000000! 
+      64 000004b0     1840          movk    2,a0
+      65 000004c0     c080          jauc    shoot_puck_sw
+         000004d0 00000000! 
+      66 000004f0           SW_13                           ;P2 B
+      67 000004f0     05b0          move    @GAME_STATE,b0
+         00000500 00000000! 
+      68 00000520     0b50          cmpi    INDIAG,b0
+         00000530     ffbf  
+      69 00000540     ca00          jrz     NO_SWITCH
+         00000550     013f  
+      70 00000560                   KITN    2
+      71 000005a0     ca00          jrz     zzp2_b
+         000005b0     0095  
+      72 000005c0     07c0          MOVE    @WAVEIRQS,@GTIMEP2,L
+         000005d0 00000000! 
+         000005f0 00000000! 
+      73 00000610     1840          movk    2,a0
+      74 00000620     c080          jauc    pass_puck_sw
+         00000630 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:08 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+      75 00000650           SW_14                           ;P2 C
+      76 00000650     05b0          move    @GAME_STATE,b0
+         00000660 00000000! 
+      77 00000680     0b50          cmpi    INDIAG,b0
+         00000690     ffbf  
+      78 000006a0     ca00          jrz     NO_SWITCH
+         000006b0     0129  
+      79 000006c0                   KITN    2
+      80 00000700     ca00          jrz     zzp2_c
+         00000710     0095  
+      81 00000720     07c0          MOVE    @WAVEIRQS,@GTIMET2,L
+         00000730 00000000! 
+         00000750 00000000! 
+      82 00000770     1840          movk    2,a0
+      83 00000780     c000          jruc    set_tob
+         00000790     0093  
+      84 000007a0           SW_15                           ;P2 D
+      85 000007a0     05b0          move    @GAME_STATE,b0
+         000007b0 00000000! 
+      86 000007d0     0b50          cmpi    INDIAG,b0
+         000007e0     ffbf  
+      87 000007f0     ca00          jrz     NO_SWITCH
+         00000800     0114  
+      88 00000810     c080          jauc    SUCIDE
+         00000820 00000000! 
+      89                    
+      90 00000840           SW_20                           ;P3 A
+      91 00000840     05b0          move    @GAME_STATE,b0
+         00000850 00000000! 
+      92 00000870     0b50          cmpi    INDIAG,b0
+         00000880     ffbf  
+      93 00000890     ca00          jrz     NO_SWITCH
+         000008a0     010a  
+      94 000008b0                   KITN    2
+      95 000008f0     ca00          jrz     NO_SWITCH
+         00000900     0104  
+      96 00000910     07c0          MOVE    @WAVEIRQS,@GTIMES5,L
+         00000920 00000000! 
+         00000940 00000000! 
+      97 00000960     18a0          movk    5,a0
+      98 00000970     c080          jauc    shoot_puck_sw
+         00000980 00000000! 
+      99 000009a0           SW_21                           ;P3 B
+     100 000009a0     05b0          move    @GAME_STATE,b0
+         000009b0 00000000! 
+     101 000009d0     0b50          cmpi    INDIAG,b0
+         000009e0     ffbf  
+     102 000009f0     ca00          jrz     NO_SWITCH
+         00000a00     00f4  
+     103 00000a10                   KITN    2
+     104 00000a50     ca00          jrz     NO_SWITCH
+         00000a60     00ee  
+     105 00000a70     07c0          MOVE    @WAVEIRQS,@GTIMEP5,L
+         00000a80 00000000! 
+         00000aa0 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:08 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     106 00000ac0     18a0          movk    5,a0
+     107 00000ad0     c080          jauc    pass_puck_sw
+         00000ae0 00000000! 
+     108 00000b00           SW_22                           ;P3 C
+     109 00000b00     05b0          move    @GAME_STATE,b0
+         00000b10 00000000! 
+     110 00000b30     0b50          cmpi    INDIAG,b0
+         00000b40     ffbf  
+     111 00000b50     ca00          jrz     NO_SWITCH
+         00000b60     00de  
+     112 00000b70                   KITN    2
+     113 00000bb0     ca00          jrz     NO_SWITCH
+         00000bc0     00d8  
+     114 00000bd0     07c0          MOVE    @WAVEIRQS,@GTIMET5,L
+         00000be0 00000000! 
+         00000c00 00000000! 
+     115 00000c20     18a0          movk    5,a0
+     116 00000c30     c049          jruc    set_tob
+     117 00000c40           SW_23                           ;P3 D
+     118 00000c40     05b0          move    @GAME_STATE,b0
+         00000c50 00000000! 
+     119 00000c70     0b50          cmpi    INDIAG,b0
+         00000c80     ffbf  
+     120 00000c90     ca00          jrz     NO_SWITCH
+         00000ca0     00ca  
+     121 00000cb0     c080          jauc    SUCIDE
+         00000cc0 00000000! 
+     122                    
+     123 00000ce0           SW_28                           ;P4 A
+     124 00000ce0     05b0          move    @GAME_STATE,b0
+         00000cf0 00000000! 
+     125 00000d10     0b50          cmpi    INDIAG,b0
+         00000d20     ffbf  
+     126 00000d30     ca00          jrz     NO_SWITCH
+         00000d40     00c0  
+     127 00000d50                   KITN    2
+     128 00000d90     ca00          jrz     NO_SWITCH
+         00000da0     00ba  
+     129 00000db0     07c0  zzp2_a  MOVE    @WAVEIRQS,@GTIMES6,L
+         00000dc0 00000000! 
+         00000de0 00000000! 
+     130 00000e00     18c0          movk    6,a0
+     131 00000e10     c080          jauc    shoot_puck_sw
+         00000e20 00000000! 
+     132 00000e40           SW_29                           ;P4 B
+     133 00000e40     05b0          move    @GAME_STATE,b0
+         00000e50 00000000! 
+     134 00000e70     0b50          cmpi    INDIAG,b0
+         00000e80     ffbf  
+     135 00000e90     ca00          jrz     NO_SWITCH
+         00000ea0     00aa  
+     136 00000eb0                   KITN    2
+     137 00000ef0     ca00          jrz     NO_SWITCH
+         00000f00     00a4  
+     138 00000f10     07c0  zzp2_b  MOVE    @WAVEIRQS,@GTIMEP6,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:08 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+         00000f20 00000000! 
+         00000f40 00000000! 
+     139 00000f60     18c0          movk    6,a0
+     140 00000f70     c080          jauc    pass_puck_sw
+         00000f80 00000000! 
+     141 00000fa0           SW_30                           ;P4 C
+     142 00000fa0     05b0          move    @GAME_STATE,b0
+         00000fb0 00000000! 
+     143 00000fd0     0b50          cmpi    INDIAG,b0
+         00000fe0     ffbf  
+     144 00000ff0     ca00          jrz     NO_SWITCH
+         00001000     0094  
+     145 00001010                   KITN    2
+     146 00001050     ca00          jrz     NO_SWITCH
+         00001060     008e  
+     147 00001070     07c0  zzp2_c  MOVE    @WAVEIRQS,@GTIMET6,L
+         00001080 00000000! 
+         000010a0 00000000! 
+     148 000010c0     18c0          movk    6,a0
+     149 000010d0     0d5f  set_tob calla   check_for_player
+         000010e0 00000000! 
+     150 00001100     c980          janc    octopus_button
+         00001110 00000000! 
+     151 00001130                   GBLOCK  a0,a6
+     152 00001180     b4c0          move    *a6(POF_FLAGS),a0,W
+         00001190     0200  
+     153 000011a0     1f60          btst    B_PF_HIGHER,a0
+     154 000011b0     cb33          jrnz    sw30_9
+     155 000011c0     1a00          movk    16,a0
+     156 000011d0     b006          move    a0,*a6(POF_TURBO_OB),W
+         000011e0     05c0  
+     157 000011f0     05a0          move    @WAVEIRQS,a0,W
+         00001200 00000000! 
+     158 00001220     b6ce          move    *a6(POF_TTIME),a14,L
+         00001230     0c90  
+     159 00001240     b206          move    a0,*a6(POF_TTIME),L
+         00001250     0c90  
+     160 00001260     45c0          sub     a14,a0
+     161 00001270     0b40          cmpi    20,a0
+         00001280     ffeb  
+     162 00001290     c325          jrhi    sw30_9
+     163 000012a0     05ae          move    @PUCK_CONTROL,a14,W
+         000012b0 00000000! 
+     164 000012d0     aec0          movb    *a6(POF_NUMBER),a0
+         000012e0     0000  
+     165 000012f0     480e          cmp     a0,a14
+     166 00001300     cb1e          jrnz    sw30_9
+     167                    
+     168 00001310     b6c8          move    *a6(POF_OBJECT),a8,L
+         00001320     0280  
+     169 00001330     05ae          move    @no_control,a14,W
+         00001340 00000000! 
+     170 00001360     cb18          jrnz    sw30_9
+     171 00001370     b4ce          move    *a6(POF_FLAGS),a14,W
+         00001380     0200  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:08 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     172 00001390     1f6e          btst    B_PF_HIGHER,a14
+     173 000013a0     cb14          jrnz    sw30_9
+     174 000013b0     1fee          btst    B_PF_HUMAN,a14
+     175 000013c0     ca12          jrz     sw30_9
+     176 000013d0     b4ce          move    *a6(POF_FLAGS),a14,W
+         000013e0     0200  
+     177 000013f0     1fce          btst    B_PF_CONTROL,a14
+     178 00001400     cb02          jrnz    ccap1
+     179 00001410     1ece          btst    B_PF_CONTROLM,a14
+     180 00001420     ca0c          jrz     sw30_9
+     181 00001430     05ae  ccap1   move    @GAME_STATE,a14,W
+         00001440 00000000! 
+     182 00001460     0b4e          cmpi    INPLAY,a14
+         00001470     ffdf  
+     183 00001480     cb06          jrnz    sw30_9
+     184 00001490     0d5f          calla   take_player_control_m
+         000014a0 00000000! 
+     185 000014c0     0d5f          calla   set_elbow_script
+         000014d0 00000000! 
+     186 000014f0     c080  sw30_9  jauc    SUCIDE
+         00001500 00000000! 
+     187                    
+     188 00001520           SW_31                           ;P4 D
+     189 00001520     05b0          move    @GAME_STATE,b0
+         00001530 00000000! 
+     190 00001550     0b50          cmpi    INDIAG,b0
+         00001560     ffbf  
+     191 00001570     ca3d          jrz     NO_SWITCH
+     192 00001580     c080          jauc    SUCIDE
+         00001590 00000000! 
+     193 000015b0           SW_34                           ;P1 START
+     194 000015b0     05b0          move    @GAME_STATE,b0
+         000015c0 00000000! 
+     195 000015e0     0b50          cmpi    INDIAG,b0
+         000015f0     ffbf  
+     196 00001600     ca34          jrz     NO_SWITCH
+     197 00001610     1820          movk    1,a0
+     198 00001620     c080          jauc    player_start
+         00001630 00000000! 
+     199 00001650           SW_37                           ;P2 START
+     200 00001650     05b0          move    @GAME_STATE,b0
+         00001660 00000000! 
+     201 00001680     0b50          cmpi    INDIAG,b0
+         00001690     ffbf  
+     202 000016a0     ca2a          jrz     NO_SWITCH
+     203 000016b0     1840          MOVK    2,A0
+     204 000016c0                   KITN    4
+     205 00001700     ca80          JAEQ    player_start                    ;BR=4 PLAYER KIT
+         00001710 00000000! 
+     206 00001730     18c0          MOVK    6,A0                            ;2 PLAYER KIT
+     207 00001740     c080          jauc    player_start
+         00001750 00000000! 
+     208 00001770           SW_41                           ;P3 START
+     209 00001770                   KITN    4
+     210 000017b0     cb19          JRNE    NO_SWITCH                       ;BR=NOT A 4 PLAYER KIT
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:31:08 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     211 000017c0     05b0          move    @GAME_STATE,b0
+         000017d0 00000000! 
+     212 000017f0     0b50          cmpi    INDIAG,b0
+         00001800     ffbf  
+     213 00001810     ca13          jrz     NO_SWITCH
+     214 00001820     18a0          movk    5,a0
+     215 00001830     c080          jauc    player_start
+         00001840 00000000! 
+     216                    
+     217 00001860           SW_42                           ;P4 START
+     218 00001860                   KITN    4
+     219 000018a0     cb0a          JRNE    NO_SWITCH                       ;BR=NOT A 4 PLAYER KIT
+     220 000018b0     05b0          move    @GAME_STATE,b0
+         000018c0 00000000! 
+     221 000018e0     0b50          cmpi    INDIAG,b0
+         000018f0     ffbf  
+     222 00001900     ca04          jrz     NO_SWITCH
+     223 00001910     18c0          movk    6,a0
+     224 00001920     c080          jauc    player_start
+         00001930 00000000! 
+     225                    
+     226 00001950           NO_SWITCH
+     227 00001950     c080          jauc    SUCIDE
+         00001960 00000000! 
+
+ No Errors,  No Warnings

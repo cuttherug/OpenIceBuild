@@ -1,0 +1,171 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:42 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHWORD.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    **************************************************************************
+       8                    *                                                                        *
+       9                    *       COPYRIGHT (C) 1994 MIDWAY MANUFACTURING COMPANY.                 *
+      10                    *                      ALL RIGHTS RESERVED.                              *
+      11                    *                                                                        *
+      12                    **************************************************************************
+      13                    
+      14                            .INCLUDE        "HH.INC"                ;System Equates
+      15                            .INCLUDE        "HHSTRING.H"    ;STRING ROUTINES
+      16                            .INCLUDE        "HHDICT.H"      ;DICTIONARY OF WORDS
+      17                            .include        "hhword.e"
+      18                    
+      19                    ; end of include files
+      20                    
+      21                    **************************************************************************
+      22                    *                                                                        *
+      23                    *       DEFS AND REFS                                                    *
+      24                    *                                                                        *
+      25                    **************************************************************************
+      26                    
+      27                    **************************************************************************
+      28                    *                                                                        *
+      29                    *       CODE START                                                       *
+      30                    *                                                                        *
+      31                    **************************************************************************
+      32                    
+      33 00000000                   .TEXT
+      34 00000000                   .EVEN
+      35                    
+      36                    **************************************************************************
+      37                    *                                                                        *
+      38                    *       DICT_LOOKUP                                                      *
+      39                    *                                                                        *
+      40                    *       ENTRY                                                            *
+      41                    *               A0      WORD NUMBER                                      *
+      42                    *                                                                        *
+      43                    *       EXIT                                                             *
+      44                    *               A8      POINTER TO WORD STRING                           *
+      45                    *                                                                        *
+      46                    *       CALL                                                             *
+      47                    *               CALL                                                     *
+      48                    *                                                                        *
+      49                    **************************************************************************
+      50 00000000           DICT_LOOKUP:
+      51 00000000     098f          MMTM    SP,A0
+         00000010     8000  
+      52 00000020     5708          CLR     A8                      ; "ASSUME ZERO"
+      53 00000030     2720          SLL     25,A0
+      54 00000040     2ce0          SRL     25,A0                   ; MASK ALL BUT LOW 7
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:42 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      55 00000050     0b40          CMPI    W_LASTWORD,A0
+         00000060     ffbd  
+      56 00000070     c305          JRHI    DICT_RET                ; BR = NOT A REAL WORD
+      57 00000080     24a0          SLL     5,A0
+      58 00000090     0b20          ADDI    LOOKUP_TAB,A0
+         000000a0 00000110' 
+      59 000000c0     8608          MOVE    *A0,A8,L
+      60 000000d0           DICT_RET
+      61 000000d0     4d08          MOVE    A8,A8
+      62 000000e0     09af          MMFM    SP,A0
+         000000f0     0001  
+      63 00000100     0960          RETS
+      64                    
+      65                    **************************************************************************
+      66                    *                                                                        *
+      67                    *       WORD TABLE                                                       *
+      68                    *                                                                        *
+      69                    **************************************************************************
+      70                    
+      71 00000110           LOOKUP_TAB:
+      72 00000110 00000970'         .LONG   W_000, W_001, W_002, W_003, W_004, W_005, W_006, W_007
+      73 00000210 00000b28'         .LONG   W_008, W_009, W_010, W_011, W_012, W_013, W_014, W_015
+      74 00000310 00000cb0'         .LONG   W_016, W_017, W_018, W_019, W_020, W_021, W_022, W_023
+      75 00000410 00000e98'         .LONG   W_024, W_025, W_026, W_027, W_028, W_029, W_030, W_031
+      76 00000510 00001018'         .LONG   W_032, W_033, W_034, W_035, W_036, W_037, W_038, W_039
+      77 00000610 00001208'         .LONG   W_040, W_041, W_042, W_043, W_044, W_045, W_046, W_047
+      78 00000710 000013d8'         .LONG   W_048, W_049, W_050, W_051, W_052, W_053, W_054, W_055
+      79 00000810 000015f0'         .LONG   W_056, W_057, W_058, W_059, W_060, W_061, W_062, W_063
+      80 00000910 000017d0'         .LONG   W_064, W_065, W_066
+      81                    
+      82 00000970       46  W_000   .STRING "FRANCE",0
+      83 000009a8       47  W_001   .STRING "GERMAN",0
+      84 000009e0       82  W_002   .STRING 82H,0
+      85 000009f0       43  W_003   .STRING "CREDIT",0
+      86 00000a28       47  W_004   .STRING "GAME",0
+      87 00000a50       41  W_005   .STRING "ADJUSTMENT",0
+      88 00000aa8       43  W_006   .STRING "CREDITS",0
+      89 00000ae8       50  W_007   .STRING "PRICING",0
+      90 00000b28       43  W_008   .STRING "CUSTOM",0
+      91 00000b60       46  W_009   .STRING "FREE",0
+      92 00000b88       50  W_010   .STRING "PLAY",0
+      93 00000bb0       43  W_011   .STRING "COIN",0
+      94 00000bd8       43  W_012   .STRING "COINS",0
+      95 00000c08       53  W_013   .STRING "STANDARD",0
+      96 00000c50       55  W_014   .STRING "UNITS",0
+      97 00000c80       43  W_015   .STRING "CHUTE",0
+      98 00000cb0       46  W_016   .STRING "FACTORY SETTING",0
+      99 00000d30       54  W_017   .STRING "TIME",0
+     100 00000d58       41  W_018   .STRING "AUDITS",0
+     101 00000d90       43  W_019   .STRING "CLOSED",0
+     102 00000dc8       43  W_020   .STRING "CLEAR",0
+     103 00000df8       54  W_021   .STRING "TEST",0
+     104 00000e20       41  W_022   .STRING "AVERAGE",0
+     105 00000e60       46  W_023   .STRING "FOURTH",0
+     106 00000e98       53  W_024   .STRING "SWITCH",0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:42 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     107 00000ed0       42  W_025   .STRING "BOARD",0
+     108 00000f00       53  W_026   .STRING "SLOT",0
+     109 00000f28       54  W_027   .STRING "TONE",0
+     110 00000f50       47  W_028   .STRING "GAMES",0
+     111 00000f80       52  W_029   .STRING "RETURN",0
+     112 00000fb8       52  W_030   .STRING "RIGHT",0
+     113 00000fe8       50  W_031   .STRING "PLAYS",0
+     114 00001018       48  W_032   .STRING "HIGH",0
+     115 00001040       43  W_033   .STRING "CONTINUES",0
+     116 00001090       43  W_034   .STRING "COLLECTION",0
+     117 000010e8       41  W_035   .STRING "AUDIT",0
+     118 00001118       50  W_036   .STRING "PRESS",0
+     119 00001148       53  W_037   .STRING "SETTINGS",0
+     120 00001190       44  W_038   .STRING "DIPSWITCH",0
+     121 000011e0       42  W_039   .STRING "BOOK",0
+     122 00001208       43  W_040   .STRING "CENTER",0
+     123 00001240       53  W_041   .STRING "SELECT",0
+     124 00001278       4c  W_042   .STRING "LEFT",0
+     125 000012a0       53  W_043   .STRING "START",0
+     126 000012d0       50  W_044   .STRING "PLAYER",0
+     127 00001308       53  W_045   .STRING "SIMULTANEOUS",0
+     128 00001370       53  W_046   .STRING "SCREEN",0
+     129 000013a8       54  W_047   .STRING "TOTAL",0
+     130 000013d8       53  W_048   .STRING "STARTS",0
+     131 00001410       53  W_049   .STRING "SOUND",0
+     132 00001440       41  W_050   .STRING "ADJUSTMENTS",0
+     133 000014a0       45  W_051   .STRING "ERROR",0
+     134 000014d0       54  W_052   .STRING "TOTALS",0
+     135 00001508       43  W_053   .STRING "COIN COUNTERS",0
+     136 00001578       4d  W_054   .STRING "MESSAGE",0
+     137 000015b8       42  W_055   .STRING "BUTTON",0
+     138 000015f0       43  W_056   .STRING "CONTINUE",0
+     139 00001638       55  W_057   .STRING "U.S.A.",0
+     140 00001670       44  W_058   .STRING "DOLLAR",0
+     141 000016a8       43  W_059   .STRING "CENT",0
+     142 000016d0       43  W_060   .STRING "CENTS",0
+     143 00001700       53  W_061   .STRING "SCHILLING",0
+     144 00001750       4d  W_062   .STRING "MAXIMUM",0
+     145 00001790       4d  W_063   .STRING "MINIMUM",0
+     146 000017d0       4c  W_064   .STRING "LIVES",0
+     147 00001800       45  W_065   .STRING "EXTRA",0
+     148 00001830       53  W_066   .STRING "SCORE",0
+     149                    
+     150 00001860                   .EVEN
+
+ No Errors,  No Warnings

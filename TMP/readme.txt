@@ -1,0 +1,1 @@
+this empty directory should be in the C:\ drive root if you will be working with some of the provided batch files in this repository.

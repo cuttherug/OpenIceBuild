@@ -1,0 +1,2848 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHSTABLE.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                    
+      11                            .INCLUDE        "HH.INC"
+      12                            .include        "HHPPALS.H"
+      13                            .include        "HHHPALS.H"
+      14                            .include        "HHBPALS.H"
+      15                            .INCLUDE        "IMGTBL.GLO"
+      16                            .INCLUDE        "HHSELECT.TBL"
+      17                            .INCLUDE        "HHSELCT2.TBL"
+      18                            .INCLUDE        "ALTLOGOS.TBL"
+      19                            .INCLUDE        "SCREEN.TBL"
+      20                            .include        "flashes.tbl"
+      21                            .include        "hhstable.e"
+      22                            .include        "hhtables.g"
+      23                            .include        "hhcontrl.g"
+      24                                    
+      25                    ; end of include files
+      26                    
+      27                    ;       .long   logo1,alt team logo image (anaheim)
+      28                    ;       .long    member_1_list,member_2_list
+      29                    ;       .long    away_uniform_pal,away_uniform_goalie_pal
+      30                    ;       .long    home_uniform_pal,home_uniform_goalie_pal
+      31                    ;       .long    home_p1_turbo_pal,home_p2_turbo_pal
+      32                    ;       .long    home_p3_turbo_pal,home_p4_turbo_pal
+      33                    ;       .long    away_p1_turbo_pal,away_p2_turbo_pal
+      34                    ;       .long    away_p3_turbo_pal,away_p4_turbo_pal
+      35                    ;       .long    long_name_init
+      36                    ;       .long    goalie_list
+      37                    ;       .LONG    TEAM NAME IMAGE, TEAM LOGO IMAGE
+      38                    ;       .word    home_helmet_palette_offset,away_helmet_palette_offset
+      39                    ;       .word    goalie_helmet_palette_offset,0
+      40                    ;       .LONG    CITY NAME IMAGE, CITY NAME STRING, BIG GOALIE HELMET PALETTE
+      41                    ;       .LONG    TEAM NICKNAME
+      42                    ;       .word    video clip primary pal, video clip secondary pal
+      43                    ;       .long    away_bench_palette,home_bench_palette
+      44                    
+      45 000a05a0           new_colorado_team
+      46 000a05a0 000045c0"         .long   QUE,0
+      47 000a05e0 000bc440'         .long    colorado_list,colorado2_list
+      48 000a0620 0001f3e0'         .long    AVALa1,GAVALAa1
+      49 000a0660 0001fbf0'         .long    AVALh1,GAVALAh1
+      50 000a06a0 00003870'         .long    PMONTaP2,PMONTaB2
+      51 000a06e0 00002850'         .long    PMONTaY2,PMONTaG2
+      52 000a0720 00001830'         .long    PMONThP2,PMONThB2
+      53 000a0760 00000810'         .long    PMONThY2,PMONThG2
+      54 000a07a0 000034e0"         .long    QUEBEC
+      55 000a07c0 000bc480'         .long    colorado_glist
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56 000a07e0 00000870"         .long    NORDIQIT,COLORAD1              ;QUEBEC1
+      57 000a0820     0000          .word    0,7,26,0
+      58 000a0860 000017a0"         .long    QUEBECIT,COLO_STR,BCOLOmsk1,COLO_NICK_STR
+      59 000a08e0     0004          .word    4,5
+      60 000a0900 0006e620'         .long    BAVALa2,BAVALh2,AVALANC2,0,0
+      61                    
+      62                    
+      63 000a09a0           team_data
+      64 000a09a0 00003c30"         .long   BOS,0                   ;boston is default on 0 (it's really 1)
+      65 000a09e0 000bc560'         .long    boston_list,boston_list
+      66 000a0a20 0001a340'         .long    BRUINSa,GBRUINSa
+      67 000a0a60 0001ab50'         .long    BRUINSh,GBRUINSh
+      68 000a0aa0 00003870'         .long    PMONTaP2,PMONTaB2
+      69 000a0ae0 00002850'         .long    PMONTaY2,PMONTaG2
+      70 000a0b20 00001830'         .long    PMONThP2,PMONThB2
+      71 000a0b60 00000810'         .long    PMONThY2,PMONThG2
+      72 000a0ba0 000039f0"         .long    BOSTON
+      73 000a0bc0 000bc5b0'         .long    boston_glist
+      74 000a0be0 00000120"         .long    BRUINSIT,BOSTON1
+      75 000a0c20     0000          .word    0,1,15,0
+      76 000a0c60 00000ea0"         .long    BOSTONIT,BOST_STR,BBOSTmsk1,BOST_NICK_STR
+      77 000a0ce0     0003          .word    3,3
+      78 000a0d00 000704e0'         .long    BBRUINSa2,BBRUINSh2,0,0,0
+      79                    
+      80 000a0da0 00003c30"         .long   BOS,0
+      81 000a0de0 000bc560'         .long    boston_list,boston2_list
+      82 000a0e20 0001a340'         .long    BRUINSa,GBRUINSa
+      83 000a0e60 0001ab50'         .long    BRUINSh,GBRUINSh
+      84 000a0ea0 00003870'         .long    PMONTaP2,PMONTaB2
+      85 000a0ee0 00002850'         .long    PMONTaY2,PMONTaG2
+      86 000a0f20 00001830'         .long    PMONThP2,PMONThB2
+      87 000a0f60 00000810'         .long    PMONThY2,PMONThG2
+      88 000a0fa0 000039f0"         .long    BOSTON
+      89 000a0fc0 000bc5b0'         .long    boston_glist
+      90 000a0fe0 00000120"         .long    BRUINSIT,BOSTON1
+      91 000a1020     0000          .word    0,1,15,0
+      92 000a1060 00000ea0"         .long    BOSTONIT,BOST_STR,BBOSTmsk1,BOST_NICK_STR
+      93 000a10e0     0003          .word    3,3
+      94 000a1100 000704e0'         .long    BBRUINSa2,BBRUINSh2,0,0,0
+      95 000a11a0 00003cc0"         .long   BUF,0
+      96 000a11e0 000bc4a0'         .long    buffalo_list,buffalo2_list
+      97 000a1220 0000e1c0'         .long    SABERSa,GSABERSa
+      98 000a1260 0000e9d0'         .long    SABERSh,GSABERSh
+      99 000a12a0 00003870'         .long    PMONTaP2,PMONTaB2
+     100 000a12e0 00002850'         .long    PMONTaY2,PMONTaG2
+     101 000a1320 00001830'         .long    PMONThP2,PMONThB2
+     102 000a1360 00000810'         .long    PMONThY2,PMONThG2
+     103 000a13a0 00003a80"         .long    BUFFAL
+     104 000a13c0 000bc4e0'         .long    buffalo_glist
+     105 000a13e0 00000bd0"         .long    SABRESIT,BUFFALO1
+     106 000a1420     0000          .word    0,5,17,0
+     107 000a1460 00000f30"         .long    BUFFALOIT,BUFF_STR,BBUFFmsk1,BUFF_NICK_STR
+     108 000a14e0     0004          .word    4,3
+     109 000a1500 00090fa0'         .long    BSABRSa2,BSABRSh2,0,0,0
+     110 000a15a0 000040b0"         .long   HAR,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     111 000a15e0 000bc5d0'         .long    hartford_list,hartford2_list
+     112 000a1620 00019320'         .long    WHALEa,GWHALEa
+     113 000a1660 00019b30'         .long    WHALEh,GWHALEh
+     114 000a16a0 00003870'         .long    PMONTaP2,PMONTaB2
+     115 000a16e0 00002850'         .long    PMONTaY2,PMONTaG2
+     116 000a1720 00001830'         .long    PMONThP2,PMONThB2
+     117 000a1760 00000810'         .long    PMONThY2,PMONThG2
+     118 000a17a0 00002fd0"         .long    HRTFRD
+     119 000a17c0 000bc610'         .long    hartford_glist
+     120 000a17e0 00001b90"         .long    WHALERIT,HARTFOR1
+     121 000a1820     0000          .word    0,6,14,0
+     122 000a1860 00001320"         .long    HARTFORDIT,HART_STR,BHARTmsk1,HART_NICK_STR
+     123 000a18e0     0004          .word    4,1
+     124 000a1900 0009c820'         .long    BWHALEa2,BWHALEh2,0,0,0
+     125 000a19a0 000041d0"         .long   MON,0
+     126 000a19e0 000bc500'         .long    montreal_list,montreal2_list
+     127 000a1a20 000050a0'         .long    PMONTa,GMONTa
+     128 000a1a60 000058b0'         .long    PMONTh,GMONTh
+     129 000a1aa0 00003870'         .long    PMONTaP2,PMONTaB2
+     130 000a1ae0 00002850'         .long    PMONTaY2,PMONTaG2
+     131 000a1b20 00001830'         .long    PMONThP2,PMONThB2
+     132 000a1b60 00000810'         .long    PMONThY2,PMONThG2
+     133 000a1ba0 000030f0"         .long    MONTRL
+     134 000a1bc0 000bc540'         .long    montreal_glist
+     135 000a1be0 000001b0"         .long    CANADIIT,MONTREA1
+     136 000a1c20     0000          .word    0,5,16,0
+     137 000a1c60 00001440"         .long    MONTREALIT,MONT_STR,BHABSmsk1,MONT_NICK_STR
+     138 000a1ce0     0005          .word    5,4
+     139 000a1d00 00085720'         .long    BMONTa2,BMONTh2,0,0,0
+     140 000a1da0 00004410"         .long   OTT,0
+     141 000a1de0 000bc630'         .long    ottawa_list,ottawa2_list
+     142 000a1e20 00014280'         .long    SENATRSa,GSENATa
+     143 000a1e60 00014a90'         .long    SENATRSh,GSENATh
+     144 000a1ea0 00003870'         .long    PMONTaP2,PMONTaB2
+     145 000a1ee0 00002850'         .long    PMONTaY2,PMONTaG2
+     146 000a1f20 00001830'         .long    PMONThP2,PMONThB2
+     147 000a1f60 00000810'         .long    PMONThY2,PMONThG2
+     148 000a1fa0 00003330"         .long    OTTAWA
+     149 000a1fc0 000bc660'         .long    ottawa_glist
+     150 000a1fe0 00000c60"         .long    SENATOIT,OTTAWA1
+     151 000a2020     0000          .word    0,1,13,0
+     152 000a2060 000015f0"         .long    OTTAWAIT,OTTA_STR,BSENAmsk1,OTTA_NICK_STR
+     153 000a20e0     0006          .word    6,5
+     154 000a2100 000894a0'         .long    BOTTAa2,BOTTAh2,0,0,0
+     155 000a21a0 00004530"         .long   PIT,0
+     156 000a21e0 000bc3e0'         .long    pittsburgh_list,pittsburgh2_list
+     157 000a2220 000060c0'         .long    PPITTa,GPITTa
+     158 000a2260 000068d0'         .long    PPITTh,GPITTh
+     159 000a22a0 00003870'         .long    PMONTaP2,PMONTaB2
+     160 000a22e0 00002850'         .long    PMONTaY2,PMONTaG2
+     161 000a2320 00001830'         .long    PMONThP2,PMONThB2
+     162 000a2360 00000810'         .long    PMONThY2,PMONThG2
+     163 000a23a0 00003450"         .long    PITBRG
+     164 000a23c0 000bc420'         .long    pittsburgh_glist
+     165 000a23e0 00000a20"         .long    PENGUIIT,PITSBRG1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     166 000a2420     0000          .word    0,1,3,0
+     167 000a2460 00001710"         .long    PITTSBRGIT,PITT_STR,BPITTmsk1,PITT_NICK_STR
+     168 000a24e0     0003          .word    3,3
+     169 000a2500 0008d220'         .long    BPITTa2,BPITTh2,0,0,0
+     170 000a25a0 000045c0"         .long   QUE,0
+     171 000a25e0 000bc440'         .long    colorado_list,colorado2_list
+     172 000a2620 000152a0'         .long    NORDIQa,GNORDIQa
+     173 000a2660 00015ab0'         .long    NORDIQh,GNORDIQh
+     174 000a26a0 00003870'         .long    PMONTaP2,PMONTaB2
+     175 000a26e0 00002850'         .long    PMONTaY2,PMONTaG2
+     176 000a2720 00001830'         .long    PMONThP2,PMONThB2
+     177 000a2760 00000810'         .long    PMONThY2,PMONThG2
+     178 000a27a0 000034e0"         .long    QUEBEC
+     179 000a27c0 000bc480'         .long    colorado_glist
+     180 000a27e0 00000870"         .long    NORDIQIT,COLORAD1              ;QUEBEC1
+     181 000a2820     0000          .word    0,4,18,0                       ;alternate is 0,7
+     182 000a2860 000017a0"         .long    QUEBECIT,COLO_STR,BCOLOmsk1,COLO_NICK_STR
+     183 000a28e0     0004          .word    4,5
+     184 000a2900 00076120'         .long    BCOLORa2,BCOLORh2,0,0,0
+     185 000a29a0 00004020"         .long   FLO,0
+     186 000a29e0 000bc320'         .long    florida_list,florida2_list
+     187 000a2a20 00010200'         .long    PANTHa,GPANTHa
+     188 000a2a60 00010a10'         .long    PANTHh,GPANTHh
+     189 000a2aa0 00003870'         .long    PMONTaP2,PMONTaB2
+     190 000a2ae0 00002850'         .long    PMONTaY2,PMONTaG2
+     191 000a2b20 00001830'         .long    PMONThP2,PMONThB2
+     192 000a2b60 00000810'         .long    PMONThY2,PMONThG2
+     193 000a2ba0 00002f40"         .long    FLORID
+     194 000a2bc0 000bc360'         .long    florida_glist
+     195 000a2be0 00000990"         .long    PANTHEIT,FLORIDA1
+     196 000a2c20     0000          .word    0,6,5,0
+     197 000a2c60 00001290"         .long    FLORIDAIT,FLOR_STR,BFLORmsk1,FLOR_NICK_STR
+     198 000a2ce0     0003          .word    3,5
+     199 000a2d00 0008b360'         .long    BPANTHa2,BPANTHh2,0,0,0
+     200 000a2da0 00004260"         .long   NJR,0
+     201 000a2de0 000bc180'         .long    newjersey_list,newjersey2_list
+     202 000a2e20 00008100'         .long    DEVILa,GNJDVLa
+     203 000a2e60 00008910'         .long    DEVILh,GNJDVLh
+     204 000a2ea0 00003870'         .long    PMONTaP2,PMONTaB2
+     205 000a2ee0 00002850'         .long    PMONTaY2,PMONTaG2
+     206 000a2f20 00001830'         .long    PMONThP2,PMONThB2
+     207 000a2f60 00000810'         .long    PMONThY2,PMONThG2
+     208 000a2fa0 00003180"         .long    NEWJER
+     209 000a2fc0 000bc1d0'         .long    newjersey_glist
+     210 000a2fe0 00000360"         .long    DEVILSIT,NEWJER1
+     211 000a3020     0000          .word    0,1,9,0
+     212 000a3060 000014d0"         .long    NEWJERSIT,NJER_STR,BNJYmsk1,NJER_NICK_STR
+     213 000a30e0     0005          .word    5,0
+     214 000a3100 000875e0'         .long    BNJERZYa2,BNJERZYh2,0,0,0
+     215 000a31a0 000042f0"         .long   NYI,0
+     216 000a31e0 000bc2c0'         .long    nyislanders_list,nyislanders2_list
+     217 000a3220 00018300'         .long    ISLANDRa,GISLANDRa
+     218 000a3260 00018b10'         .long    ISLANDRh,GISLANDRh
+     219 000a32a0 00003870'         .long    PMONTaP2,PMONTaB2
+     220 000a32e0 00002850'         .long    PMONTaY2,PMONTaG2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     221 000a3320 00001830'         .long    PMONThP2,PMONThB2
+     222 000a3360 00000810'         .long    PMONThY2,PMONThG2
+     223 000a33a0 00003210"         .long    NYISLD
+     224 000a33c0 000bc300'         .long    nyislanders_glist
+     225 000a33e0 00000510"         .long    ISLANDIT,NWYRKIS1
+     226 000a3420     0000          .word    0,5,6,0
+     227 000a3460 00001560"         .long    NEWYORKIT,NYIS_STR,BISLEmsk1,NYIS_NICK_STR
+     228 000a34e0     0005          .word    5,0
+     229 000a3500 0007fae0'         .long    BISLESa2,BISLESh2,0,0,0
+     230 000a35a0 00004380"         .long   NYR,0
+     231 000a35e0 000bc110'         .long    nyrangers_list,nyrangers2_list
+     232 000a3620 0000a140'         .long    RANGRa,GRANGRa
+     233 000a3660 0000a950'         .long    RANGRh,GRANGRh
+     234 000a36a0 00003870'         .long    PMONTaP2,PMONTaB2
+     235 000a36e0 00002850'         .long    PMONTaY2,PMONTaG2
+     236 000a3720 00001830'         .long    PMONThP2,PMONThB2
+     237 000a3760 00000810'         .long    PMONThY2,PMONThG2
+     238 000a37a0 000032a0"         .long    NYRANG
+     239 000a37c0 000bc160'         .long    nyrangers_glist
+     240 000a37e0 00000ab0"         .long    RANGERIT,NWYRKRA1
+     241 000a3820     0000          .word    0,5,10,0
+     242 000a3860 00001560"         .long    NEWYORKIT,NYRA_STR,BNYRmsk1,NYRA_NICK_STR
+     243 000a38e0     0004          .word    4,5
+     244 000a3900 0008f0e0'         .long    BRANGRa2,BRANGRh2,0,0,0
+     245 000a39a0 000044a0"         .long   PHI,0
+     246 000a39e0 000bc250'         .long    philadelphia_list,philadelphia2_list
+     247 000a3a20 000172e0'         .long    FLYERSa,GFLYERSa
+     248 000a3a60 00017af0'         .long    FLYERSh,GFLYERSh
+     249 000a3aa0 00003870'         .long    PMONTaP2,PMONTaB2
+     250 000a3ae0 00002850'         .long    PMONTaY2,PMONTaG2
+     251 000a3b20 00001830'         .long    PMONThP2,PMONThB2
+     252 000a3b60 00000810'         .long    PMONThY2,PMONThG2
+     253 000a3ba0 000033c0"         .long    PHILAD
+     254 000a3bc0 000bc2a0'         .long    philadelphia_glist
+     255 000a3be0 00000480"         .long    FLYERSIT,PHILADE1
+     256 000a3c20     0000          .word    0,1,7,0
+     257 000a3c60 00001680"         .long    PHILADELIT,PHIL_STR,BFLYRmsk1,PHIL_NICK_STR
+     258 000a3ce0     0007          .word    7,7
+     259 000a3d00 0007bd60'         .long    BFLYERSa2,BFLYERSh2,0,0,0
+     260 000a3da0 00004770"         .long   TAM,0
+     261 000a3de0 000bc380'         .long    tampabay_list,tampabay2_list
+     262 000a3e20 00012240'         .long    LIGHTa,GLIGHTa
+     263 000a3e60 00012a50'         .long    LIGHTh,GLIGHTh
+     264 000a3ea0 00003870'         .long    PMONTaP2,PMONTaB2
+     265 000a3ee0 00002850'         .long    PMONTaY2,PMONTaG2
+     266 000a3f20 00001830'         .long    PMONThP2,PMONThB2
+     267 000a3f60 00000810'         .long    PMONThY2,PMONThG2
+     268 000a3fa0 00003690"         .long    TAMPAB
+     269 000a3fc0 000bc3c0'         .long    tampabay_glist
+     270 000a3fe0 000006c0"         .long    LIGHTNIT,TAMPA1
+     271 000a4020     0000          .word    0,1,4,0
+     272 000a4060 00001950"         .long    TAMPABAYIT,TBAY_STR,BTAMPmsk1,TBAY_NICK_STR
+     273 000a40e0     0004          .word    4,0
+     274 000a4100 000819a0'         .long    BLIGHTa2,BLIGHTh2,0,0,0
+     275 000a41a0 00004920"         .long   WAS,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     276 000a41e0 000bc1f0'         .long    washington_list,washington2_list
+     277 000a4220 0001e3c0'         .long    NCAPSa,GWASH2a
+     278 000a4260 0001ebd0'         .long    NCAPSh,GWASH2h
+     279 000a42a0 00003870'         .long    PMONTaP2,PMONTaB2
+     280 000a42e0 00002850'         .long    PMONTaY2,PMONTaG2
+     281 000a4320 00001830'         .long    PMONThP2,PMONThB2
+     282 000a4360 00000810'         .long    PMONThY2,PMONThG2
+     283 000a43a0 00003840"         .long    WASHTN
+     284 000a43c0 000bc230'         .long    washington_glist
+     285 000a43e0 000002d0"         .long    CAPITAIT,WASHING1
+     286 000a4420     0000          .word    0,7,8,0
+     287 000a4460 00001b00"         .long    WASHINGTIT,WASH_STR,BWASHmsk1,WASH_NICK_STR
+     288 000a44e0     0004          .word    4,6
+     289 000a4500 00074260'         .long    BCAPSa2,BCAPSh2,0,0,0
+     290 000a45a0 00003de0"         .long   CHI,0
+     291 000a45e0 000bc7c0'         .long    chicago_list,chicago2_list
+     292 000a4620 000078f0'         .long    phawka,GHAWKa
+     293 000a4660 000070e0'         .long    PHAWKh,GHAWKh
+     294 000a46a0 00003870'         .long    PMONTaP2,PMONTaB2
+     295 000a46e0 00002850'         .long    PMONTaY2,PMONTaG2
+     296 000a4720 00001830'         .long    PMONThP2,PMONThB2
+     297 000a4760 00000810'         .long    PMONThY2,PMONThG2
+     298 000a47a0 00002d00"         .long    CHICAG
+     299 000a47c0 000bc810'         .long    chicago_glist
+     300 000a47e0 00000000"         .long    BLACKHIT,BLCKHWK2
+     301 000a4820     0000          .word    0,1,0,0
+     302 000a4860 00001050"         .long    CHICAGOIT,CHIC_STR,BHAWKmsk1,CHIC_NICK_STR
+     303 000a48e0     0005          .word    5,7
+     304 000a4900 0007dc20'         .long    BHAWKa2,BHAWKh2,0,0,0
+     305 000a49a0 00003e70"         .long   DAL,0
+     306 000a49e0 000bc890'         .long    dallas_list,dallas2_list
+     307 000a4a20 0000f1e0'         .long    STARSa,GSTARSa
+     308 000a4a60 0000f9f0'         .long    STARSh,GSTARSh
+     309 000a4aa0 00003870'         .long    PMONTaP2,PMONTaB2
+     310 000a4ae0 00002850'         .long    PMONTaY2,PMONTaG2
+     311 000a4b20 00001830'         .long    PMONThP2,PMONThB2
+     312 000a4b60 00000810'         .long    PMONThY2,PMONThG2
+     313 000a4ba0 00002d90"         .long    DALLAS
+     314 000a4bc0 000bc8d0'         .long    dallas_glist
+     315 000a4be0 00000d80"         .long    STARSIT,DALLAS1
+     316 000a4c20     0000          .word    0,1,24,0
+     317 000a4c60 000010e0"         .long    DALLASIT,DALL_STR,BDALLmsk1,DALL_NICK_STR
+     318 000a4ce0     0001          .word    1,6
+     319 000a4d00 00094d20'         .long    BSTARSa2,BSTARSh2,0,0,0
+     320 000a4da0 00003f00"         .long   DET,0
+     321 000a4de0 000bc680'         .long    detroit_list,detroit2_list
+     322 000a4e20 00004080'         .long    PWINGa,GWINGa
+     323 000a4e60 00004890'         .long    PWINGh,GWINGh
+     324 000a4ea0 00003870'         .long    PMONTaP2,PMONTaB2
+     325 000a4ee0 00002850'         .long    PMONTaY2,PMONTaG2
+     326 000a4f20 00001830'         .long    PMONThP2,PMONThB2
+     327 000a4f60 00000810'         .long    PMONThY2,PMONThG2
+     328 000a4fa0 00002e20"         .long    DETROT
+     329 000a4fc0 000bc6d0'         .long    detroit_glist
+     330 000a4fe0 00000b40"         .long    REDWINIT,DETROIT1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     331 000a5020     0000          .word    0,2,1,0
+     332                    ;       .word    0,2,27,0
+     333 000a5060 00001170"         .long    DETROITIT,DETR_STR,BWNGSmsk1,DETR_NICK_STR
+     334 000a50e0     0005          .word    5,0
+     335 000a5100 00077fe0'         .long    BDETROIa2,BDETROIh2,0,0,0
+     336 000a51a0 000046e0"         .long   STL,0
+     337 000a51e0 000bc750'         .long    stlouis_list,stlouis2_list
+     338 000a5220 00011220'         .long    BLUESa,GBLUESa
+     339 000a5260 00011a30'         .long    BLUESh,GBLUESh
+     340 000a52a0 00003870'         .long    PMONTaP2,PMONTaB2
+     341 000a52e0 00002850'         .long    PMONTaY2,PMONTaG2
+     342 000a5320 00001830'         .long    PMONThP2,PMONThB2
+     343 000a5360 00000810'         .long    PMONThY2,PMONThG2
+     344 000a53a0 00003600"         .long    STLOUS
+     345 000a53c0 000bc7a0'         .long    stlouis_glist
+     346 000a53e0 00000090"         .long    BLUESIT,STLOUIS1
+     347 000a5420     0000          .word    0,5,11,0
+     348 000a5460 000018c0"         .long    STLOUISIT,STLO_STR,BSTLmsk1,STLO_NICK_STR
+     349 000a54e0     0004          .word    4,7
+     350 000a5500 00096be0'         .long    BSTLOUa2,BSTLOUh2,0,0,0
+     351 000a55a0 00004800"         .long   TOR,0
+     352 000a55e0 000bc6f0'         .long    toronto_list,toronto2_list
+     353 000a5620 00009120'         .long    LEAFSa,GLEAFSa
+     354 000a5660 00009930'         .long    LEAFSh,GLEAFSh
+     355 000a56a0 00003870'         .long    PMONTaP2,PMONTaB2
+     356 000a56e0 00002850'         .long    PMONTaY2,PMONTaG2
+     357 000a5720 00001830'         .long    PMONThP2,PMONThB2
+     358 000a5760 00000810'         .long    PMONThY2,PMONThG2
+     359 000a57a0 00003720"         .long    TORONT
+     360 000a57c0 000bc730'         .long    toronto_glist
+     361 000a57e0 00000750"         .long    MAPLELIT,TORONTO1
+     362 000a5820     0000          .word    0,5,12,0
+     363 000a5860 000019e0"         .long    TOR0NTOIT,TORO_STR,BTOROmsk1,TORO_NICK_STR
+     364 000a58e0     0004          .word    4,4
+     365 000a5900 00098aa0'         .long    BTORONTa2,BTORONTh2,0,0,0
+     366 000a59a0 000049b0"         .long   WNP,0
+     367 000a59e0 000bc830'         .long    winnipeg_list,winnipeg2_list
+     368 000a5a20 0001d3a0'         .long    JETSa,GJETSa
+     369 000a5a60 0001dbb0'         .long    JETSh,GJETSh
+     370 000a5aa0 00003870'         .long    PMONTaP2,PMONTaB2
+     371 000a5ae0 00002850'         .long    PMONTaY2,PMONTaG2
+     372 000a5b20 00001830'         .long    PMONThP2,PMONThB2
+     373 000a5b60 00000810'         .long    PMONThY2,PMONThG2
+     374 000a5ba0 000038d0"         .long    WINNIP
+     375 000a5bc0 000bc870'         .long    winnipeg_glist
+     376 000a5be0 000005a0"         .long    JETSIT,WINNIPEG
+     377 000a5c20     0000          .word    0,5,25,0
+     378 000a5c60 00001c20"         .long    WINNIPEGIT,WINN_STR,BJETSmsk1,WINN_NICK_STR
+     379 000a5ce0     0005          .word    5,4
+     380 000a5d00 0009e6e0'         .long    BWINNAa2,BWINNAh2,0,0,0
+     381 000a5da0 00003ba0"         .long   ANA,DUCKSLOGO2
+     382 000a5de0 000bca80'         .long    anaheim_list,anaheim2_list
+     383 000a5e20 0000c180'         .long    DUCKSa,GDUCKSa
+     384 000a5e60 0000c990'         .long    DUCKSh,GDUCKSh
+     385 000a5ea0 00003870'         .long    PMONTaP2,PMONTaB2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     386 000a5ee0 00002850'         .long    PMONTaY2,PMONTaG2
+     387 000a5f20 00001830'         .long    PMONThP2,PMONThB2
+     388 000a5f60 00000810'         .long    PMONThY2,PMONThG2
+     389 000a5fa0 00003960"         .long    ANAHEM
+     390 000a5fc0 000bcac0'         .long    anaheim_glist
+     391 000a5fe0 000007e0"         .long    MIGHTYIT,ANAHEIM1
+     392 000a6020     0000          .word    0,3,20,0
+     393 000a6060 00000e10"         .long    ANAHEIMIT,ANAH_STR,BDUCKmsk1,ANAH_NICK_STR
+     394 000a60e0     0002          .word    2,1
+     395 000a6100 0006c760'         .long    BANAHEIa2,BANAHEIh2,0,0,0
+     396 000a61a0 00003d50"         .long   CAL,0
+     397 000a61e0 000bc950'         .long    calgary_list,calgary2_list
+     398 000a6220 0000d1a0'         .long    FLAMESa,GFLAMESa
+     399 000a6260 0000d9b0'         .long    FLAMESh,GFLAMESh
+     400 000a62a0 00003870'         .long    PMONTaP2,PMONTaB2
+     401 000a62e0 00002850'         .long    PMONTaY2,PMONTaG2
+     402 000a6320 00001830'         .long    PMONThP2,PMONThB2
+     403 000a6360 00000810'         .long    PMONThY2,PMONThG2
+     404 000a63a0 00003b10"         .long    CALGAR
+     405 000a63c0 000bc9a0'         .long    calgary_glist
+     406 000a63e0 000003f0"         .long    FLAMESIT,CALGARY1
+     407 000a6420     0000          .word    0,2,22,0
+     408 000a6460 00000fc0"         .long    CALGARYIT,CALG_STR,BCALGmsk1,CALG_NICK_STR
+     409 000a64e0     0005          .word    5,3
+     410 000a6500 000723a0'         .long    BCALGa2,BCALGh2,0,0,0
+     411 000a65a0 00003f90"         .long   EDM,0
+     412 000a65e0 000bcae0'         .long    edmonton_list,edmonton2_list
+     413 000a6620 0001c380'         .long    OILERSa,GOILERSa
+     414 000a6660 0001cb90'         .long    OILERSh,GOILERSh
+     415 000a66a0 00003870'         .long    PMONTaP2,PMONTaB2
+     416 000a66e0 00002850'         .long    PMONTaY2,PMONTaG2
+     417 000a6720 00001830'         .long    PMONThP2,PMONThB2
+     418 000a6760 00000810'         .long    PMONThY2,PMONThG2
+     419 000a67a0 00002eb0"         .long    EDMONT
+     420 000a67c0 000bcb20'         .long    edmonton_glist
+     421 000a67e0 00000900"         .long    OILERSIT,EDMONTO1
+     422 000a6820     0000          .word    0,5,19,0
+     423 000a6860 00001200"         .long    EDMONTONIT,EDMO_STR,BOILmsk1,EDMO_NICK_STR
+     424 000a68e0     0004          .word    4,7
+     425 000a6900 00079ea0'         .long    BEDMOa2,BEDMOh2,0,0,0
+     426 000a69a0 00004140"         .long   LOS,0
+     427 000a69e0 000bca20'         .long    losangeles_list,losangeles2_list
+     428 000a6a20 0000b160'         .long    KINGSa,GKINGSa
+     429 000a6a60 0000b970'         .long    KINGSh,GKINGSh
+     430 000a6aa0 00003870'         .long    PMONTaP2,PMONTaB2
+     431 000a6ae0 00002850'         .long    PMONTaY2,PMONTaG2
+     432 000a6b20 00001830'         .long    PMONThP2,PMONThB2
+     433 000a6b60 00000810'         .long    PMONThY2,PMONThG2
+     434 000a6ba0 00003060"         .long    LOSANG
+     435 000a6bc0 000bca60'         .long    losangeles_glist
+     436 000a6be0 00000630"         .long    KINGSIT,KINGS3
+     437 000a6c20     0000          .word    0,1,21,0
+     438 000a6c60 000013b0"         .long    LOSANGELIT,LANG_STR,BLOSAmsk1,LANG_NICK_STR
+     439 000a6ce0     0000          .word    0,0
+     440 000a6d00 00083860'         .long    BLOSAa2,BLOSAh2,0,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     441 000a6da0 00004650"         .long   SAN,0
+     442 000a6de0 000bc9c0'         .long    sanjose_list,sanjose2_list
+     443 000a6e20 00013260'         .long    SHARKSa,GSHARKSa
+     444 000a6e60 00013a70'         .long    SHARKSh,GSHARKSh
+     445 000a6ea0 00003870'         .long    PMONTaP2,PMONTaB2
+     446 000a6ee0 00002850'         .long    PMONTaY2,PMONTaG2
+     447 000a6f20 00001830'         .long    PMONThP2,PMONThB2
+     448 000a6f60 00000810'         .long    PMONThY2,PMONThG2
+     449 000a6fa0 00003570"         .long    SANJOS
+     450 000a6fc0 000bca00'         .long    sanjose_glist
+     451 000a6fe0 00000cf0"         .long    SHARKSIT,SANJOSE1
+     452 000a7020     0000          .word    0,1,2,0
+     453 000a7060 00001830"         .long    SANJOSEIT,SJOS_STR,BSHRKmsk1,SJOS_NICK_STR
+     454 000a70e0     0002          .word    2,0
+     455 000a7100 00092e60'         .long    BSANJOa2,BSANJOh2,0,0,0
+     456 000a71a0 00004890"         .long   VAN,0
+     457 000a71e0 000bc8f0'         .long    vancouver_list,vancouver2_list
+     458 000a7220 000162c0'         .long    CANUCKa,GCANUCKa
+     459 000a7260 00016ad0'         .long    CANUCKh,GCANUCKh
+     460 000a72a0 00003870'         .long    PMONTaP2,PMONTaB2
+     461 000a72e0 00002850'         .long    PMONTaY2,PMONTaG2
+     462 000a7320 00001830'         .long    PMONThP2,PMONThB2
+     463 000a7360 00000810'         .long    PMONThY2,PMONThG2
+     464 000a73a0 000037b0"         .long    VANCOV
+     465 000a73c0 000bc930'         .long    vancouver_glist
+     466 000a73e0 00000240"         .long    CANUCKIT,VANCOU5
+     467 000a7420     0000          .word    0,1,23,0
+     468 000a7460 00001a70"         .long    VANCOUVERIT,VANC_STR,BCANUmsk1,VANC_NICK_STR
+     469 000a74e0     0003          .word    3,5
+     470 000a7500 0009a960'         .long    BVANCa2,BVANCh2,0,0,0
+     471                    
+     472 000a75a0 00004a40"         .long   SPCT,0
+     473 000a75e0 000b7a70'         .long    special01_list,non_list
+     474 000a7620 00018300'         .long    ISLANDRa,GISLANDRa
+     475 000a7660 00018b10'         .long    ISLANDRh,GISLANDRh
+     476 000a76a0 00003870'         .long    PMONTaP2,PMONTaB2
+     477 000a76e0 00002850'         .long    PMONTaY2,PMONTaG2
+     478 000a7720 00001830'         .long    PMONThP2,PMONThB2
+     479 000a7760 00000810'         .long    PMONThY2,PMONThG2
+     480 000a77a0 00001d40"         .long    SPECIALTM
+     481 000a77c0 000b7ac0'         .long    special01_glist
+     482 000a77e0 00001cb0"         .long    SPECIALIT,blankit
+     483 000a7820     0000          .word    0,1,23,0
+     484 000a7860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     485 000a78e0     0000          .word    0,0
+     486 000a7900 0007fae0'         .long    BISLESa2,BISLESh2,0,0,0
+     487 000a79a0 00004a40"         .long   SPCT,0
+     488 000a79e0 000b7ae0'         .long    special02_list,non_list
+     489 000a7a20 00004080'         .long    PWINGa,GWINGa
+     490 000a7a60 00004890'         .long    PWINGh,GWINGh
+     491 000a7aa0 00003870'         .long    PMONTaP2,PMONTaB2
+     492 000a7ae0 00002850'         .long    PMONTaY2,PMONTaG2
+     493 000a7b20 00001830'         .long    PMONThP2,PMONThB2
+     494 000a7b60 00000810'         .long    PMONThY2,PMONThG2
+     495 000a7ba0 00001d40"         .long    SPECIALTM
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     496 000a7bc0 000b7b30'         .long    special02_glist
+     497 000a7be0 00001cb0"         .long    SPECIALIT,blankit
+     498 000a7c20     0000          .word    0,1,23,0
+     499 000a7c60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     500 000a7ce0     0000          .word    0,0
+     501 000a7d00 00077fe0'         .long    BDETROIa2,BDETROIh2,0,0,0
+     502 000a7da0 00004a40"         .long   SPCT,0
+     503 000a7de0 000b7b50'         .long    special03_list,non_list
+     504 000a7e20 00019320'         .long    WHALEa,GWHALEa
+     505 000a7e60 00019b30'         .long    WHALEh,GWHALEh
+     506 000a7ea0 00003870'         .long    PMONTaP2,PMONTaB2
+     507 000a7ee0 00002850'         .long    PMONTaY2,PMONTaG2
+     508 000a7f20 00001830'         .long    PMONThP2,PMONThB2
+     509 000a7f60 00000810'         .long    PMONThY2,PMONThG2
+     510 000a7fa0 00001d40"         .long    SPECIALTM
+     511 000a7fc0 000b7b90'         .long    special03_glist
+     512 000a7fe0 00001cb0"         .long    SPECIALIT,blankit
+     513 000a8020     0000          .word    0,1,23,0
+     514 000a8060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     515 000a80e0     0000          .word    0,0
+     516 000a8100 0009c820'         .long    BWHALEa2,BWHALEh2,0,0,0
+     517 000a81a0 00004a40"         .long   SPCT,0
+     518 000a81e0 000b7bb0'         .long    special04_list,non_list
+     519 000a8220 000060c0'         .long    PPITTa,GPITTa
+     520 000a8260 000068d0'         .long    PPITTh,GPITTh
+     521 000a82a0 00003870'         .long    PMONTaP2,PMONTaB2
+     522 000a82e0 00002850'         .long    PMONTaY2,PMONTaG2
+     523 000a8320 00001830'         .long    PMONThP2,PMONThB2
+     524 000a8360 00000810'         .long    PMONThY2,PMONThG2
+     525 000a83a0 00001d40"         .long    SPECIALTM
+     526 000a83c0 000b7c00'         .long    special04_glist
+     527 000a83e0 00001cb0"         .long    SPECIALIT,blankit
+     528 000a8420     0000          .word    0,1,23,0
+     529 000a8460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     530 000a84e0     0000          .word    0,0
+     531 000a8500 0008d220'         .long    BPITTa2,BPITTh2,0,0,0
+     532 000a85a0 00004a40"         .long   SPCT,0
+     533 000a85e0 000b7c20'         .long    special05_list,non_list
+     534 000a8620 0001a340'         .long    BRUINSa,GBRUINSa
+     535 000a8660 0001ab50'         .long    BRUINSh,GBRUINSh
+     536 000a86a0 00003870'         .long    PMONTaP2,PMONTaB2
+     537 000a86e0 00002850'         .long    PMONTaY2,PMONTaG2
+     538 000a8720 00001830'         .long    PMONThP2,PMONThB2
+     539 000a8760 00000810'         .long    PMONThY2,PMONThG2
+     540 000a87a0 00001d40"         .long    SPECIALTM
+     541 000a87c0 000b7c70'         .long    special05_glist
+     542 000a87e0 00001cb0"         .long    SPECIALIT,blankit
+     543 000a8820     0000          .word    0,1,23,0
+     544 000a8860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     545 000a88e0     0000          .word    0,0
+     546 000a8900 000704e0'         .long    BBRUINSa2,BBRUINSh2,0,0,0
+     547 000a89a0 00004a40"         .long   SPCT,0
+     548 000a89e0 000b7c90'         .long    special06_list,non_list
+     549 000a8a20 00012240'         .long    LIGHTa,GLIGHTa
+     550 000a8a60 00012a50'         .long    LIGHTh,GLIGHTh
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     551 000a8aa0 00003870'         .long    PMONTaP2,PMONTaB2
+     552 000a8ae0 00002850'         .long    PMONTaY2,PMONTaG2
+     553 000a8b20 00001830'         .long    PMONThP2,PMONThB2
+     554 000a8b60 00000810'         .long    PMONThY2,PMONThG2
+     555 000a8ba0 00001d40"         .long    SPECIALTM
+     556 000a8bc0 000b7cd0'         .long    special06_glist
+     557 000a8be0 00001cb0"         .long    SPECIALIT,blankit
+     558 000a8c20     0000          .word    0,1,23,0
+     559 000a8c60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     560 000a8ce0     0000          .word    0,0
+     561 000a8d00 000819a0'         .long    BLIGHTa2,BLIGHTh2,0,0,0
+     562 000a8da0 00004a40"         .long   SPCT,0
+     563 000a8de0 000b7cf0'         .long    special07_list,non_list
+     564 000a8e20 0001d3a0'         .long    JETSa,GJETSa
+     565 000a8e60 0001dbb0'         .long    JETSh,GJETSh
+     566 000a8ea0 00003870'         .long    PMONTaP2,PMONTaB2
+     567 000a8ee0 00002850'         .long    PMONTaY2,PMONTaG2
+     568 000a8f20 00001830'         .long    PMONThP2,PMONThB2
+     569 000a8f60 00000810'         .long    PMONThY2,PMONThG2
+     570 000a8fa0 00001d40"         .long    SPECIALTM
+     571 000a8fc0 000b7d30'         .long    special07_glist
+     572 000a8fe0 00001cb0"         .long    SPECIALIT,blankit
+     573 000a9020     0000          .word    0,1,23,0
+     574 000a9060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     575 000a90e0     0000          .word    0,0
+     576 000a9100 0009e6e0'         .long    BWINNAa2,BWINNAh2,0,0,0
+     577 000a91a0 00004a40"         .long   SPCT,0
+     578 000a91e0 000b7d50'         .long    special08_list,non_list
+     579 000a9220 000162c0'         .long    CANUCKa,GCANUCKa
+     580 000a9260 00016ad0'         .long    CANUCKh,GCANUCKh
+     581 000a92a0 00003870'         .long    PMONTaP2,PMONTaB2
+     582 000a92e0 00002850'         .long    PMONTaY2,PMONTaG2
+     583 000a9320 00001830'         .long    PMONThP2,PMONThB2
+     584 000a9360 00000810'         .long    PMONThY2,PMONThG2
+     585 000a93a0 00001d40"         .long    SPECIALTM
+     586 000a93c0 000b7d90'         .long    special08_glist
+     587 000a93e0 00001cb0"         .long    SPECIALIT,blankit
+     588 000a9420     0000          .word    0,1,23,0
+     589 000a9460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     590 000a94e0     0000          .word    0,0
+     591 000a9500 0009a960'         .long    BVANCa2,BVANCh2,0,0,0
+     592 000a95a0 00004a40"         .long   SPCT,0
+     593 000a95e0 000b7db0'         .long    special09_list,non_list
+     594 000a9620 0001c380'         .long    OILERSa,GOILERSa
+     595 000a9660 0001cb90'         .long    OILERSh,GOILERSh
+     596 000a96a0 00003870'         .long    PMONTaP2,PMONTaB2
+     597 000a96e0 00002850'         .long    PMONTaY2,PMONTaG2
+     598 000a9720 00001830'         .long    PMONThP2,PMONThB2
+     599 000a9760 00000810'         .long    PMONThY2,PMONThG2
+     600 000a97a0 00001d40"         .long    SPECIALTM
+     601 000a97c0 000b7df0'         .long    special09_glist
+     602 000a97e0 00001cb0"         .long    SPECIALIT,blankit
+     603 000a9820     0000          .word    0,1,23,0
+     604 000a9860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     605 000a98e0     0000          .word    0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     606 000a9900 00079ea0'         .long    BEDMOa2,BEDMOh2,0,0,0
+     607 000a99a0 00004a40"         .long   SPCT,0
+     608 000a99e0 000b7e10'         .long    special10_list,non_list
+     609 000a9a20 0000e1c0'         .long    SABERSa,GSABERSa
+     610 000a9a60 0000e9d0'         .long    SABERSh,GSABERSh
+     611 000a9aa0 00003870'         .long    PMONTaP2,PMONTaB2
+     612 000a9ae0 00002850'         .long    PMONTaY2,PMONTaG2
+     613 000a9b20 00001830'         .long    PMONThP2,PMONThB2
+     614 000a9b60 00000810'         .long    PMONThY2,PMONThG2
+     615 000a9ba0 00001d40"         .long    SPECIALTM
+     616 000a9bc0 000b7e40'         .long    special10_glist
+     617 000a9be0 00001cb0"         .long    SPECIALIT,blankit
+     618 000a9c20     0000          .word    0,1,23,0
+     619 000a9c60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     620 000a9ce0     0000          .word    0,0
+     621 000a9d00 00090fa0'         .long    BSABRSa2,BSABRSh2,0,0,0
+     622 000a9da0 00004a40"         .long   SPCT,0
+     623 000a9de0 000b7e60'         .long    special11_list,non_list
+     624 000a9e20 00008100'         .long    DEVILa,GNJDVLa
+     625 000a9e60 00008910'         .long    DEVILh,GNJDVLh
+     626 000a9ea0 00003870'         .long    PMONTaP2,PMONTaB2
+     627 000a9ee0 00002850'         .long    PMONTaY2,PMONTaG2
+     628 000a9f20 00001830'         .long    PMONThP2,PMONThB2
+     629 000a9f60 00000810'         .long    PMONThY2,PMONThG2
+     630 000a9fa0 00001d40"         .long    SPECIALTM
+     631 000a9fc0 000b7ea0'         .long    special11_glist
+     632 000a9fe0 00001cb0"         .long    SPECIALIT,blankit
+     633 000aa020     0000          .word    0,1,23,0
+     634 000aa060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     635 000aa0e0     0000          .word    0,0
+     636 000aa100 000875e0'         .long    BNJERZYa2,BNJERZYh2,0,0,0
+     637 000aa1a0 00004a40"         .long   SPCT,0
+     638 000aa1e0 000b7ec0'         .long    special12_list,non_list
+     639 000aa220 0001f3e0'         .long    AVALa1,GAVALAa1
+     640 000aa260 0001fbf0'         .long    AVALh1,GAVALAh1
+     641 000aa2a0 00003870'         .long    PMONTaP2,PMONTaB2
+     642 000aa2e0 00002850'         .long    PMONTaY2,PMONTaG2
+     643 000aa320 00001830'         .long    PMONThP2,PMONThB2
+     644 000aa360 00000810'         .long    PMONThY2,PMONThG2
+     645 000aa3a0 00001d40"         .long    SPECIALTM
+     646 000aa3c0 000b7f10'         .long    special12_glist
+     647 000aa3e0 00001cb0"         .long    SPECIALIT,blankit
+     648 000aa420     0000          .word    0,1,23,0
+     649 000aa460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     650 000aa4e0     0000          .word    0,0
+     651 000aa500 00076120'         .long    BCOLORa2,BCOLORh2,0,0,0
+     652 000aa5a0 00004a40"         .long   SPCT,0
+     653 000aa5e0 000b7f30'         .long    special13_list,non_list
+     654 000aa620 0001e3c0'         .long    NCAPSa,GWASH2a
+     655 000aa660 0001ebd0'         .long    NCAPSh,GWASH2h
+     656 000aa6a0 00003870'         .long    PMONTaP2,PMONTaB2
+     657 000aa6e0 00002850'         .long    PMONTaY2,PMONTaG2
+     658 000aa720 00001830'         .long    PMONThP2,PMONThB2
+     659 000aa760 00000810'         .long    PMONThY2,PMONThG2
+     660 000aa7a0 00001d40"         .long    SPECIALTM
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     661 000aa7c0 000b7f70'         .long    special13_glist
+     662 000aa7e0 00001cb0"         .long    SPECIALIT,blankit
+     663 000aa820     0000          .word    0,1,23,0
+     664 000aa860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     665 000aa8e0     0000          .word    0,0
+     666 000aa900 00074260'         .long    BCAPSa2,BCAPSh2,0,0,0
+     667 000aa9a0 00004a40"         .long   SPCT,0
+     668 000aa9e0 000b7f90'         .long    special14_list,non_list
+     669 000aaa20 00011220'         .long    BLUESa,GBLUESa
+     670 000aaa60 00011a30'         .long    BLUESh,GBLUESh
+     671 000aaaa0 00003870'         .long    PMONTaP2,PMONTaB2
+     672 000aaae0 00002850'         .long    PMONTaY2,PMONTaG2
+     673 000aab20 00001830'         .long    PMONThP2,PMONThB2
+     674 000aab60 00000810'         .long    PMONThY2,PMONThG2
+     675 000aaba0 00001d40"         .long    SPECIALTM
+     676 000aabc0 000b7fd0'         .long    special14_glist
+     677 000aabe0 00001cb0"         .long    SPECIALIT,blankit
+     678 000aac20     0000          .word    0,1,23,0
+     679 000aac60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     680 000aace0     0000          .word    0,0
+     681 000aad00 00096be0'         .long    BSTLOUa2,BSTLOUh2,0,0,0
+     682 000aada0 00004a40"         .long   SPCT,0
+     683 000aade0 000b7ff0'         .long    special15_list,non_list
+     684 000aae20 00009120'         .long    LEAFSa,GLEAFSa
+     685 000aae60 00009930'         .long    LEAFSh,GLEAFSh
+     686 000aaea0 00003870'         .long    PMONTaP2,PMONTaB2
+     687 000aaee0 00002850'         .long    PMONTaY2,PMONTaG2
+     688 000aaf20 00001830'         .long    PMONThP2,PMONThB2
+     689 000aaf60 00000810'         .long    PMONThY2,PMONThG2
+     690 000aafa0 00001d40"         .long    SPECIALTM
+     691 000aafc0 000b8040'         .long    special15_glist
+     692 000aafe0 00001cb0"         .long    SPECIALIT,blankit
+     693 000ab020     0000          .word    0,1,23,0
+     694 000ab060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     695 000ab0e0     0000          .word    0,0
+     696 000ab100 00098aa0'         .long    BTORONTa2,BTORONTh2,0,0,0
+     697 000ab1a0 00004a40"         .long   SPCT,0
+     698 000ab1e0 000b8060'         .long    special16_list,non_list
+     699 000ab220 0000b160'         .long    KINGSa,GKINGSa
+     700 000ab260 0000b970'         .long    KINGSh,GKINGSh
+     701 000ab2a0 00003870'         .long    PMONTaP2,PMONTaB2
+     702 000ab2e0 00002850'         .long    PMONTaY2,PMONTaG2
+     703 000ab320 00001830'         .long    PMONThP2,PMONThB2
+     704 000ab360 00000810'         .long    PMONThY2,PMONThG2
+     705 000ab3a0 00001d40"         .long    SPECIALTM
+     706 000ab3c0 000b80b0'         .long    special16_glist
+     707 000ab3e0 00001cb0"         .long    SPECIALIT,blankit
+     708 000ab420     0000          .word    0,1,23,0
+     709 000ab460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     710 000ab4e0     0000          .word    0,0
+     711 000ab500 00083860'         .long    BLOSAa2,BLOSAh2,0,0,0
+     712 000ab5a0 00004a40"         .long   SPCT,0
+     713 000ab5e0 000b80d0'         .long    special17_list,non_list
+     714 000ab620 0000d1a0'         .long    FLAMESa,GFLAMESa
+     715 000ab660 0000d9b0'         .long    FLAMESh,GFLAMESh
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     716 000ab6a0 00003870'         .long    PMONTaP2,PMONTaB2
+     717 000ab6e0 00002850'         .long    PMONTaY2,PMONTaG2
+     718 000ab720 00001830'         .long    PMONThP2,PMONThB2
+     719 000ab760 00000810'         .long    PMONThY2,PMONThG2
+     720 000ab7a0 00001d40"         .long    SPECIALTM
+     721 000ab7c0 000b8120'         .long    special17_glist
+     722 000ab7e0 00001cb0"         .long    SPECIALIT,blankit
+     723 000ab820     0000          .word    0,1,23,0
+     724 000ab860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     725 000ab8e0     0000          .word    0,0
+     726 000ab900 000723a0'         .long    BCALGa2,BCALGh2,0,0,0
+     727 000ab9a0 00004a40"         .long   SPCT,0
+     728 000ab9e0 000b8140'         .long    special18_list,non_list
+     729 000aba20 0000f1e0'         .long    STARSa,GSTARSa
+     730 000aba60 0000f9f0'         .long    STARSh,GSTARSh
+     731 000abaa0 00003870'         .long    PMONTaP2,PMONTaB2
+     732 000abae0 00002850'         .long    PMONTaY2,PMONTaG2
+     733 000abb20 00001830'         .long    PMONThP2,PMONThB2
+     734 000abb60 00000810'         .long    PMONThY2,PMONThG2
+     735 000abba0 00001d40"         .long    SPECIALTM
+     736 000abbc0 000b8180'         .long    special18_glist
+     737 000abbe0 00001cb0"         .long    SPECIALIT,blankit
+     738 000abc20     0000          .word    0,1,23,0
+     739 000abc60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     740 000abce0     0000          .word    0,0
+     741 000abd00 00094d20'         .long    BSTARSa2,BSTARSh2,0,0,0
+     742 000abda0 00004a40"         .long   SPCT,0
+     743 000abde0 000b81a0'         .long    special19_list,non_list
+     744 000abe20 0000a140'         .long    RANGRa,GRANGRa
+     745 000abe60 0000a950'         .long    RANGRh,GRANGRh
+     746 000abea0 00003870'         .long    PMONTaP2,PMONTaB2
+     747 000abee0 00002850'         .long    PMONTaY2,PMONTaG2
+     748 000abf20 00001830'         .long    PMONThP2,PMONThB2
+     749 000abf60 00000810'         .long    PMONThY2,PMONThG2
+     750 000abfa0 00001d40"         .long    SPECIALTM
+     751 000abfc0 000b81e0'         .long    special19_glist
+     752 000abfe0 00001cb0"         .long    SPECIALIT,blankit
+     753 000ac020     0000          .word    0,1,23,0
+     754 000ac060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     755 000ac0e0     0000          .word    0,0
+     756 000ac100 0008f0e0'         .long    BRANGRa2,BRANGRh2,0,0,0
+     757 000ac1a0 00004a40"         .long   SPCT,0
+     758 000ac1e0 000b8200'         .long    special20_list,non_list
+     759 000ac220 000050a0'         .long    PMONTa,GMONTa
+     760 000ac260 000058b0'         .long    PMONTh,GMONTh
+     761 000ac2a0 00003870'         .long    PMONTaP2,PMONTaB2
+     762 000ac2e0 00002850'         .long    PMONTaY2,PMONTaG2
+     763 000ac320 00001830'         .long    PMONThP2,PMONThB2
+     764 000ac360 00000810'         .long    PMONThY2,PMONThG2
+     765 000ac3a0 00001d40"         .long    SPECIALTM
+     766 000ac3c0 000b8240'         .long    special20_glist
+     767 000ac3e0 00001cb0"         .long    SPECIALIT,blankit
+     768 000ac420     0000          .word    0,1,23,0
+     769 000ac460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     770 000ac4e0     0000          .word    0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     771 000ac500 00085720'         .long    BMONTa2,BMONTh2,0,0,0
+     772 000ac5a0 00004a40"         .long   SPCT,0
+     773 000ac5e0 000b8260'         .long    special21_list,non_list
+     774 000ac620 000172e0'         .long    FLYERSa,GFLYERSa
+     775 000ac660 00017af0'         .long    FLYERSh,GFLYERSh
+     776 000ac6a0 00003870'         .long    PMONTaP2,PMONTaB2
+     777 000ac6e0 00002850'         .long    PMONTaY2,PMONTaG2
+     778 000ac720 00001830'         .long    PMONThP2,PMONThB2
+     779 000ac760 00000810'         .long    PMONThY2,PMONThG2
+     780 000ac7a0 00001d40"         .long    SPECIALTM
+     781 000ac7c0 000b82a0'         .long    special21_glist
+     782 000ac7e0 00001cb0"         .long    SPECIALIT,blankit
+     783 000ac820     0000          .word    0,1,23,0
+     784 000ac860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     785 000ac8e0     0000          .word    0,0
+     786 000ac900 0007bd60'         .long    BFLYERSa2,BFLYERSh2,0,0,0
+     787 000ac9a0 00004a40"         .long   SPCT,0
+     788 000ac9e0 000b82c0'         .long    special22_list,non_list
+     789 000aca20 000078f0'         .long    phawka,GHAWKa
+     790 000aca60 000070e0'         .long    PHAWKh,GHAWKh
+     791 000acaa0 00003870'         .long    PMONTaP2,PMONTaB2
+     792 000acae0 00002850'         .long    PMONTaY2,PMONTaG2
+     793 000acb20 00001830'         .long    PMONThP2,PMONThB2
+     794 000acb60 00000810'         .long    PMONThY2,PMONThG2
+     795 000acba0 00001d40"         .long    SPECIALTM
+     796 000acbc0 000b8300'         .long    special22_glist
+     797 000acbe0 00001cb0"         .long    SPECIALIT,blankit
+     798 000acc20     0000          .word    0,1,23,0
+     799 000acc60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     800 000acce0     0000          .word    0,0
+     801 000acd00 0007dc20'         .long    BHAWKa2,BHAWKh2,0,0,0
+     802 000acda0 00004a40"         .long   SPCT,0
+     803 000acde0 000b8320'         .long    special23_list,non_list
+     804 000ace20 0000c180'         .long    DUCKSa,GDUCKSa
+     805 000ace60 0000c990'         .long    DUCKSh,GDUCKSh
+     806 000acea0 00003870'         .long    PMONTaP2,PMONTaB2
+     807 000acee0 00002850'         .long    PMONTaY2,PMONTaG2
+     808 000acf20 00001830'         .long    PMONThP2,PMONThB2
+     809 000acf60 00000810'         .long    PMONThY2,PMONThG2
+     810 000acfa0 00001d40"         .long    SPECIALTM
+     811 000acfc0 000b8360'         .long    special23_glist
+     812 000acfe0 00001cb0"         .long    SPECIALIT,blankit
+     813 000ad020     0000          .word    0,1,23,0
+     814 000ad060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     815 000ad0e0     0000          .word    0,0
+     816 000ad100 0006c760'         .long    BANAHEIa2,BANAHEIh2,0,0,0
+     817 000ad1a0 00004a40"         .long   SPCT,0
+     818 000ad1e0 000b8380'         .long    special24_list,non_list
+     819 000ad220 00010200'         .long    PANTHa,GPANTHa
+     820 000ad260 00010a10'         .long    PANTHh,GPANTHh
+     821 000ad2a0 00003870'         .long    PMONTaP2,PMONTaB2
+     822 000ad2e0 00002850'         .long    PMONTaY2,PMONTaG2
+     823 000ad320 00001830'         .long    PMONThP2,PMONThB2
+     824 000ad360 00000810'         .long    PMONThY2,PMONThG2
+     825 000ad3a0 00001d40"         .long    SPECIALTM
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     826 000ad3c0 000b83c0'         .long    special24_glist
+     827 000ad3e0 00001cb0"         .long    SPECIALIT,blankit
+     828 000ad420     0000          .word    0,1,23,0
+     829 000ad460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     830 000ad4e0     0000          .word    0,0
+     831 000ad500 0008b360'         .long    BPANTHa2,BPANTHh2,0,0,0
+     832 000ad5a0 00004a40"         .long   SPCT,0
+     833 000ad5e0 000b83e0'         .long    special25_list,non_list
+     834 000ad620 00014280'         .long    SENATRSa,GSENATa
+     835 000ad660 00014a90'         .long    SENATRSh,GSENATh
+     836 000ad6a0 00003870'         .long    PMONTaP2,PMONTaB2
+     837 000ad6e0 00002850'         .long    PMONTaY2,PMONTaG2
+     838 000ad720 00001830'         .long    PMONThP2,PMONThB2
+     839 000ad760 00000810'         .long    PMONThY2,PMONThG2
+     840 000ad7a0 00001d40"         .long    SPECIALTM
+     841 000ad7c0 000b8420'         .long    special25_glist
+     842 000ad7e0 00001cb0"         .long    SPECIALIT,blankit
+     843 000ad820     0000          .word    0,1,23,0
+     844 000ad860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     845 000ad8e0     0000          .word    0,0
+     846 000ad900 000894a0'         .long    BOTTAa2,BOTTAh2,0,0,0
+     847 000ad9a0 00004a40"         .long   SPCT,0
+     848 000ad9e0 000b8440'         .long    special26_list,non_list
+     849 000ada20 00013260'         .long    SHARKSa,GSHARKSa
+     850 000ada60 00013a70'         .long    SHARKSh,GSHARKSh
+     851 000adaa0 00003870'         .long    PMONTaP2,PMONTaB2
+     852 000adae0 00002850'         .long    PMONTaY2,PMONTaG2
+     853 000adb20 00001830'         .long    PMONThP2,PMONThB2
+     854 000adb60 00000810'         .long    PMONThY2,PMONThG2
+     855 000adba0 00001d40"         .long    SPECIALTM
+     856 000adbc0 000b8480'         .long    special26_glist
+     857 000adbe0 00001cb0"         .long    SPECIALIT,blankit
+     858 000adc20     0000          .word    0,1,23,0
+     859 000adc60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     860 000adce0     0000          .word    0,0
+     861 000add00 00092e60'         .long    BSANJOa2,BSANJOh2,0,0,0
+     862 000adda0 00004a40"         .long   SPCT,0
+     863 000adde0 000b84a0'         .long    special27_list,non_list
+     864 000ade20 00018300'         .long    ISLANDRa,GISLANDRa
+     865 000ade60 00018b10'         .long    ISLANDRh,GISLANDRh
+     866 000adea0 00003870'         .long    PMONTaP2,PMONTaB2
+     867 000adee0 00002850'         .long    PMONTaY2,PMONTaG2
+     868 000adf20 00001830'         .long    PMONThP2,PMONThB2
+     869 000adf60 00000810'         .long    PMONThY2,PMONThG2
+     870 000adfa0 00001d40"         .long    SPECIALTM
+     871 000adfc0 000b84e0'         .long    special27_glist
+     872 000adfe0 00001cb0"         .long    SPECIALIT,blankit
+     873 000ae020     0000          .word    0,1,23,0
+     874 000ae060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     875 000ae0e0     0000          .word    0,0
+     876 000ae100 0007fae0'         .long    BISLESa2,BISLESh2,0,0,0
+     877 000ae1a0 00004a40"         .long   SPCT,0
+     878 000ae1e0 000b8500'         .long    special28_list,non_list
+     879 000ae220 00004080'         .long    PWINGa,GWINGa
+     880 000ae260 00004890'         .long    PWINGh,GWINGh
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     881 000ae2a0 00003870'         .long    PMONTaP2,PMONTaB2
+     882 000ae2e0 00002850'         .long    PMONTaY2,PMONTaG2
+     883 000ae320 00001830'         .long    PMONThP2,PMONThB2
+     884 000ae360 00000810'         .long    PMONThY2,PMONThG2
+     885 000ae3a0 00001d40"         .long    SPECIALTM
+     886 000ae3c0 000b8530'         .long    special28_glist
+     887 000ae3e0 00001cb0"         .long    SPECIALIT,blankit
+     888 000ae420     0000          .word    0,1,23,0
+     889 000ae460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     890 000ae4e0     0000          .word    0,0
+     891 000ae500 00077fe0'         .long    BDETROIa2,BDETROIh2,0,0,0
+     892 000ae5a0 00004a40"         .long   SPCT,0
+     893 000ae5e0 000b8550'         .long    special29_list,non_list
+     894 000ae620 00019320'         .long    WHALEa,GWHALEa
+     895 000ae660 00019b30'         .long    WHALEh,GWHALEh
+     896 000ae6a0 00003870'         .long    PMONTaP2,PMONTaB2
+     897 000ae6e0 00002850'         .long    PMONTaY2,PMONTaG2
+     898 000ae720 00001830'         .long    PMONThP2,PMONThB2
+     899 000ae760 00000810'         .long    PMONThY2,PMONThG2
+     900 000ae7a0 00001d40"         .long    SPECIALTM
+     901 000ae7c0 000b8590'         .long    special29_glist
+     902 000ae7e0 00001cb0"         .long    SPECIALIT,blankit
+     903 000ae820     0000          .word    0,1,23,0
+     904 000ae860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     905 000ae8e0     0000          .word    0,0
+     906 000ae900 0009c820'         .long    BWHALEa2,BWHALEh2,0,0,0
+     907 000ae9a0 00004a40"         .long   SPCT,0
+     908 000ae9e0 000b85b0'         .long    special30_list,non_list
+     909 000aea20 000060c0'         .long    PPITTa,GPITTa
+     910 000aea60 000068d0'         .long    PPITTh,GPITTh
+     911 000aeaa0 00003870'         .long    PMONTaP2,PMONTaB2
+     912 000aeae0 00002850'         .long    PMONTaY2,PMONTaG2
+     913 000aeb20 00001830'         .long    PMONThP2,PMONThB2
+     914 000aeb60 00000810'         .long    PMONThY2,PMONThG2
+     915 000aeba0 00001d40"         .long    SPECIALTM
+     916 000aebc0 000b85e0'         .long    special30_glist
+     917 000aebe0 00001cb0"         .long    SPECIALIT,blankit
+     918 000aec20     0000          .word    0,1,23,0
+     919 000aec60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     920 000aece0     0000          .word    0,0
+     921 000aed00 0008d220'         .long    BPITTa2,BPITTh2,0,0,0
+     922 000aeda0 00004a40"         .long   SPCT,0
+     923 000aede0 000b8600'         .long    special31_list,non_list
+     924 000aee20 0001a340'         .long    BRUINSa,GBRUINSa
+     925 000aee60 0001ab50'         .long    BRUINSh,GBRUINSh
+     926 000aeea0 00003870'         .long    PMONTaP2,PMONTaB2
+     927 000aeee0 00002850'         .long    PMONTaY2,PMONTaG2
+     928 000aef20 00001830'         .long    PMONThP2,PMONThB2
+     929 000aef60 00000810'         .long    PMONThY2,PMONThG2
+     930 000aefa0 00001d40"         .long    SPECIALTM
+     931 000aefc0 000b8630'         .long    special31_glist
+     932 000aefe0 00001cb0"         .long    SPECIALIT,blankit
+     933 000af020     0000          .word    0,1,23,0
+     934 000af060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     935 000af0e0     0000          .word    0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     936 000af100 000704e0'         .long    BBRUINSa2,BBRUINSh2,0,0,0
+     937 000af1a0 00004a40"         .long   SPCT,0
+     938 000af1e0 000b8650'         .long    special32_list,non_list
+     939 000af220 00012240'         .long    LIGHTa,GLIGHTa
+     940 000af260 00012a50'         .long    LIGHTh,GLIGHTh
+     941 000af2a0 00003870'         .long    PMONTaP2,PMONTaB2
+     942 000af2e0 00002850'         .long    PMONTaY2,PMONTaG2
+     943 000af320 00001830'         .long    PMONThP2,PMONThB2
+     944 000af360 00000810'         .long    PMONThY2,PMONThG2
+     945 000af3a0 00001d40"         .long    SPECIALTM
+     946 000af3c0 000b8690'         .long    special32_glist
+     947 000af3e0 00001cb0"         .long    SPECIALIT,blankit
+     948 000af420     0000          .word    0,1,23,0
+     949 000af460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     950 000af4e0     0000          .word    0,0
+     951 000af500 000819a0'         .long    BLIGHTa2,BLIGHTh2,0,0,0
+     952 000af5a0 00004a40"         .long   SPCT,0
+     953 000af5e0 000b86b0'         .long    special33_list,non_list
+     954 000af620 0001d3a0'         .long    JETSa,GJETSa
+     955 000af660 0001dbb0'         .long    JETSh,GJETSh
+     956 000af6a0 00003870'         .long    PMONTaP2,PMONTaB2
+     957 000af6e0 00002850'         .long    PMONTaY2,PMONTaG2
+     958 000af720 00001830'         .long    PMONThP2,PMONThB2
+     959 000af760 00000810'         .long    PMONThY2,PMONThG2
+     960 000af7a0 00001d40"         .long    SPECIALTM
+     961 000af7c0 000b86f0'         .long    special33_glist
+     962 000af7e0 00001cb0"         .long    SPECIALIT,blankit
+     963 000af820     0000          .word    0,1,23,0
+     964 000af860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     965 000af8e0     0000          .word    0,0
+     966 000af900 0009e6e0'         .long    BWINNAa2,BWINNAh2,0,0,0
+     967 000af9a0 00004a40"         .long   SPCT,0
+     968 000af9e0 000b8710'         .long    special34_list,non_list
+     969 000afa20 000162c0'         .long    CANUCKa,GCANUCKa
+     970 000afa60 00016ad0'         .long    CANUCKh,GCANUCKh
+     971 000afaa0 00003870'         .long    PMONTaP2,PMONTaB2
+     972 000afae0 00002850'         .long    PMONTaY2,PMONTaG2
+     973 000afb20 00001830'         .long    PMONThP2,PMONThB2
+     974 000afb60 00000810'         .long    PMONThY2,PMONThG2
+     975 000afba0 00001d40"         .long    SPECIALTM
+     976 000afbc0 000b8760'         .long    special34_glist
+     977 000afbe0 00001cb0"         .long    SPECIALIT,blankit
+     978 000afc20     0000          .word    0,1,23,0
+     979 000afc60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     980 000afce0     0000          .word    0,0
+     981 000afd00 0009a960'         .long    BVANCa2,BVANCh2,0,0,0
+     982 000afda0 00004a40"         .long   SPCT,0
+     983 000afde0 000b8780'         .long    special35_list,non_list
+     984 000afe20 0001c380'         .long    OILERSa,GOILERSa
+     985 000afe60 0001cb90'         .long    OILERSh,GOILERSh
+     986 000afea0 00003870'         .long    PMONTaP2,PMONTaB2
+     987 000afee0 00002850'         .long    PMONTaY2,PMONTaG2
+     988 000aff20 00001830'         .long    PMONThP2,PMONThB2
+     989 000aff60 00000810'         .long    PMONThY2,PMONThG2
+     990 000affa0 00001d40"         .long    SPECIALTM
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+     991 000affc0 000b87b0'         .long    special35_glist
+     992 000affe0 00001cb0"         .long    SPECIALIT,blankit
+     993 000b0020     0000          .word    0,1,23,0
+     994 000b0060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+     995 000b00e0     0000          .word    0,0
+     996 000b0100 00079ea0'         .long    BEDMOa2,BEDMOh2,0,0,0
+     997 000b01a0 00004a40"         .long   SPCT,0
+     998 000b01e0 000b87d0'         .long    special36_list,non_list
+     999 000b0220 0000e1c0'         .long    SABERSa,GSABERSa
+    1000 000b0260 0000e9d0'         .long    SABERSh,GSABERSh
+    1001 000b02a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1002 000b02e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1003 000b0320 00001830'         .long    PMONThP2,PMONThB2
+    1004 000b0360 00000810'         .long    PMONThY2,PMONThG2
+    1005 000b03a0 00001d40"         .long    SPECIALTM
+    1006 000b03c0 000b8800'         .long    special36_glist
+    1007 000b03e0 00001cb0"         .long    SPECIALIT,blankit
+    1008 000b0420     0000          .word    0,1,23,0
+    1009 000b0460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1010 000b04e0     0000          .word    0,0
+    1011 000b0500 00090fa0'         .long    BSABRSa2,BSABRSh2,0,0,0
+    1012 000b05a0 00004a40"         .long   SPCT,0
+    1013 000b05e0 000b8820'         .long    special37_list,non_list
+    1014 000b0620 00008100'         .long    DEVILa,GNJDVLa
+    1015 000b0660 00008910'         .long    DEVILh,GNJDVLh
+    1016 000b06a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1017 000b06e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1018 000b0720 00001830'         .long    PMONThP2,PMONThB2
+    1019 000b0760 00000810'         .long    PMONThY2,PMONThG2
+    1020 000b07a0 00001d40"         .long    SPECIALTM
+    1021 000b07c0 000b8880'         .long    special37_glist
+    1022 000b07e0 00001cb0"         .long    SPECIALIT,blankit
+    1023 000b0820     0000          .word    0,1,23,0
+    1024 000b0860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1025 000b08e0     0000          .word    0,0
+    1026 000b0900 000875e0'         .long    BNJERZYa2,BNJERZYh2,0,0,0
+    1027 000b09a0 00004a40"         .long   SPCT,0
+    1028 000b09e0 000b88a0'         .long    special38_list,non_list
+    1029 000b0a20 0001f3e0'         .long    AVALa1,GAVALAa1
+    1030 000b0a60 0001fbf0'         .long    AVALh1,GAVALAh1
+    1031 000b0aa0 00003870'         .long    PMONTaP2,PMONTaB2
+    1032 000b0ae0 00002850'         .long    PMONTaY2,PMONTaG2
+    1033 000b0b20 00001830'         .long    PMONThP2,PMONThB2
+    1034 000b0b60 00000810'         .long    PMONThY2,PMONThG2
+    1035 000b0ba0 00001d40"         .long    SPECIALTM
+    1036 000b0bc0 000b8900'         .long    special38_glist
+    1037 000b0be0 00001cb0"         .long    SPECIALIT,blankit
+    1038 000b0c20     0000          .word    0,1,23,0
+    1039 000b0c60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1040 000b0ce0     0000          .word    0,0
+    1041 000b0d00 00076120'         .long    BCOLORa2,BCOLORh2,0,0,0
+    1042 000b0da0 00004a40"         .long   SPCT,0
+    1043 000b0de0 000b8920'         .long    special39_list,non_list
+    1044 000b0e20 0001e3c0'         .long    NCAPSa,GWASH2a
+    1045 000b0e60 0001ebd0'         .long    NCAPSh,GWASH2h
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+    1046 000b0ea0 00003870'         .long    PMONTaP2,PMONTaB2
+    1047 000b0ee0 00002850'         .long    PMONTaY2,PMONTaG2
+    1048 000b0f20 00001830'         .long    PMONThP2,PMONThB2
+    1049 000b0f60 00000810'         .long    PMONThY2,PMONThG2
+    1050 000b0fa0 00001d40"         .long    SPECIALTM
+    1051 000b0fc0 000b8960'         .long    special39_glist
+    1052 000b0fe0 00001cb0"         .long    SPECIALIT,blankit
+    1053 000b1020     0000          .word    0,1,23,0
+    1054 000b1060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1055 000b10e0     0000          .word    0,0
+    1056 000b1100 00074260'         .long    BCAPSa2,BCAPSh2,0,0,0
+    1057 000b11a0 00004a40"         .long   SPCT,0
+    1058 000b11e0 000b8980'         .long    special40_list,non_list
+    1059 000b1220 00011220'         .long    BLUESa,GBLUESa
+    1060 000b1260 00011a30'         .long    BLUESh,GBLUESh
+    1061 000b12a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1062 000b12e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1063 000b1320 00001830'         .long    PMONThP2,PMONThB2
+    1064 000b1360 00000810'         .long    PMONThY2,PMONThG2
+    1065 000b13a0 00001d40"         .long    SPECIALTM
+    1066 000b13c0 000b89e0'         .long    special40_glist
+    1067 000b13e0 00001cb0"         .long    SPECIALIT,blankit
+    1068 000b1420     0000          .word    0,1,23,0
+    1069 000b1460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1070 000b14e0     0000          .word    0,0
+    1071 000b1500 00096be0'         .long    BSTLOUa2,BSTLOUh2,0,0,0
+    1072 000b15a0 00004a40"         .long   SPCT,0
+    1073 000b15e0 000b8a00'         .long    special41_list,non_list
+    1074 000b1620 00009120'         .long    LEAFSa,GLEAFSa
+    1075 000b1660 00009930'         .long    LEAFSh,GLEAFSh
+    1076 000b16a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1077 000b16e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1078 000b1720 00001830'         .long    PMONThP2,PMONThB2
+    1079 000b1760 00000810'         .long    PMONThY2,PMONThG2
+    1080 000b17a0 00001d40"         .long    SPECIALTM
+    1081 000b17c0 000b8a40'         .long    special41_glist
+    1082 000b17e0 00001cb0"         .long    SPECIALIT,blankit
+    1083 000b1820     0000          .word    0,1,23,0
+    1084 000b1860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1085 000b18e0     0000          .word    0,0
+    1086 000b1900 00098aa0'         .long    BTORONTa2,BTORONTh2,0,0,0
+    1087 000b19a0 00004a40"         .long   SPCT,0
+    1088 000b19e0 000b8a60'         .long    special42_list,non_list
+    1089 000b1a20 0000b160'         .long    KINGSa,GKINGSa
+    1090 000b1a60 0000b970'         .long    KINGSh,GKINGSh
+    1091 000b1aa0 00003870'         .long    PMONTaP2,PMONTaB2
+    1092 000b1ae0 00002850'         .long    PMONTaY2,PMONTaG2
+    1093 000b1b20 00001830'         .long    PMONThP2,PMONThB2
+    1094 000b1b60 00000810'         .long    PMONThY2,PMONThG2
+    1095 000b1ba0 00001d40"         .long    SPECIALTM
+    1096 000b1bc0 000b8ab0'         .long    special42_glist
+    1097 000b1be0 00001cb0"         .long    SPECIALIT,blankit
+    1098 000b1c20     0000          .word    0,1,23,0
+    1099 000b1c60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1100 000b1ce0     0000          .word    0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+    1101 000b1d00 00083860'         .long    BLOSAa2,BLOSAh2,0,0,0
+    1102 000b1da0 00004a40"         .long   SPCT,0
+    1103 000b1de0 000b8ad0'         .long    special43_list,non_list
+    1104 000b1e20 0000d1a0'         .long    FLAMESa,GFLAMESa
+    1105 000b1e60 0000d9b0'         .long    FLAMESh,GFLAMESh
+    1106 000b1ea0 00003870'         .long    PMONTaP2,PMONTaB2
+    1107 000b1ee0 00002850'         .long    PMONTaY2,PMONTaG2
+    1108 000b1f20 00001830'         .long    PMONThP2,PMONThB2
+    1109 000b1f60 00000810'         .long    PMONThY2,PMONThG2
+    1110 000b1fa0 00001d40"         .long    SPECIALTM
+    1111 000b1fc0 000b8b10'         .long    special43_glist
+    1112 000b1fe0 00001cb0"         .long    SPECIALIT,blankit
+    1113 000b2020     0000          .word    0,1,23,0
+    1114 000b2060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1115 000b20e0     0000          .word    0,0
+    1116 000b2100 000723a0'         .long    BCALGa2,BCALGh2,0,0,0
+    1117 000b21a0 00004a40"         .long   SPCT,0
+    1118 000b21e0 000b8b30'         .long    special44_list,non_list
+    1119 000b2220 0000f1e0'         .long    STARSa,GSTARSa
+    1120 000b2260 0000f9f0'         .long    STARSh,GSTARSh
+    1121 000b22a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1122 000b22e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1123 000b2320 00001830'         .long    PMONThP2,PMONThB2
+    1124 000b2360 00000810'         .long    PMONThY2,PMONThG2
+    1125 000b23a0 00001d40"         .long    SPECIALTM
+    1126 000b23c0 000b8b60'         .long    special44_glist
+    1127 000b23e0 00001cb0"         .long    SPECIALIT,blankit
+    1128 000b2420     0000          .word    0,1,23,0
+    1129 000b2460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1130 000b24e0     0000          .word    0,0
+    1131 000b2500 00094d20'         .long    BSTARSa2,BSTARSh2,0,0,0
+    1132 000b25a0 00004a40"         .long   SPCT,0
+    1133 000b25e0 000b8b80'         .long    special45_list,non_list
+    1134 000b2620 0000a140'         .long    RANGRa,GRANGRa
+    1135 000b2660 0000a950'         .long    RANGRh,GRANGRh
+    1136 000b26a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1137 000b26e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1138 000b2720 00001830'         .long    PMONThP2,PMONThB2
+    1139 000b2760 00000810'         .long    PMONThY2,PMONThG2
+    1140 000b27a0 00001d40"         .long    SPECIALTM
+    1141 000b27c0 000b8bc0'         .long    special45_glist
+    1142 000b27e0 00001cb0"         .long    SPECIALIT,blankit
+    1143 000b2820     0000          .word    0,1,23,0
+    1144 000b2860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1145 000b28e0     0000          .word    0,0
+    1146 000b2900 0008f0e0'         .long    BRANGRa2,BRANGRh2,0,0,0
+    1147 000b29a0 00004a40"         .long   SPCT,0
+    1148 000b29e0 000b8be0'         .long    special46_list,non_list
+    1149 000b2a20 000050a0'         .long    PMONTa,GMONTa
+    1150 000b2a60 000058b0'         .long    PMONTh,GMONTh
+    1151 000b2aa0 00003870'         .long    PMONTaP2,PMONTaB2
+    1152 000b2ae0 00002850'         .long    PMONTaY2,PMONTaG2
+    1153 000b2b20 00001830'         .long    PMONThP2,PMONThB2
+    1154 000b2b60 00000810'         .long    PMONThY2,PMONThG2
+    1155 000b2ba0 00001d40"         .long    SPECIALTM
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+    1156 000b2bc0 000b8c20'         .long    special46_glist
+    1157 000b2be0 00001cb0"         .long    SPECIALIT,blankit
+    1158 000b2c20     0000          .word    0,1,23,0
+    1159 000b2c60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1160 000b2ce0     0000          .word    0,0
+    1161 000b2d00 00085720'         .long    BMONTa2,BMONTh2,0,0,0
+    1162 000b2da0 00004a40"         .long   SPCT,0
+    1163 000b2de0 000b8c40'         .long    special47_list,non_list
+    1164 000b2e20 000172e0'         .long    FLYERSa,GFLYERSa
+    1165 000b2e60 00017af0'         .long    FLYERSh,GFLYERSh
+    1166 000b2ea0 00003870'         .long    PMONTaP2,PMONTaB2
+    1167 000b2ee0 00002850'         .long    PMONTaY2,PMONTaG2
+    1168 000b2f20 00001830'         .long    PMONThP2,PMONThB2
+    1169 000b2f60 00000810'         .long    PMONThY2,PMONThG2
+    1170 000b2fa0 00001d40"         .long    SPECIALTM
+    1171 000b2fc0 000b8ca0'         .long    special47_glist
+    1172 000b2fe0 00001cb0"         .long    SPECIALIT,blankit
+    1173 000b3020     0000          .word    0,1,23,0
+    1174 000b3060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1175 000b30e0     0000          .word    0,0
+    1176 000b3100 0007bd60'         .long    BFLYERSa2,BFLYERSh2,0,0,0
+    1177 000b31a0 00004a40"         .long   SPCT,0
+    1178 000b31e0 000b8cc0'         .long    special48_list,non_list
+    1179 000b3220 000078f0'         .long    phawka,GHAWKa
+    1180 000b3260 000070e0'         .long    PHAWKh,GHAWKh
+    1181 000b32a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1182 000b32e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1183 000b3320 00001830'         .long    PMONThP2,PMONThB2
+    1184 000b3360 00000810'         .long    PMONThY2,PMONThG2
+    1185 000b33a0 00001d40"         .long    SPECIALTM
+    1186 000b33c0 000b8d10'         .long    special48_glist
+    1187 000b33e0 00001cb0"         .long    SPECIALIT,blankit
+    1188 000b3420     0000          .word    0,1,23,0
+    1189 000b3460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1190 000b34e0     0000          .word    0,0
+    1191 000b3500 0007dc20'         .long    BHAWKa2,BHAWKh2,0,0,0
+    1192 000b35a0 00004a40"         .long   SPCT,0
+    1193 000b35e0 000b8d30'         .long    special49_list,non_list
+    1194 000b3620 0000c180'         .long    DUCKSa,GDUCKSa
+    1195 000b3660 0000c990'         .long    DUCKSh,GDUCKSh
+    1196 000b36a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1197 000b36e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1198 000b3720 00001830'         .long    PMONThP2,PMONThB2
+    1199 000b3760 00000810'         .long    PMONThY2,PMONThG2
+    1200 000b37a0 00001d40"         .long    SPECIALTM
+    1201 000b37c0 000b8d60'         .long    special49_glist
+    1202 000b37e0 00001cb0"         .long    SPECIALIT,blankit
+    1203 000b3820     0000          .word    0,1,23,0
+    1204 000b3860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1205 000b38e0     0000          .word    0,0
+    1206 000b3900 0006c760'         .long    BANAHEIa2,BANAHEIh2,0,0,0
+    1207 000b39a0 00004a40"         .long   SPCT,0
+    1208 000b39e0 000b8d80'         .long    special50_list,non_list
+    1209 000b3a20 00010200'         .long    PANTHa,GPANTHa
+    1210 000b3a60 00010a10'         .long    PANTHh,GPANTHh
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+    1211 000b3aa0 00003870'         .long    PMONTaP2,PMONTaB2
+    1212 000b3ae0 00002850'         .long    PMONTaY2,PMONTaG2
+    1213 000b3b20 00001830'         .long    PMONThP2,PMONThB2
+    1214 000b3b60 00000810'         .long    PMONThY2,PMONThG2
+    1215 000b3ba0 00001d40"         .long    SPECIALTM
+    1216 000b3bc0 000b8db0'         .long    special50_glist
+    1217 000b3be0 00001cb0"         .long    SPECIALIT,blankit
+    1218 000b3c20     0000          .word    0,1,23,0
+    1219 000b3c60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1220 000b3ce0     0000          .word    0,0
+    1221 000b3d00 0008b360'         .long    BPANTHa2,BPANTHh2,0,0,0
+    1222 000b3da0 00004a40"         .long   SPCT,0
+    1223 000b3de0 000b8dd0'         .long    special51_list,non_list
+    1224 000b3e20 00014280'         .long    SENATRSa,GSENATa
+    1225 000b3e60 00014a90'         .long    SENATRSh,GSENATh
+    1226 000b3ea0 00003870'         .long    PMONTaP2,PMONTaB2
+    1227 000b3ee0 00002850'         .long    PMONTaY2,PMONTaG2
+    1228 000b3f20 00001830'         .long    PMONThP2,PMONThB2
+    1229 000b3f60 00000810'         .long    PMONThY2,PMONThG2
+    1230 000b3fa0 00001d40"         .long    SPECIALTM
+    1231 000b3fc0 000b8e20'         .long    special51_glist
+    1232 000b3fe0 00001cb0"         .long    SPECIALIT,blankit
+    1233 000b4020     0000          .word    0,1,23,0
+    1234 000b4060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1235 000b40e0     0000          .word    0,0
+    1236 000b4100 000894a0'         .long    BOTTAa2,BOTTAh2,0,0,0
+    1237 000b41a0 00004a40"         .long   SPCT,0
+    1238 000b41e0 000b8e40'         .long    special52_list,non_list
+    1239 000b4220 00013260'         .long    SHARKSa,GSHARKSa
+    1240 000b4260 00013a70'         .long    SHARKSh,GSHARKSh
+    1241 000b42a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1242 000b42e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1243 000b4320 00001830'         .long    PMONThP2,PMONThB2
+    1244 000b4360 00000810'         .long    PMONThY2,PMONThG2
+    1245 000b43a0 00001d40"         .long    SPECIALTM
+    1246 000b43c0 000b8ea0'         .long    special52_glist
+    1247 000b43e0 00001cb0"         .long    SPECIALIT,blankit
+    1248 000b4420     0000          .word    0,1,23,0
+    1249 000b4460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1250 000b44e0     0000          .word    0,0
+    1251 000b4500 00092e60'         .long    BSANJOa2,BSANJOh2,0,0,0
+    1252 000b45a0 00004a40"         .long   SPCT,0
+    1253 000b45e0 000b8ec0'         .long    special53_list,non_list
+    1254 000b4620 00018300'         .long    ISLANDRa,GISLANDRa
+    1255 000b4660 00018b10'         .long    ISLANDRh,GISLANDRh
+    1256 000b46a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1257 000b46e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1258 000b4720 00001830'         .long    PMONThP2,PMONThB2
+    1259 000b4760 00000810'         .long    PMONThY2,PMONThG2
+    1260 000b47a0 00001d40"         .long    SPECIALTM
+    1261 000b47c0 000b8f20'         .long    special53_glist
+    1262 000b47e0 00001cb0"         .long    SPECIALIT,blankit
+    1263 000b4820     0000          .word    0,1,23,0
+    1264 000b4860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1265 000b48e0     0000          .word    0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+    1266 000b4900 0007fae0'         .long    BISLESa2,BISLESh2,0,0,0
+    1267 000b49a0 00004a40"         .long   SPCT,0
+    1268 000b49e0 000b8f40'         .long    special54_list,non_list
+    1269 000b4a20 00004080'         .long    PWINGa,GWINGa
+    1270 000b4a60 00004890'         .long    PWINGh,GWINGh
+    1271 000b4aa0 00003870'         .long    PMONTaP2,PMONTaB2
+    1272 000b4ae0 00002850'         .long    PMONTaY2,PMONTaG2
+    1273 000b4b20 00001830'         .long    PMONThP2,PMONThB2
+    1274 000b4b60 00000810'         .long    PMONThY2,PMONThG2
+    1275 000b4ba0 00001d40"         .long    SPECIALTM
+    1276 000b4bc0 000b8f80'         .long    special54_glist
+    1277 000b4be0 00001cb0"         .long    SPECIALIT,blankit
+    1278 000b4c20     0000          .word    0,1,23,0
+    1279 000b4c60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1280 000b4ce0     0000          .word    0,0
+    1281 000b4d00 00077fe0'         .long    BDETROIa2,BDETROIh2,0,0,0
+    1282 000b4da0 00004a40"         .long   SPCT,0
+    1283 000b4de0 000b8fa0'         .long    special55_list,non_list
+    1284 000b4e20 00019320'         .long    WHALEa,GWHALEa
+    1285 000b4e60 00019b30'         .long    WHALEh,GWHALEh
+    1286 000b4ea0 00003870'         .long    PMONTaP2,PMONTaB2
+    1287 000b4ee0 00002850'         .long    PMONTaY2,PMONTaG2
+    1288 000b4f20 00001830'         .long    PMONThP2,PMONThB2
+    1289 000b4f60 00000810'         .long    PMONThY2,PMONThG2
+    1290 000b4fa0 00001d40"         .long    SPECIALTM
+    1291 000b4fc0 000b8ff0'         .long    special55_glist
+    1292 000b4fe0 00001cb0"         .long    SPECIALIT,blankit
+    1293 000b5020     0000          .word    0,1,23,0
+    1294 000b5060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1295 000b50e0     0000          .word    0,0
+    1296 000b5100 0009c820'         .long    BWHALEa2,BWHALEh2,0,0,0
+    1297 000b51a0 00004a40"         .long   SPCT,0
+    1298 000b51e0 000b9010'         .long    special56_list,non_list
+    1299 000b5220 000060c0'         .long    PPITTa,GPITTa
+    1300 000b5260 000068d0'         .long    PPITTh,GPITTh
+    1301 000b52a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1302 000b52e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1303 000b5320 00001830'         .long    PMONThP2,PMONThB2
+    1304 000b5360 00000810'         .long    PMONThY2,PMONThG2
+    1305 000b53a0 00001d40"         .long    SPECIALTM
+    1306 000b53c0 000b9060'         .long    special56_glist
+    1307 000b53e0 00001cb0"         .long    SPECIALIT,blankit
+    1308 000b5420     0000          .word    0,1,23,0
+    1309 000b5460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1310 000b54e0     0000          .word    0,0
+    1311 000b5500 0008d220'         .long    BPITTa2,BPITTh2,0,0,0
+    1312 000b55a0 00004a40"         .long   SPCT,0
+    1313 000b55e0 000b9080'         .long    special57_list,non_list
+    1314 000b5620 0001a340'         .long    BRUINSa,GBRUINSa
+    1315 000b5660 0001ab50'         .long    BRUINSh,GBRUINSh
+    1316 000b56a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1317 000b56e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1318 000b5720 00001830'         .long    PMONThP2,PMONThB2
+    1319 000b5760 00000810'         .long    PMONThY2,PMONThG2
+    1320 000b57a0 00001d40"         .long    SPECIALTM
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+    1321 000b57c0 000b90d0'         .long    special57_glist
+    1322 000b57e0 00001cb0"         .long    SPECIALIT,blankit
+    1323 000b5820     0000          .word    0,1,23,0
+    1324 000b5860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1325 000b58e0     0000          .word    0,0
+    1326 000b5900 000704e0'         .long    BBRUINSa2,BBRUINSh2,0,0,0
+    1327 000b59a0 00004a40"         .long   SPCT,0
+    1328 000b59e0 000b90f0'         .long    special58_list,non_list
+    1329 000b5a20 00012240'         .long    LIGHTa,GLIGHTa
+    1330 000b5a60 00012a50'         .long    LIGHTh,GLIGHTh
+    1331 000b5aa0 00003870'         .long    PMONTaP2,PMONTaB2
+    1332 000b5ae0 00002850'         .long    PMONTaY2,PMONTaG2
+    1333 000b5b20 00001830'         .long    PMONThP2,PMONThB2
+    1334 000b5b60 00000810'         .long    PMONThY2,PMONThG2
+    1335 000b5ba0 00001d40"         .long    SPECIALTM
+    1336 000b5bc0 000b9140'         .long    special58_glist
+    1337 000b5be0 00001cb0"         .long    SPECIALIT,blankit
+    1338 000b5c20     0000          .word    0,1,23,0
+    1339 000b5c60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1340 000b5ce0     0000          .word    0,0
+    1341 000b5d00 000819a0'         .long    BLIGHTa2,BLIGHTh2,0,0,0
+    1342 000b5da0 00004a40"         .long   SPCT,0
+    1343 000b5de0 000b9160'         .long    special59_list,non_list
+    1344 000b5e20 0001d3a0'         .long    JETSa,GJETSa
+    1345 000b5e60 0001dbb0'         .long    JETSh,GJETSh
+    1346 000b5ea0 00003870'         .long    PMONTaP2,PMONTaB2
+    1347 000b5ee0 00002850'         .long    PMONTaY2,PMONTaG2
+    1348 000b5f20 00001830'         .long    PMONThP2,PMONThB2
+    1349 000b5f60 00000810'         .long    PMONThY2,PMONThG2
+    1350 000b5fa0 00001d40"         .long    SPECIALTM
+    1351 000b5fc0 000b91a0'         .long    special59_glist
+    1352 000b5fe0 00001cb0"         .long    SPECIALIT,blankit
+    1353 000b6020     0000          .word    0,1,23,0
+    1354 000b6060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1355 000b60e0     0000          .word    0,0
+    1356 000b6100 0009e6e0'         .long    BWINNAa2,BWINNAh2,0,0,0
+    1357 000b61a0 00004a40"         .long   SPCT,0
+    1358 000b61e0 000b91c0'         .long    special60_list,non_list
+    1359 000b6220 000162c0'         .long    CANUCKa,GCANUCKa
+    1360 000b6260 00016ad0'         .long    CANUCKh,GCANUCKh
+    1361 000b62a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1362 000b62e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1363 000b6320 00001830'         .long    PMONThP2,PMONThB2
+    1364 000b6360 00000810'         .long    PMONThY2,PMONThG2
+    1365 000b63a0 00001d40"         .long    SPECIALTM
+    1366 000b63c0 000b9200'         .long    special60_glist
+    1367 000b63e0 00001cb0"         .long    SPECIALIT,blankit
+    1368 000b6420     0000          .word    0,1,23,0
+    1369 000b6460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1370 000b64e0     0000          .word    0,0
+    1371 000b6500 0009a960'         .long    BVANCa2,BVANCh2,0,0,0
+    1372 000b65a0 00004a40"         .long   SPCT,0
+    1373 000b65e0 000b9220'         .long    special61_list,non_list
+    1374 000b6620 0001c380'         .long    OILERSa,GOILERSa
+    1375 000b6660 0001cb90'         .long    OILERSh,GOILERSh
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+    1376 000b66a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1377 000b66e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1378 000b6720 00001830'         .long    PMONThP2,PMONThB2
+    1379 000b6760 00000810'         .long    PMONThY2,PMONThG2
+    1380 000b67a0 00001d40"         .long    SPECIALTM
+    1381 000b67c0 000b9260'         .long    special61_glist
+    1382 000b67e0 00001cb0"         .long    SPECIALIT,blankit
+    1383 000b6820     0000          .word    0,1,23,0
+    1384 000b6860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1385 000b68e0     0000          .word    0,0
+    1386 000b6900 00079ea0'         .long    BEDMOa2,BEDMOh2,0,0,0
+    1387 000b69a0 00004a40"         .long   SPCT,0
+    1388 000b69e0 000b9280'         .long    special62_list,non_list
+    1389 000b6a20 0000e1c0'         .long    SABERSa,GSABERSa
+    1390 000b6a60 0000e9d0'         .long    SABERSh,GSABERSh
+    1391 000b6aa0 00003870'         .long    PMONTaP2,PMONTaB2
+    1392 000b6ae0 00002850'         .long    PMONTaY2,PMONTaG2
+    1393 000b6b20 00001830'         .long    PMONThP2,PMONThB2
+    1394 000b6b60 00000810'         .long    PMONThY2,PMONThG2
+    1395 000b6ba0 00001d40"         .long    SPECIALTM
+    1396 000b6bc0 000b92c0'         .long    special62_glist
+    1397 000b6be0 00001cb0"         .long    SPECIALIT,blankit
+    1398 000b6c20     0000          .word    0,1,23,0
+    1399 000b6c60 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1400 000b6ce0     0000          .word    0,0
+    1401 000b6d00 00090fa0'         .long    BSABRSa2,BSABRSh2,0,0,0
+    1402 000b6da0 00004a40"         .long   SPCT,0
+    1403 000b6de0 000b92e0'         .long    special63_list,non_list
+    1404 000b6e20 00008100'         .long    DEVILa,GNJDVLa
+    1405 000b6e60 00008910'         .long    DEVILh,GNJDVLh
+    1406 000b6ea0 00003870'         .long    PMONTaP2,PMONTaB2
+    1407 000b6ee0 00002850'         .long    PMONTaY2,PMONTaG2
+    1408 000b6f20 00001830'         .long    PMONThP2,PMONThB2
+    1409 000b6f60 00000810'         .long    PMONThY2,PMONThG2
+    1410 000b6fa0 00001d40"         .long    SPECIALTM
+    1411 000b6fc0 000b9320'         .long    special63_glist
+    1412 000b6fe0 00001cb0"         .long    SPECIALIT,blankit
+    1413 000b7020     0000          .word    0,1,23,0
+    1414 000b7060 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1415 000b70e0     0000          .word    0,0
+    1416 000b7100 000875e0'         .long    BNJERZYa2,BNJERZYh2,0,0,0
+    1417 000b71a0 00004a40"         .long   SPCT,0
+    1418 000b71e0 000b9340'         .long    special64_list,non_list
+    1419 000b7220 0001f3e0'         .long    AVALa1,GAVALAa1
+    1420 000b7260 0001fbf0'         .long    AVALh1,GAVALAh1
+    1421 000b72a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1422 000b72e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1423 000b7320 00001830'         .long    PMONThP2,PMONThB2
+    1424 000b7360 00000810'         .long    PMONThY2,PMONThG2
+    1425 000b73a0 00001d40"         .long    SPECIALTM
+    1426 000b73c0 000b9380'         .long    special64_glist
+    1427 000b73e0 00001cb0"         .long    SPECIALIT,blankit
+    1428 000b7420     0000          .word    0,1,23,0
+    1429 000b7460 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1430 000b74e0     0000          .word    0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   27
+
+    1431 000b7500 00076120'         .long    BCOLORa2,BCOLORh2,0,0,0
+    1432 000b75a0 00004a40"         .long   SPCT,0
+    1433 000b75e0 000b93a0'         .long    special65_list,non_list
+    1434 000b7620 0001e3c0'         .long    NCAPSa,GWASH2a
+    1435 000b7660 0001ebd0'         .long    NCAPSh,GWASH2h
+    1436 000b76a0 00003870'         .long    PMONTaP2,PMONTaB2
+    1437 000b76e0 00002850'         .long    PMONTaY2,PMONTaG2
+    1438 000b7720 00001830'         .long    PMONThP2,PMONThB2
+    1439 000b7760 00000810'         .long    PMONThY2,PMONThG2
+    1440 000b77a0 00001d40"         .long    SPECIALTM
+    1441 000b77c0 000b93e0'         .long    special65_glist
+    1442 000b77e0 00001cb0"         .long    SPECIALIT,blankit
+    1443 000b7820     0000          .word    0,1,23,0
+    1444 000b7860 000b79a0'         .long    blankit,SPEC_STR,BFLYRmsk1,SPEC_STR
+    1445 000b78e0     0000          .word    0,0
+    1446 000b7900 00074260'         .long    BCAPSa2,BCAPSh2,0,0,0
+    1447                    
+    1448 000b79a0     4000  blankit .word   04000H,4,4
+    1449 000b79d0 06011cdc          .long   06011cdcH
+    1450 000b79f0     0320          .word   800,800
+    1451 000b7a10 00000000!         .long   GFONT10CP
+    1452                    
+    1453 000b7a30           SPEC_STR
+    1454 000b7a30       53          .string "SP TEAM",0
+    1455 000b7a70                   .even
+    1456                    
+    1457 000b7a70           special01_list
+    1458 000b7a70     0021          .word   s_brett_hull
+    1459 000b7a80     0022          .word   s_brendan_shanahan
+    1460 000b7a90     004f          .word   s_jeremy_roenick
+    1461 000b7aa0     0024          .word   s_chris_chelios
+    1462 000b7ab0     0000          .word   0
+    1463 000b7ac0           special01_glist
+    1464 000b7ac0     0046          .word   s_ed_belfour
+    1465 000b7ad0     0000          .word   0
+    1466                    
+    1467 000b7ae0           special02_list
+    1468 000b7ae0     0064          .word   s_mario_lemieux
+    1469 000b7af0     0007          .word   s_eric_lindros
+    1470 000b7b00     0010          .word   s_luc_robitaille
+    1471 000b7b10     0008          .word   s_rod_brindamour
+    1472 000b7b20     0000          .word   0
+    1473 000b7b30           special02_glist
+    1474 000b7b30     0038          .word   s_ron_hextall
+    1475 000b7b40     0000          .word   0
+    1476                    
+    1477 000b7b50           special03_list
+    1478 000b7b50     002f          .word   s_wayne_gretzky
+    1479 000b7b60     0001          .word   s_mark_messier
+    1480 000b7b70     0030          .word   s_jari_kurri
+    1481 000b7b80     0000          .word   0
+    1482 000b7b90           special03_glist
+    1483 000b7b90     004e          .word   s_bill_ranford
+    1484 000b7ba0     0000          .word   0
+    1485                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   28
+
+    1486 000b7bb0           special04_list
+    1487 000b7bb0     0056          .word   s_paul_coffey
+    1488 000b7bc0     0017          .word   s_ray_bourque
+    1489 000b7bd0     0024          .word   s_chris_chelios
+    1490 000b7be0     005e          .word   s_scott_stevens
+    1491 000b7bf0     0000          .word   0
+    1492 000b7c00           special04_glist
+    1493 000b7c00     0036          .word   s_martin_brodeur
+    1494 000b7c10     0000          .word   0
+    1495                    
+    1496 000b7c20           special05_list
+    1497 000b7c20     002b          .word   s_theoren_fleury
+    1498 000b7c30     001d          .word   s_sergei_fedorov
+    1499 000b7c40     0029          .word   s_pavel_bure
+    1500 000b7c50     0025          .word   s_teemu_selanne
+    1501 000b7c60     0000          .word   0
+    1502 000b7c70           special05_glist
+    1503 000b7c70     0044          .word   s_felix_potvin
+    1504 000b7c80     0000          .word   0
+    1505                    
+    1506 000b7c90           special06_list
+    1507 000b7c90     001d          .word   s_sergei_fedorov
+    1508 000b7ca0     0029          .word   s_pavel_bure
+    1509 000b7cb0     0014          .word   s_alexander_mogilny
+    1510                    ;       .word   s_sergei_makarov
+    1511 000b7cc0     0000          .word   0
+    1512 000b7cd0           special06_glist
+    1513 000b7cd0     004b          .word   s_arturs_irbe
+    1514 000b7ce0     0000          .word   0
+    1515                    
+    1516 000b7cf0           special07_list
+    1517 000b7cf0     0005          .word   s_joe_juneau
+    1518 000b7d00     0051          .word   s_adam_oates
+    1519 000b7d10     0021          .word   s_brett_hull
+    1520 000b7d20     0000          .word   0
+    1521 000b7d30           special07_glist
+    1522 000b7d30     003b          .word   s_darren_puppa
+    1523 000b7d40     0000          .word   0
+    1524                    
+    1525 000b7d50           special08_list
+    1526 000b7d50     0009          .word   s_kirk_muller
+    1527 000b7d60     0063          .word   s_eric_desjardins
+    1528 000b7d70     005d          .word   s_claude_lemieux
+    1529 000b7d80     0000          .word   0
+    1530 000b7d90           special08_glist
+    1531 000b7d90     003f          .word   s_patrick_roy
+    1532 000b7da0     0000          .word   0
+    1533                    
+    1534 000b7db0           special09_list
+    1535 000b7db0     0002          .word   s_petr_nedved
+    1536 000b7dc0     0006          .word   s_peter_bondra
+    1537 000b7dd0     000e          .word   s_petr_klima
+    1538 000b7de0     0000          .word   0
+    1539 000b7df0           special09_glist
+    1540 000b7df0     0035          .word   s_mike_richter
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   29
+
+    1541 000b7e00     0000          .word   0
+    1542                    
+    1543 000b7e10           special10_list
+    1544 000b7e10     002b          .word   s_theoren_fleury
+    1545 000b7e20     0016          .word   s_mark_recchi
+    1546 000b7e30     0000          .word   0
+    1547 000b7e40           special10_glist
+    1548                    ;       .word   s_chris_osgood
+    1549 000b7e40     0043          .word   s_mike_vernon
+    1550 000b7e50     0000          .word   0
+    1551                    
+    1552 000b7e60           special11_list
+    1553 000b7e60     0007          .word   s_eric_lindros
+    1554 000b7e70     0020          .word   s_dave_andreychuk
+    1555 000b7e80     0022          .word   s_brendan_shanahan
+    1556 000b7e90     0000          .word   0
+    1557 000b7ea0           special11_glist
+    1558 000b7ea0     0041          .word   s_sean_burke
+    1559 000b7eb0     0000          .word   0
+    1560                    
+    1561 000b7ec0           special12_list
+    1562 000b7ec0     000f          .word   s_jaromir_jagr
+    1563 000b7ed0     0061          .word   s_radek_bonk
+    1564 000b7ee0     002e          .word   s_ulf_dahlen
+    1565 000b7ef0     0067          .word   s_esa_tikkanen
+    1566 000b7f00     0000          .word   0
+    1567 000b7f10           special12_glist
+    1568 000b7f10     0040          .word   s_blaine_lacher
+    1569 000b7f20     0000          .word   0
+    1570                    
+    1571 000b7f30           special13_list
+    1572 000b7f30     002d          .word   s_sandis_ozolinsh
+    1573 000b7f40     0033          .word   s_igor_kravchuk
+    1574 000b7f50     0057          .word   s_dino_ciccarelli
+    1575 000b7f60     0000          .word   0
+    1576 000b7f70           special13_glist
+    1577 000b7f70     004b          .word   s_arturs_irbe
+    1578 000b7f80     0000          .word   0
+    1579                    
+    1580 000b7f90           special14_list
+    1581 000b7f90     0001          .word   s_mark_messier
+    1582 000b7fa0     005d          .word   s_claude_lemieux
+    1583 000b7fb0     0017          .word   s_ray_bourque
+    1584 000b7fc0     0000          .word   0
+    1585 000b7fd0           special14_glist
+    1586 000b7fd0     0038          .word   s_ron_hextall
+    1587 000b7fe0     0000          .word   0
+    1588                    
+    1589 000b7ff0           special15_list
+    1590 000b7ff0     0009          .word   s_kirk_muller
+    1591 000b8000     0012          .word   s_wendel_clark
+    1592 000b8010     0054          .word   s_denis_savard
+    1593 000b8020     005f          .word   s_ray_ferraro
+    1594 000b8030     0000          .word   0
+    1595 000b8040           special15_glist
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   30
+
+    1596 000b8040     0048          .word   s_andy_moog
+    1597 000b8050     0000          .word   0
+    1598                    
+    1599 000b8060           special16_list
+    1600 000b8060     005d          .word   s_claude_lemieux
+    1601 000b8070     0005          .word   s_joe_juneau
+    1602 000b8080     0031          .word   s_paul_kariya
+    1603 000b8090     0012          .word   s_wendel_clark
+    1604 000b80a0     0000          .word   0
+    1605 000b80b0           special16_glist
+    1606 000b80b0     0048          .word   s_andy_moog
+    1607 000b80c0     0000          .word   0
+    1608                    
+    1609 000b80d0           special17_list
+    1610 000b80d0     0008          .word   s_rod_brindamour
+    1611 000b80e0     0069          .word   s_mats_sundin
+    1612 000b80f0     000f          .word   s_jaromir_jagr
+    1613 000b8100     0023          .word   s_bernie_nicholls
+    1614 000b8110     0000          .word   0
+    1615 000b8120           special17_glist
+    1616 000b8120     0040          .word   s_blaine_lacher
+    1617 000b8130     0000          .word   0
+    1618                    
+    1619 000b8140           special18_list
+    1620 000b8140     0054          .word   s_denis_savard
+    1621 000b8150     0017          .word   s_ray_bourque
+    1622 000b8160     0015          .word   s_vincent_damphousse
+    1623 000b8170     0000          .word   0
+    1624 000b8180           special18_glist
+    1625 000b8180     0046          .word   s_ed_belfour
+    1626 000b8190     0000          .word   0
+    1627                    
+    1628 000b81a0           special19_list
+    1629 000b81a0     0030          .word   s_jari_kurri
+    1630 000b81b0     0018          .word   s_cam_neely
+    1631 000b81c0     0011          .word   s_joe_sakic
+    1632 000b81d0     0000          .word   0
+    1633 000b81e0           special19_glist
+    1634 000b81e0     004b          .word   s_arturs_irbe
+    1635 000b81f0     0000          .word   0
+    1636                    
+    1637 000b8200           special20_list
+    1638 000b8200     0009          .word   s_kirk_muller
+    1639 000b8210     0002          .word   s_petr_nedved
+    1640 000b8220     002f          .word   s_wayne_gretzky
+    1641 000b8230     0000          .word   0
+    1642 000b8240           special20_glist
+    1643 000b8240     0048          .word   s_andy_moog
+    1644 000b8250     0000          .word   0
+    1645                    
+    1646 000b8260           special21_list
+    1647 000b8260     0067          .word   s_esa_tikkanen
+    1648 000b8270     0024          .word   s_chris_chelios
+    1649 000b8280     0029          .word   s_pavel_bure
+    1650 000b8290     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   31
+
+    1651 000b82a0           special21_glist
+    1652 000b82a0     003e          .word   s_dominik_hasek
+    1653 000b82b0     0000          .word   0
+    1654                    
+    1655 000b82c0           special22_list
+    1656 000b82c0     001e          .word   s_steve_yzerman
+    1657 000b82d0     0025          .word   s_teemu_selanne
+    1658 000b82e0     0007          .word   s_eric_lindros
+    1659 000b82f0     0000          .word   0
+    1660 000b8300           special22_glist
+    1661 000b8300     0037          .word   s_jim_carey
+    1662 000b8310     0000          .word   0
+    1663                    
+    1664 000b8320           special23_list
+    1665 000b8320     006c          .word   s_dale_hawerchuk
+    1666 000b8330     0057          .word   s_dino_ciccarelli
+    1667 000b8340     0010          .word   s_luc_robitaille
+    1668 000b8350     0000          .word   0
+    1669 000b8360           special23_glist
+    1670 000b8360     003a          .word   s_john_vanbiesbrouck
+    1671 000b8370     0000          .word   0
+    1672                    
+    1673 000b8380           special24_list
+    1674 000b8380     0013          .word   s_pat_lafontaine
+    1675 000b8390     005f          .word   s_ray_ferraro
+    1676 000b83a0     001f          .word   s_doug_gilmour
+    1677 000b83b0     0000          .word   0
+    1678 000b83c0           special24_glist
+    1679 000b83c0     0036          .word   s_martin_brodeur
+    1680 000b83d0     0000          .word   0
+    1681                    
+    1682 000b83e0           special25_list
+    1683 000b83e0     005e          .word   s_scott_stevens
+    1684 000b83f0     0056          .word   s_paul_coffey
+    1685 000b8400     0020          .word   s_dave_andreychuk
+    1686 000b8410     0000          .word   0
+    1687 000b8420           special25_glist
+    1688                    ;       .word   s_chris_osgood
+    1689 000b8420     0043          .word   s_mike_vernon
+    1690 000b8430     0000          .word   0
+    1691                    
+    1692 000b8440           special26_list
+    1693 000b8440     0060          .word   s_brian_leetch
+    1694 000b8450     0022          .word   s_brendan_shanahan
+    1695 000b8460     0003          .word   s_john_maclean
+    1696 000b8470     0000          .word   0
+    1697 000b8480           special26_glist
+    1698 000b8480     0038          .word   s_ron_hextall
+    1699 000b8490     0000          .word   0
+    1700                    
+    1701 000b84a0           special27_list
+    1702 000b84a0     004f          .word   s_jeremy_roenick
+    1703 000b84b0     0064          .word   s_mario_lemieux
+    1704 000b84c0     0027          .word   s_mike_modano
+    1705 000b84d0     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   32
+
+    1706 000b84e0           special27_glist
+    1707 000b84e0     003f          .word   s_patrick_roy
+    1708 000b84f0     0000          .word   0
+    1709                    
+    1710 000b8500           special28_list
+    1711 000b8500     002b          .word   s_theoren_fleury
+    1712                    ;       .word   s_sergei_makarov
+    1713 000b8510     001d          .word   s_sergei_fedorov
+    1714 000b8520     0000          .word   0
+    1715 000b8530           special28_glist
+    1716 000b8530     0035          .word   s_mike_richter
+    1717 000b8540     0000          .word   0
+    1718                    
+    1719 000b8550           special29_list
+    1720 000b8550     0021          .word   s_brett_hull
+    1721 000b8560     0001          .word   s_mark_messier
+    1722 000b8570     0063          .word   s_eric_desjardins
+    1723 000b8580     0000          .word   0
+    1724 000b8590           special29_glist
+    1725 000b8590     0044          .word   s_felix_potvin
+    1726 000b85a0     0000          .word   0
+    1727                    
+    1728 000b85b0           special30_list
+    1729 000b85b0     0070          .word   s_martin_martinez
+    1730 000b85c0     0071          .word   s_jack_haeger
+    1731 000b85d0     0000          .word   0
+    1732 000b85e0           special30_glist
+    1733 000b85e0     0047          .word   s_tim_chevaldae
+    1734 000b85f0     0000          .word   0
+    1735                    
+    1736 000b8600           special31_list
+    1737 000b8600     0074          .word   s_mark_penacho
+    1738 000b8610     0076          .word   s_carlos_pesina
+    1739 000b8620     0000          .word   0
+    1740 000b8630           special31_glist
+    1741 000b8630     0046          .word   s_ed_belfour
+    1742 000b8640     0000          .word   0
+    1743                    
+    1744 000b8650           special32_list
+    1745 000b8650     0074          .word   s_mark_penacho
+    1746 000b8660     0086          .word   s_jon_hey
+    1747 000b8670     0089          .word   s_john_carlton
+    1748 000b8680     0000          .word   0
+    1749 000b8690           special32_glist
+    1750 000b8690     0041          .word   s_sean_burke
+    1751 000b86a0     0000          .word   0
+    1752                    
+    1753 000b86b0           special33_list
+    1754 000b86b0     0073          .word   s_josh_tsui
+    1755 000b86c0     0061          .word   s_radek_bonk
+    1756 000b86d0     0091          .word   s_jason_skiles
+    1757 000b86e0     0000          .word   0
+    1758 000b86f0           special33_glist
+    1759 000b86f0     004a          .word   s_trevor_kidd
+    1760 000b8700     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   33
+
+    1761                    
+    1762 000b8710           special34_list
+    1763 000b8710     0076          .word   s_carlos_pesina
+    1764 000b8720     0070          .word   s_martin_martinez
+    1765 000b8730     0073          .word   s_josh_tsui
+    1766 000b8740     0075          .word   s_maryann_rohn
+    1767 000b8750     0000          .word   0
+    1768 000b8760           special34_glist
+    1769 000b8760     00bc          .word   s_goalie_haeger
+    1770 000b8770     0000          .word   0
+    1771                    
+    1772 000b8780           special35_list
+    1773 000b8780     0077          .word   s_jim_tianis
+    1774 000b8790     0078          .word   s_mike_waldron
+    1775 000b87a0     0000          .word   0
+    1776 000b87b0           special35_glist
+    1777 000b87b0     0037          .word   s_jim_carey
+    1778 000b87c0     0000          .word   0
+    1779                    
+    1780 000b87d0           special36_list
+    1781 000b87d0     0079          .word   s_mike_vinikour
+    1782 000b87e0     0082          .word   s_eddie_ferrier
+    1783 000b87f0     0000          .word   0
+    1784 000b8800           special36_glist
+    1785                    ;       .word   s_chris_osgood
+    1786 000b8800     0043          .word   s_mike_vernon
+    1787 000b8810     0000          .word   0
+    1788                    
+    1789 000b8820           special37_list
+    1790 000b8820     007b          .word   s_ed_boon
+    1791 000b8830     007c          .word   s_john_tobias
+    1792 000b8840     007d          .word   s_steve_beran
+    1793 000b8850     0084          .word   s_tony_goskie
+    1794 000b8860     0088          .word   s_dave_michicich
+    1795 000b8870     0000          .word   0
+    1796 000b8880           special37_glist
+    1797 000b8880     003a          .word   s_john_vanbiesbrouck
+    1798 000b8890     0000          .word   0
+    1799                    
+    1800 000b88a0           special38_list
+    1801 000b88a0     0080          .word   s_sal_divita
+    1802 000b88b0     0083          .word   s_eugene_geer
+    1803 000b88c0     0073          .word   s_josh_tsui
+    1804 000b88d0     009d          .word   s_mark_turmell
+    1805 000b88e0     0085          .word   s_jennifer_hedrick
+    1806 000b88f0     0000          .word   0
+    1807 000b8900           special38_glist
+    1808 000b8900     0040          .word   s_blaine_lacher
+    1809 000b8910     0000          .word   0
+    1810                    
+    1811 000b8920           special39_list
+    1812 000b8920     0080          .word   s_sal_divita
+    1813 000b8930     0090          .word   s_luis_mangubat
+    1814 000b8940     00ad          .word   s_chris_bobrowski
+    1815 000b8950     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   34
+
+    1816 000b8960           special39_glist
+    1817 000b8960     00bd          .word   s_goalie_hedrick
+    1818 000b8970     0000          .word   0
+    1819                    
+    1820 000b8980           special40_list
+    1821 000b8980     00ac          .word   s_xion_cooper
+    1822 000b8990     0096          .word   s_ted_barber
+    1823 000b89a0     008d          .word   s_eugene_jarvis
+    1824 000b89b0     00a6          .word   s_glenn_shipp
+    1825 000b89c0     008b          .word   s_mark_loffredo
+    1826 000b89d0     0000          .word   0
+    1827 000b89e0           special40_glist
+    1828 000b89e0     0048          .word   s_andy_moog
+    1829 000b89f0     0000          .word   0
+    1830                    
+    1831 000b8a00           special41_list
+    1832 000b8a00     008d          .word   s_eugene_jarvis
+    1833 000b8a10     008c          .word   s_cary_mednick
+    1834 000b8a20     001f          .word   s_doug_gilmour
+    1835 000b8a30     0000          .word   0
+    1836 000b8a40           special41_glist
+    1837 000b8a40     0048          .word   s_andy_moog
+    1838 000b8a50     0000          .word   0
+    1839                    
+    1840 000b8a60           special42_list
+    1841 000b8a60     0084          .word   s_tony_goskie
+    1842 000b8a70     0085          .word   s_jennifer_hedrick
+    1843 000b8a80     00ad          .word   s_chris_bobrowski
+    1844 000b8a90     008f          .word   s_joan_faux
+    1845 000b8aa0     0000          .word   0
+    1846 000b8ab0           special42_glist
+    1847 000b8ab0     004c          .word   s_kelly_hrudey
+    1848 000b8ac0     0000          .word   0
+    1849                    
+    1850 000b8ad0           special43_list
+    1851 000b8ad0     008a          .word   s_brian_eddie
+    1852 000b8ae0     0078          .word   s_mike_waldron
+    1853 000b8af0     00a9          .word   s_ken_williams
+    1854 000b8b00     0000          .word   0
+    1855 000b8b10           special43_glist
+    1856 000b8b10     0049          .word   s_kirk_mclean
+    1857 000b8b20     0000          .word   0
+    1858                    
+    1859 000b8b30           special44_list
+    1860 000b8b30     0071          .word   s_jack_haeger
+    1861 000b8b40     009a          .word   s_jack_h_haeger
+    1862 000b8b50     0000          .word   0
+    1863 000b8b60           special44_glist
+    1864 000b8b60     004b          .word   s_arturs_irbe
+    1865 000b8b70     0000          .word   0
+    1866                    
+    1867 000b8b80           special45_list
+    1868 000b8b80     00a4          .word   s_steve_correll
+    1869 000b8b90     0075          .word   s_maryann_rohn
+    1870 000b8ba0     0070          .word   s_martin_martinez
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   35
+
+    1871 000b8bb0     0000          .word   0
+    1872 000b8bc0           special45_glist
+    1873 000b8bc0     004d          .word   s_guy_hebert
+    1874 000b8bd0     0000          .word   0
+    1875                    
+    1876 000b8be0           special46_list
+    1877 000b8be0     00a1          .word   s_ed_keenan
+    1878 000b8bf0     00a5          .word   s_john_lowes
+    1879 000b8c00     0057          .word   s_dino_ciccarelli
+    1880 000b8c10     0000          .word   0
+    1881 000b8c20           special46_glist
+    1882 000b8c20     004e          .word   s_bill_ranford
+    1883 000b8c30     0000          .word   0
+    1884                    
+    1885 000b8c40           special47_list
+    1886 000b8c40     008f          .word   s_joan_faux
+    1887 000b8c50     0098          .word   s_christa_woss
+    1888 000b8c60     009e          .word   s_art_tianis
+    1889 000b8c70     00ae          .word   s_andy_lycke
+    1890 000b8c80     009f          .word   s_jim_greene
+    1891 000b8c90     0000          .word   0
+    1892 000b8ca0           special47_glist
+    1893                    ;       .word   s_jon_casey
+    1894 000b8ca0     00c5          .word   s_grant_fuhr
+    1895 000b8cb0     0000          .word   0
+    1896                    
+    1897 000b8cc0           special48_list
+    1898 000b8cc0     0075          .word   s_maryann_rohn
+    1899 000b8cd0     0093          .word   s_jim_rohn
+    1900 000b8ce0     0072          .word   s_bill_dabelstein
+    1901 000b8cf0     00a3          .word   s_matt_davis
+    1902 000b8d00     0000          .word   0
+    1903 000b8d10           special48_glist
+    1904 000b8d10     00c3          .word   s_tommy_soderstrom
+    1905                    ;       .word   s_jamie_mclennan
+    1906 000b8d20     0000          .word   0
+    1907                    
+    1908 000b8d30           special49_list
+    1909 000b8d30     0072          .word   s_bill_dabelstein
+    1910 000b8d40     00a3          .word   s_matt_davis
+    1911 000b8d50     0000          .word   0
+    1912 000b8d60           special49_glist
+    1913 000b8d60     0036          .word   s_martin_brodeur
+    1914 000b8d70     0000          .word   0
+    1915                    
+    1916 000b8d80           special50_list
+    1917 000b8d80     00a7          .word   s_tony_metke
+    1918 000b8d90     00a0          .word   s_sheridan_oursler
+    1919 000b8da0     0000          .word   0
+    1920 000b8db0           special50_glist
+    1921 000b8db0     0035          .word   s_mike_richter
+    1922 000b8dc0     0000          .word   0
+    1923                    
+    1924 000b8dd0           special51_list
+    1925 000b8dd0     008c          .word   s_cary_mednick
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   36
+
+    1926 000b8de0     007e          .word   s_pat_cox
+    1927 000b8df0     00a5          .word   s_john_lowes
+    1928 000b8e00     0094          .word   s_ray_gay
+    1929 000b8e10     0000          .word   0
+    1930 000b8e20           special51_glist
+    1931 000b8e20     0038          .word   s_ron_hextall
+    1932 000b8e30     0000          .word   0
+    1933                    
+    1934 000b8e40           special52_list
+    1935 000b8e40     0092          .word   s_al_lasko
+    1936 000b8e50     00a0          .word   s_sheridan_oursler
+    1937 000b8e60     00a9          .word   s_ken_williams
+    1938 000b8e70     00b0          .word   s_ross_shaffer
+    1939 000b8e80     00af          .word   s_ted_valvanis
+    1940 000b8e90     0000          .word   0
+    1941 000b8ea0           special52_glist
+    1942 000b8ea0     003b          .word   s_darren_puppa
+    1943 000b8eb0     0000          .word   0
+    1944                    
+    1945 000b8ec0           special53_list
+    1946 000b8ec0     0086          .word   s_jon_hey
+    1947 000b8ed0     00a1          .word   s_ed_keenan
+    1948 000b8ee0     00a2          .word   s_matt_booty
+    1949 000b8ef0     009b          .word   s_jennifer_fedesna
+    1950 000b8f00     009c          .word   s_bridgitte_fedesna
+    1951 000b8f10     0000          .word   0
+    1952 000b8f20           special53_glist
+    1953 000b8f20     003c          .word   s_ken_wregget
+    1954 000b8f30     0000          .word   0
+    1955                    
+    1956 000b8f40           special54_list
+    1957 000b8f40     0087          .word   s_mike_lynch
+    1958 000b8f50     007a          .word   s_warren_davis
+    1959 000b8f60     0089          .word   s_john_carlton
+    1960 000b8f70     0000          .word   0
+    1961 000b8f80           special54_glist
+    1962 000b8f80     003d          .word   s_stephane_fiset
+    1963 000b8f90     0000          .word   0
+    1964                    
+    1965 000b8fa0           special55_list
+    1966 000b8fa0     007f          .word   s_jim_gentile
+    1967 000b8fb0     0081          .word   s_nik_ehrlik
+    1968 000b8fc0     008e          .word   s_mike_ossian
+    1969 000b8fd0     009b          .word   s_jennifer_fedesna
+    1970 000b8fe0     0000          .word   0
+    1971 000b8ff0           special55_glist
+    1972 000b8ff0     003e          .word   s_dominik_hasek
+    1973 000b9000     0000          .word   0
+    1974                    
+    1975 000b9010           special56_list
+    1976 000b9010     00aa          .word   s_jake_simpson
+    1977 000b9020     00ab          .word   s_john_newcomer
+    1978 000b9030     008a          .word   s_brian_eddie
+    1979 000b9040     0097          .word   s_dave_zabodoul
+    1980 000b9050     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   37
+
+    1981 000b9060           special56_glist
+    1982 000b9060     003f          .word   s_patrick_roy
+    1983 000b9070     0000          .word   0
+    1984                    
+    1985 000b9080           special57_list
+    1986 000b9080     0099          .word   s_paul_dussault
+    1987 000b9090     009a          .word   s_jack_h_haeger
+    1988 000b90a0     00a4          .word   s_steve_correll
+    1989 000b90b0     00a8          .word   s_ray_macika
+    1990 000b90c0     0000          .word   0
+    1991 000b90d0           special57_glist
+    1992 000b90d0     0042          .word   s_don_beaupre
+    1993 000b90e0     0000          .word   0
+    1994                    
+    1995 000b90f0           special58_list
+    1996 000b90f0     0070          .word   s_martin_martinez
+    1997 000b9100     0076          .word   s_carlos_pesina
+    1998 000b9110     007b          .word   s_ed_boon
+    1999 000b9120     007c          .word   s_john_tobias
+    2000 000b9130     0000          .word   0
+    2001 000b9140           special58_glist
+    2002 000b9140     0044          .word   s_felix_potvin
+    2003 000b9150     0000          .word   0
+    2004                    
+    2005 000b9160           special59_list
+    2006 000b9160     0071          .word   s_jack_haeger
+    2007 000b9170     0029          .word   s_pavel_bure
+    2008 000b9180     0025          .word   s_teemu_selanne
+    2009 000b9190     0000          .word   0
+    2010 000b91a0           special59_glist
+    2011 000b91a0     0044          .word   s_felix_potvin
+    2012 000b91b0     0000          .word   0
+    2013                    
+    2014 000b91c0           special60_list
+    2015 000b91c0     0086          .word   s_jon_hey
+    2016 000b91d0     002b          .word   s_theoren_fleury
+    2017 000b91e0     0018          .word   s_cam_neely
+    2018 000b91f0     0000          .word   0
+    2019 000b9200           special60_glist
+    2020 000b9200     0037          .word   s_jim_carey
+    2021 000b9210     0000          .word   0
+    2022                    
+    2023 000b9220           special61_list
+    2024 000b9220     0075          .word   s_maryann_rohn
+    2025 000b9230     0007          .word   s_eric_lindros
+    2026 000b9240     0063          .word   s_eric_desjardins
+    2027 000b9250     0000          .word   0
+    2028 000b9260           special61_glist
+    2029 000b9260     0042          .word   s_don_beaupre
+    2030 000b9270     0000          .word   0
+    2031                    
+    2032 000b9280           special62_list
+    2033 000b9280     0073          .word   s_josh_tsui
+    2034 000b9290     002f          .word   s_wayne_gretzky
+    2035 000b92a0     005d          .word   s_claude_lemieux
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   38
+
+    2036 000b92b0     0000          .word   0
+    2037 000b92c0           special62_glist
+    2038 000b92c0     0047          .word   s_tim_chevaldae
+    2039 000b92d0     0000          .word   0
+    2040                    
+    2041 000b92e0           special63_list
+    2042 000b92e0     0070          .word   s_martin_martinez
+    2043 000b92f0     0014          .word   s_alexander_mogilny
+    2044 000b9300     0001          .word   s_mark_messier
+    2045 000b9310     0000          .word   0
+    2046 000b9320           special63_glist
+    2047 000b9320     0046          .word   s_ed_belfour
+    2048 000b9330     0000          .word   0
+    2049                    
+    2050 000b9340           special64_list
+    2051 000b9340     0076          .word   s_carlos_pesina
+    2052 000b9350     0024          .word   s_chris_chelios
+    2053 000b9360     005d          .word   s_claude_lemieux
+    2054 000b9370     0000          .word   0
+    2055 000b9380           special64_glist
+    2056 000b9380     003e          .word   s_dominik_hasek
+    2057 000b9390     0000          .word   0
+    2058                    
+    2059 000b93a0           special65_list
+    2060 000b93a0     0074          .word   s_mark_penacho
+    2061 000b93b0     0054          .word   s_denis_savard
+    2062 000b93c0     0056          .word   s_paul_coffey
+    2063 000b93d0     0000          .word   0
+    2064 000b93e0           special65_glist
+    2065 000b93e0     003f          .word   s_patrick_roy
+    2066 000b93f0     0000          .word   0
+    2067                    
+    2068                    
+    2069                    ;alt lists for default uniforms
+    2070                    
+    2071 000b9400           newjersey2_list
+    2072 000b9400     0072          .word   s_bill_dabelstein
+    2073 000b9410     0000          .word   0
+    2074 000b9420           edmonton2_list
+    2075 000b9420     0045          .word   s_curtis_joseph
+    2076 000b9430     0000          .word   0
+    2077                    
+    2078 000b9440           detroit2_list
+    2079 000b9440     0043          .word   s_mike_vernon
+    2080 000b9450     0000          .word   0
+    2081                    
+    2082 000b9460           boston2_list
+    2083 000b9460           buffalo2_list
+    2084 000b9460           hartford2_list
+    2085 000b9460           montreal2_list
+    2086 000b9460           ottawa2_list
+    2087 000b9460           pittsburgh2_list
+    2088 000b9460           colorado2_list
+    2089 000b9460           florida2_list
+    2090 000b9460           nyislanders2_list
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   39
+
+    2091 000b9460           nyrangers2_list
+    2092 000b9460           philadelphia2_list
+    2093 000b9460           tampabay2_list
+    2094 000b9460           washington2_list
+    2095 000b9460           chicago2_list
+    2096 000b9460           dallas2_list
+    2097 000b9460           stlouis2_list
+    2098 000b9460           toronto2_list
+    2099 000b9460           winnipeg2_list
+    2100 000b9460           anaheim2_list
+    2101 000b9460           calgary2_list
+    2102 000b9460           losangeles2_list
+    2103 000b9460           sanjose2_list
+    2104 000b9460           vancouver2_list
+    2105                    
+    2106 000b9460           non_list
+    2107 000b9460     0000          .word   0
+    2108                    
+    2109 000b9470           ALPHA_CITY_REMAP_TABLE
+    2110                    ;       .WORD   1, 2, 9,11,15,17,18
+    2111                    ;       .WORD   8,12,13,14,16,21,23
+    2112                    ;       .WORD   4, 5, 6,20,22,24
+    2113                    ;       .WORD   0, 3, 7,10,19,25
+    2114                    
+    2115 000b9470     0001          .WORD   1, 2,10,12,16,18, 5
+    2116 000b94e0     0009          .WORD   9,13,14,15,17,21,24
+    2117 000b9550     0004          .WORD   4, 6, 7,20,22,25
+    2118 000b95b0     0000          .WORD   0, 3, 8,11,19,23
+    2119                    
+    2120 000b9610           ALPHA_CITY_TABLE
+    2121 000b9610 000b9f28'         .LONG   ANAH_STR,BOST_STR,BUFF_STR,CALG_STR,CHIC_STR,COLO_STR,DALL_STR
+    2122 000b96f0 000b9e10'         .LONG   DETR_STR,EDMO_STR,FLOR_STR,HART_STR,LANG_STR,MONT_STR,NJER_STR
+    2123 000b97d0 000b9bc8'         .LONG   NYIS_STR,NYRA_STR,OTTA_STR,PHIL_STR,PITT_STR,SJOS_STR,STLO_STR
+    2124 000b98b0 000b9cf0'         .LONG   TBAY_STR,TORO_STR,VANC_STR,WASH_STR,WINN_STR
+    2125                    
+    2126 000b9950           BOST_STR
+    2127 000b9950       42          .STRING "BOSTON",0
+    2128 000b9988           BUFF_STR
+    2129 000b9988       42          .STRING "BUFFALO",0
+    2130 000b99c8           HART_STR
+    2131 000b99c8       48          .STRING "HARTFORD",0
+    2132 000b9a10           MONT_STR
+    2133 000b9a10       4d          .STRING "MONTREAL",0
+    2134 000b9a58           OTTA_STR
+    2135 000b9a58       4f          .STRING "OTTAWA",0
+    2136 000b9a90           PITT_STR
+    2137 000b9a90       50          .STRING "PITTSBURGH",0
+    2138 000b9ae8           COLO_STR
+    2139 000b9ae8       43          .STRING "COLORADO",0
+    2140                    
+    2141 000b9b30           FLOR_STR
+    2142 000b9b30       46          .STRING "FLORIDA",0
+    2143 000b9b70           NJER_STR
+    2144 000b9b70       4e          .STRING "NEW JERSEY",0
+    2145 000b9bc8           NYIS_STR
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   40
+
+    2146 000b9bc8       4e          .STRING "NY ISLANDERS",0
+    2147 000b9c30           NYRA_STR
+    2148 000b9c30       4e          .STRING "NY RANGERS",0
+    2149 000b9c88           PHIL_STR
+    2150 000b9c88       50          .STRING "PHILADELPHIA",0
+    2151 000b9cf0           TBAY_STR
+    2152 000b9cf0       54          .STRING "TAMPA BAY",0
+    2153 000b9d40           WASH_STR
+    2154 000b9d40       57          .STRING "WASHINGTON",0
+    2155                    
+    2156 000b9d98           CHIC_STR
+    2157 000b9d98       43          .STRING "CHICAGO",0
+    2158 000b9dd8           DALL_STR
+    2159 000b9dd8       44          .STRING "DALLAS",0
+    2160 000b9e10           DETR_STR
+    2161 000b9e10       44          .STRING "DETROIT",0
+    2162 000b9e50           STLO_STR
+    2163 000b9e50       53          .STRING "ST. LOUIS",0
+    2164 000b9ea0           TORO_STR
+    2165 000b9ea0       54          .STRING "TORONTO",0
+    2166 000b9ee0           WINN_STR
+    2167 000b9ee0       57          .STRING "WINNIPEG",0
+    2168                    
+    2169 000b9f28           ANAH_STR
+    2170 000b9f28       41          .STRING "ANAHEIM",0
+    2171 000b9f68           CALG_STR
+    2172 000b9f68       43          .STRING "CALGARY",0
+    2173 000b9fa8           EDMO_STR
+    2174 000b9fa8       45          .STRING "EDMONTON",0
+    2175 000b9ff0           LANG_STR
+    2176 000b9ff0       4c          .STRING "LOS ANGELES",0
+    2177 000ba050           SJOS_STR
+    2178 000ba050       53          .STRING "SAN JOSE",0
+    2179 000ba098           VANC_STR
+    2180 000ba098       56          .STRING "VANCOUVER",0
+    2181                    
+    2182                    
+    2183 000ba0e8           BOST_NICK_STR
+    2184 000ba0e8       42          .STRING "BRUINS",0
+    2185 000ba120           BUFF_NICK_STR
+    2186 000ba120       53          .STRING "SABRES",0
+    2187 000ba158           HART_NICK_STR
+    2188 000ba158       57          .STRING "WHALERS",0
+    2189 000ba198           MONT_NICK_STR
+    2190 000ba198       43          .STRING "CANADIENS",0
+    2191 000ba1e8           OTTA_NICK_STR
+    2192 000ba1e8       53          .STRING "SENATORS",0
+    2193 000ba230           PITT_NICK_STR
+    2194 000ba230       50          .STRING "PENGUINS",0
+    2195 000ba278           COLO_NICK_STR
+    2196 000ba278       43          .STRING "COLORADO",0
+    2197                    
+    2198 000ba2c0           FLOR_NICK_STR
+    2199 000ba2c0       50          .STRING "PANTHERS",0
+    2200 000ba308           NJER_NICK_STR
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   41
+
+    2201 000ba308       44          .STRING "DEVILS",0
+    2202 000ba340           NYIS_NICK_STR
+    2203 000ba340       49          .STRING "ISLANDERS",0
+    2204 000ba390           NYRA_NICK_STR
+    2205 000ba390       52          .STRING "RANGERS",0
+    2206 000ba3d0           PHIL_NICK_STR
+    2207 000ba3d0       46          .STRING "FLYERS",0
+    2208 000ba408           TBAY_NICK_STR
+    2209 000ba408       4c          .STRING "LIGHTNING",0
+    2210 000ba458           WASH_NICK_STR
+    2211 000ba458       43          .STRING "CAPITALS",0
+    2212                    
+    2213 000ba4a0           CHIC_NICK_STR
+    2214 000ba4a0       42          .STRING "BLACKHAWKS",0
+    2215 000ba4f8           DALL_NICK_STR
+    2216 000ba4f8       53          .STRING "STARS",0
+    2217 000ba528           DETR_NICK_STR
+    2218 000ba528       52          .STRING "RED WINGS",0
+    2219 000ba578           STLO_NICK_STR
+    2220 000ba578       42          .STRING "BLUES",0
+    2221 000ba5a8           TORO_NICK_STR
+    2222 000ba5a8       4d          .STRING "MAPLE\nLEAFS",0
+    2223 000ba610           WINN_NICK_STR
+    2224 000ba610       4a          .STRING "JETS",0
+    2225                    
+    2226 000ba638           ANAH_NICK_STR
+    2227 000ba638       4d          .STRING "MIGHTY\nDUCKS",0
+    2228 000ba6a8           CALG_NICK_STR
+    2229 000ba6a8       46          .STRING "FLAMES",0
+    2230 000ba6e0           EDMO_NICK_STR
+    2231 000ba6e0       4f          .STRING "OILERS",0
+    2232 000ba718           LANG_NICK_STR
+    2233 000ba718       4b          .STRING "KINGS",0
+    2234 000ba748           SJOS_NICK_STR
+    2235 000ba748       53          .STRING "SHARKS",0
+    2236 000ba780           VANC_NICK_STR
+    2237 000ba780       43          .STRING "CANUCKS",0
+    2238                    
+    2239                    ;stuff to throw off lookers
+    2240 000ba7c0       4b          .string "KANSAS CITY",0
+    2241 000ba820       43          .string "CLEVELAND",0
+    2242 000ba870       4f          .string "OAKLAND",0
+    2243 000ba8b0       51          .string "QUEBEC",0
+    2244 000ba8e8       4d          .string "MINNESOTA",0
+    2245 000ba938       43          .string "CALIFORNIA",0
+    2246 000ba990       42          .string "BROOKLYN",0
+    2247 000ba9d8       48          .string "HAMILTON",0
+    2248                    
+    2249 000baa20       45          .string "EAGLES",0
+    2250 000baa58       46          .string "FALCONS",0
+    2251 000baa98       50          .string "PIRATES",0
+    2252 000baad8       51          .string "QUAKERS",0
+    2253 000bab18       43          .string "COUGARS",0
+    2254 000bab58       57          .string "WANDERERS",0
+    2255 000baba8       47          .string "GOLDEN SEALS",0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   42
+
+    2256 000bac10       4d          .string "MAROONS",0
+    2257 000bac50       41          .string "ARENAS",0
+    2258 000bac88       53          .string "SCOUTS",0
+    2259 000bacc0       41          .string "AMERICANS",0
+    2260 000bad10       42          .string "BARONS",0
+    2261 000bad48       42          .string "BULLDOGS",0
+    2262 000bad90       52          .string "ROCKIES",0
+    2263 000badd0       53          .string "SEALS",0
+    2264 000bae00       54          .string "TIGERS",0
+    2265 000bae38       53          .string "ST. PATRICKS",0
+    2266 000baea0       4e          .string "NORDIQUES",0
+    2267 000baef0       4e          .string "NORTH STARS",0
+    2268                    
+    2269 000baf50       57          .string "WHA MODE ACTIVE",0
+    2270                    
+    2271 000bafd0       41          .string "ALBERTA",0
+    2272 000bb010       42          .string "BALTIMORE",0
+    2273 000bb060       42          .string "BIRMINGHAM",0
+    2274 000bb0b8       43          .string "CINCINNATI",0
+    2275 000bb110       44          .string "DENVER",0
+    2276 000bb148       48          .string "HOUSTON",0
+    2277 000bb188       49          .string "INDIANAPOLIS",0
+    2278 000bb1f0       4a          .string "JERSEY",0
+    2279 000bb228       4d          .string "MICHIGAN",0
+    2280 000bb270       4e          .string "NEW ENGLAND",0
+    2281 000bb2d0       50          .string "PHOENIX",0
+    2282 000bb310       53          .string "SAN DIEGO",0
+    2283                    
+    2284 000bb360       41          .string "AEROS",0
+    2285 000bb390       42          .string "BLADES",0
+    2286 000bb3c8       42          .string "BLAZERS",0
+    2287 000bb408       42          .string "BULLS",0
+    2288 000bb438       43          .string "CIVICS",0
+    2289 000bb470       43          .string "COUGARS",0
+    2290 000bb4b0       43          .string "COWBOYS",0
+    2291 000bb4f0       43          .string "CRUSADERS",0
+    2292 000bb540       46          .string "FIGHTING SAINTS",0
+    2293 000bb5c0       47          .string "GOLDEN BLADES",0
+    2294 000bb630       4b          .string "KNIGHTS",0
+    2295 000bb670       4d          .string "MARINERS",0
+    2296 000bb6b8       4e          .string "NATIONALS",0
+    2297 000bb708       52          .string "RACERS",0
+    2298 000bb740       52          .string "RAIDERS",0
+    2299 000bb780       52          .string "ROADRUNNERS",0
+    2300 000bb7e0       53          .string "SHARKS",0
+    2301 000bb818       53          .string "SPURS",0
+    2302 000bb848       53          .string "STAGS",0
+    2303 000bb878       53          .string "STINGERS",0
+    2304 000bb8c0       54          .string "TOROS",0
+    2305                    
+    2306 000bb8f0                   .EVEN
+    2307                    
+    2308 000bb8f0           helmet_type_plist
+    2309 000bb8f0 000bb990'         .long   ccm_helmet_pals
+    2310 000bb910 000bba90'         .long   cooper_helmet_pals
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   43
+
+    2311 000bb930 000bbb90'         .long   jofa1_helmet_pals
+    2312 000bb950 000bbc90'         .long   jofa2_helmet_pals
+    2313 000bb970 000bbd90'         .long   regular_goalie_helmet_pals
+    2314                    
+    2315 000bb990           ccm_helmet_pals
+    2316 000bb990 00053da0'         .long   CCMWHT5
+    2317 000bb9b0 000507d0'         .long   CCMBLK1
+    2318 000bb9d0 000535f0'         .long   CCMRED1
+    2319 000bb9f0 00052e40'         .long   CCMPRP1
+    2320 000bba10 00052690'         .long   CCMLBL1
+    2321 000bba30 00050f80'         .long   CCMDBL1
+    2322 000bba50 00051730'         .long   CCMDBL2
+    2323 000bba70 00051ee0'         .long   CCMDBL3
+    2324                    
+    2325 000bba90           cooper_helmet_pals
+    2326 000bba90 00057370'         .long   COPWHT2
+    2327 000bbab0 00054550'         .long   COPBLK1
+    2328 000bbad0 00056410'         .long   COPRED1
+    2329 000bbaf0 00056bc0'         .long   COPURP1
+    2330 000bbb10 00052690'         .long   CCMLBL1
+    2331 000bbb30 00054d00'         .long   COPDBL1
+    2332 000bbb50 000554b0'         .long   COPDBL2
+    2333 000bbb70 00055c60'         .long   COPDBL3
+    2334                    
+    2335 000bbb90           jofa1_helmet_pals
+    2336 000bbb90 0005a940'         .long   GJOFWH1
+    2337 000bbbb0 00057b20'         .long   GJOFBK1
+    2338 000bbbd0 0005a190'         .long   GJOFRD1
+    2339 000bbbf0 000599e0'         .long   GJOFPR1
+    2340 000bbc10 00052690'         .long   CCMLBL1
+    2341 000bbc30 000582d0'         .long   GJOFDB1
+    2342 000bbc50 00058a80'         .long   GJOFDB2
+    2343 000bbc70 00059230'         .long   GJOFDB3
+    2344                    
+    2345 000bbc90           jofa2_helmet_pals
+    2346 000bbc90 0005e6c0'         .long   LJOFWH1
+    2347 000bbcb0 0005b0f0'         .long   LJOFBK1
+    2348 000bbcd0 0005df10'         .long   LJOFRD1
+    2349 000bbcf0 0005d760'         .long   LJOFPR1
+    2350 000bbd10 0005b8a0'         .long   LJOFBL1
+    2351 000bbd30 0005c050'         .long   LJOFDB1
+    2352 000bbd50 0005c800'         .long   LJOFDB2
+    2353 000bbd70 0005cfb0'         .long   LJOFDB3
+    2354                    
+    2355 000bbd90           regular_goalie_helmet_pals
+    2356 000bbd90 00000000!         .long   WARBELF1
+    2357 000bbdb0 0005ee70'         .long   VERNON1
+    2358 000bbdd0 00000000!         .long   IRBPAL1
+    2359 000bbdf0 0005f630'         .long   WREGGET1
+    2360 000bbe10 0005fdf0'         .long   PUPPA1
+    2361 000bbe30 000605b0'         .long   BEEZER1
+    2362                    ;       .long   McLENHM30
+    2363 000bbe50 0006bfa0'         .long   PSODERS1
+    2364 000bbe70 00061520'         .long   HEXTALL1
+    2365 000bbe90 0006a860'         .long   CAREY2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   44
+
+    2366 000bbeb0 000624a0'         .long   BRODEUR1
+    2367 000bbed0 00062c60'         .long   RICHTER1
+    2368 000bbef0 00063420'         .long   CUJO1
+    2369 000bbf10 00063be0'         .long   POTVIN1
+    2370 000bbf30 000643a0'         .long   BEAUPRE1
+    2371 000bbf50 00064b60'         .long   BURKE1
+    2372 000bbf70 00065320'         .long   LACHER1
+    2373 000bbf90 00065ae0'         .long   ROY1
+    2374 000bbfb0 00000000!         .long   HASEK1P
+    2375 000bbfd0 00066a60'         .long   FISET1                  ;new AVALMSK1 for alt
+    2376 000bbff0 00067220'         .long   RANFORD1
+    2377 000bc010 000679e0'         .long   HEBERT1
+    2378 000bc030 000681a0'         .long   HRUDEY1
+    2379 000bc050 00068960'         .long   KIDD1
+    2380 000bc070 00069120'         .long   McLEAN1
+    2381 000bc090 000698e0'         .long   MOOG1
+    2382 000bc0b0 0006a0a0'         .long   CHEVELDA1
+    2383 000bc0d0 0006b020'         .long   AVALMSK1                ;new for new colorado
+    2384 000bc0f0 0006b7e0'         .long   POSGOOD
+    2385                    
+    2386 000bc110           nyrangers_list
+    2387 000bc110     0001          .word   s_mark_messier
+    2388 000bc120     0010          .word   s_luc_robitaille
+    2389 000bc130     0060          .word   s_brian_leetch
+    2390 000bc140     005f          .word   s_ray_ferraro
+    2391 000bc150     0000          .word   0
+    2392 000bc160           nyrangers_glist
+    2393 000bc160     0035          .word   s_mike_richter
+    2394 000bc170     0000          .word   0
+    2395 000bc180           newjersey_list
+    2396 000bc180     0003          .word   s_john_maclean
+    2397 000bc190     0004          .word   s_stephane_richer
+    2398 000bc1a0     000a          .word   s_steve_thomas
+    2399 000bc1b0     005e          .word   s_scott_stevens
+    2400 000bc1c0     0000          .word   0
+    2401 000bc1d0           newjersey_glist
+    2402 000bc1d0     0036          .word   s_martin_brodeur
+    2403 000bc1e0     0000          .word   0
+    2404 000bc1f0           washington_list
+    2405 000bc1f0     0005          .word   s_joe_juneau
+    2406 000bc200     0006          .word   s_peter_bondra
+    2407 000bc210     006a          .word   s_sylvain_cote
+    2408 000bc220     0000          .word   0
+    2409 000bc230           washington_glist
+    2410 000bc230     0037          .word   s_jim_carey
+    2411 000bc240     0000          .word   0
+    2412 000bc250           philadelphia_list
+    2413 000bc250     0007          .word   s_eric_lindros
+    2414 000bc260     0008          .word   s_rod_brindamour
+    2415 000bc270     0062          .word   s_mikael_renberg
+    2416 000bc280     0063          .word   s_eric_desjardins
+    2417 000bc290     0000          .word   0
+    2418 000bc2a0           philadelphia_glist
+    2419 000bc2a0     0038          .word   s_ron_hextall
+    2420 000bc2b0     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   45
+
+    2421 000bc2c0           nyislanders_list
+    2422 000bc2c0     0009          .word   s_kirk_muller
+    2423 000bc2d0     0012          .word   s_wendel_clark
+    2424 000bc2e0     006e          .word   s_derek_king
+    2425 000bc2f0     0000          .word   0
+    2426 000bc300           nyislanders_glist
+    2427 000bc300     00c3          .word   s_tommy_soderstrom
+    2428                    ;       .word   s_jamie_mclennan
+    2429 000bc310     0000          .word   0
+    2430 000bc320           florida_list
+    2431 000bc320     000b          .word   s_gord_murphy
+    2432 000bc330     000c          .word   s_scott_mellanby
+    2433 000bc340     005a          .word   s_jesse_belanger
+    2434 000bc350     0000          .word   0
+    2435 000bc360           florida_glist
+    2436 000bc360     003a          .word   s_john_vanbiesbrouck
+    2437 000bc370     0000          .word   0
+    2438 000bc380           tampabay_list
+    2439 000bc380     000d          .word   s_brian_bradley
+    2440 000bc390     000e          .word   s_petr_klima
+    2441 000bc3a0     0068          .word   s_roman_hamrlik
+    2442 000bc3b0     0000          .word   0
+    2443 000bc3c0           tampabay_glist
+    2444 000bc3c0     003b          .word   s_darren_puppa
+    2445 000bc3d0     0000          .word   0
+    2446 000bc3e0           pittsburgh_list
+    2447 000bc3e0     0064          .word   s_mario_lemieux
+    2448 000bc3f0     000f          .word   s_jaromir_jagr
+    2449 000bc400     0002          .word   s_petr_nedved
+    2450 000bc410     0000          .word   0
+    2451 000bc420           pittsburgh_glist
+    2452 000bc420     003c          .word   s_ken_wregget
+    2453 000bc430     0000          .word   0
+    2454 000bc440           colorado_list
+    2455 000bc440     0011          .word   s_joe_sakic
+    2456 000bc450     005d          .word   s_claude_lemieux
+    2457 000bc460     0065          .word   s_owen_nolan
+    2458 000bc470     0000          .word   0
+    2459 000bc480           colorado_glist
+    2460 000bc480     003d          .word   s_stephane_fiset
+    2461 000bc490     0000          .word   0
+    2462 000bc4a0           buffalo_list
+    2463 000bc4a0     0013          .word   s_pat_lafontaine
+    2464 000bc4b0     0052          .word   s_derek_plante
+    2465 000bc4c0     006d          .word   s_doug_bodger
+    2466 000bc4d0     0000          .word   0
+    2467 000bc4e0           buffalo_glist
+    2468 000bc4e0     003e          .word   s_dominik_hasek
+    2469 000bc4f0     0000          .word   0
+    2470 000bc500           montreal_list
+    2471 000bc500     0015          .word   s_vincent_damphousse
+    2472 000bc510     0016          .word   s_mark_recchi
+    2473 000bc520     005c          .word   s_pierre_turgeon
+    2474 000bc530     0000          .word   0
+    2475 000bc540           montreal_glist
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   46
+
+    2476 000bc540     003f          .word   s_patrick_roy
+    2477 000bc550     0000          .word   0
+    2478 000bc560           boston_list
+    2479 000bc560     0017          .word   s_ray_bourque
+    2480 000bc570     0018          .word   s_cam_neely
+    2481 000bc580     0051          .word   s_adam_oates
+    2482 000bc590     00b2          .word   s_kevin_stevens
+    2483 000bc5a0     0000          .word   0
+    2484 000bc5b0           boston_glist
+    2485 000bc5b0     0040          .word   s_blaine_lacher
+    2486 000bc5c0     0000          .word   0
+    2487 000bc5d0           hartford_list
+    2488 000bc5d0     0022          .word   s_brendan_shanahan
+    2489 000bc5e0     0019          .word   s_andrew_cassels
+    2490 000bc5f0     001a          .word   s_geoff_sanderson
+    2491 000bc600     0000          .word   0
+    2492 000bc610           hartford_glist
+    2493 000bc610     0041          .word   s_sean_burke
+    2494 000bc620     0000          .word   0
+    2495 000bc630           ottawa_list
+    2496 000bc630     001b          .word   s_alexandre_daigle
+    2497                    ;       .word   s_alexei_yashin
+    2498 000bc640     0061          .word   s_radek_bonk
+    2499 000bc650     0000          .word   0
+    2500 000bc660           ottawa_glist
+    2501 000bc660     0042          .word   s_don_beaupre
+    2502 000bc670     0000          .word   0
+    2503 000bc680           detroit_list
+    2504 000bc680     001d          .word   s_sergei_fedorov
+    2505 000bc690     001e          .word   s_steve_yzerman
+    2506 000bc6a0     0057          .word   s_dino_ciccarelli
+    2507 000bc6b0     0056          .word   s_paul_coffey
+    2508 000bc6c0     0000          .word   0
+    2509 000bc6d0           detroit_glist
+    2510                    ;       .word   s_chris_osgood
+    2511 000bc6d0     0043          .word   s_mike_vernon
+    2512 000bc6e0     0000          .word   0
+    2513 000bc6f0           toronto_list
+    2514 000bc6f0     001f          .word   s_doug_gilmour
+    2515 000bc700     0020          .word   s_dave_andreychuk
+    2516 000bc710     0069          .word   s_mats_sundin
+    2517 000bc720     0000          .word   0
+    2518 000bc730           toronto_glist
+    2519 000bc730     0044          .word   s_felix_potvin
+    2520 000bc740     0000          .word   0
+    2521 000bc750           stlouis_list
+    2522 000bc750     0021          .word   s_brett_hull
+    2523 000bc760     0067          .word   s_esa_tikkanen
+    2524 000bc770     0034          .word   s_shayne_corson
+    2525 000bc780     006c          .word   s_dale_hawerchuk
+    2526 000bc790     0000          .word   0
+    2527 000bc7a0           stlouis_glist
+    2528                    ;       .word   s_jon_casey
+    2529 000bc7a0     00c5          .word   s_grant_fuhr
+    2530 000bc7b0     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   47
+
+    2531 000bc7c0           chicago_list
+    2532 000bc7c0     004f          .word   s_jeremy_roenick
+    2533 000bc7d0     0024          .word   s_chris_chelios
+    2534 000bc7e0     0023          .word   s_bernie_nicholls
+    2535 000bc7f0     0054          .word   s_denis_savard
+    2536 000bc800     0000          .word   0
+    2537 000bc810           chicago_glist
+    2538 000bc810     0046          .word   s_ed_belfour
+    2539 000bc820     0000          .word   0
+    2540 000bc830           winnipeg_list
+    2541 000bc830     0025          .word   s_teemu_selanne
+    2542 000bc840     0026          .word   s_keith_tkachuk
+    2543 000bc850     006b          .word   s_alexei_zhamnov
+    2544 000bc860     0000          .word   0
+    2545 000bc870           winnipeg_glist
+    2546 000bc870     0047          .word   s_tim_chevaldae
+    2547 000bc880     0000          .word   0
+    2548 000bc890           dallas_list
+    2549 000bc890     0027          .word   s_mike_modano
+    2550 000bc8a0     0028          .word   s_kevin_hatcher
+    2551 000bc8b0     0055          .word   s_dave_gagner
+    2552 000bc8c0     0000          .word   0
+    2553 000bc8d0           dallas_glist
+    2554 000bc8d0     0048          .word   s_andy_moog
+    2555 000bc8e0     0000          .word   0
+    2556 000bc8f0           vancouver_list
+    2557 000bc8f0     0029          .word   s_pavel_bure
+    2558 000bc900     0014          .word   s_alexander_mogilny
+    2559 000bc910     002a          .word   s_trevor_linden
+    2560 000bc920     0000          .word   0
+    2561 000bc930           vancouver_glist
+    2562 000bc930     0049          .word   s_kirk_mclean
+    2563 000bc940     0000          .word   0
+    2564 000bc950           calgary_list
+    2565 000bc950     002b          .word   s_theoren_fleury
+    2566 000bc960     0053          .word   s_phil_housley
+    2567 000bc970     006f          .word   s_joe_nieuwendyk
+    2568 000bc980     00b3          .word   s_zarley_zalapski
+    2569 000bc990     0000          .word   0
+    2570 000bc9a0           calgary_glist
+    2571 000bc9a0     004a          .word   s_trevor_kidd
+    2572 000bc9b0     0000          .word   0
+    2573 000bc9c0           sanjose_list
+    2574 000bc9c0     002d          .word   s_sandis_ozolinsh
+    2575 000bc9d0     00b4          .word   s_craig_janney
+    2576 000bc9e0     002e          .word   s_ulf_dahlen
+    2577                    ;       .word   s_sergei_makarov
+    2578 000bc9f0     0000          .word   0
+    2579 000bca00           sanjose_glist
+    2580 000bca00     004b          .word   s_arturs_irbe
+    2581 000bca10     0000          .word   0
+    2582 000bca20           losangeles_list
+    2583 000bca20     002f          .word   s_wayne_gretzky
+    2584 000bca30     0030          .word   s_jari_kurri
+    2585 000bca40     005b          .word   s_rick_tocchet
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:21 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   48
+
+    2586 000bca50     0000          .word   0
+    2587 000bca60           losangeles_glist
+    2588 000bca60     004c          .word   s_kelly_hrudey
+    2589 000bca70     0000          .word   0
+    2590 000bca80           anaheim_list
+    2591 000bca80     0031          .word   s_paul_kariya
+    2592 000bca90     0032          .word   s_tom_kurvers
+    2593 000bcaa0     0050          .word   s_bob_corkum
+    2594 000bcab0     0000          .word   0
+    2595 000bcac0           anaheim_glist
+    2596 000bcac0     004d          .word   s_guy_hebert
+    2597 000bcad0     0000          .word   0
+    2598 000bcae0           edmonton_list
+    2599 000bcae0     0033          .word   s_igor_kravchuk
+    2600 000bcaf0     0058          .word   s_doug_weight
+    2601 000bcb00     0059          .word   s_jason_arnott
+    2602 000bcb10     0000          .word   0
+    2603 000bcb20           edmonton_glist
+    2604 000bcb20     004e          .word   s_bill_ranford
+    2605                    ;       .word   s_curtis_joseph
+    2606 000bcb30     0000          .word   0
+
+ No Errors,  No Warnings

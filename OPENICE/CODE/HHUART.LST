@@ -1,0 +1,114 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:43 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHUART.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    **************************************************************************
+       8                    *                                                                        *
+       9                    *       Revision                By                                       *
+      10                    *       --------                --                                       *
+      11                    *                                                                        *
+      12                    *       1.0 - 10/28/93          George Petro                             *
+      13                    *                                                                        *
+      14                    *       COPYRIGHT (C) 1994 MIDWAY MANUFACTURING COMPANY.                 *
+      15                    *                      ALL RIGHTS RESERVED.                              *
+      16                    *                                                                        *
+      17                    **************************************************************************
+      18                    
+      19                            .INCLUDE        "HH.INC"                ;Game equates
+      20                            .include        "hhuart.e"
+      21                    
+      22                    ; end of include files
+      23                    
+      24                    *
+      25                    *Mode settings for the UART
+      26                    *
+      27              0093  MODE_MR1 .EQU   93H             ;Mode - 8 bits, no parity, RX controls RTS
+      28              0017  MODE_MR2 .EQU   17H             ;Mode - 1 stop bit, CTS controls Tx
+      29              0038  MODE_ACR .EQU   38H             ;Mode - PWRDWN off, Clk = X1 ext
+      30              00cc  MODE_CSR .EQU   0CCH            ;Mode - Baud rate 38.4k
+      31              0004  MODE_IMR .EQU   04H             ;Mode - Interrupt when RxRDY
+      32                    
+      33                    
+      34 00000000                   .BSS    UART_IMR_COPY,16        ;Copy of UART interrupt mask reg
+      35 00000010                   .BSS    UNUSED_WORD,16
+      36                    
+      37 00000000                   .TEXT
+      38                    
+      39                    **************************************************************************
+      40                    *                                                                        *
+      41                    *       INITIALIZE_UART                                                  *
+      42                    *                                                                        *
+      43                    *       Initialize the Sound UART for all to use                         *
+      44                    *                                                                        *
+      45                    **************************************************************************
+      46 00000000           INITIALIZE_UART
+      47                            .if     XUNIT=1
+      48                            PUSH    A0
+      49                    
+      50                            MOVI    UART,A0,L
+      51                    
+      52                            MOVIM   1AH,*A0(UART_CR),W      ;Set CR - Reset MR pointer.
+      53                    
+      54                            MSECWT  3                       ;Modes take time
+      55                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:43 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56                            MOVIM   20H,*A0(UART_CR),W      ;Reset Rx.
+      57                    
+      58                            MSECWT  3                       ;Modes take time
+      59                    
+      60                            MOVIM   30H,*A0(UART_CR),W      ;Reset Tx.
+      61                    
+      62                            MOVIM   MODE_MR1,*A0,W          ;Set MR1 - 8 bits, no parity, RX controls RTS.
+      63                    
+      64                            MOVIM   MODE_MR2,*A0,W          ;Set MR2 - 1 stop bit, CTS controls TX.
+      65                    
+      66                            MOVIM   MODE_ACR,*A0(UART_ACR),W        ;Set ACR - PWRDWN off, Clk = X1 ext
+      67                    
+      68                            MOVIM   MODE_CSR,*A0(UART_CSR),W        ;Set CSR - 38.4kBaud
+      69                    
+      70                            MOVIM   0A0H,*A0(UART_CR),W     ;Assert RTSN - allows Rx to control RTS.
+      71                    
+      72                            MOVI    MODE_IMR,A14
+      73                            MOVE    A14,@UART_IMR_COPY,W
+      74                            MOVE    A14,*A0(UART_IMR),W     ;Set proper interrupt mode
+      75                    
+      76                            .IF DEBUG
+      77                    
+      78                    *Here we will test if the UART took what we sent it
+      79                            MOVIM   10H,*A0(UART_CR),W      ;Set CR - Reset MR pointer.
+      80                    
+      81                            MSECWT  3
+      82                    
+      83                            MOVE    *A0,A14,W               ;Check to see if MR1 was written to
+      84                            SLL     24,A14
+      85                            SRL     24,A14
+      86                            CMPI    MODE_MR1,A14            ;If MR1 is correct than no lock
+      87                            JRNZ    $
+      88                    
+      89                            MOVE    *A0,A14,W               ;Check to see if MR2 was written to
+      90                            SLL     24,A14
+      91                            SRL     24,A14
+      92                            CMPI    MODE_MR2,A14            ;If MR2 is correct than no lock
+      93                            JRNZ    $
+      94                    
+      95                            .ENDIF
+      96                    ;UART is good to go
+      97                    
+      98                            MOVIM   45H,*A0(UART_CR),W      ;Enable Tx, Rx and clear error flags.
+      99                    
+     100                            PULLQ   A0
+     101                            .endif
+     102 00000000     0960          RETS
+
+ No Errors,  No Warnings

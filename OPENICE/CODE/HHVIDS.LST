@@ -1,0 +1,1122 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHVIDS.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                            .INCLUDE        "HH.INC"
+      11                            .INCLUDE        "IMGTBL.GLO"
+      12                            .include        "newvids.tbl"
+      13                            .include        "HHVIDS.tbl"
+      14                            .include        "hhscore.g"
+      15                            .include        "hhpall.g"
+      16                            .include        "hhvids.e"
+      17                            .include        "hhd.g"
+      18                            .include        "hhafunc.g"
+      19                            .include        "hhspeech.g"
+      20                            .include        "hhscr_fn.g"
+      21                            .include        "hhutil.g"
+      22                    
+      23                    ; end of include files
+      24                    
+      25 00000000           a_brw
+      26 00000000     b70e          move    *a8(ANIMARG),a14,L
+         00000010     03e0  
+      27 00000020     87ce          move    *a14,a14,L
+      28 00000030     05a0          move    @scored_by,a0,W
+         00000040 00000000! 
+      29 00000060     ca02          jrz     a_brw9
+      30 00000070           abrw2
+      31 00000070     b3c8          move    a14,*a8(ANIMFRM),L
+         00000080     0320  
+      32 00000090           a_brw9
+      33 00000090     b3c8          move    a14,*a8(ANIMSCR),L
+         000000a0     0340  
+      34 000000b0     0960          rets
+      35                    
+      36                    ;a_brw  move    @scored_by,a14,W
+      37                    ;       jrz     a_brw9
+      38                    ;abrw2  move    *a8(ANIMARG),a14,L
+      39                    ;       move    *a14,a14,L
+      40                    ;       move    a14,*a8(ANIMFRM),L
+      41                    ;       move    a14,*a8(ANIMSCR),L
+      42                    ;a_brw9 rets
+      43                    
+      44 000000c0           a_set_pal
+      45 000000c0     b700          move    *a8(OIMG),a0,L
+         000000d0     02c0  
+      46 000000e0     b600          move    *a0(ICMAP),a0,L
+         000000f0     0070  
+      47 00000100     c080          jauc    CHANGE_PAL
+         00000110 00000000! 
+      48                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      49                    **************************************************************************
+      50                    *                                                                        *
+      51                    * A_RAND_VIDPAL                                                          *
+      52                    *                                                                        *
+      53                    **************************************************************************
+      54                    
+      55 00000130           A_RAND_VIDPAL
+      56                    ;       MOVK    6,A0
+      57 00000130     18a0          MOVK    5,A0
+      58 00000140     0d5f          CALLA   RAND0
+         00000150 00000000! 
+      59 00000170     ca09          JRZ     ARVP_DONE                       ;BR=GRAY PALETTE                                        
+      60 00000180     1420          DEC     A0
+      61 00000190     24a0          SLL     5,A0
+      62 000001a0     0b20          ADDI    REPLAY_PAL_TABLE,A0
+         000001b0 00000220' 
+      63 000001d0     8600          MOVE    *A0,A0,L
+      64 000001e0     0d5f          CALLA   CHANGE_PAL
+         000001f0 00000000! 
+      65 00000210           ARVP_DONE
+      66 00000210     0960          RETS
+      67                    
+      68 00000220           REPLAY_PAL_TABLE
+      69                    ;       .LONG   VIDEOBLUP,VIDEOORGP,VIDEOREDP,VIDEOTRQP,VIDEOYELP
+      70 00000220 000002a0'         .LONG   VIDEOBLUP,VIDEOORGP,VIDEOTRQP,VIDEOYELP
+      71                    
+      72 000002a0           VIDEOBLUP:
+      73 000002a0     0010     .word   16 
+      74 000002b0     7c1f     .word   07c1fh,018e8h,018e9h,018ech,018eeh,018f0h,01d13h,02555h
+      75 00000330     2d97     .word   02d97h,035d9h,0423ch,04a7eh,052bfh,05f1fh,0675fh,06f9fh
+      76 000003b0           VIDEOORGP:
+      77 000003b0     0010     .word   16 
+      78 000003c0     7c1f     .word   07c1fh,02863h,02c63h,03883h,040c3h,04903h,05563h,05da3h
+      79 00000440     65e3     .word   065e3h,06e23h,07a86h,07ec8h,07f0ah,07f6dh,07fafh,07ff1h
+      80                    ;VIDEOREDP:
+      81                    ;   .word   16 
+      82                    ;   .word   07c1fh,02400h,02821h,03484h,03cc6h,04508h,0516bh,059adh
+      83                    ;   .word   061efh,06a31h,07694h,07ed6h,07f18h,07f7bh,07fbdh,07fffh
+      84 000004c0           VIDEOTRQP:
+      85 000004c0     0010     .word   16 
+      86 000004d0     7c1f     .word   07c1fh,00000h,00021h,00084h,000c6h,00108h,0016bh,001adh
+      87 00000550     01ef     .word   001efh,00a31h,01694h,01ed6h,02718h,0337bh,03bbdh,043ffh
+      88 000005d0           VIDEOYELP:
+      89 000005d0     0010     .word   16 
+      90 000005e0     7c1f     .word   07c1fh,02480h,028a0h,03500h,03d40h,04581h,051e4h,05a26h
+      91 00000660     6268     .word   06268h,06aaah,0770dh,07f4fh,07f91h,07ff4h,07ff6h,07ff8h
+      92                    
+      93                    
+      94                    
+      95 000006e0           video_1_clip
+      96 000006e0                   LWL     1,1|AFUNC,A_RAND_VIDPAL
+      97 00000730           cu1_    LWLL    1,AFUNC|1,a_brw+2,cu1_
+      98 000007a0                   LW      VIDEO101,4
+      99 000007d0                   LW      VIDEO102,4
+     100 00000800                   LW      VIDEO103,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     101 00000830                   LW      VIDEO104,4
+     102 00000860                   LW      VIDEO105,4
+     103 00000890                   LW      VIDEO106,4
+     104 000008c0                   LW      VIDEO107,4
+     105 000008f0                   LW      VIDEO108,4
+     106 00000920                   LW      VIDEO109,4
+     107 00000950                   LW      VIDEO110,4
+     108 00000980                   LW      VIDEO111,4
+     109 000009b0                   LW      VIDEO112,4
+     110 000009e0                   LW      VIDEO113,4
+     111 00000a10                   LW      VIDEO114,4
+     112 00000a40                   LW      VIDEO115,4
+     113 00000a70                   LW      VIDEO116,4
+     114 00000aa0                   LW      VIDEO117,4
+     115 00000ad0                   LW      VIDEO118,4
+     116 00000b00                   LW      VIDEO119,4
+     117 00000b30                   LW      VIDEO120,4
+     118 00000b60                   LW      VIDEO121,4
+     119 00000b90                   LW      VIDEO122,4
+     120 00000bc0                   LW      VIDEO123,4
+     121 00000bf0                   LW      VIDEO124,4
+     122 00000c20                   LW      VIDEO125,4
+     123 00000c50                   LW      VIDEO126,4
+     124 00000c80                   LW      VIDEO127,4
+     125 00000cb0                   LW      VIDEO128,4
+     126 00000ce0 00000000          .long   0
+     127                    
+     128 00000d00           video_2_clip
+     129 00000d00                   LWL     1,1|AFUNC,A_RAND_VIDPAL
+     130 00000d50           cu2_    LWLL    1,AFUNC|1,a_brw+2,cu2_
+     131 00000dc0                   LW      VIDEO201,3
+     132 00000df0                   LW      VIDEO202,3
+     133 00000e20                   LW      VIDEO203,3
+     134 00000e50                   LW      VIDEO204,3
+     135 00000e80                   LW      VIDEO205,3
+     136 00000eb0                   LW      VIDEO206,3
+     137 00000ee0                   LW      VIDEO207,3
+     138 00000f10                   LW      VIDEO208,3
+     139 00000f40                   LW      VIDEO209,3
+     140 00000f70                   LW      VIDEO210,3
+     141 00000fa0                   LW      VIDEO211,3
+     142 00000fd0                   LW      VIDEO212,3
+     143 00001000                   LW      VIDEO213,3
+     144 00001030                   LW      VIDEO214,3
+     145 00001060                   LW      VIDEO215,3
+     146 00001090                   LW      VIDEO216,3
+     147 000010c0                   LW      VIDEO217,3
+     148 000010f0                   LW      VIDEO218,3
+     149 00001120                   LW      VIDEO219,3
+     150 00001150                   LW      VIDEO220,3
+     151 00001180                   LW      VIDEO221,3
+     152 000011b0                   LW      VIDEO222,3
+     153 000011e0                   LW      VIDEO223,3
+     154 00001210                   LW      VIDEO224,3
+     155 00001240                   LW      VIDEO225,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     156 00001270                   LW      VIDEO226,3
+     157 000012a0                   LW      VIDEO227,3
+     158 000012d0                   LW      VIDEO228,3
+     159 00001300                   LW      VIDEO229,3
+     160 00001330                   LW      VIDEO230,3
+     161 00001360                   LW      VIDEO231,3
+     162 00001390                   LW      VIDEO232,3
+     163 000013c0                   LW      VIDEO233,3
+     164 000013f0                   LW      VIDEO234,3
+     165 00001420                   LWL     VIDEO235,3|AFUNC,PULL_ANIM
+     166                    
+     167 00001470           video_3_clip
+     168 00001470                   LWL     1,1|AFUNC,A_RAND_VIDPAL
+     169 000014c0           cu3_    LWLL    1,AFUNC|1,a_brw+2,cu3_
+     170 00001530                   LW      VIDEO301,3
+     171 00001560                   LW      VIDEO302,3
+     172 00001590                   LW      VIDEO303,3
+     173 000015c0                   LW      VIDEO304,3
+     174 000015f0                   LW      VIDEO305,3
+     175 00001620                   LW      VIDEO306,3
+     176 00001650                   LW      VIDEO307,3
+     177 00001680                   LW      VIDEO308,3
+     178 000016b0                   LW      VIDEO309,3
+     179 000016e0                   LW      VIDEO310,3
+     180 00001710                   LW      VIDEO311,3
+     181 00001740                   LW      VIDEO312,3
+     182 00001770                   LW      VIDEO313,3
+     183 000017a0                   LW      VIDEO314,3
+     184 000017d0                   LW      VIDEO315,3
+     185 00001800                   LW      VIDEO316,3
+     186 00001830                   LW      VIDEO317,3
+     187 00001860                   LW      VIDEO318,3
+     188 00001890                   LW      VIDEO319,3
+     189 000018c0                   LW      VIDEO320,3
+     190 000018f0                   LW      VIDEO321,3
+     191 00001920                   LW      VIDEO322,3
+     192 00001950                   LW      VIDEO323,3
+     193 00001980                   LW      VIDEO324,3
+     194 000019b0                   LW      VIDEO325,3
+     195 000019e0                   LW      VIDEO326,3
+     196 00001a10                   LW      VIDEO327,3
+     197 00001a40                   LW      VIDEO328,3
+     198 00001a70                   LW      VIDEO329,3
+     199 00001aa0                   LW      VIDEO330,3
+     200 00001ad0                   LW      VIDEO331,3
+     201 00001b00                   LW      VIDEO332,3
+     202 00001b30                   LW      VIDEO333,3
+     203 00001b60                   LW      VIDEO334,3
+     204 00001b90                   LWL     VIDEO335,3|AFUNC,PULL_ANIM
+     205                    
+     206 00001be0           video_4_clip
+     207 00001be0                   LWL     1,1|AFUNC,A_RAND_VIDPAL
+     208 00001c30           cu4_    LWLL    1,AFUNC|1,a_brw+2,cu4_
+     209 00001ca0                   LW      VIDEO401,3
+     210 00001cd0                   LW      VIDEO402,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     211 00001d00                   LW      VIDEO403,3
+     212 00001d30                   LW      VIDEO404,3
+     213 00001d60                   LW      VIDEO405,3
+     214 00001d90                   LW      VIDEO406,3
+     215 00001dc0                   LW      VIDEO407,3
+     216 00001df0                   LW      VIDEO408,3
+     217 00001e20                   LW      VIDEO409,3
+     218 00001e50                   LW      VIDEO410,3
+     219 00001e80                   LW      VIDEO411,3
+     220 00001eb0                   LW      VIDEO412,3
+     221 00001ee0                   LW      VIDEO413,3
+     222 00001f10                   LW      VIDEO414,3
+     223 00001f40                   LW      VIDEO415,3
+     224 00001f70                   LW      VIDEO416,3
+     225 00001fa0                   LW      VIDEO417,3
+     226 00001fd0                   LW      VIDEO418,3
+     227 00002000                   LW      VIDEO419,3
+     228 00002030                   LW      VIDEO420,3
+     229 00002060                   LW      VIDEO421,3
+     230 00002090                   LW      VIDEO422,3
+     231 000020c0                   LW      VIDEO423,3
+     232 000020f0                   LW      VIDEO424,3
+     233 00002120                   LW      VIDEO425,3
+     234 00002150                   LW      VIDEO426,3
+     235 00002180                   LW      VIDEO427,3
+     236 000021b0                   LW      VIDEO428,3
+     237 000021e0                   LW      VIDEO429,3
+     238 00002210                   LW      VIDEO430,3
+     239 00002240                   LW      VIDEO431,3
+     240 00002270                   LW      GOA30032,3
+     241 000022a0                   LW      VIDEO433,3
+     242 000022d0                   LW      VIDEO434,3
+     243 00002300                   LW      VIDEO435,3
+     244 00002330                   LW      VIDEO436,3
+     245 00002360                   LWL     VIDEO437,3|AFUNC,PULL_ANIM
+     246                    
+     247 000023b0           video_5_clip
+     248 000023b0                   LWL     1,1|AFUNC,A_RAND_VIDPAL
+     249 00002400           cu5_    LWLL    1,AFUNC|1,a_brw+2,cu5_
+     250 00002470                   LW      VIDEO501,3
+     251 000024a0                   LW      VIDEO502,3
+     252 000024d0                   LW      VIDEO503,3
+     253 00002500                   LW      VIDEO504,3
+     254 00002530                   LW      VIDEO505,3
+     255 00002560                   LW      VIDEO506,3
+     256 00002590                   LW      VIDEO507,3
+     257 000025c0                   LW      VIDEO508,3
+     258 000025f0                   LW      VIDEO509,3
+     259 00002620                   LW      VIDEO510,3
+     260 00002650                   LW      VIDEO511,3
+     261 00002680                   LW      VIDEO512,3
+     262 000026b0                   LW      VIDEO513,3
+     263 000026e0                   LW      VIDEO514,3
+     264 00002710                   LW      VIDEO515,3
+     265 00002740                   LW      VIDEO516,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     266 00002770                   LW      VIDEO517,3
+     267 000027a0                   LW      VIDEO518,3
+     268 000027d0                   LW      VIDEO519,3
+     269 00002800                   LW      VIDEO520,3
+     270 00002830                   LW      VIDEO521,3
+     271 00002860                   LW      VIDEO522,3
+     272 00002890                   LW      VIDEO523,3
+     273 000028c0                   LW      VIDEO524,3
+     274 000028f0                   LW      VIDEO525,3
+     275 00002920                   LW      VIDEO526,3
+     276 00002950                   LW      VIDEO527,3
+     277 00002980                   LW      VIDEO528,3
+     278 000029b0                   LW      VIDEO529,3
+     279 000029e0                   LW      VIDEO530,3
+     280 00002a10                   LW      VIDEO531,3
+     281 00002a40                   LW      VIDEO532,3
+     282 00002a70                   LW      VIDEO533,3
+     283 00002aa0                   LW      VIDEO534,3
+     284 00002ad0                   LW      VIDEO535,3
+     285 00002b00                   LW      VIDEO536,3
+     286 00002b30                   LWL     VIDEO537,3|AFUNC,PULL_ANIM
+     287                    
+     288 00002b80           video_8_clip
+     289 00002b80                   LWL     1,1|AFUNC,A_RAND_VIDPAL
+     290 00002bd0           cu8_    LWLL    1,AFUNC|1,a_brw+2,cu8_
+     291 00002c40                   LW      VIDEO801,3
+     292 00002c70                   LW      VIDEO802,3
+     293 00002ca0                   LW      VIDEO803,3
+     294 00002cd0                   LW      VIDEO804,3
+     295 00002d00                   LW      VIDEO805,3
+     296 00002d30                   LW      VIDEO806,3
+     297 00002d60                   LW      VIDEO807,3
+     298 00002d90                   LW      VIDEO808,3
+     299 00002dc0                   LW      VIDEO809,3
+     300 00002df0                   LW      VIDEO810,3
+     301 00002e20                   LW      VIDEO811,3
+     302 00002e50                   LW      VIDEO812,3
+     303 00002e80                   LW      VIDEO813,3
+     304 00002eb0                   LW      VIDEO814,3
+     305 00002ee0                   LW      VIDEO815,3
+     306 00002f10                   LW      VIDEO816,3
+     307 00002f40                   LW      VIDEO817,3
+     308 00002f70                   LW      VIDEO818,3
+     309 00002fa0                   LW      VIDEO819,3
+     310 00002fd0                   LW      VIDEO820,3
+     311 00003000                   LW      VIDEO821,3
+     312 00003030                   LW      VIDEO822,3
+     313 00003060                   LW      VIDEO823,3
+     314 00003090                   LW      VIDEO824,3
+     315 000030c0                   LW      VIDEO825,3
+     316 000030f0                   LW      VIDEO826,3
+     317 00003120                   LW      VIDEO827,3
+     318 00003150                   LWL     VIDEO828,3|AFUNC,PULL_ANIM
+     319                    
+     320 000031a0           video_10_clip
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     321 000031a0           cu10    LWLL    1,AFUNC|1,a_brw+2,cu10
+     322 00003210                   LWL     CGRP101,3|AFUNC,a_set_pal
+     323 00003260                   LW      CGRP102,3
+     324 00003290                   LW      CGRP103,3
+     325 000032c0                   LW      CGRP104,3
+     326 000032f0                   LW      CGRP105,3
+     327 00003320                   LW      CGRP106,3
+     328 00003350                   LW      CGRP107,3
+     329 00003380 00000000          .long   0
+     330                    
+     331 000033a0           video_11_clip
+     332 000033a0           cu11    LWLL    1,AFUNC|1,a_brw+2,cu11
+     333 00003410                   LWL     SHAT2B01,35|AFUNC,a_set_pal
+     334 00003460                   LW      SHAT2B02,3
+     335 00003490                   LW      SHAT2B03,3
+     336 000034c0                   LW      SHAT2B04,3
+     337 000034f0                   LW      SHAT2B05,3
+     338 00003520                   LW      SHAT2B06,3
+     339 00003550                   LW      SHAT2B07,3
+     340 00003580                   LW      SHAT2B08,3
+     341 000035b0                   LW      SHAT2B09,3
+     342 000035e0                   LW      SHAT2B10,3
+     343 00003610                   LW      SHAT2B11,3
+     344 00003640                   LW      SHAT2B12,3
+     345 00003670                   LW      SHAT2B13,3
+     346 000036a0                   LW      SHAT2B14,3
+     347 000036d0                   LW      SHAT2B15,3
+     348 00003700                   LW      SHAT2B16,3
+     349 00003730                   LWL     SHAT2B17,3|AFUNC,PULL_ANIM
+     350                    
+     351 00003780           video_12_clip
+     352 00003780           cu12    LWLL    1,AFUNC|1,a_brw+2,cu12
+     353 000037f0                   LWL     WHAM201,3|AFUNC,a_set_pal
+     354 00003840                   LW      WHAM202,3
+     355 00003870                   LW      WHAM203,3
+     356 000038a0                   LW      WHAM204,3
+     357 000038d0                   LW      WHAM205,3
+     358 00003900                   LW      WHAM206,3
+     359 00003930                   LW      WHAM207,3
+     360 00003960                   LW      WHAM208,3
+     361 00003990                   LW      WHAM209,3
+     362 000039c0                   LW      WHAM210,3
+     363 000039f0                   LW      WHAM211,3
+     364 00003a20                   LW      WHAM212,3
+     365 00003a50                   LW      WHAM213,3
+     366 00003a80                   LW      WHAM214,3
+     367 00003ab0                   LW      WHAM215,3
+     368 00003ae0           E12
+     369 00003ae0                   LWL     WHAM216,3|AFUNC,a_set_pal
+     370 00003b30                   LWLL    WHAM217,3|AFUNC,A_ANIMFRM+2,E12
+     371                    
+     372 00003ba0           video_13_clip
+     373 00003ba0           cu13    LWLL    1,AFUNC|1,a_brw+2,cu13
+     374 00003c10                   LWL     HESHOT01,3|AFUNC,a_set_pal
+     375 00003c60                   LW      HESHOT02,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     376 00003c90                   LW      HESHOT03,3
+     377 00003cc0                   LW      HESHOT04,3
+     378 00003cf0                   LW      HESHOT05,3
+     379 00003d20                   LW      HESHOT06,3
+     380 00003d50                   LW      HESHOT07,3
+     381 00003d80                   LW      HESHOT08,3
+     382 00003db0                   LW      HESHOT09,3
+     383 00003de0                   LW      HESHOT10,3
+     384 00003e10                   LW      HESHOT11,3
+     385 00003e40                   LW      HESHOT12,3
+     386 00003e70                   LW      HESHOT13,3
+     387 00003ea0                   LW      HESHOT14,3
+     388 00003ed0                   LW      HESHOT15,3
+     389 00003f00           E13
+     390 00003f00                   LWL     HESHOT16,3|AFUNC,a_set_pal
+     391 00003f50                   LWLL    HESHOT17,3|AFUNC,A_ANIMFRM+2,E13
+     392                    
+     393 00003fc0           video_14_clip
+     394 00003fc0           cu14    LWLL    1,AFUNC|1,a_brw+2,cu14
+     395 00004030                   LWL     HATRIK01,3|AFUNC,a_set_pal
+     396 00004080                   LW      HATRIK02,3
+     397 000040b0                   LW      HATRIK03,3
+     398 000040e0                   LW      HATRIK04,3
+     399 00004110                   LW      HATRIK05,3
+     400 00004140                   LW      HATRIK06,3
+     401 00004170                   LW      HATRIK07,3
+     402 000041a0                   LW      HATRIK08,3
+     403 000041d0                   LW      HATRIK09,3
+     404 00004200                   LW      HATRIK10,3
+     405 00004230                   LW      HATRIK11,3
+     406 00004260                   LW      HATRIK12,3
+     407 00004290                   LW      HATRIK13,3
+     408 000042c0                   LW      HATRIK14,3
+     409 000042f0                   LW      HATRIK15,3
+     410 00004320           E14
+     411 00004320                   LWL     HATRIK16,3|AFUNC,a_set_pal
+     412 00004370                   LWLL    HATRIK17,3|AFUNC,A_ANIMFRM+2,E14
+     413                    
+     414 000043e0           video_15_clip
+     415 000043e0           cu15    LWLL    1,AFUNC|1,a_brw+2,cu15
+     416 00004450                   LWL     SPINAR01,3|AFUNC,a_set_pal
+     417 000044a0                   LW      SPINAR02,3
+     418 000044d0                   LW      SPINAR03,3
+     419 00004500                   LW      SPINAR04,3
+     420 00004530                   LW      SPINAR05,3
+     421 00004560                   LW      SPINAR06,3
+     422 00004590                   LW      SPINAR07,3
+     423 000045c0                   LW      SPINAR08,3
+     424 000045f0                   LW      SPINAR09,3
+     425 00004620                   LW      SPINAR10,3
+     426 00004650                   LW      SPINAR11,3
+     427 00004680                   LW      SPINAR12,3
+     428 000046b0                   LW      SPINAR13,3
+     429 000046e0                   LW      SPINAR14,3
+     430 00004710                   LW      SPINAR15,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     431 00004740           E15
+     432 00004740                   LWL     SPINAR16,3|AFUNC,a_set_pal
+     433 00004790                   LWLL    SPINAR17,3|AFUNC,A_ANIMFRM+2,E15
+     434                    
+     435 00004800           video_16_clip
+     436 00004800           cu16    LWLL    1,AFUNC|1,a_brw+2,cu16
+     437 00004870                   LWL     SAGNK101,3|AFUNC,a_set_pal
+     438 000048c0                   LW      SAGNK102,3
+     439 000048f0                   LW      SAGNK103,3
+     440 00004920                   LW      SAGNK104,3
+     441 00004950                   LW      SAGNK105,3
+     442 00004980                   LW      SAGNK106,3
+     443 000049b0                   LW      SAGNK107,3
+     444 000049e0                   LW      SAGNK108,3
+     445 00004a10                   LW      SAGNK109,3
+     446 00004a40                   LW      SAGNK110,3
+     447 00004a70                   LW      SAGNK111,3
+     448 00004aa0                   LW      SAGNK112,3
+     449 00004ad0                   LW      SAGNK113,3
+     450 00004b00                   LW      SAGNK114,3
+     451 00004b30                   LW      SAGNK115,3
+     452 00004b60                   LW      SAGNK116,3
+     453 00004b90                   LW      SAGNK117,3
+     454 00004bc0                   LW      SAGNK118,3
+     455 00004bf0                   LW      SAGNK119,3
+     456 00004c20                   LW      SAGNK120,3
+     457 00004c50                   LW      SAGNK121,3
+     458 00004c80                   LW      SAGNK122,3
+     459 00004cb0                   LW      SAGNK123,3
+     460 00004ce0                   LW      SAGNK124,3
+     461 00004d10                   LW      SAGNK125,3
+     462 00004d40                   LW      SAGNK126,3
+     463 00004d70                   LW      SAGNK127,3
+     464 00004da0                   LW      SAGNK128,3
+     465 00004dd0                   LW      SAGNK129,3
+     466 00004e00                   LW      SAGNK130,3
+     467 00004e30                   LW      SAGNK131,3
+     468 00004e60                   LW      SAGNK132,3
+     469 00004e90                   LW      SAGNK133,3
+     470 00004ec0                   LW      SAGNK134,3
+     471 00004ef0                   LW      SAGNK135,3
+     472 00004f20                   LW      SAGNK136,3
+     473 00004f50                   LW      SAGNK137,3
+     474 00004f80                   LW      SAGNK138,3
+     475 00004fb0                   LWLL    SAGNK139,3|AFUNC,A_ANIMFRM+2,E13
+     476                    
+     477 00005020           video_17_clip
+     478 00005020           cu17    LWLL    1,AFUNC|1,a_brw+2,cu17
+     479 00005090                   LWL     HFIREB01,35|AFUNC,a_set_pal
+     480 000050e0                   LW      HFIREB02,3
+     481 00005110                   LW      HFIREB03,3
+     482 00005140                   LW      HFIREB04,3
+     483 00005170                   LW      HFIREB05,3
+     484 000051a0                   LW      HFIREB06,3
+     485 000051d0                   LW      HFIREB07,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     486 00005200                   LW      HFIREB08,3
+     487 00005230                   LW      HFIREB09,3
+     488 00005260           L17
+     489 00005260                   LW      HFIREB10,3
+     490 00005290                   LW      HFIREB11,3
+     491 000052c0                   LW      HFIREB12,3
+     492 000052f0                   LW      HFIREB13,3
+     493 00005320                   LW      HFIREB14,3
+     494 00005350                   LWLL    HFIREB15,3|AFUNC,A_ANIMFRM+2,L17
+     495                    
+     496 000053c0           video_18_clip
+     497 000053c0           cu18    LWLL    1,AFUNC|1,a_brw+2,cu18
+     498 00005430                   LWLLWL  HFIREB10,1|AFUNC,A_2FUNCS+5,A_SET_ANIMLOOP,2,a_set_pal
+     499 000054d0           L18
+     500 000054d0                   LW      HFIREB10,3
+     501 00005500                   LW      HFIREB11,3
+     502 00005530                   LW      HFIREB12,3
+     503 00005560                   LW      HFIREB13,3
+     504 00005590                   LW      HFIREB14,3
+     505 000055c0                   LWLL    HFIREB15,3|AFUNC,A_Anim_DSJ+2,L18
+     506                    
+     507 00005630                   LWL     HSELTB04,3|AFUNC,a_set_pal
+     508 00005680                   LW      HSELTB05,3
+     509 000056b0                   LW      HSELTB06,3
+     510 000056e0                   LW      HSELTB07,3
+     511 00005710                   LW      HSELTB08,3
+     512 00005740                   LW      HSELTB09,3
+     513 00005770                   LW      HSELTB10,3
+     514 000057a0                   LW      HSELTB11,3
+     515 000057d0                   LW      HSELTB12,3
+     516 00005800                   LW      HSELTB13,3
+     517 00005830                   LW      HSELTB14,3
+     518 00005860                   LW      HSELTB15,3
+     519 00005890                   LW      HSELTB16,3
+     520 000058c0                   LW      HSELTB17,3
+     521 000058f0                   LW      HSELTB18,3
+     522 00005920                   LW      HSELTB19,3
+     523 00005950                   LW      HSELTB20,3
+     524 00005980                   LW      HSELTB21,3
+     525 000059b0                   LW      HSELTB22,3
+     526 000059e0                   LW      HSELTB23,3
+     527 00005a10                   LW      HSELTB24,3
+     528 00005a40                   LW      HSELTB25,3
+     529 00005a70                   LW      HSELTB26,3
+     530 00005aa0                   LW      HSELTB27,3
+     531 00005ad0                   LW      HSELTB28,3
+     532 00005b00                   LW      HSELTB29,3
+     533 00005b30                   LW      HSELTB30,3
+     534 00005b60                   LW      HSELTB31,3
+     535 00005b90                   LW      HSELTB32,3
+     536 00005bc0                   LWL     HSELTB33,3|AFUNC,PULL_ANIM
+     537                    
+     538 00005c10           video_19_clip
+     539 00005c10           cu19    LWLL    1,AFUNC|1,a_brw+2,cu19
+     540 00005c80                   LWL     CANNON01,35|AFUNC,a_set_pal
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     541 00005cd0                   LW      CANNON02,3
+     542 00005d00                   LW      CANNON03,3
+     543 00005d30                   LW      CANNON04,3
+     544 00005d60                   LW      CANNON05,3
+     545 00005d90                   LW      CANNON06,3
+     546 00005dc0                   LW      CANNON07,3
+     547 00005df0                   LW      CANNON08,3
+     548 00005e20                   LW      CANNON09,3
+     549 00005e50                   LW      CANNON10,3
+     550 00005e80                   LW      CANNON11,3
+     551 00005eb0                   LW      CANNON12,3
+     552 00005ee0                   LW      CANNON13,3
+     553 00005f10                   LW      CANNON14,3
+     554 00005f40                   LW      CANNON15,3
+     555 00005f70                   LW      CANNON16,3
+     556 00005fa0                   LW      CANNON17,3
+     557 00005fd0                   LW      CANNON18,3
+     558 00006000                   LW      CANNON19,3
+     559 00006030                   LW      CANNON20,3
+     560 00006060                   LW      CANNON21,3
+     561 00006090                   LW      CANNON22,3
+     562 000060c0                   LW      CANNON23,3
+     563 000060f0                   LW      CANNON24,3
+     564 00006120                   LW      CANNON25,3
+     565 00006150                   LW      CANNON26,3
+     566 00006180                   LW      CANNON27,3
+     567 000061b0                   LW      CANNON28,3
+     568 000061e0                   LW      CANNON29,3
+     569 00006210                   LW      CANNON30,3
+     570 00006240                   LW      CANNON31,3
+     571 00006270                   LW      CANNON32,3
+     572 000062a0                   LWL     CANNON33,3|AFUNC,PULL_ANIM
+     573                    
+     574 000062f0           video_20_clip
+     575 000062f0           cu20    LWLL    1,AFUNC|1,a_brw+2,cu20
+     576 00006360                   LWL     EATING01,1|AFUNC,a_set_pal
+     577 000063b0                   LW      EATING02,1
+     578 000063e0                   LW      EATING03,1
+     579 00006410                   LW      EATING04,1
+     580 00006440                   LW      EATING05,1
+     581 00006470                   LW      EATING06,1
+     582 000064a0                   LW      EATING07,1
+     583 000064d0                   LW      EATING08,1
+     584 00006500                   LW      EATING09,1
+     585 00006530                   LW      EATING10,1
+     586 00006560                   LW      EATING11,1
+     587 00006590                   LW      EATING12,1
+     588 000065c0                   LW      EATING13,1
+     589 000065f0                   LW      EATING14,1
+     590 00006620                   LW      EATING15,1
+     591 00006650                   LW      EATING16,1
+     592 00006680                   LW      EATING17,1
+     593 000066b0                   LW      EATING18,1
+     594 000066e0                   LW      EATING19,1
+     595 00006710                   LW      EATING20,1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     596 00006740                   LW      EATING21,1
+     597 00006770                   LW      EATING22,1
+     598 000067a0                   LW      EATING23,1
+     599 000067d0                   LW      EATING24,1
+     600 00006800                   LW      EATING25,1
+     601 00006830                   LW      EATING26,1
+     602 00006860                   LW      EATING27,1
+     603 00006890                   LW      EATING28,1
+     604 000068c0                   LW      EATING29,1
+     605 000068f0                   LW      EATING23,1
+     606 00006920 00000000          .long   0
+     607                    
+     608 00006940           video_21_clip
+     609 00006940           cu21    LWLL    1,AFUNC|1,a_brw+2,cu21
+     610 000069b0                   LWL     ROCKET01,35|AFUNC,a_set_pal
+     611 00006a00                   LW      ROCKET02,3
+     612 00006a30                   LW      ROCKET03,3
+     613 00006a60                   LW      ROCKET04,3
+     614 00006a90                   LW      ROCKET05,3
+     615 00006ac0                   LW      ROCKET06,3
+     616 00006af0                   LW      ROCKET07,3
+     617 00006b20                   LW      ROCKET08,3
+     618 00006b50                   LW      ROCKET09,3
+     619 00006b80                   LW      ROCKET10,3
+     620 00006bb0                   LW      ROCKET11,3
+     621 00006be0                   LW      ROCKET12,3
+     622 00006c10                   LW      ROCKET13,3
+     623 00006c40                   LW      ROCKET14,3
+     624 00006c70                   LW      ROCKET15,3
+     625 00006ca0                   LW      ROCKET16,3
+     626 00006cd0                   LW      ROCKET17,3
+     627 00006d00                   LW      ROCKET18,3
+     628 00006d30                   LW      ROCKET19,3
+     629 00006d60                   LW      ROCKET20,3
+     630 00006d90                   LW      ROCKET21,3
+     631 00006dc0                   LW      ROCKET22,3
+     632 00006df0                   LW      ROCKET23,3
+     633 00006e20                   LW      ROCKET24,3
+     634 00006e50                   LW      ROCKET25,3
+     635 00006e80                   LW      ROCKET26,3
+     636 00006eb0                   LW      ROCKET27,3
+     637 00006ee0                   LW      ROCKET28,3
+     638 00006f10                   LW      ROCKET29,3
+     639 00006f40                   LW      ROCKET30,3
+     640 00006f70                   LW      ROCKET31,3
+     641 00006fa0                   LW      ROCKET32,3
+     642 00006fd0                   LW      ROCKET33,3
+     643 00007000                   LW      ROCKET34,3
+     644 00007030                   LW      ROCKET35,3
+     645 00007060                   LWL     ROCKET35,3|AFUNC,PULL_ANIM
+     646                    
+     647 000070b0           video_22_clip
+     648 000070b0           cu22    LWLL    1,AFUNC|1,a_brw+2,cu22
+     649 00007120                   LWL     SKCRSH01,35|AFUNC,a_set_pal
+     650 00007170                   LW      SKCRSH03,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     651 000071a0                   LW      SKCRSH05,4
+     652 000071d0                   LW      SKCRSH07,4
+     653 00007200                   LW      SKCRSH09,4
+     654 00007230                   LW      SKCRSH11,4
+     655 00007260                   LW      SKCRSH13,4
+     656 00007290                   LW      SKCRSH15,4
+     657 000072c0                   LW      SKCRSH17,4
+     658 000072f0                   LW      SKCRSH19,4
+     659 00007320                   LW      SKCRSH21,4
+     660 00007350                   LW      SKCRSH23,4
+     661 00007380                   LW      SKCRSH25,4
+     662 000073b0                   LW      SKCRSH27,4
+     663 000073e0                   LW      SKCRSH29,4
+     664 00007410                   LW      SKCRSH31,4
+     665 00007440                   LW      SKCRSH33,4
+     666 00007470                   LW      SKCRSH35,4
+     667 000074a0                   LW      SKCRSH37,4
+     668 000074d0                   LW      SKCRSH39,4
+     669 00007500                   LW      SKCRSH41,4
+     670 00007530                   LW      SKCRSH43,4
+     671 00007560                   LW      SKCRSH45,4
+     672 00007590                   LW      SKCRSH47,4
+     673 000075c0                   LW      SKCRSH49,4
+     674 000075f0                   LWL     SKCRSH49,4|AFUNC,PULL_ANIM
+     675                    
+     676 00007640           video_23_clip
+     677 00007640           cu23    LWLL    1,AFUNC|1,a_brw+2,cu23
+     678 000076b0                   LWL     SKDIP01,3|AFUNC,a_set_pal
+     679 00007700                   LW      SKDIP02,3
+     680 00007730                   LW      SKDIP03,3
+     681 00007760                   LW      SKDIP04,3
+     682 00007790                   LW      SKDIP05,3
+     683 000077c0                   LW      SKDIP06,3
+     684 000077f0                   LW      SKDIP07,3
+     685 00007820                   LW      SKDIP08,3
+     686 00007850                   LW      SKDIP09,3
+     687 00007880                   LW      SKDIP10,3
+     688 000078b0                   LW      SKDIP11,3
+     689 000078e0                   LW      SKDIP12,3
+     690 00007910                   LW      SKDIP13,3
+     691 00007940                   LW      SKDIP14,3
+     692 00007970                   LW      SKDIP15,3
+     693 000079a0                   LW      SKDIP16,3
+     694 000079d0                   LW      SKDIP17,3
+     695 00007a00                   LW      SKDIP18,3
+     696 00007a30                   LW      SKDIP19,3
+     697 00007a60                   LW      SKDIP20,3
+     698 00007a90                   LW      SKDIP21,3
+     699 00007ac0                   LW      SKDIP22,3
+     700 00007af0                   LW      SKDIP23,3
+     701 00007b20                   LW      SKDIP24,3
+     702 00007b50                   LW      SKDIP25,3
+     703 00007b80                   LW      SKDIP26,3
+     704 00007bb0                   LW      SKDIP27,3
+     705 00007be0                   LW      SKDIP28,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     706 00007c10                   LW      SKDIP29,3
+     707 00007c40                   LW      SKDIP30,3
+     708 00007c70                   LW      SKDIP31,3
+     709 00007ca0                   LW      SKDIP32,3
+     710 00007cd0                   LW      SKDIP33,3
+     711 00007d00                   LW      SKDIP34,3
+     712 00007d30                   LW      SKDIP35,3
+     713 00007d60                   LW      SKDIP36,3
+     714 00007d90                   LW      SKDIP37,3
+     715 00007dc0                   LW      SKDIP38,3
+     716 00007df0                   LW      SKDIP39,3
+     717 00007e20                   LW      SKDIP40,3
+     718 00007e50                   LW      SKDIP41,3
+     719 00007e80                   LW      SKDIP42,3
+     720 00007eb0                   LW      SKDIP43,3
+     721 00007ee0                   LW      SKDIP44,3
+     722 00007f10                   LW      SKDIP45,3
+     723 00007f40 00000000          .long   0
+     724                    
+     725 00007f60           video_24_clip
+     726 00007f60           cu24    LWLL    1,AFUNC|1,a_brw+2,cu24
+     727 00007fd0                   LWL     SKFACE01,35|AFUNC,a_set_pal
+     728 00008020                   LW      SKFACE03,4
+     729 00008050                   LW      SKFACE05,4
+     730 00008080                   LW      SKFACE07,4
+     731 000080b0                   LW      SKFACE09,4
+     732 000080e0                   LW      SKFACE11,4
+     733 00008110                   LW      SKFACE13,4
+     734 00008140                   LW      SKFACE15,4
+     735 00008170                   LW      SKFACE17,4
+     736 000081a0                   LW      SKFACE19,4
+     737 000081d0                   LW      SKFACE21,4
+     738 00008200                   LW      SKFACE23,4
+     739 00008230                   LW      SKFACE25,4
+     740 00008260                   LW      SKFACE27,4
+     741 00008290                   LW      SKFACE29,4
+     742 000082c0                   LW      SKFACE31,4
+     743 000082f0                   LW      SKFACE33,4
+     744 00008320                   LW      SKFACE35,4
+     745 00008350                   LW      SKFACE37,4
+     746 00008380                   LW      SKFACE39,4
+     747 000083b0                   LW      SKFACE41,4
+     748 000083e0                   LW      SKFACE43,4
+     749 00008410                   LW      SKFACE45,4
+     750 00008440                   LW      SKFACE47,4
+     751 00008470                   LW      SKFACE49,4
+     752 000084a0                   LWL     SKFACE51,4|AFUNC,PULL_ANIM
+     753                    
+     754 000084f0           video_25_clip
+     755 000084f0           cu25    LWLL    1,AFUNC|1,a_brw+2,cu25
+     756 00008560                   LWL     SKSPIN13,4|AFUNC,a_set_pal
+     757 000085b0                   LW      SKSPIN14,4
+     758 000085e0                   LW      SKSPIN15,4
+     759 00008610                   LW      SKSPIN16,4
+     760 00008640                   LW      SKSPIN17,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     761 00008670                   LW      SKSPIN18,4
+     762 000086a0                   LW      SKSPIN19,4
+     763 000086d0                   LW      SKSPIN20,4
+     764 00008700                   LW      SKSPIN21,4
+     765 00008730                   LW      SKSPIN22,4
+     766 00008760                   LW      SKSPIN23,4
+     767 00008790                   LW      SKSPIN24,4
+     768 000087c0                   LW      SKSPIN25,4
+     769 000087f0                   LW      SKSPIN26,4
+     770 00008820                   LW      SKSPIN27,4
+     771 00008850                   LW      SKSPIN28,4
+     772 00008880                   LW      SKSPIN29,4
+     773 000088b0                   LW      SKSPIN30,4
+     774 000088e0                   LW      SKSPIN31,4
+     775 00008910                   LW      SKSPIN32,4
+     776 00008940                   LW      SKSPIN33,4
+     777 00008970                   LW      SKSPIN34,4
+     778 000089a0                   LW      SKSPIN35,4
+     779 000089d0                   LW      SKSPIN36,4
+     780 00008a00                   LW      SKSPIN37,4
+     781 00008a30                   LW      SKSPIN38,4
+     782 00008a60                   LW      SKSPIN39,4
+     783 00008a90                   LWL     SKSPIN40,4|AFUNC,PULL_ANIM
+     784                    
+     785 00008ae0           video_26_clip
+     786 00008ae0           cu26    LWLL    1,AFUNC|1,a_brw+2,cu26
+     787 00008b50                   LWL     SKSPLT01,35|AFUNC,a_set_pal
+     788 00008ba0                   LW      SKSPLT02,3
+     789 00008bd0                   LW      SKSPLT03,3
+     790 00008c00                   LW      SKSPLT04,3
+     791 00008c30                   LW      SKSPLT05,3
+     792 00008c60                   LW      SKSPLT06,3
+     793 00008c90                   LW      SKSPLT07,3
+     794 00008cc0                   LW      SKSPLT08,3
+     795 00008cf0                   LW      SKSPLT09,3
+     796 00008d20                   LW      SKSPLT10,3
+     797 00008d50                   LW      SKSPLT11,3
+     798 00008d80                   LW      SKSPLT12,3
+     799 00008db0                   LW      SKSPLT13,3
+     800 00008de0                   LW      SKSPLT14,3
+     801 00008e10                   LW      SKSPLT15,3
+     802 00008e40                   LW      SKSPLT16,3
+     803 00008e70                   LW      SKSPLT17,3
+     804 00008ea0                   LW      SKSPLT18,3
+     805 00008ed0                   LW      SKSPLT19,3
+     806 00008f00                   LW      SKSPLT20,3
+     807 00008f30                   LW      SKSPLT21,3
+     808 00008f60                   LW      SKSPLT22,3
+     809 00008f90                   LW      SKSPLT23,3
+     810 00008fc0                   LW      SKSPLT24,3
+     811 00008ff0                   LW      SKSPLT25,3
+     812 00009020                   LW      SKSPLT26,3
+     813 00009050                   LW      SKSPLT27,3
+     814 00009080                   LW      SKSPLT28,3
+     815 000090b0                   LW      SKSPLT29,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     816 000090e0                   LW      SKSPLT30,3
+     817 00009110                   LW      SKSPLT31,3
+     818 00009140                   LW      SKSPLT32,3
+     819 00009170                   LW      SKSPLT33,3
+     820 000091a0                   LW      SKSPLT34,3
+     821 000091d0                   LW      SKSPLT35,3
+     822 00009200                   LW      SKSPLT36,3
+     823 00009230                   LW      SKSPLT37,3
+     824 00009260                   LW      SKSPLT38,3
+     825 00009290                   LW      SKSPLT39,3
+     826 000092c0                   LW      SKSPLT40,3
+     827 000092f0                   LWL     SKSPLT41,3|AFUNC,PULL_ANIM
+     828                    
+     829 00009340           video_27_clip
+     830 00009340           cu27    LWLL    1,AFUNC|1,a_brw+2,cu27
+     831 000093b0                   LWL     BABY127,3|AFUNC,a_set_pal
+     832 00009400                   LW      BABY129,3
+     833 00009430                   LW      BABY131,3
+     834 00009460                   LW      BABY133,3
+     835 00009490                   LW      BABY135,3
+     836 000094c0                   LW      BABY137,3
+     837 000094f0                   LW      BABY139,3
+     838 00009520                   LW      BABY141,3
+     839 00009550                   LW      BABY143,3
+     840 00009580                   LW      BABY145,3
+     841 000095b0                   LW      BABY147,3
+     842 000095e0                   LW      BABY145,3
+     843 00009610                   LW      BABY143,3
+     844 00009640                   LW      BABY141,3
+     845 00009670                   LW      BABY139,3
+     846 000096a0                   LW      BABY137,3
+     847 000096d0                   LW      BABY135,3
+     848 00009700                   LW      BABY133,3
+     849 00009730                   LW      BABY131,3
+     850 00009760                   LW      BABY129,3
+     851 00009790 00000000          .long   0
+     852                    
+     853                    ;video_28_clip
+     854                    ;cu28   LWLL    1,AFUNC|1,a_brw+2,cu28
+     855                    ;       LWL     SPRAY106,35|AFUNC,a_set_pal
+     856                    ;       LW      SPRAY107,3
+     857                    ;       LW      SPRAY108,3
+     858                    ;       LW      SPRAY109,3
+     859                    ;       LW      SPRAY110,3
+     860                    ;       LW      SPRAY111,3
+     861                    ;       LW      SPRAY112,3
+     862                    ;       LW      SPRAY113,3
+     863                    ;       LW      SPRAY114,3
+     864                    ;       LW      SPRAY115,3
+     865                    ;       LW      SPRAY116,3
+     866                    ;       LW      SPRAY117,3
+     867                    ;       LW      SPRAY118,3
+     868                    ;       LW      SPRAY120,3
+     869                    ;       LW      SPRAY122,3
+     870                    ;       LW      SPRAY124,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     871                    ;       LW      SPRAY126,3
+     872                    ;       LW      SPRAY128,3
+     873                    ;       LW      SPRAY130,3
+     874                    ;       LW      SPRAY132,3
+     875                    ;       LW      SPRAY134,3
+     876                    ;       LW      SPRAY136,3
+     877                    ;       LW      SPRAY138,3
+     878                    ;       LW      SPRAY140,3
+     879                    ;       LW      SPRAY142,3
+     880                    ;       LW      SPRAY144,3
+     881                    ;       LW      SPRAY146,3
+     882                    ;       LW      SPRAY148,3
+     883                    ;       LWL     SPRAY150,3|AFUNC,PULL_ANIM
+     884                    
+     885 000097b0           video_29_clip
+     886 000097b0           cu29    LWLL    1,AFUNC|1,a_brw+2,cu29
+     887 00009820                   LWL     HESHOO01,3|AFUNC,a_set_pal
+     888 00009870                   LW      HESHOO02,3
+     889 000098a0                   LW      HESHOO03,3
+     890 000098d0                   LW      HESHOO04,3
+     891 00009900                   LW      HESHOO05,3
+     892 00009930                   LW      HESHOO06,3
+     893 00009960                   LW      HESHOO07,3
+     894 00009990                   LW      HESHOO08,3
+     895 000099c0                   LW      HESHOO09,3
+     896 000099f0                   LW      HESHOO10,3
+     897 00009a20                   LW      HESHOO11,3
+     898 00009a50                   LW      HESHOO12,3
+     899 00009a80                   LW      HESHOO13,3
+     900 00009ab0                   LW      HESHOO14,3
+     901 00009ae0                   LW      HESHOO15,3
+     902 00009b10           E29
+     903 00009b10                   LWL     HESHOO16,3|AFUNC,a_set_pal
+     904 00009b60                   LWLL    HESHOO17,3|AFUNC,A_ANIMFRM+2,E29
+     905                    
+     906 00009bd0           video_30_clip
+     907 00009bd0           cu30    LWLL    1,AFUNC|1,a_brw+2,cu30
+     908 00009c40                   LWL     TRAIN01,3|AFUNC,a_set_pal
+     909 00009c90                   LW      TRAIN02,3
+     910 00009cc0                   LW      TRAIN03,3
+     911 00009cf0                   LW      TRAIN04,3
+     912 00009d20                   LW      TRAIN05,3
+     913 00009d50                   LW      TRAIN06,3
+     914 00009d80                   LW      TRAIN07,3
+     915 00009db0                   LW      TRAIN08,3
+     916 00009de0                   LW      TRAIN09,3
+     917 00009e10                   LW      TRAIN10,3
+     918 00009e40                   LW      TRAIN11,3
+     919 00009e70                   LW      TRAIN12,3
+     920 00009ea0                   LW      TRAIN13,3
+     921 00009ed0                   LW      TRAIN14,3
+     922 00009f00                   LW      TRAIN15,3
+     923 00009f30                   LW      TRAIN16,3
+     924 00009f60                   LW      TRAIN17,3
+     925 00009f90                   LW      TRAIN18,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     926 00009fc0                   LW      TRAIN19,3
+     927 00009ff0                   LW      TRAIN20,3
+     928 0000a020                   LWLL    TRAIN21,3|AFUNC,A_ANIMFRM+2,E12
+     929                    
+     930 0000a090           video_31_clip
+     931 0000a090           cu31    LWLL    1,AFUNC|1,a_brw+2,cu31
+     932 0000a100                   LWL     1,AFUNC|1,a_beauty_speech
+     933 0000a150           cu31a   LWL     SMSOI01,4|AFUNC,a_set_pal
+     934 0000a1a0                   LW      SMSOI02,4
+     935 0000a1d0                   LW      SMSOI03,4
+     936 0000a200                   LW      SMSOI04,4
+     937 0000a230                   LW      SMSOI05,4
+     938 0000a260                   LW      SMSOI06,4
+     939 0000a290                   LW      SMSOI07,4
+     940 0000a2c0                   LW      SMSOI08,4
+     941 0000a2f0                   LW      SMSOI07,4
+     942 0000a320                   LW      SMSOI06,4
+     943 0000a350                   LW      SMSOI05,4
+     944 0000a380                   LW      SMSOI04,4
+     945 0000a3b0                   LW      SMSOI03,4
+     946 0000a3e0                   LWLL    SMSOI02,AFUNC|4,a_branch+2,cu31a
+     947 0000a450 00000000          .long   0
+     948                    
+     949 0000a470           a_beauty_speech
+     950 0000a470     c080          jauc    spx_what_a_beauty
+         0000a480 00000000! 
+     951                    
+     952 0000a4a0           video_32_clip
+     953 0000a4a0           cu32    LWLL    1,AFUNC|1,a_brw+2,cu32
+     954 0000a510                   LWL     HITICE01,4|AFUNC,a_set_pal
+     955 0000a560                   LW      HITICE02,4
+     956 0000a590                   LW      HITICE03,4
+     957 0000a5c0                   LW      HITICE04,4
+     958 0000a5f0                   LW      HITICE03,4
+     959 0000a620                   LW      HITICE02,4
+     960 0000a650 00000000          .long   0
+     961                    
+     962 0000a670           video_33_clip
+     963 0000a670           cu33    LWLL    1,AFUNC|1,a_brw+2,cu33
+     964                    ;       LWL     OCTOP01,4|AFUNC,a_set_pal
+     965 0000a6e0                   LWLL    OCTOP01,4|AFUNC,A_CHANGE_PAL+2,OCTOP03P
+     966 0000a750                   LWL     OCTOP02,4|AFUNC,a_octopus_speech
+     967 0000a7a0                   LW      OCTOP03,4
+     968 0000a7d0                   LW      OCTOP04,4
+     969 0000a800                   LW      OCTOP05,4
+     970 0000a830                   LW      OCTOP06,4
+     971 0000a860                   LW      OCTOP07,4
+     972 0000a890                   LW      OCTOP08,4
+     973 0000a8c0                   LW      OCTOP09,4
+     974 0000a8f0                   LW      OCTOP10,4
+     975 0000a920                   LW      OCTOP11,4
+     976 0000a950                   LW      OCTOP12,4
+     977 0000a980                   LW      OCTOP13,4
+     978 0000a9b0                   LW      OCTOP14,4
+     979 0000a9e0                   LW      OCTOP15,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:25 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+     980 0000aa10                   LW      OCTOP16,4
+     981 0000aa40                   LW      OCTOP17,4
+     982 0000aa70                   LW      OCTOP18,4
+     983 0000aaa0                   LW      OCTOP19,4
+     984 0000aad0                   LW      OCTOP20,4
+     985 0000ab00                   LWL     OCTOP21,4|AFUNC,PULL_ANIM
+     986                    
+     987 0000ab50           a_octopus_speech
+     988 0000ab50     c080          jauc    spx_theres_the_octopus
+         0000ab60 00000000! 
+     989                    
+     990                    ;OCTOP02P:
+     991                    ;   .word   63 
+     992                    ;   .word   03800h,010c8h,018c8h,018e8h,01909h,020e8h,02108h,02109h
+     993                    ;   .word   0214ah,0212ah,0214ah,02929h,0294ah,0254ch,0296bh,02d6ah
+     994                    ;   .word   0296dh,02d6ch,0316ah,0298eh,02d8dh,02dadh,0318dh,02dafh
+     995                    ;   .word   035ach,031aeh,031ceh,039cch,031cfh,039ceh,035efh,03dceh
+     996                    ;   .word   03a0fh,03df0h,03a10h,03e10h,03a12h,03e11h,03e32h,04630h
+     997                    ;   .word   04231h,03e33h,04631h,04253h,04254h,04a73h,04674h,04a73h
+     998                    ;   .word   04675h,04e73h,04a95h,04e95h,04ab6h,04eb5h,052d6h,04ed7h
+     999                    ;   .word   052d8h,056f7h,056f8h,056f9h,05b19h,05b3ah,05b5ah
+    1000                    
+    1001 0000ab80           OCTOP03P:
+    1002 0000ab80     003f     .word   63 
+    1003 0000ab90     0000     .word   00000h,00ca7h,014a7h,014c7h,014e8h,01cc7h,01ce7h,01ce8h
+    1004 0000ac10     1d0a     .word   01d0ah,0210ah,0212ah,02909h,0292ah,0252ch,0294bh,02d4ah
+    1005 0000ac90     294d     .word   0294dh,02d4ch,0314ah,0296eh,02d6dh,02d8dh,0314dh,02dafh
+    1006 0000ad10     35ac     .word   035ach,031aeh,031ceh,039cch,031cfh,039ceh,035efh,03dceh
+    1007 0000ad90     3a0f     .word   03a0fh,03df0h,03a10h,03e10h,03a12h,03e11h,03e32h,04630h
+    1008 0000ae10     4231     .word   04231h,03e33h,04631h,04253h,04254h,04a73h,04674h,04a73h
+    1009 0000ae90     4675     .word   04675h,04e73h,04a95h,04e95h,04ab6h,04eb5h,052d6h,04ed7h
+    1010 0000af10     52d8     .word   052d8h,056f7h,056f9h,056fah,05b1ah,05b3bh,05b7ch
+    1011                            
+    1012                    
+    1013                            .end
+
+ No Errors,  No Warnings

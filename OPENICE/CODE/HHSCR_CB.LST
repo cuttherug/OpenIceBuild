@@ -1,0 +1,1300 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHSCR_CB.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                            .INCLUDE        "HH.INC"
+      11                            .INCLUDE        "IMGTBL.GLO"
+      12                            .include        "hhscrmcb.tbl"
+      13                            .include        "hhcontrl.g"
+      14                            .include        "hhproc.g"
+      15                            .include        "hhutil.g"
+      16                            .include        "hhtimer.g"
+      17                            .include        "hhgame.g"
+      18                            .include        "hhscore.g"
+      19                            .include        "hhmath.g"
+      20                            .include        "hhscr_cb.e"
+      21                            .include        "hhscr_fn.g"
+      22                            .include        "hhplayer.g"
+      23                            .include        "hhscr_sk.g"
+      24                            .include        "hhcmos.g"
+      25                            .include        "hhcontr2.g"
+      26                    
+      27                    ; end of include files
+      28                    
+      29 00000000                   .TEXT
+      30 00000000                   .EVEN
+      31                    
+      32                    **************************************************************************
+      33                    *                                                                        *
+      34                    * for player objects, OIMG looks like this                               *
+      35                    *       .word   control,xsize,ysize                                      *
+      36                    *       .long   sag                                                      *
+      37                    *       .word   anix,aniy                                                *
+      38                    *       .word   puckx,pucky                                              *
+      39                    *       .word   headx,heady,headz                                        *
+      40                    *       .word   head#                                                    *
+      41                    *                                                                        *
+      42                    **************************************************************************
+      43 00000000           test_go
+      44 00000000     18c0          movk    6,a0
+      45 00000010                   GBLOCK  a0,a6
+      46 00000060     b6c8          move    *a6(POF_OBJECT),a8,L
+         00000070     0280  
+      47 00000080     0d5f          calla   take_player_control
+         00000090 00000000! 
+      48 000000b0     09ee          movi    tg_tab-32,a14
+         000000c0 00000120' 
+      49 000000e0     0d5f          calla   start_panim_if_not_ta14
+         000000f0 00000000! 
+      50 00000110     c080          jauc    SUCIDE
+         00000120 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      51                    
+      52 00000140           tg_tab
+      53 00000140 00000240'         .long   anim_test
+      54 00000160 00000240'         .long   anim_test
+      55 00000180 00000240'         .long   anim_test
+      56 000001a0 00000240'         .long   anim_test
+      57 000001c0 00000240'         .long   anim_test
+      58 000001e0 00000240'         .long   anim_test
+      59 00000200 00000240'         .long   anim_test
+      60 00000220 00000240'         .long   anim_test
+      61 00000240           anim_test
+      62 00000240                   LW      CH53F01,4
+      63 00000270                   LWL     1,AFUNC|1,start_j1_grav
+      64 000002c0                   LW      CH53F02,3
+      65 000002f0                   LW      CH53F03,2
+      66 00000320                   LW      CH53F04,2
+      67 00000350                   LW      CH53F05,6
+      68 00000380                   LWL     1,AFUNC|1,start_j11_grav
+      69 000003d0                   LW      CH53F05,11
+      70 00000400                   LWL     1,AFUNC|1,stop_j1_grav
+      71 00000450                   LW      CH53F06,2
+      72 00000480                   LWL     1,AFUNC|1,a_control_script_done
+      73 000004d0 00000000          .long   0
+      74                    
+      75                    ;       LW      CH63F01,4
+      76                    ;       LWL     1,AFUNC|1,start_j1_grav
+      77                    ;       LW      CH63F02,3
+      78                    ;       LW      CH63F03,2
+      79                    ;       LW      CH63F04,2
+      80                    ;       LW      CH63F05,6
+      81                    ;       LWL     1,AFUNC|1,start_j11_grav
+      82                    ;;      LW      CH63F05,19
+      83                    ;       LW      CH63F05,11
+      84                    ;       LWL     1,AFUNC|1,stop_j1_grav
+      85                    ;       LW      CH63F06,2
+      86                    ;       LWL     1,AFUNC|1,a_control_script_done
+      87                    ;       .long   0
+      88                    
+      89                    **************************************************************************
+      90                    *                                                                        *
+      91                    * for player objects, OIMG looks like this                               *
+      92                    *       .word   control,xsize,ysize                                      *
+      93                    *       .long   sag                                                      *
+      94                    *       .word   anix,aniy                                                *
+      95                    *       .word   puckx,pucky                                              *
+      96                    *       .word   headx,heady,headz                                        *
+      97                    *       .word   head#                                                    *
+      98                    *                                                                        *
+      99                    **************************************************************************
+     100 000004f0           score_celebrations
+     101 000004f0     05a0          move    @period,a0
+         00000500 00000000! 
+     102 00000520     0b40          cmpi    4,a0
+         00000530     fffb  
+     103 00000540     cb05          jrnz    sc_rck
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     104 00000550     1ac0          movk    ADJPAYOT,a0
+     105 00000560     0d5f          calla   GET_ADJ
+         00000570 00000000! 
+     106 00000590     ca0a          jrz     scdoit2                 ;do celebration for both players always on overtime goal
+     107 000005a0     05a0  sc_rck  move    @scored_by,a0,W
+         000005b0 00000000! 
+     108 000005d0     ca05          jrz     sc_n9
+     109 000005e0     05ae          move    @hot_player,a14,W
+         000005f0 00000000! 
+     110 00000610     480e          cmp     a0,a14
+     111 00000620     ca01          jrz     scdoit2                 ;hot player scored, do 1 or 2 player celebration
+     112 00000630     0960  sc_n9   rets
+     113                    
+     114 00000640     05a0  scdoit2 move    @scored_by,a0,W
+         00000650 00000000! 
+     115 00000670     0d3f          callr   celebrate_goal_player
+         00000680     0012  
+     116 00000690     1420          dec     a0
+     117 000006a0     0bc0          xori    1,a0
+         000006b0 00000001  
+     118 000006d0     1020          inc     a0
+     119 000006e0     0d3f          callr   celebrate_happy_player
+         000006f0     000f  
+     120 00000700     1420          dec     a0
+     121 00000710     2fc0          srl     2,a0
+     122 00000720     0bc0          xori    1,a0
+         00000730 00000001  
+     123 00000750     2440          sll     2,a0
+     124 00000760     1020          inc     a0
+     125 00000770     0d3f          callr   celebrate_not_happy_player
+         00000780     000a  
+     126 00000790     1020          inc     a0
+     127 000007a0     c008          jruc    celebrate_not_happy_player
+     128                    
+     129 000007b0           celebrate_goal_player
+     130 000007b0     09e7          movi    celebrate_goal,a7
+         000007c0 00000930' 
+     131 000007e0     c007          jruc    cgp_1
+     132 000007f0           celebrate_happy_player
+     133 000007f0     09e7          movi    celebrate_happy,a7
+         00000800 00000900' 
+     134 00000820     c003          jruc    cgp_1
+     135 00000830           celebrate_not_happy_player
+     136 00000830     09e7          movi    celebrate_not_happy,a7
+         00000840 00000900' 
+     137 00000860     4c08  cgp_1   move    a0,a8
+     138 00000870     4c01          move    a0,a1
+     139 00000880     2501          sll     8,a1
+     140 00000890     0b01          addi    PIDOF_CELEBRATE,a1
+         000008a0     0006  
+     141 000008b0     0d5f          calla   GETPRC
+         000008c0 00000000! 
+     142 000008e0     4d00          move    a8,a0
+     143 000008f0     0960          rets
+     144                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     145 00000900           celebrate_happy
+     146 00000900           celebrate_not_happy
+     147 00000900     c080          jauc    SUCIDE
+         00000910 00000000! 
+     148                    
+     149 00000930           celebrate_goal
+     150 00000930           celebrate_around
+     151 00000930     05ae          move    @scored_by,a14,W
+         00000940 00000000! 
+     152 00000960                   GBLOCK  a14,a6
+     153 000009b0     b6c8          move    *a6(POF_OBJECT),a8,L
+         000009c0     0280  
+     154 000009d0     aec0          movb    *a6(POF_NUMBER),a0
+         000009e0     0000  
+     155 000009f0     1420          dec     a0
+     156 00000a00     2fc0          srl     2,a0
+     157 00000a10     cb1e          jrnz    cat2
+     158 00000a20     b500  cat1    move    *a8(OXPOS),a0,W
+         00000a30     0150  
+     159 00000a40     0b40          cmpi    233,a0
+         00000a50     ff16  
+     160 00000a60     c401          jrlt    cat1_fr
+     161 00000a70     c008          jruc    cat1_pg
+     162                    
+     163 00000a80           cat1_fr         ;past blue line
+     164 00000a80     09ea          movi    ca1fr_1,a10
+         00000a90 00000de0' 
+     165 00000ab0     0d3f          callr   do_celebration
+         00000ac0     022b  
+     166 00000ad0     c080          jauc    SUCIDE
+         00000ae0 00000000! 
+     167                    
+     168 00000b00           cat1_pg         ;past goal
+     169 00000b00     09ea          movi    ca1pg1u,a10
+         00000b10 000013c0' 
+     170 00000b30     b500          move    *a8(OZPOS),a0,W
+         00000b40     0190  
+     171 00000b50     0b40          cmpi    339,a0
+         00000b60     feac  
+     172 00000b70     c403          jrlt    cat1pg1
+     173 00000b80     09ea          movi    ca1pg1d,a10
+         00000b90 00001790' 
+     174 00000bb0     0d3f  cat1pg1 callr   do_celebration
+         00000bc0     021b  
+     175 00000bd0     c080          jauc    SUCIDE
+         00000be0 00000000! 
+     176                    
+     177                    
+     178 00000c00     b500  cat2    move    *a8(OXPOS),a0,W
+         00000c10     0150  
+     179 00000c20     0b40          cmpi    -233,a0
+         00000c30     00e8  
+     180 00000c40     c701          jrgt    cat2_fr
+     181 00000c50     c008          jruc    cat2_pg
+     182                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     183 00000c60           cat2_fr         ;past blue line
+     184 00000c60     09ea          movi    ca2fr_1,a10
+         00000c70 00001b60' 
+     185 00000c90     0d3f          callr   do_celebration
+         00000ca0     020d  
+     186 00000cb0     c080          jauc    SUCIDE
+         00000cc0 00000000! 
+     187                    
+     188 00000ce0           cat2_pg         ;past goal
+     189 00000ce0     09ea          movi    ca2pg1u,a10
+         00000cf0 00002140' 
+     190 00000d10     b500          move    *a8(OZPOS),a0,W
+         00000d20     0190  
+     191 00000d30     0b40          cmpi    339,a0
+         00000d40     feac  
+     192 00000d50     c403          jrlt    cat2pg1
+     193 00000d60     09ea          movi    ca2pg1d,a10
+         00000d70 00002510' 
+     194 00000d90     0d3f  cat2pg1 callr   do_celebration
+         00000da0     01fd  
+     195 00000db0     c080          jauc    SUCIDE
+         00000dc0 00000000! 
+     196                    
+     197                    DC_DCM  .macro  script,xpos,zpos,dist,vel
+     198                            .word   1
+     199                            .long   [:xpos:,0],[:zpos:,0],[:dist:,0],[:vel:,0]
+     200                            .long   :script:
+     201                            .endm
+     202                    
+     203                    DC_DC   .macro  script,face,xvel,zvel
+     204                            .word   2
+     205                            .word   :face:
+     206                            .long   [:xvel:,0],[:zvel:,0]
+     207                            .long   :script:
+     208                            .endm
+     209                    
+     210 00000de0           ca1fr_1 DC_DCM  set_regular_run_script          ,500,420,30,6
+     211 00000e90                   DC_DCM  set_regular_run_script          ,600,420,30,6
+     212 00000f40                   DC_DCM  set_regular_run_script          ,640,400,30,6
+     213 00000ff0                   DC_DCM  set_regular_run_script          ,660,380,30,6
+     214 000010a0                   DC_DCM  set_regular_run_script          ,660,370,30,6
+     215 00001150                   DC_DCM  set_regular_run_script          ,640,365,30,6
+     216 00001200                   DC_DCM  set_regular_run_script          ,600,365,30,6
+     217 000012b0                   DC_DC   set_random_celebrate_script     ,7,-5,0
+     218 00001330                   DC_DC   set_random_celebrate_script     ,7,-5,0
+     219 000013b0     0000          .word   0
+     220                    
+     221 000013c0           ca1pg1u
+     222 000013c0                   DC_DCM  set_celebrate_spin_move1_script ,780,250,30,6
+     223 00001470                   DC_DCM  set_celebrate_spin_move1_script ,780,500,30,6
+     224 00001520                   DC_DCM  set_celebrate_spin_move1_script ,760,535,30,6
+     225 000015d0                   DC_DCM  set_celebrate_spin_move1_script ,710,540,30,6
+     226 00001680                   DC_DC   set_random_celebrate_script     ,7,-5,0
+     227 00001700                   DC_DC   set_random_celebrate_script     ,7,-5,0
+     228 00001780     0000          .word   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     229                    
+     230 00001790           ca1pg1d
+     231 00001790                   DC_DCM  set_celebrate_spin_move2_script ,780,429,30,6
+     232 00001840                   DC_DCM  set_celebrate_spin_move2_script ,780,178,30,6
+     233 000018f0                   DC_DCM  set_celebrate_spin_move2_script ,760,143,30,6
+     234 000019a0                   DC_DCM  set_celebrate_spin_move2_script ,710,138,30,6
+     235 00001a50                   DC_DC   set_random_celebrate_script     ,7,-5,0
+     236 00001ad0                   DC_DC   set_random_celebrate_script     ,7,-5,0
+     237 00001b50     0000          .word   0
+     238                    
+     239 00001b60           ca2fr_1 DC_DCM  set_regular_run_script          ,-500,420,30,6
+     240 00001c10                   DC_DCM  set_regular_run_script          ,-600,420,30,6
+     241 00001cc0                   DC_DCM  set_regular_run_script          ,-640,400,30,6
+     242 00001d70                   DC_DCM  set_regular_run_script          ,-660,380,30,6
+     243 00001e20                   DC_DCM  set_regular_run_script          ,-660,370,30,6
+     244 00001ed0                   DC_DCM  set_regular_run_script          ,-640,365,30,6
+     245 00001f80                   DC_DCM  set_regular_run_script          ,-600,365,30,6
+     246 00002030                   DC_DC   set_random_celebrate_script     ,3,5,0
+     247 000020b0                   DC_DC   set_random_celebrate_script     ,3,5,0
+     248 00002130     0000          .word   0
+     249                    
+     250 00002140           ca2pg1u
+     251 00002140                   DC_DCM  set_celebrate_spin_move1_script ,-780,250,30,6
+     252 000021f0                   DC_DCM  set_celebrate_spin_move1_script ,-780,500,30,6
+     253 000022a0                   DC_DCM  set_celebrate_spin_move1_script ,-760,535,30,6
+     254 00002350                   DC_DCM  set_celebrate_spin_move1_script ,-710,540,30,6
+     255 00002400                   DC_DC   set_random_celebrate_script     ,3,5,0
+     256 00002480                   DC_DC   set_random_celebrate_script     ,3,5,0
+     257 00002500     0000          .word   0
+     258                    
+     259 00002510           ca2pg1d
+     260 00002510                   DC_DCM  set_celebrate_spin_move2_script ,-780,429,30,6
+     261 000025c0                   DC_DCM  set_celebrate_spin_move2_script ,-780,178,30,6
+     262 00002670                   DC_DCM  set_celebrate_spin_move2_script ,-760,143,30,6
+     263 00002720                   DC_DCM  set_celebrate_spin_move2_script ,-710,138,30,6
+     264 000027d0                   DC_DC   set_random_celebrate_script     ,3,5,0
+     265 00002850                   DC_DC   set_random_celebrate_script     ,3,5,0
+     266 000028d0     0000          .word   0
+     267                    
+     268                    **************************************************************************
+     269                    *                                                                        *
+     270                    * do_celebration_move                                                    *
+     271                    *       input   a6  = player block                                       *
+     272                    *               a8  = player object                                      *
+     273                    *               a11 = script set address (skating)                       *
+     274                    *               a2  = x point to move to                                 *
+     275                    *               a3  = z point to move to                                 *
+     276                    *               a4  = target distance from point (come this close)       *
+     277                    *               a5  = speed to move to point                             *
+     278                    *                                                                        *
+     279                    **************************************************************************
+     280 000028e0           do_celebration_table_move
+     281 000028e0     b706          move    *a8(ODT_PBK),a6,L
+         000028f0     0530  
+     282 00002900     b6ca          move    *a6(POF_CELEBRATION),a10,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+         00002910     0c20  
+     283 00002920     9742          move    *a10+,a2,L
+     284 00002930     9743          move    *a10+,a3,L
+     285 00002940     9744          move    *a10+,a4,L
+     286 00002950     9745          move    *a10+,a5,L
+     287 00002960     974b          move    *a10+,a11,L
+     288 00002970     b346          move    a10,*a6(POF_CELEBRATION),L
+         00002980     0c20  
+     289 00002990                   JSRP    do_celebration_move
+     290 00002a00     0d3f          callr   do_celeb_script
+         00002a10     0042  
+     291 00002a20     c080          jauc    SUCIDE
+         00002a30 00000000! 
+     292 00002a50           do_celebration_move
+     293 00002a50     4c49          move    a2,a9
+     294 00002a60     4c6a          move    a3,a10
+     295 00002a70     b288          move    a4,*a8(ODT_TEMP2),L
+         00002a80     0770  
+     296 00002a90     b2a8          move    a5,*a8(ODT_TEMP1),L
+         00002aa0     0750  
+     297 00002ab0     4c40          move    a2,a0
+     298 00002ac0     4c61          move    a3,a1
+     299 00002ad0     b702  dcm1    move    *a8(OXVAL),a2,L
+         00002ae0     0140  
+     300 00002af0     b703          move    *a8(OZVAL),a3,L
+         00002b00     0180  
+     301 00002b10     b706          move    *a8(ODT_PBK),a6,L
+         00002b20     0530  
+     302 00002b30     0d5f          calla   find_dirdis_to_point
+         00002b40 00000000! 
+     303 00002b60     4881          cmp     a4,a1
+     304 00002b70     c21d          jrls    dcm8
+     305 00002b80     4ca1          move    a5,a1
+     306 00002b90     098f          mmtm    sp,a0
+         00002ba0     8000  
+     307 00002bb0     0d5f          calla   set_obj_to_polar
+         00002bc0 00000000! 
+     308 00002be0     09af          mmfm    sp,a0
+         00002bf0     0001  
+     309 00002c00     098f          mmtm    sp,a11
+         00002c10     0010  
+     310 00002c20     0d5f          calla   dir_to_18
+         00002c30 00000000! 
+     311 00002c50     09af          mmfm    sp,a11
+         00002c60     0800  
+     312 00002c70     ac06          movb    a0,*a6(POF_DIRECTION)
+         00002c80     0390  
+     313 00002c90     092b          call    a11
+     314 00002ca0                   SLEEP   1
+     315 00002ce0     4d20          move    a9,a0
+     316 00002cf0     4d41          move    a10,a1
+     317 00002d00     b704          move    *a8(ODT_TEMP2),a4,L
+         00002d10     0770  
+     318 00002d20     b705          move    *a8(ODT_TEMP1),a5,L
+         00002d30     0750  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     319 00002d40     c0d8          jruc    dcm1
+     320 00002d50           dcm8    RETP
+     321                    
+     322                    **************************************************************************
+     323                    *                                                                        *
+     324                    * do_celebration                                                         *
+     325                    *       input   a6  = player block                                       *
+     326                    *               a10 = celebration script address                         *
+     327                    *                                                                        *
+     328                    **************************************************************************
+     329 00002d80           do_celebration
+     330 00002d80     b4ce          move    *a6(POF_FLAGS),a14,W
+         00002d90     0200  
+     331 00002da0     0bae          ori     M_PF_CELEBRATE,a14
+         00002db0 00001000  
+     332 00002dd0     b1c6          move    a14,*a6(POF_FLAGS),W
+         00002de0     0200  
+     333 00002df0     b346          move    a10,*a6(POF_CELEBRATION),L
+         00002e00     0c20  
+     334 00002e10     0d5f          calla   take_player_control
+         00002e20 00000000! 
+     335 00002e40           do_celeb_script
+     336 00002e40     b6ca          move    *a6(POF_CELEBRATION),a10,L
+         00002e50     0c20  
+     337 00002e60     ca09          jrz     dcs_abr                         ;this is part one of our fix for no script set before fu
+     338 00002e70     954e          move    *a10+,a14,W
+     339 00002e80     b346          move    a10,*a6(POF_CELEBRATION),L
+         00002e90     0c20  
+     340 00002ea0     24ae          sll     5,a14
+     341 00002eb0     0b2e          addi    dcs_bs,a14
+         00002ec0 00002f10' 
+     342 00002ee0     87ce          move    *a14,a14,L
+     343 00002ef0     016e          jump    a14
+     344 00002f00     0960  dcs_abr rets
+     345                    
+     346 00002f10 00002f70' dcs_bs  .long   dsc_0
+     347 00002f30 000030c0'         .long   dsc_1
+     348 00002f50 00003140'         .long   dsc_2
+     349                    
+     350 00002f70     b706  dsc_0   move    *a8(ODT_PBK),a6,L       ;get player block
+         00002f80     0530  
+     351 00002f90     5600          clr     a0
+     352 00002fa0     b206          move    a0,*a6(POF_CELEBRATION),L
+         00002fb0     0c20  
+     353 00002fc0     b006          move    a0,*a6(POF_MODE),W
+         00002fd0     0210  
+     354 00002fe0     b4ce          move    *a6(POF_FLAGS),a14,W
+         00002ff0     0200  
+     355 00003000     0b8e          andni   M_PF_CELEBRATE,a14
+         00003010 00001000  
+     356 00003030     b1c6          move    a14,*a6(POF_FLAGS),W
+         00003040     0200  
+     357 00003050     09c0          movi    100,a0
+         00003060     0064  
+     358 00003070     b008          move    a0,*a8(ANISLP),W                ;this is part two of our fix for no script set before fu
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+         00003080     0368  
+     359 00003090     c080          jauc    give_player_control
+         000030a0 00000000! 
+     360 000030c0     09c1  dsc_1   movi    PID_CELEBRATION_P,a1
+         000030d0     0a0b  
+     361 000030e0     09e7          movi    do_celebration_table_move,a7
+         000030f0 000028e0' 
+     362 00003110     c080          jauc    GETPRC
+         00003120 00000000! 
+     363 00003140     b706  dsc_2   move    *a8(ODT_PBK),a6,L       ;get player block
+         00003150     0530  
+     364 00003160     b6ca          move    *a6(POF_CELEBRATION),a10,L
+         00003170     0c20  
+     365 00003180     954e          move    *a10+,a14,W
+     366 00003190     adc6          movb    a14,*a6(POF_DIRECTION)
+         000031a0     0390  
+     367 000031b0     974e          move    *a10+,a14,L
+     368 000031c0     b3c8          move    a14,*a8(OXVEL),L
+         000031d0     0100  
+     369 000031e0     974e          move    *a10+,a14,L
+     370 000031f0     b3c8          move    a14,*a8(OZVEL),L
+         00003200     00e0  
+     371 00003210     974e          move    *a10+,a14,L
+     372 00003220     b346          move    a10,*a6(POF_CELEBRATION),L
+         00003230     0c20  
+     373 00003240     016e          jump    a14
+     374                    
+     375                    ;0 - done
+     376                    ;1 - dcm - x,z,t,s,script
+     377                    ;2 - dc  - face,xv,zv,script
+     378                    
+     379 00003250     b706  dcs9    move    *a8(ODT_PBK),a6,L       ;get player block
+         00003260     0530  
+     380 00003270     5600          clr     a0
+     381 00003280     b206          move    a0,*a6(POF_CELEBRATION),L
+         00003290     0c20  
+     382 000032a0     b006          move    a0,*a6(POF_MODE),W
+         000032b0     0210  
+     383 000032c0     c080          jauc    give_player_control
+         000032d0 00000000! 
+     384                    
+     385 000032f0           a_celebrate_script_done
+     386 000032f0     b706          move    *a8(ODT_PBK),a6,L
+         00003300     0530  
+     387 00003310     c0b2          jruc    do_celeb_script
+     388                    
+     389                    
+     390 00003320           set_random_celebrate_script
+     391 00003320     18c0          movk    6,a0
+     392 00003330     0d5f          calla   RAND0
+         00003340 00000000! 
+     393 00003360     24a0          sll     5,a0
+     394 00003370     0b20          addi    srcstab,a0
+         00003380 000033c0' 
+     395 000033a0     8600          move    *a0,a0,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     396 000033b0     0160          jump    a0
+     397                    
+     398 000033c0 000035e0' srcstab .long   set_pump_arm_script
+     399 000033e0 000038a0'         .long   set_toe_run_script
+     400 00003400 00003a00'         .long   set_leap1l_script
+     401 00003420 00003cc0'         .long   set_leap2l_script
+     402 00003440 00003f80'         .long   set_celebrate_spin_script
+     403 00003460 000043a0'         .long   set_knee_walk_script
+     404                    
+     405 00003480           set_celebrate_skate_script
+     406 00003480     09ee          movi    scs_tab-32,a14
+         00003490 000034c0' 
+     407 000034b0     c080          jauc    start_panim_if_not_ta14
+         000034c0 00000000! 
+     408 000034e0           scs_tab
+     409 000034e0 00000000!         .long   anim_crun_1
+     410 00003500 00000000!         .long   anim_crun_2
+     411 00003520 00000000!         .long   anim_crun_3
+     412 00003540 00000000!         .long   anim_crun_4
+     413 00003560 00000000!         .long   anim_crun_5
+     414 00003580 00000000!         .long   anim_crun_6
+     415 000035a0 00000000!         .long   anim_crun_7
+     416 000035c0 00000000!         .long   anim_crun_8
+     417                    
+     418 000035e0           set_pump_arm_script
+     419 000035e0     09ee          movi    spak_tab-32,a14
+         000035f0 00003620' 
+     420 00003610     c080          jauc    start_panim_if_not_ta14
+         00003620 00000000! 
+     421 00003640           spak_tab
+     422 00003640 00004500'         .long   anim_pump_arm_1
+     423 00003660 00004690'         .long   anim_pump_arm_2
+     424 00003680 00004830'         .long   anim_pump_arm_3
+     425 000036a0 000049d0'         .long   anim_pump_arm_4
+     426 000036c0 00004b70'         .long   anim_pump_arm_5
+     427 000036e0 00004d00'         .long   anim_pump_arm_6
+     428 00003700 00004ea0'         .long   anim_pump_arm_7
+     429 00003720 00005040'         .long   anim_pump_arm_8
+     430                    
+     431 00003740           set_pump_arm_move_script
+     432 00003740     09ee          movi    spakm_tab-32,a14
+         00003750 00003780' 
+     433 00003770     c080          jauc    start_panim_if_not_ta14
+         00003780 00000000! 
+     434 000037a0           spakm_tab
+     435 000037a0 000051e0'         .long   anim_pump_arm_m1
+     436 000037c0 00005320'         .long   anim_pump_arm_m2
+     437 000037e0 00005470'         .long   anim_pump_arm_m3
+     438 00003800 000055c0'         .long   anim_pump_arm_m4
+     439 00003820 00005710'         .long   anim_pump_arm_m5
+     440 00003840 00005850'         .long   anim_pump_arm_m6
+     441 00003860 000059a0'         .long   anim_pump_arm_m7
+     442 00003880 00005af0'         .long   anim_pump_arm_m8
+     443                    
+     444 000038a0           set_toe_run_script
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     445 000038a0     09ee          movi    strs_tab-32,a14
+         000038b0 000038e0' 
+     446 000038d0     c080          jauc    start_panim_if_not_ta14
+         000038e0 00000000! 
+     447 00003900           strs_tab
+     448 00003900 00005c40'         .long   anim_toe_run_1
+     449 00003920 00005dd0'         .long   anim_toe_run_2
+     450 00003940 00005dd0'         .long   anim_toe_run_3
+     451 00003960 00005dd0'         .long   anim_toe_run_4
+     452 00003980 00005c40'         .long   anim_toe_run_5
+     453 000039a0 00005f70'         .long   anim_toe_run_6
+     454 000039c0 00005f70'         .long   anim_toe_run_7
+     455 000039e0 00005f70'         .long   anim_toe_run_8
+     456                    
+     457 00003a00           set_leap1l_script
+     458 00003a00     09ee          movi    sl1_tab-32,a14
+         00003a10 00003a40' 
+     459 00003a30     c080          jauc    start_panim_if_not_ta14
+         00003a40 00000000! 
+     460 00003a60           sl1_tab
+     461 00003a60 00006110'         .long   anim_leap1l_1
+     462 00003a80 000063c0'         .long   anim_leap1l_2
+     463 00003aa0 000063c0'         .long   anim_leap1l_3
+     464 00003ac0 000063c0'         .long   anim_leap1l_4
+     465 00003ae0 00006110'         .long   anim_leap1l_5
+     466 00003b00 00006680'         .long   anim_leap1l_6
+     467 00003b20 00006680'         .long   anim_leap1l_7
+     468 00003b40 00006680'         .long   anim_leap1l_8
+     469                    
+     470 00003b60           set_leap1h_script
+     471 00003b60     09ee          movi    sl1h_tab-32,a14
+         00003b70 00003ba0' 
+     472 00003b90     c080          jauc    start_panim_if_not_ta14
+         00003ba0 00000000! 
+     473 00003bc0           sl1h_tab
+     474 00003bc0 00006940'         .long   anim_leap1h_1
+     475 00003be0 00006bf0'         .long   anim_leap1h_2
+     476 00003c00 00006bf0'         .long   anim_leap1h_3
+     477 00003c20 00006bf0'         .long   anim_leap1h_4
+     478 00003c40 00006940'         .long   anim_leap1h_5
+     479 00003c60 00006eb0'         .long   anim_leap1h_6
+     480 00003c80 00006eb0'         .long   anim_leap1h_7
+     481 00003ca0 00006eb0'         .long   anim_leap1h_8
+     482                    
+     483 00003cc0           set_leap2l_script
+     484 00003cc0     09ee          movi    sl2_tab-32,a14
+         00003cd0 00003d00' 
+     485 00003cf0     c080          jauc    start_panim_if_not_ta14
+         00003d00 00000000! 
+     486 00003d20           sl2_tab
+     487 00003d20 00007380'         .long   anim_leap2l_1
+     488 00003d40 00007630'         .long   anim_leap2l_2
+     489 00003d60 00007630'         .long   anim_leap2l_3
+     490 00003d80 00007630'         .long   anim_leap2l_4
+     491 00003da0 00007380'         .long   anim_leap2l_5
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     492 00003dc0 000078f0'         .long   anim_leap2l_6
+     493 00003de0 000078f0'         .long   anim_leap2l_7
+     494 00003e00 000078f0'         .long   anim_leap2l_8
+     495                    
+     496 00003e20           set_leap2h_script
+     497 00003e20     09ee          movi    sl2h_tab-32,a14
+         00003e30 00003e60' 
+     498 00003e50     c080          jauc    start_panim_if_not_ta14
+         00003e60 00000000! 
+     499 00003e80           sl2h_tab
+     500 00003e80 00007bb0'         .long   anim_leap2h_1
+     501 00003ea0 00007e60'         .long   anim_leap2h_2
+     502 00003ec0 00007e60'         .long   anim_leap2h_3
+     503 00003ee0 00007e60'         .long   anim_leap2h_4
+     504 00003f00 00007bb0'         .long   anim_leap2h_5
+     505 00003f20 00008120'         .long   anim_leap2h_6
+     506 00003f40 00008120'         .long   anim_leap2h_7
+     507 00003f60 00008120'         .long   anim_leap2h_8
+     508                    
+     509 00003f80           set_celebrate_spin_script
+     510 00003f80     09ee          movi    scsp_tab-32,a14
+         00003f90 00003fc0' 
+     511 00003fb0     c080          jauc    start_panim_if_not_ta14
+         00003fc0 00000000! 
+     512 00003fe0           scsp_tab
+     513 00003fe0 000083e0'         .long   anim_cspin_1
+     514 00004000 000085d0'         .long   anim_cspin_2
+     515 00004020 000085d0'         .long   anim_cspin_3
+     516 00004040 000085d0'         .long   anim_cspin_4
+     517 00004060 000083e0'         .long   anim_cspin_5
+     518 00004080 000087d0'         .long   anim_cspin_6
+     519 000040a0 000087d0'         .long   anim_cspin_7
+     520 000040c0 000087d0'         .long   anim_cspin_8
+     521                    
+     522 000040e0           set_celebrate_spin_move1_script         ;(team1)
+     523 000040e0     09ee          movi    scspm1_tab-32,a14
+         000040f0 00004120' 
+     524 00004110     c080          jauc    start_panim_if_not_ta14
+         00004120 00000000! 
+     525 00004140           scspm1_tab
+     526 00004140 000089d0'         .long   anim_cspinm1_1
+     527 00004160 000089d0'         .long   anim_cspinm1_2
+     528 00004180 000089d0'         .long   anim_cspinm1_3
+     529 000041a0 000089d0'         .long   anim_cspinm1_4
+     530 000041c0 000089d0'         .long   anim_cspinm1_5
+     531 000041e0 000089d0'         .long   anim_cspinm1_6
+     532 00004200 000089d0'         .long   anim_cspinm1_7
+     533 00004220 000089d0'         .long   anim_cspinm1_8
+     534                    
+     535 00004240           set_celebrate_spin_move2_script         ;(team2)
+     536 00004240     09ee          movi    scspm2_tab-32,a14
+         00004250 00004280' 
+     537 00004270     c080          jauc    start_panim_if_not_ta14
+         00004280 00000000! 
+     538 000042a0           scspm2_tab
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     539 000042a0 00008b80'         .long   anim_cspinm2_1
+     540 000042c0 00008b80'         .long   anim_cspinm2_2
+     541 000042e0 00008b80'         .long   anim_cspinm2_3
+     542 00004300 00008b80'         .long   anim_cspinm2_4
+     543 00004320 00008b80'         .long   anim_cspinm2_5
+     544 00004340 00008b80'         .long   anim_cspinm2_6
+     545 00004360 00008b80'         .long   anim_cspinm2_7
+     546 00004380 00008b80'         .long   anim_cspinm2_8
+     547                    
+     548 000043a0           set_knee_walk_script
+     549 000043a0     09ee          movi    skws_tab-32,a14
+         000043b0 000043e0' 
+     550 000043d0     c080          jauc    start_panim_if_not_ta14
+         000043e0 00000000! 
+     551 00004400           skws_tab
+     552 00004400 00008d30'         .long   anim_knee_walk_1
+     553 00004420 00008e90'         .long   anim_knee_walk_2
+     554 00004440 00008e90'         .long   anim_knee_walk_3
+     555 00004460 00008e90'         .long   anim_knee_walk_4
+     556 00004480 00008d30'         .long   anim_knee_walk_5
+     557 000044a0 00009000'         .long   anim_knee_walk_6
+     558 000044c0 00009000'         .long   anim_knee_walk_7
+     559 000044e0 00009000'         .long   anim_knee_walk_8
+     560                    
+     561 00004500           anim_pump_arm_1
+     562 00004500                   LW      CH11F01,4
+     563 00004530                   LW      CH11F02,4
+     564 00004560                   LW      CH11F03,4
+     565 00004590                   LW      CH11F04,4
+     566 000045c0                   LW      CH11F05,4
+     567 000045f0                   LW      CH11F07,4
+     568 00004620                   LWL     1,AFUNC|1,a_celebrate_script_done
+     569 00004670 00000000          .long   0
+     570                    
+     571 00004690           anim_pump_arm_2
+     572 00004690                   LWW     CH12F01,4|AFLIP,0
+     573 000046d0                   LW      CH12F02,4
+     574 00004700                   LW      CH12F03,4
+     575 00004730                   LW      CH12F04,4
+     576 00004760                   LW      CH12F05,4
+     577 00004790                   LW      CH12F08,4
+     578 000047c0                   LWL     1,AFUNC|1,a_celebrate_script_done
+     579 00004810 00000000          .long   0
+     580                    
+     581 00004830           anim_pump_arm_3
+     582 00004830                   LWW     CH13F01,4|AFLIP,0
+     583 00004870                   LW      CH13F02,4
+     584 000048a0                   LW      CH13F03,4
+     585 000048d0                   LW      CH13F04,4
+     586 00004900                   LW      CH13F05,4
+     587 00004930                   LW      CH13F08,4
+     588 00004960                   LWL     1,AFUNC|1,a_celebrate_script_done
+     589 000049b0 00000000          .long   0
+     590                    
+     591 000049d0           anim_pump_arm_4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     592 000049d0                   LWW     CH14F01,4|AFLIP,0
+     593 00004a10                   LW      CH14F02,4
+     594 00004a40                   LW      CH14F03,4
+     595 00004a70                   LW      CH14F04,4
+     596 00004aa0                   LW      CH14F05,4
+     597 00004ad0                   LW      CH14F07,4
+     598 00004b00                   LWL     1,AFUNC|1,a_celebrate_script_done
+     599 00004b50 00000000          .long   0
+     600                    
+     601 00004b70           anim_pump_arm_5
+     602 00004b70                   LW      CH15F01,4
+     603 00004ba0                   LW      CH15F02,4
+     604 00004bd0                   LW      CH15F03,4
+     605 00004c00                   LW      CH15F04,4
+     606 00004c30                   LW      CH15F05,4
+     607 00004c60                   LW      CH15F07,4
+     608 00004c90                   LWL     1,AFUNC|1,a_celebrate_script_done
+     609 00004ce0 00000000          .long   0
+     610                    
+     611 00004d00           anim_pump_arm_6
+     612 00004d00                   LWW     CH14F01,4|AFLIP,M_FLIPH
+     613 00004d40                   LW      CH14F02,4
+     614 00004d70                   LW      CH14F03,4
+     615 00004da0                   LW      CH14F04,4
+     616 00004dd0                   LW      CH14F05,4
+     617 00004e00                   LW      CH14F07,4
+     618 00004e30                   LWL     1,AFUNC|1,a_celebrate_script_done
+     619 00004e80 00000000          .long   0
+     620                    
+     621 00004ea0           anim_pump_arm_7
+     622 00004ea0                   LWW     CH13F01,4|AFLIP,M_FLIPH
+     623 00004ee0                   LW      CH13F02,4
+     624 00004f10                   LW      CH13F03,4
+     625 00004f40                   LW      CH13F04,4
+     626 00004f70                   LW      CH13F05,4
+     627 00004fa0                   LW      CH13F08,4
+     628 00004fd0                   LWL     1,AFUNC|1,a_celebrate_script_done
+     629 00005020 00000000          .long   0
+     630                    
+     631 00005040           anim_pump_arm_8
+     632 00005040                   LWW     CH12F01,4|AFLIP,M_FLIPH
+     633 00005080                   LW      CH12F02,4
+     634 000050b0                   LW      CH12F03,4
+     635 000050e0                   LW      CH12F04,4
+     636 00005110                   LW      CH12F05,4
+     637 00005140                   LW      CH12F08,4
+     638 00005170                   LWL     1,AFUNC|1,a_celebrate_script_done
+     639 000051c0 00000000          .long   0
+     640                    
+     641 000051e0           anim_pump_arm_m1
+     642 000051e0                   LW      CH11F01,4
+     643 00005210                   LW      CH11F02,4
+     644 00005240                   LW      CH11F03,4
+     645 00005270                   LW      CH11F04,4
+     646 000052a0                   LW      CH11F05,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     647 000052d0                   LW      CH11F07,4
+     648 00005300 00000000          .long   0
+     649                    
+     650 00005320           anim_pump_arm_m2
+     651 00005320                   LWW     CH12F01,4|AFLIP,0
+     652 00005360                   LW      CH12F02,4
+     653 00005390                   LW      CH12F03,4
+     654 000053c0                   LW      CH12F04,4
+     655 000053f0                   LW      CH12F05,4
+     656 00005420                   LW      CH12F08,4
+     657 00005450 00000000          .long   0
+     658                    
+     659 00005470           anim_pump_arm_m3
+     660 00005470                   LWW     CH13F01,4|AFLIP,0
+     661 000054b0                   LW      CH13F02,4
+     662 000054e0                   LW      CH13F03,4
+     663 00005510                   LW      CH13F04,4
+     664 00005540                   LW      CH13F05,4
+     665 00005570                   LW      CH13F08,4
+     666 000055a0 00000000          .long   0
+     667                    
+     668 000055c0           anim_pump_arm_m4
+     669 000055c0                   LWW     CH14F01,4|AFLIP,0
+     670 00005600                   LW      CH14F02,4
+     671 00005630                   LW      CH14F03,4
+     672 00005660                   LW      CH14F04,4
+     673 00005690                   LW      CH14F05,4
+     674 000056c0                   LW      CH14F07,4
+     675 000056f0 00000000          .long   0
+     676                    
+     677 00005710           anim_pump_arm_m5
+     678 00005710                   LW      CH15F01,4
+     679 00005740                   LW      CH15F02,4
+     680 00005770                   LW      CH15F03,4
+     681 000057a0                   LW      CH15F04,4
+     682 000057d0                   LW      CH15F05,4
+     683 00005800                   LW      CH15F07,4
+     684 00005830 00000000          .long   0
+     685                    
+     686 00005850           anim_pump_arm_m6
+     687 00005850                   LWW     CH14F01,4|AFLIP,M_FLIPH
+     688 00005890                   LW      CH14F02,4
+     689 000058c0                   LW      CH14F03,4
+     690 000058f0                   LW      CH14F04,4
+     691 00005920                   LW      CH14F05,4
+     692 00005950                   LW      CH14F07,4
+     693 00005980 00000000          .long   0
+     694                    
+     695 000059a0           anim_pump_arm_m7
+     696 000059a0                   LWW     CH13F01,4|AFLIP,M_FLIPH
+     697 000059e0                   LW      CH13F02,4
+     698 00005a10                   LW      CH13F03,4
+     699 00005a40                   LW      CH13F04,4
+     700 00005a70                   LW      CH13F05,4
+     701 00005aa0                   LW      CH13F08,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     702 00005ad0 00000000          .long   0
+     703                    
+     704 00005af0           anim_pump_arm_m8
+     705 00005af0                   LWW     CH12F01,4|AFLIP,M_FLIPH
+     706 00005b30                   LW      CH12F02,4
+     707 00005b60                   LW      CH12F03,4
+     708 00005b90                   LW      CH12F04,4
+     709 00005bc0                   LW      CH12F05,4
+     710 00005bf0                   LW      CH12F08,4
+     711 00005c20 00000000          .long   0
+     712                    
+     713 00005c40           anim_toe_run_1
+     714 00005c40           anim_toe_run_5
+     715 00005c40                   LW      CH43F01,5
+     716 00005c70                   LW      CH43F02,5
+     717 00005ca0                   LW      CH43F03,5
+     718 00005cd0                   LW      CH43F04,5
+     719 00005d00                   LW      CH43F05,5
+     720 00005d30                   LW      CH43F06,5
+     721 00005d60                   LWL     1,AFUNC|1,a_celebrate_script_done
+     722 00005db0 00000000          .long   0
+     723 00005dd0           anim_toe_run_2
+     724 00005dd0           anim_toe_run_3
+     725 00005dd0           anim_toe_run_4
+     726 00005dd0                   LWW     CH43F01,5|AFLIP,0
+     727 00005e10                   LW      CH43F02,5
+     728 00005e40                   LW      CH43F03,5
+     729 00005e70                   LW      CH43F04,5
+     730 00005ea0                   LW      CH43F05,5
+     731 00005ed0                   LW      CH43F06,5
+     732 00005f00                   LWL     1,AFUNC|1,a_celebrate_script_done
+     733 00005f50 00000000          .long   0
+     734 00005f70           anim_toe_run_6
+     735 00005f70           anim_toe_run_7
+     736 00005f70           anim_toe_run_8
+     737 00005f70                   LWW     CH43F01,5|AFLIP,M_FLIPH
+     738 00005fb0                   LW      CH43F02,5
+     739 00005fe0                   LW      CH43F03,5
+     740 00006010                   LW      CH43F04,5
+     741 00006040                   LW      CH43F05,5
+     742 00006070                   LW      CH43F06,5
+     743 000060a0                   LWL     1,AFUNC|1,a_celebrate_script_done
+     744 000060f0 00000000          .long   0
+     745                    
+     746 00006110           anim_leap1l_1
+     747 00006110           anim_leap1l_5
+     748 00006110                   LW      CH63F01,4
+     749 00006140                   LWL     1,AFUNC|1,start_j1_grav
+     750 00006190                   LW      CH63F02,3
+     751 000061c0                   LW      CH63F03,2
+     752 000061f0                   LW      CH63F04,2
+     753 00006220                   LW      CH63F05,6
+     754 00006250                   LWL     1,AFUNC|1,start_j11_grav
+     755 000062a0                   LW      CH63F05,11
+     756 000062d0                   LWL     1,AFUNC|1,stop_j1_grav
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     757 00006320                   LW      CH63F06,2
+     758 00006350                   LWL     1,AFUNC|1,a_celebrate_script_done
+     759 000063a0 00000000          .long   0
+     760 000063c0           anim_leap1l_2
+     761 000063c0           anim_leap1l_3
+     762 000063c0           anim_leap1l_4
+     763 000063c0                   LWW     CH63F01,4|AFLIP,0
+     764 00006400                   LWL     1,AFUNC|1,start_j1_grav
+     765 00006450                   LW      CH63F02,3
+     766 00006480                   LW      CH63F03,2
+     767 000064b0                   LW      CH63F04,2
+     768 000064e0                   LW      CH63F05,6
+     769 00006510                   LWL     1,AFUNC|1,start_j11_grav
+     770 00006560                   LW      CH63F05,11
+     771 00006590                   LWL     1,AFUNC|1,stop_j1_grav
+     772 000065e0                   LW      CH63F06,2
+     773 00006610                   LWL     1,AFUNC|1,a_celebrate_script_done
+     774 00006660 00000000          .long   0
+     775 00006680           anim_leap1l_6
+     776 00006680           anim_leap1l_7
+     777 00006680           anim_leap1l_8
+     778 00006680                   LWW     CH63F01,4|AFLIP,M_FLIPH
+     779 000066c0                   LWL     1,AFUNC|1,start_j1_grav
+     780 00006710                   LW      CH63F02,3
+     781 00006740                   LW      CH63F03,2
+     782 00006770                   LW      CH63F04,2
+     783 000067a0                   LW      CH63F05,6
+     784 000067d0                   LWL     1,AFUNC|1,start_j11_grav
+     785 00006820                   LW      CH63F05,11
+     786 00006850                   LWL     1,AFUNC|1,stop_j1_grav
+     787 000068a0                   LW      CH63F06,2
+     788 000068d0                   LWL     1,AFUNC|1,a_celebrate_script_done
+     789 00006920 00000000          .long   0
+     790                    
+     791 00006940           anim_leap1h_1
+     792 00006940           anim_leap1h_5
+     793 00006940                   LW      CH63F01,4
+     794 00006970                   LWL     1,AFUNC|1,start_jh1_grav
+     795 000069c0                   LW      CH63F02,3
+     796 000069f0                   LW      CH63F03,2
+     797 00006a20                   LW      CH63F04,2
+     798 00006a50                   LW      CH63F05,6
+     799 00006a80                   LWL     1,AFUNC|1,start_j11_grav
+     800 00006ad0                   LW      CH63F05,19
+     801 00006b00                   LWL     1,AFUNC|1,stop_j1_grav
+     802 00006b50                   LW      CH63F06,2
+     803 00006b80                   LWL     1,AFUNC|1,a_celebrate_script_done
+     804 00006bd0 00000000          .long   0
+     805 00006bf0           anim_leap1h_2
+     806 00006bf0           anim_leap1h_3
+     807 00006bf0           anim_leap1h_4
+     808 00006bf0                   LWW     CH63F01,4|AFLIP,0
+     809 00006c30                   LWL     1,AFUNC|1,start_jh1_grav
+     810 00006c80                   LW      CH63F02,3
+     811 00006cb0                   LW      CH63F03,2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     812 00006ce0                   LW      CH63F04,2
+     813 00006d10                   LW      CH63F05,6
+     814 00006d40                   LWL     1,AFUNC|1,start_j11_grav
+     815 00006d90                   LW      CH63F05,19
+     816 00006dc0                   LWL     1,AFUNC|1,stop_j1_grav
+     817 00006e10                   LW      CH63F06,2
+     818 00006e40                   LWL     1,AFUNC|1,a_celebrate_script_done
+     819 00006e90 00000000          .long   0
+     820 00006eb0           anim_leap1h_6
+     821 00006eb0           anim_leap1h_7
+     822 00006eb0           anim_leap1h_8
+     823 00006eb0                   LWW     CH63F01,4|AFLIP,M_FLIPH
+     824 00006ef0                   LWL     1,AFUNC|1,start_jh1_grav
+     825 00006f40                   LW      CH63F02,3
+     826 00006f70                   LW      CH63F03,2
+     827 00006fa0                   LW      CH63F04,2
+     828 00006fd0                   LW      CH63F05,6
+     829 00007000                   LWL     1,AFUNC|1,start_j11_grav
+     830 00007050                   LW      CH63F05,19
+     831 00007080                   LWL     1,AFUNC|1,stop_j1_grav
+     832 000070d0                   LW      CH63F06,2
+     833 00007100                   LWL     1,AFUNC|1,a_celebrate_script_done
+     834 00007150 00000000          .long   0
+     835                    
+     836 00007170           start_j1_grav
+     837 00007170     09e0          movi    0fffa6000h,a0
+         00007180 fffa6000  
+     838 000071a0     b208          move    a0,*a8(OYVEL),L
+         000071b0     0120  
+     839 000071c0     09c0          movi    [0,07780h],a0
+         000071d0     7780  
+     840 000071e0     b008          move    a0,*a8(OYACCEL),W
+         000071f0     02f0  
+     841 00007200     0960          rets
+     842 00007210           start_jh1_grav
+     843 00007210     09e0          movi    [-7,0],a0
+         00007220 fff90000  
+     844 00007240     b208          move    a0,*a8(OYVEL),L
+         00007250     0120  
+     845 00007260     09c0          movi    [0,07530h],a0
+         00007270     7530  
+     846 00007280     b008          move    a0,*a8(OYACCEL),W
+         00007290     02f0  
+     847 000072a0     0960          rets
+     848 000072b0           start_j11_grav
+     849 000072b0     09c0          movi    [0,06000h],a0
+         000072c0     6000  
+     850 000072d0     b008          move    a0,*a8(OYACCEL),W
+         000072e0     02f0  
+     851 000072f0     0960          rets
+     852 00007300           stop_j1_grav
+     853 00007300     5600          clr     a0
+     854 00007310     b008          move    a0,*a8(OYACCEL),W
+         00007320     02f0  
+     855 00007330     b208          move    a0,*a8(OYVEL),L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+         00007340     0120  
+     856 00007350     b208          move    a0,*a8(OYVAL),L
+         00007360     0160  
+     857 00007370     0960          rets
+     858                    
+     859 00007380           anim_leap2l_1
+     860 00007380           anim_leap2l_5
+     861 00007380                   LW      CH53F01,4
+     862 000073b0                   LWL     1,AFUNC|1,start_j1_grav
+     863 00007400                   LW      CH53F02,3
+     864 00007430                   LW      CH53F03,2
+     865 00007460                   LW      CH53F04,2
+     866 00007490                   LW      CH53F05,6
+     867 000074c0                   LWL     1,AFUNC|1,start_j11_grav
+     868 00007510                   LW      CH53F05,11
+     869 00007540                   LWL     1,AFUNC|1,stop_j1_grav
+     870 00007590                   LW      CH53F06,2
+     871 000075c0                   LWL     1,AFUNC|1,a_celebrate_script_done
+     872 00007610 00000000          .long   0
+     873 00007630           anim_leap2l_2
+     874 00007630           anim_leap2l_3
+     875 00007630           anim_leap2l_4
+     876 00007630                   LWW     CH53F01,4|AFLIP,0
+     877 00007670                   LWL     1,AFUNC|1,start_j1_grav
+     878 000076c0                   LW      CH53F02,3
+     879 000076f0                   LW      CH53F03,2
+     880 00007720                   LW      CH53F04,2
+     881 00007750                   LW      CH53F05,6
+     882 00007780                   LWL     1,AFUNC|1,start_j11_grav
+     883 000077d0                   LW      CH53F05,11
+     884 00007800                   LWL     1,AFUNC|1,stop_j1_grav
+     885 00007850                   LW      CH53F06,2
+     886 00007880                   LWL     1,AFUNC|1,a_celebrate_script_done
+     887 000078d0 00000000          .long   0
+     888 000078f0           anim_leap2l_6
+     889 000078f0           anim_leap2l_7
+     890 000078f0           anim_leap2l_8
+     891 000078f0                   LWW     CH53F01,4|AFLIP,M_FLIPH
+     892 00007930                   LWL     1,AFUNC|1,start_j1_grav
+     893 00007980                   LW      CH53F02,3
+     894 000079b0                   LW      CH53F03,2
+     895 000079e0                   LW      CH53F04,2
+     896 00007a10                   LW      CH53F05,6
+     897 00007a40                   LWL     1,AFUNC|1,start_j11_grav
+     898 00007a90                   LW      CH53F05,11
+     899 00007ac0                   LWL     1,AFUNC|1,stop_j1_grav
+     900 00007b10                   LW      CH53F06,2
+     901 00007b40                   LWL     1,AFUNC|1,a_celebrate_script_done
+     902 00007b90 00000000          .long   0
+     903                    
+     904 00007bb0           anim_leap2h_1
+     905 00007bb0           anim_leap2h_5
+     906 00007bb0                   LW      CH53F01,4
+     907 00007be0                   LWL     1,AFUNC|1,start_jh1_grav
+     908 00007c30                   LW      CH53F02,3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+     909 00007c60                   LW      CH53F03,2
+     910 00007c90                   LW      CH53F04,2
+     911 00007cc0                   LW      CH53F05,6
+     912 00007cf0                   LWL     1,AFUNC|1,start_j11_grav
+     913 00007d40                   LW      CH53F05,19
+     914 00007d70                   LWL     1,AFUNC|1,stop_j1_grav
+     915 00007dc0                   LW      CH53F06,2
+     916 00007df0                   LWL     1,AFUNC|1,a_celebrate_script_done
+     917 00007e40 00000000          .long   0
+     918 00007e60           anim_leap2h_2
+     919 00007e60           anim_leap2h_3
+     920 00007e60           anim_leap2h_4
+     921 00007e60                   LWW     CH53F01,4|AFLIP,0
+     922 00007ea0                   LWL     1,AFUNC|1,start_jh1_grav
+     923 00007ef0                   LW      CH53F02,3
+     924 00007f20                   LW      CH53F03,2
+     925 00007f50                   LW      CH53F04,2
+     926 00007f80                   LW      CH53F05,6
+     927 00007fb0                   LWL     1,AFUNC|1,start_j11_grav
+     928 00008000                   LW      CH53F05,19
+     929 00008030                   LWL     1,AFUNC|1,stop_j1_grav
+     930 00008080                   LW      CH53F06,2
+     931 000080b0                   LWL     1,AFUNC|1,a_celebrate_script_done
+     932 00008100 00000000          .long   0
+     933 00008120           anim_leap2h_6
+     934 00008120           anim_leap2h_7
+     935 00008120           anim_leap2h_8
+     936 00008120                   LWW     CH53F01,4|AFLIP,M_FLIPH
+     937 00008160                   LWL     1,AFUNC|1,start_jh1_grav
+     938 000081b0                   LW      CH53F02,3
+     939 000081e0                   LW      CH53F03,2
+     940 00008210                   LW      CH53F04,2
+     941 00008240                   LW      CH53F05,6
+     942 00008270                   LWL     1,AFUNC|1,start_j11_grav
+     943 000082c0                   LW      CH53F05,19
+     944 000082f0                   LWL     1,AFUNC|1,stop_j1_grav
+     945 00008340                   LW      CH53F06,2
+     946 00008370                   LWL     1,AFUNC|1,a_celebrate_script_done
+     947 000083c0 00000000          .long   0
+     948                    
+     949 000083e0           anim_cspin_1
+     950 000083e0           anim_cspin_5
+     951 000083e0                   LW      CH73F02,4
+     952 00008410                   LW      CH73F04,4
+     953 00008440                   LW      CH73F05,4
+     954 00008470                   LW      CH73F07,4
+     955 000084a0                   LW      CH73F09,4
+     956 000084d0                   LW      CH73F11,4
+     957 00008500                   LW      CH73F13,4
+     958 00008530                   LW      CH73F14,4
+     959 00008560                   LWL     1,AFUNC|1,a_celebrate_script_done
+     960 000085b0 00000000          .long   0
+     961 000085d0           anim_cspin_2
+     962 000085d0           anim_cspin_3
+     963 000085d0           anim_cspin_4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+     964 000085d0                   LWW     CH73F02,4|AFLIP,0
+     965 00008610                   LW      CH73F04,4
+     966 00008640                   LW      CH73F05,4
+     967 00008670                   LW      CH73F07,4
+     968 000086a0                   LW      CH73F09,4
+     969 000086d0                   LW      CH73F11,4
+     970 00008700                   LW      CH73F13,4
+     971 00008730                   LW      CH73F14,4
+     972 00008760                   LWL     1,AFUNC|1,a_celebrate_script_done
+     973 000087b0 00000000          .long   0
+     974 000087d0           anim_cspin_6
+     975 000087d0           anim_cspin_7
+     976 000087d0           anim_cspin_8
+     977 000087d0                   LWW     CH73F02,4|AFLIP,M_FLIPH
+     978 00008810                   LW      CH73F04,4
+     979 00008840                   LW      CH73F05,4
+     980 00008870                   LW      CH73F07,4
+     981 000088a0                   LW      CH73F09,4
+     982 000088d0                   LW      CH73F11,4
+     983 00008900                   LW      CH73F13,4
+     984 00008930                   LW      CH73F14,4
+     985 00008960                   LWL     1,AFUNC|1,a_celebrate_script_done
+     986 000089b0 00000000          .long   0
+     987                    
+     988 000089d0           anim_cspinm1_1
+     989 000089d0           anim_cspinm1_2
+     990 000089d0           anim_cspinm1_3
+     991 000089d0           anim_cspinm1_4
+     992 000089d0           anim_cspinm1_5
+     993 000089d0           anim_cspinm1_6
+     994 000089d0           anim_cspinm1_7
+     995 000089d0           anim_cspinm1_8
+     996 000089d0                   LWW     CH73F02,4|AFLIP,0
+     997 00008a10                   LW      CH73F04,4
+     998 00008a40                   LW      CH73F05,4
+     999 00008a70                   LW      CH73F07,4
+    1000 00008aa0                   LW      CH73F09,4
+    1001 00008ad0                   LW      CH73F11,4
+    1002 00008b00                   LW      CH73F13,4
+    1003 00008b30                   LW      CH73F14,4
+    1004 00008b60 00000000          .long   0
+    1005 00008b80           anim_cspinm2_1
+    1006 00008b80           anim_cspinm2_2
+    1007 00008b80           anim_cspinm2_3
+    1008 00008b80           anim_cspinm2_4
+    1009 00008b80           anim_cspinm2_5
+    1010 00008b80           anim_cspinm2_6
+    1011 00008b80           anim_cspinm2_7
+    1012 00008b80           anim_cspinm2_8
+    1013 00008b80                   LWW     CH73F02,4|AFLIP,M_FLIPH
+    1014 00008bc0                   LW      CH73F04,4
+    1015 00008bf0                   LW      CH73F05,4
+    1016 00008c20                   LW      CH73F07,4
+    1017 00008c50                   LW      CH73F09,4
+    1018 00008c80                   LW      CH73F11,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:05 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+    1019 00008cb0                   LW      CH73F13,4
+    1020 00008ce0                   LW      CH73F14,4
+    1021 00008d10 00000000          .long   0
+    1022                    
+    1023 00008d30           anim_knee_walk_1
+    1024 00008d30           anim_knee_walk_5
+    1025 00008d30                   LW      CH23F03,4
+    1026 00008d60                   LW      CH23F04,4
+    1027 00008d90                   LW      CH23F05,4
+    1028 00008dc0                   LW      CH23F06,4
+    1029 00008df0                   LW      CH23F07,4
+    1030 00008e20                   LWL     1,AFUNC|1,a_celebrate_script_done
+    1031 00008e70 00000000          .long   0
+    1032 00008e90           anim_knee_walk_2
+    1033 00008e90           anim_knee_walk_3
+    1034 00008e90           anim_knee_walk_4
+    1035 00008e90                   LWW     CH23F03,4|AFLIP,0
+    1036 00008ed0                   LW      CH23F04,4
+    1037 00008f00                   LW      CH23F05,4
+    1038 00008f30                   LW      CH23F06,4
+    1039 00008f60                   LW      CH23F07,4
+    1040 00008f90                   LWL     1,AFUNC|1,a_celebrate_script_done
+    1041 00008fe0 00000000          .long   0
+    1042 00009000           anim_knee_walk_6
+    1043 00009000           anim_knee_walk_7
+    1044 00009000           anim_knee_walk_8
+    1045 00009000                   LWW     CH23F03,4|AFLIP,M_FLIPH
+    1046 00009040                   LW      CH23F04,4
+    1047 00009070                   LW      CH23F05,4
+    1048 000090a0                   LW      CH23F06,4
+    1049 000090d0                   LW      CH23F07,4
+    1050 00009100                   LWL     1,AFUNC|1,a_celebrate_script_done
+    1051 00009150 00000000          .long   0
+
+ No Errors,  No Warnings

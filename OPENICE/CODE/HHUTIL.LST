@@ -1,0 +1,850 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHUTIL.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L
+       5                            .MNOLIST
+       6                    
+       7                    **************************************************************************
+       8                    *                                                                        *
+       9                    *       COPYRIGHT (C) 1994 MIDWAY MANUFACTURING COMPANY.                 *
+      10                    *                      ALL RIGHTS RESERVED.                              *
+      11                    *                                                                        *
+      12                    **************************************************************************
+      13                    
+      14                    *       GET THE SYSTEM STUFF
+      15                            .INCLUDE        "HH.INC"
+      16                            .INCLUDE        "IMGTBL.GLO"
+      17                            .include        "hhutil.e"
+      18                            .include        "hhd.g"
+      19                            .include        "hhproc.g"
+      20                            .include        "hh.g"
+      21                            .include        "hhram.g"
+      22                            .include        "hhpall.g"
+      23                            .include        "hhc.g"
+      24                            .include        "hhsnd.g"
+      25                            .include        "hhtext.g"
+      26                    
+      27                    ; end of include files
+      28                    
+      29 00000000                   .EVEN
+      30 00000000                   .TEXT
+      31                    
+      32                    **************************************************************************
+      33                    *                                                                        *
+      34                    * CLRPDATA - CLEAR THE PDATA AREA OF A PROCESS BLOCK                     *
+      35                    * A13 = PTR TO PROCESS BLOCK                                             *
+      36                    *                                                                        *
+      37                    **************************************************************************
+      38 00000000           CLRPDATA
+      39 00000000     098f          MMTM    SP,A1,A6,A14
+         00000010     4202  
+      40 00000020     4dae          MOVE    A13,A14
+      41 00000030     5621          CLR     A1
+      42 00000040     0b0e          ADDI    PDATA,A14
+         00000050     0100  
+      43 00000060     09c6          MOVI    (PSDATA-PDATA)/16,A6
+         00000070     0080  
+      44 00000080           CLRSHL
+      45 00000080     2fe6          SRL     1,A6
+      46 00000090     c901          JRNC    CLRPDL
+      47 000000a0     902e          MOVE    A1,*A14+,W      ;STUFF THE ODD WORD
+      48 000000b0           CLRPDL
+      49 000000b0     922e          MOVE    A1,*A14+,L
+      50 000000c0     3c46          DSJS    A6,CLRPDL
+      51 000000d0     09af          MMFM    SP,A1,A6,A14
+         000000e0     4042  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      52 000000f0     0960          RETS
+      53                    
+      54 00000100           T2FIXED:
+      55 00000100     0019          .word    25
+      56 00000110     0000          .word   00H,07C00H,06739H,01FH,035ADH,077A0H,0741AH,03A0H
+      57 00000190     0000          .word   00H,010H,07E3H,07FFFH,07DADH,06420H,02108H,03DEFH
+      58 00000210     4210          .word   04210H,05AD6H,05EF7H,0C0H,0120H,0982H,0221H,0782H
+      59 00000290     47f1          .word   047F1H
+      60                    
+      61                    **************************************************************************
+      62                    *                                                                        *
+      63                    * MYOINIT - INITIALIZE SUPPLEMENTAL OBJECT LIST HEADERS                  *
+      64                    *                                                                        *
+      65                    **************************************************************************
+      66 000002a0           MYOINIT
+      67 000002a0     098f          MMTM    SP,A0,A1,A2,A3,A4,A5
+         000002b0     fc00  
+      68 000002c0     01e0          PUSHST
+      69                    
+      70 000002d0     0d5f          CALLA   RESET_MAX_PALXFERS
+         000002e0 00000000! 
+      71                    
+      72 00000300     0d5f          CALLA   CLRPAL
+         00000310 00000000! 
+      73 00000330     09e0          MOVI    T2FIXED,A0
+         00000340 00000100' 
+      74 00000360     0d5f          CALLA   GETFPAL                 ;GET THE FIXED FOREGROUND PALETTE
+         00000370 00000000! 
+      75 00000390     09e0          MOVI    TEXTPAL,A0              ;FIX THE TEXT PALETTE
+         000003a0 00000000! 
+      76 000003c0     0d5f          CALLA   GETFPAL                 ;IF YOU CHANGE THIS, CHANGE TEXT_PAL
+         000003d0 00000000! 
+      77 000003f0     0d5f          calla   build_whitepal
+         00000400 00000000! 
+      78                    
+      79                    ;       MOVE    A0,@CURPAL,W            ;STUFF THIS HERE FOR FIXED STUFF
+      80 00000420     0360          DINT
+      81 00000430     05a0          MOVE    @INTENB,A0,W
+         00000440 c0000110  
+      82 00000460     0b80          ANDNI   X1E,A0                  ;NO MORE DMA INTERRUPTS
+         00000470 00000002  
+      83 00000490     0580          MOVE    A0,@INTENB,W
+         000004a0 c0000110  
+      84 000004c0     01c0          POPST
+      85 000004d0     5600          CLR     A0
+      86 000004e0     0580          MOVE    A0,@GAMERASE
+         000004f0 00000000! 
+      87 00000510     0d3f          CALLR   DMAWAIT                 ;WAIT ON DMA
+         00000520     00ef  
+      88 00000530     0d5f          CALLA   IAUTOE
+         00000540 00000000! 
+      89                    
+      90                    *INITIALIZE SUPPLEMENTAL LIST HEADERS
+      91 00000560     09e1          MOVI    SUPPLSTS,A1              ;GET THE SUPPLEMENTAL LIST AREA
+         00000570 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+      92 00000590     5600          CLR     A0
+      93 000005a0           MYOINITS:
+      94 000005a0     9201          MOVE    A0,*A1+,L
+      95 000005b0     0b61          CMPI    SUPPLSTSX,A1
+         000005c0 ffffffff! 
+      96 000005e0     c8fb          JRLO    MYOINITS
+      97 000005f0     5600          clr     a0
+      98 00000600     0580          move    a0,@rink_on,W
+         00000610 00000000! 
+      99 00000630     0580          move    a0,@small_timer_on,W
+         00000640 00000000! 
+     100 00000660     09af          MMFM    SP,A0,A1,A2,A3,A4,A5
+         00000670     003f  
+     101 00000680     c080          JAUC    OINIT
+         00000690 00000000! 
+     102                    
+     103                    **************************************************************************
+     104                    *                                                                        *
+     105                    * RANDOM - GENERATE A RANDOM NUMBER                                      *
+     106                    * RETURNS:                                                               *
+     107                    * A0 = 32 BIT RANDOM #                                                   *
+     108                    *                                                                        *
+     109                    **************************************************************************
+     110 000006b0           RANDOM:
+     111 000006b0     07a0          MOVE    @RAND,A0,L
+         000006c0 00000000! 
+     112 000006e0     2020          SLA     1,A0
+     113 000006f0     cc03          JRV     RND2
+     114 00000700     0ba0          ORI     2,A0
+         00000710 00000002  
+     115 00000730     0780  RND2:   MOVE    A0,@RAND,L
+         00000740 00000000! 
+     116 00000760     57ce          CLR     A14
+     117 00000770     43c0          ADDC    A14,A0  ;GET LAST BIT BACK TO MAKE 32
+     118 00000780     05ae          MOVE    @HCOUNT,A14,W
+         00000790 c00001c0  
+     119 000007b0     69c0          RL      A14,A0  ;RANDOM ROTATION
+     120 000007c0     4c00          MOVE    A0,A0   ;SET STATUS BITS
+     121 000007d0     0960          RETS
+     122                    
+     123                    **************************************************************************
+     124                    *                                                                        *
+     125                    * RANDU - GENERATE A UNIFORMLY DISTRIBUTED RANDOM # BETWEEN 1 AND [A0]   *
+     126                    * A0 = RANGE INPUT                                                       *
+     127                    * RETURNS:                                                               *
+     128                    * A0 = RANDOM #                                                          *
+     129                    *                                                                        *
+     130                    **************************************************************************
+     131 000007e0           RANDU:  PUSH    A1
+     132 000007f0     4c01          MOVE    A0,A1
+     133 00000800     0d3f          CALLR   RANDOM
+         00000810     ffe9  
+     134 00000820     5e20          MPYU    A1,A0
+     135 00000830     1020          INC     A0
+     136 00000840     09af          MMFM    SP,A1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+         00000850     0002  
+     137 00000860     0960          RETS
+     138                    
+     139                    **************************************************************************
+     140                    *                                                                        *
+     141                    *       RAND0                                                            *
+     142                    *                                                                        *
+     143                    *       Generate a uniformly distributed random # between 0 and          *
+     144                    *       [A0 - 1].                                                        *
+     145                    *                                                                        *
+     146                    *       A0 = Distribution range                                          *
+     147                    *                                                                        *
+     148                    *       Returns:                                                         *
+     149                    *               A0 = Number (Status bits reflect value in A0)            *
+     150                    *                                                                        *
+     151                    **************************************************************************
+     152 00000870           RAND0:
+     153 00000870                   PUSH    A1
+     154 00000880     4c01          MOVE    A0,A1
+     155 00000890     0d3f          CALLR   RANDOM
+         000008a0     ffe0  
+     156 000008b0     5e20          MPYU    A1,A0
+     157 000008c0     4c00          MOVE    A0,A0
+     158 000008d0     09af          MMFM    SP,A1
+         000008e0     0002  
+     159 000008f0     0960          RETS
+     160                    
+     161                    *
+     162                    *GET SIGNED RANDOM # IN RANGE +/- A0
+     163                    *CALLING PARAMETERS: A0
+     164                    *RETURNS A0
+     165                    *
+     166 00000900           SRAND:
+     167 00000900                   PUSH    A0
+     168 00000910     2420          SLL     1,A0
+     169 00000920     0d5f          CALLA   RANDU
+         00000930 000007e0' 
+     170 00000950                   PULLQ   A14
+     171 00000960     45c0          SUB     A14,A0
+     172 00000970     0960          RETS
+     173                    **************************************************************************
+     174                    *                                                                        *
+     175                    * RANGRAND - GENERATE A RANDOM NUMBER IN A GIVEN RANGE.                  *
+     176                    * A0 = UPPER BOUND                                                       *
+     177                    * A1 = LOWER BOUND                                                       *
+     178                    * RETURNS                                                                *
+     179                    * A0 = RANDOM #                                                          *
+     180                    *                                                                        *
+     181                    **************************************************************************
+     182 00000980           RANGRAND
+     183 00000980     4420          SUB     A1,A0           ;NORMALIZE THE RANGE
+     184 00000990     0d3f          CALLR   RANDU
+         000009a0     ffe3  
+     185 000009b0     4020          ADD     A1,A0
+     186 000009c0     0960          RETS
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     187                    
+     188                    **************************************************************************
+     189                    * RANGERND - GENERATE A RANDOM NUMBER IN A GIVEN RANGE.
+     190                    * A0 = VAL 1 (SIGNED, UPPER BOUND)
+     191                    * A1 = VAL 2 (SIGNED, LOWER BOUND)
+     192                    * RETURNS
+     193                    * A0 = RANDOM # BETWEEN VAL 1 AND VAL 2
+     194                    * CLOBBERS A1
+     195 000009d0           RANGERND
+     196 000009d0     4820          CMP     A1,A0
+     197 000009e0     c503          JRGE    VALSOK  ;WANT A0 > A1
+     198 000009f0                   SWAP    A1,A0
+     199 00000a20           VALSOK
+     200 00000a20     4420          SUB     A1,A0
+     201 00000a30     0d3f          CALLR   RAND0
+         00000a40     ffe2  
+     202 00000a50     4020          ADD     A1,A0
+     203 00000a60     0960          RETS
+     204                    
+     205                    *
+     206                    *RANDPER - RANDOM % ROUTINE
+     207                    *CALLING PARAMETERS:
+     208                    *A0=PROBABILITY OF EVENT (0-1023) P(A0=1024) = 1; P(A0=1) = 1/1024.
+     209                    *RETURNS CS IF PROBABILITY IS TRUE, CC FOR FALSE
+     210                    *RETURNS A0 = ACTUAL RANDOM # 0-1023
+     211 00000a70           RANDPER:
+     212 00000a70                   PUSH    A0
+     213 00000a80     0d5f          CALLA   RANDOM
+         00000a90 000006b0' 
+     214 00000ab0     2d40          SRL     22,A0
+     215 00000ac0                   PULLQ   A14
+     216 00000ad0     49c0          CMP     A14,A0
+     217 00000ae0     0960          RETS
+     218                    
+     219                    **************************************************************************
+     220                    *                                                                        *
+     221                    * FILLAREA - FILL A GIVEN SQUARE AREA ON THE SCREEN WITH A COLOR         *
+     222                    * A1 = [COLOR,PALETTE]                                                   *
+     223                    * A3 = DAG OF AREA [YPOS,XPOS]                                           *
+     224                    * A4 = [Y,X] SIZE OF AREA                                                *
+     225                    *                                                                        *
+     226                    **************************************************************************
+     227 00000af0           FILLAREA
+     228 00000af0     098f          MMTM    SP,A0,A1,A2,A4,A5,A7
+         00000b00     ed00  
+     229 00000b10     09e7          MOVI    QDMAN,A7
+         00000b20 00000000! 
+     230 00000b40     c007          JRUC    AREACON
+     231                    
+     232                    **************************************************************************
+     233                    *                                                                        *
+     234                    * BLNKAREA - BLANK A GIVEN SQUARE AREA ON THE SCREEN                     *
+     235                    * A3 = DAG OF AREA [YPOS,XPOS]                                           *
+     236                    * A4 = [Y,X] SIZE OF AREA                                                *
+     237                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     238                    **************************************************************************
+     239 00000b50           BLNKAREA
+     240 00000b50     098f          MMTM    SP,A0,A1,A2,A4,A5,A7
+         00000b60     ed00  
+     241 00000b70     09e7          MOVI    QDMAN,A7
+         00000b80 00000000! 
+     242 00000ba0     5621          CLR     A1                      ;CONSTANT 0:PALETTE 0
+     243 00000bb0     0300          JRUC    AREACON
+     244                    
+     245 00000bc0           AREACON
+     246 00000bc0     09e0          MOVI    [0100H,0100H],A0
+         00000bd0 01000100  
+     247 00000bf0     4c82          MOVE    A4,A2
+     248 00000c00     09e4          MOVI    IROM,A4         ;SOMEWHERE IN IMAGE ROM
+         00000c10 02000000  
+     249 00000c30     09e5          MOVI    DMACAL,A5
+         00000c40 0000800c  
+     250 00000c60     2605          SLL     16,A5
+     251 00000c70     0927          CALL    A7
+     252 00000c80     09af          MMFM    SP,A0,A1,A2,A4,A5,A7
+         00000c90     00b7  
+     253 00000ca0     0960          RETS
+     254                    
+     255                    **************************************************************************
+     256                    *                                                                        *
+     257                    * DRAWBOX_OBJ - DRAW A BOX AS OBJECTS USING THE DISPLAY SYSTEM           *
+     258                    * A0 = [H,W] SIZE OF BOX                                                 *
+     259                    * A1 = [COLOR,PALETTE]                                                   *
+     260                    * A2 = LINE THICKNESS IN PIXELS                                          *
+     261                    * A3 = [Y,X] SCREEN ADDRESS OF BOX                                       *
+     262                    *                                                                        *
+     263                    **************************************************************************
+     264 00000cb0           DRAWBOX_OBJ
+     265 00000cb0     098f          MMTM    SP,A0,A2,A3,A4,A5,A6,A7,A8
+         00000cc0     bf80  
+     266 00000cd0     4c04          MOVE    A0,A4
+     267 00000ce0     4c67          MOVE    A3,A7
+     268 00000cf0     4c48          MOVE    A2,A8                   ;KEEP PIXEL THICKNESS HERE
+     269 00000d00     2602          SLL     16,A2
+     270 00000d10     ec82          MOVX    A4,A2
+     271 00000d20     4c46          MOVE    A2,A6
+     272                    
+     273 00000d30     09e5          MOVI    BOXLINE_INIT,A5
+         00000d40 000012f0' 
+     274 00000d60     0d5f          CALLA   CREATE_OBJ
+         00000d70 00000000! 
+     275 00000d90     ca52          JRZ     DBO_X
+     276 00000da0     b220          MOVE    A1,*A0(OPAL),L
+         00000db0     0280  
+     277 00000dc0     b060          MOVE    A3,*A0(OXPOS),W
+         00000dd0     0150  
+     278 00000de0     b260          MOVE    A3,*A0(OYVAL),L
+         00000df0     0160  
+     279 00000e00     b240          MOVE    A2,*A0(OSIZE),L
+         00000e10     0260  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     280 00000e20     0d5f          CALLA   INSOBJ
+         00000e30 00000000! 
+     281                    
+     282 00000e50     3202          RL      16,A2
+     283 00000e60     ee82          MOVY    A4,A2
+     284 00000e70     4c44          MOVE    A2,A4
+     285                    
+     286 00000e80     09e5          MOVI    BOXLINE_INIT,A5
+         00000e90 000012f0' 
+     287 00000eb0     0d5f          CALLA   CREATE_OBJ
+         00000ec0 00000000! 
+     288 00000ee0     ca3d          JRZ     DBO_X
+     289 00000ef0     b220          MOVE    A1,*A0(OPAL),L
+         00000f00     0280  
+     290 00000f10     b060          MOVE    A3,*A0(OXPOS),W
+         00000f20     0150  
+     291 00000f30     b260          MOVE    A3,*A0(OYVAL),L
+         00000f40     0160  
+     292 00000f50     b240          MOVE    A2,*A0(OSIZE),L
+         00000f60     0260  
+     293 00000f70     0d5f          CALLA   INSOBJ
+         00000f80 00000000! 
+     294                    
+     295 00000fa0     2e02          SRL     16,A2
+     296 00000fb0     2602          SLL     16,A2
+     297 00000fc0     3208          RL      16,A8
+     298 00000fd0     e302          SUBXY   A8,A2                   ;ADJUST FOR PIXEL THICKNESS
+     299 00000fe0     e043          ADDXY   A2,A3                   ;MOVE TO LL CORNER
+     300 00000ff0     4cc2          MOVE    A6,A2
+     301                    
+     302 00001000     09e5          MOVI    BOXLINE_INIT,A5
+         00001010 000012f0' 
+     303 00001030     0d5f          CALLA   CREATE_OBJ
+         00001040 00000000! 
+     304 00001060     ca25          JRZ     DBO_X
+     305 00001070     b220          MOVE    A1,*A0(OPAL),L
+         00001080     0280  
+     306 00001090     b060          MOVE    A3,*A0(OXPOS),W
+         000010a0     0150  
+     307 000010b0     b260          MOVE    A3,*A0(OYVAL),L
+         000010c0     0160  
+     308 000010d0     b240          MOVE    A2,*A0(OSIZE),L
+         000010e0     0260  
+     309 000010f0     0d5f          CALLA   INSOBJ
+         00001100 00000000! 
+     310                    
+     311 00001120     0522          ZEXT    A2
+     312 00001130     1422          DEC     A2
+     313 00001140     3208          RL      16,A8
+     314 00001150     1428          SUBK    1,A8                    ;BASE ON 1 PIXEL
+     315 00001160     e302          SUBXY   A8,A2                   ;ADJUST FOR PIXEL THICKNESS
+     316 00001170     e047          ADDXY   A2,A7
+     317 00001180     4ce3          MOVE    A7,A3                   ;MOVE TO UR CORNER
+     318 00001190     4c82          MOVE    A4,A2
+     319                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     320 000011a0     09e5          MOVI    BOXLINE_INIT,A5
+         000011b0 000012f0' 
+     321 000011d0     0d5f          CALLA   CREATE_OBJ
+         000011e0 00000000! 
+     322 00001200     ca0b          JRZ     DBO_X
+     323 00001210     b220          MOVE    A1,*A0(OPAL),L
+         00001220     0280  
+     324 00001230     b060          MOVE    A3,*A0(OXPOS),W
+         00001240     0150  
+     325 00001250     b260          MOVE    A3,*A0(OYVAL),L
+         00001260     0160  
+     326 00001270     b240          MOVE    A2,*A0(OSIZE),L
+         00001280     0260  
+     327 00001290     0d5f          CALLA   INSOBJ
+         000012a0 00000000! 
+     328                    
+     329 000012c0           DBO_X
+     330 000012c0     09af          MMFM    SP,A0,A2,A3,A4,A5,A6,A7,A8
+         000012d0     01fd  
+     331 000012e0     0960          RETS
+     332                    
+     333 000012f0           BOXLINE_INIT
+     334 000012f0 00001390'         .LONG   BOXLINE,0
+     335 00001330     07ff          .WORD   OID_JUNK,DMACAL,M_SCRNOBJ|M_NOSCALE,0
+     336 00001370 00000000          .LONG   0
+     337                    
+     338 00001390           BOXLINE:
+     339 00001390     0004          .word   4,4
+     340 000013b0 02000000          .long   IROM
+     341 000013d0     0000          .word   0,0,00H
+     342 00001400 00000100'         .long   T2FIXED
+     343                    
+     344                    **************************************************************************
+     345                    *                                                                        *
+     346                    * DMAWAIT - WAIT ON THE DMA BUSY BIT TO CLEAR                            *
+     347                    *                                                                        *
+     348                    **************************************************************************
+     349 00001420           DMAWAIT
+     350 00001420     05ae          MOVE    @DMAGOREG,A14,W ;DMA BUSY?
+         00001430 01a00000  
+     351 00001450     cefc          JRN     DMAWAIT         ;BR = YES
+     352 00001460     0960          RETS
+     353                    
+     354                    **************************************************************************
+     355                    *                                                                        *
+     356                    * DMAQWAIT - WAIT ON DMA QUEUE TO EMPTY, THEN DMA BUSY TO CLEAR          *
+     357                    *                                                                        *
+     358                    **************************************************************************
+     359 00001470           DMAQWAIT
+     360 00001470     499d          cmp     B12,B13         ;Is Q Empty?
+     361 00001480     c7fe          jrgt    DMAQWAIT
+     362 00001490     05ae          MOVE    @DMAGOREG,A14,W ;DMA BUSY?
+         000014a0 01a00000  
+     363 000014c0     cefa          JRN     DMAQWAIT        ;BR = YES
+     364 000014d0     0960          RETS
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     365                    
+     366                    **************************************************************************
+     367                    *                                                                        *
+     368                    * DMAHALT - HALT THE DMA                                                 *
+     369                    *                                                                        *
+     370                    **************************************************************************
+     371 000014e0           DMAHALT
+     372 000014e0     57ce          CLR     A14
+     373 000014f0     078e          MOVE    A14,@DMAGOREG,L         ;HALT THE DMA
+         00001500 01a00000  
+     374 00001520     078e          MOVE    A14,@DMAGOREG,L         ;CLEAR THE DMA
+         00001530 01a00000  
+     375 00001550     0960          RETS
+     376                    
+     377                    
+     378                    *
+     379                    *CMAPRS - RESET THE COLOR MAP SELECT
+     380 00001560     5600  CMAPRS  CLR     A0
+     381                    *CMAPSL - SELECT THE COLOR MAP(0-15 IN A0)
+     382 00001570     a22f  CMAPSL  MOVE    A1,-*SP,L
+     383 00001580     0d5f          CALLA   DMAWAIT
+         00001590 00001420' 
+     384 000015b0     0580          MOVE    A0,@CMAPSEL
+         000015c0 01a00080  
+     385 000015e0     97e1          MOVE    *SP+,A1,L
+     386 000015f0     0960          RETS
+     387                    
+     388                    *
+     389                    *SCRCLR - CLEAR THE SCREEN WITH EUGENE
+     390                    *ONLY CALL WITH INTERRUPTS DISABLED AND THE DMA SHUT DOWN, OTHERWISE
+     391                    *       USE CLR_SCRN
+     392 00001600     5600  SCRCLR  CLR     A0
+     393                    *SCRFIL - FILL SCREEN WITH A0
+     394 00001610           SCRFIL:
+     395 00001610     098f          MMTM    SP,A1,A2
+         00001620     6000  
+     396 00001630     5621          CLR     A1
+     397 00001640     0581          MOVE    A1,@CMAPSEL,W                   ;SELECT COLOR MAP 0
+         00001650 01a00080  
+     398 00001670     09e1          MOVI    SCREEN,A1,L
+         00001680 00000000  
+     399 000016a0     09e2          MOVI    (SCRNE-SCREEN)/32,A2,L
+         000016b0 00010000  
+     400 000016d0     9201  SCRLP   MOVE    A0,*A1+,L
+     401 000016e0     3c42          DSJS    A2,SCRLP
+     402 000016f0     09af          MMFM    SP,A1,A2
+         00001700     0006  
+     403 00001710     0960          RETS
+     404                    
+     405                    *
+     406                    *LAST2CLR - CLEAR LAST TWO LINES OF BIT MAP(I.E. SET AUTO ERASE COLOR)
+     407 00001720           LAST2CLR
+     408 00001720     5600          CLR     A0
+     409                    *
+     410                    *LAST2FIL - FILL LAST TWO LINES OF BIT MAP
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     411                    *A0 = FILL COLOR
+     412 00001730           LAST2FIL
+     413 00001730     0580          MOVE    A0,@ERASELOC,W                  ;STUFF DA COLOR
+         00001740 018803f0  
+     414 00001760     0960          RETS
+     415                    **************************************************************************
+     416                    *                                                                        *
+     417                    * SETPPROC - SETUP TI'S PIXEL PROCESSING REGISTER'S (BFILE), TO MATCH    *
+     418                    *          THE ZUNIT SYSTEM.                                             *
+     419                    * NOTE:    IF YOU WANT TO DO ANY SPECIAL TRICKS, DON'T USE THIS.         *
+     420                    *                                                                        *
+     421                    **************************************************************************
+     422 00001770           SETPPROC
+     423 00001770                   PUSH    A0
+     424 00001780     09d4          MOVI    OFFSETVAL,B4    ;Set up OFFSET register
+         00001790     01c0  
+     425 000017a0     09d8          MOVI    0,B8                    ;Set background color
+         000017b0     0000  
+     426 000017c0     09c0          MOVI    SCRN_PTCH,A0            ;Get Screen Pitch
+         000017d0     1000  
+     427 000017e0     4e01          MOVE    A0,B1
+     428 000017f0     4e03          MOVE    A0,B3
+     429 00001800     6a00          LMO     A0,A0                   ;Convert in temporary register
+     430 00001810     0580          MOVE    A0,@CONVSP              ;Move to CONVSP io register
+         00001820 c0000130  
+     431 00001840     0580          MOVE    A0,@CONVDP              ;Move to CONVDP io register
+         00001850 c0000140  
+     432 00001870                   PULL    A0
+     433 00001890     0960          RETS
+     434                    
+     435                    
+     436                    **************************************************************************
+     437                    *                                                                        *
+     438                    * CLRBLOCK - CLEAR A BLOCK OF MEMORY. SIZE MUST BE A FACTOR OF 16        *
+     439                    *            MAKE SURE BLOCK SIZE IS 32 BITS OR GREATER.                 *
+     440                    * A1 = START ADDRESS                                                     *
+     441                    * A2 = END ADDRESS                                                       *
+     442                    *                                                                        *
+     443                    **************************************************************************
+     444 000018a0           CLRBLOCK:
+     445 000018a0                   PUSH    A3
+     446 000018b0     5663          CLR     A3
+     447 000018c0     0d3f          CALLR   FILBLOCK
+         000018d0     0003  
+     448 000018e0                   PULL    A3
+     449 00001900     0960          RETS
+     450                    
+     451                    **************************************************************************
+     452                    *                                                                        *
+     453                    * FILBLOCK - FILL A BLOCK OF MEMORY. SIZE MUST BE A FACTOR OF 16         *
+     454                    *            MAKE SURE BLOCK SIZE IS 32 BITS OR GREATER.                 *
+     455                    * A1 = START ADDRESS                                                     *
+     456                    * A2 = END ADDRESS                                                       *
+     457                    * A3 = FILL VALUE                                                        *
+     458                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     459                    **************************************************************************
+     460 00001910           FILBLOCK:
+     461 00001910     098f          MMTM    SP,A1,A2
+         00001920     6000  
+     462 00001930     4422          SUB     A1,A2
+     463 00001940     2f62          SRL     5,A2
+     464 00001950     c901          JRNC    FIL32LP
+     465 00001960     9061          MOVE    A3,*A1+,W               ;MOVE THE ODD WORD
+     466 00001970           FIL32LP:
+     467 00001970     9261          MOVE    A3,*A1+,L               ;JUST MOVE LONG
+     468 00001980     3c42          DSJS    A2,FIL32LP
+     469 00001990     09af          MMFM    SP,A1,A2
+         000019a0     0006  
+     470 000019b0     0960          RETS
+     471                    
+     472                    **************************************************************************
+     473                    *                                                                        *
+     474                    * CLR_SCRN - CLEAR THE WHOLE BIT MAP                                     *
+     475                    * NOTE : TRASHES A0                                                      *
+     476                    *                                                                        *
+     477                    **************************************************************************
+     478 000019c0           CLR_SCRN:
+     479 000019c0     5600          CLR     A0
+     480                    *
+     481                    *YOU PROVIDE THE COLOR IN A0
+     482 000019d0           FILL_SCRN:
+     483 000019d0     098f          MMTM    SP,A1,A2,A3
+         000019e0     7000  
+     484 000019f0     05a3          MOVE    @DISPLAYON,A3,W
+         00001a00 00000000! 
+     485 00001a20     5621          CLR     A1
+     486 00001a30     0581          MOVE    A1,@DISPLAYON,W
+         00001a40 00000000! 
+     487 00001a60     0d3f          CALLR   DMAQWAIT                        ;WAIT ON DMA
+         00001a70     ff9f  
+     488 00001a80     5621          CLR     A1
+     489 00001a90     0581          MOVE    A1,@CMAPSEL,W                   ;SELECT COLOR MAP 0
+         00001aa0 01a00080  
+     490 00001ac0     09e1          MOVI    SCREEN,A1,L
+         00001ad0 00000000  
+     491 00001af0     09e2          MOVI    ((SCRNE-2000H)-SCREEN)/32,A2,L
+         00001b00 0000ff00  
+     492 00001b20     9201  CLRLP   MOVE    A0,*A1+,L
+     493 00001b30     3c42          DSJS    A2,CLRLP
+     494 00001b40     0583          MOVE    A3,@DISPLAYON,W
+         00001b50 00000000! 
+     495 00001b70     09af          MMFM    SP,A1,A2,A3
+         00001b80     000e  
+     496 00001b90     0960          RETS
+     497                    
+     498                    
+     499                    **************************************************************************
+     500                    *                                                                        *
+     501                    *       CLEAR_PAGE2                                                      *
+     502                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     503                    *       Clear just screen page 2                                         *
+     504                    *                                                                        *
+     505                    **************************************************************************
+     506 00001ba0           CLEAR_PAGE2
+     507 00001ba0     098f          MMTM    SP,A0,A1,A2,A3
+         00001bb0     f000  
+     508 00001bc0     5600          CLR     A0
+     509 00001bd0     05a3          MOVE    @DISPLAYON,A3,W
+         00001be0 00000000! 
+     510 00001c00     0580          MOVE    A0,@DISPLAYON,W
+         00001c10 00000000! 
+     511 00001c30     0d5f          CALLA   DMAQWAIT                        ;WAIT ON DMA
+         00001c40 00001470' 
+     512 00001c60     5621          CLR     A1
+     513 00001c70     0581          MOVE    A1,@CMAPSEL,W                   ;SELECT COLOR MAP 0
+         00001c80 01a00080  
+     514 00001ca0     09e1          MOVI    PAGE2_START,A1,L
+         00001cb0 00200000  
+     515 00001cd0     09e2          MOVI    ((PAGE2_END + 1) - PAGE2_START)/32,A2,L
+         00001ce0 00008000  
+     516 00001d00     c016          JRUC    CLRP0LP
+     517                    
+     518                    **************************************************************************
+     519                    *                                                                        *
+     520                    *       CLEAR_PAGE3                                                      *
+     521                    *                                                                        *
+     522                    *       Clear just screen page 2                                         *
+     523                    *                                                                        *
+     524                    **************************************************************************
+     525 00001d10           CLEAR_PAGE3
+     526 00001d10     098f          MMTM    SP,A0,A1,A2,A3
+         00001d20     f000  
+     527 00001d30     5600          CLR     A0
+     528 00001d40     05a3          MOVE    @DISPLAYON,A3,W
+         00001d50 00000000! 
+     529 00001d70     0580          MOVE    A0,@DISPLAYON,W
+         00001d80 00000000! 
+     530 00001da0     0d5f          CALLA   DMAQWAIT                        ;WAIT ON DMA
+         00001db0 00001470' 
+     531 00001dd0     5621          CLR     A1
+     532 00001de0     0581          MOVE    A1,@CMAPSEL,W                   ;SELECT COLOR MAP 0
+         00001df0 01a00080  
+     533 00001e10     09e1          MOVI    PAGE3_START,A1,L
+         00001e20 00300000  
+     534 00001e40     09e2          MOVI    ((PAGE3_END + 1) - PAGE3_START)/32,A2,L
+         00001e50 00008000  
+     535 00001e70     9201  CLRP0LP MOVE    A0,*A1+,L
+     536 00001e80     3c42          DSJS    A2,CLRP0LP
+     537 00001e90     0583          MOVE    A3,@DISPLAYON,W
+         00001ea0 00000000! 
+     538 00001ec0     09af          MMFM    SP,A0,A1,A2,A3
+         00001ed0     000f  
+     539 00001ee0     0960          RETS
+     540                    
+     541                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     542                    *                                                                        *
+     543                    * FlshWyte - FLASH AN OBJECT TO CONSTANT COLOR USE ANIM TO UNFLASH.      *
+     544                    *            TO USE THIS FUNCTION OBJ MUST NOT USE OVAR5,OVAR6           *
+     545                    *               BUT IT CAN BE ON ANIM.                                   *
+     546                    * A1 = OCONST                                                            *
+     547                    *                                                                        *
+     548                    **************************************************************************
+     549 00001ef0           FlshWyte:
+     550 00001ef0                   PUSH    A1
+     551 00001f00     af0e          movb    *A8(OFLAGS+B_ANIM-7),A14        ;already animating??
+         00001f10     0427  
+     552 00001f20     cf0c          jrnn    FlashIt0                        ;NO..
+     553                    
+     554                            ;save current anim info in OVAR5,OVAR6
+     555 00001f30     b70e          move    *A8(ANIMSCR),A14,L
+         00001f40     0340  
+     556 00001f50     0b6e          cmpi    UNFLASH,A14
+         00001f60 ffffde9f' 
+     557 00001f80     ca1b          jreq    SkWhite                         ;BR = already unflashing..
+     558 00001f90     b3c8          move    A14,*A8(OVAR5),L
+         00001fa0     0380  
+     559 00001fb0     bb08          move    *A8(ANIMFRM),*A8(OVAR6),L
+         00001fc0     0320  
+         00001fd0     03a0  
+     560 00001fe0     c003          jruc    FlashIt
+     561 00001ff0           FlashIt0
+     562 00001ff0                   CLRM    *A8(OVAR6),L
+     563 00002020           FlashIt
+     564 00002020     b028          move    A1,*A8(OCONST),W
+         00002030     0290  
+     565 00002040     09e1          movi    UNFLASH,A1
+         00002050 00002160' 
+     566 00002070     0d5f          calla   STRT_ANIM
+         00002080 00000000! 
+     567 000020a0     b50e          move    *A8(OCTRL),A14,W
+         000020b0     01f0  
+     568                    ;       move    *A8(OFLAGS),A14,W
+     569 000020c0     0b8e          andni   M_WRNONZ,A14    ;Don't Write Non-Zero Data
+         000020d0 00000002  
+     570 000020f0     0bae          ori     M_CONNON,A14    ;Do Replace Non-Zero Data with constant
+         00002100 00000008  
+     571 00002120     b1c8          move    A14,*A8(OCTRL),W
+         00002130     01f0  
+     572                    ;       move    A14,*A8(OFLAGS),W
+     573 00002140           SkWhite:
+     574 00002140                   PULLQ   A1
+     575 00002150     0960          rets
+     576                    
+     577                    *FLASH ANIM SCRIPT
+     578 00002160           UNFLASH
+     579 00002160                   LW      1,4
+     580 00002190                   LWL     1,1|AFUNC,UnFlash
+     581                    
+     582                    ****************************************************************************
+     583                    * UnFlash
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     584                    * Anim function used by FlshWyte to unflash an object and restore its
+     585                    * previous action
+     586 000021e0           UnFlash:
+     587 000021e0     b501          move    *A8(OCTRL),A1,W
+         000021f0     01f0  
+     588                    ;       move    *A8(OFLAGS),A1,W
+     589 00002200     0ba1          ori     M_WRNONZ,A1     ;Do Write Non-Zero Data
+         00002210 00000002  
+     590 00002230     0b81          andni   M_CONNON,A1     ;Don't Replace Non-Zero Data with constant
+         00002240 00000008  
+     591 00002260     b028          move    A1,*A8(OCTRL),W
+         00002270     01f0  
+     592                    ;       move    A1,*A8(OFLAGS),W
+     593                    
+     594 00002280     b701          move    *A8(OVAR6),A1,L
+         00002290     03a0  
+     595 000022a0     ca06          jrz     UFPul
+     596                            ;*** JUST RESTORE TO OLD ANIM SCRIPT ***
+     597 000022b0     b228          move    A1,*A8(ANIMFRM),L
+         000022c0     0320  
+     598 000022d0     bb08          move    *A8(OVAR5),*A8(ANIMSCR),L
+         000022e0     0380  
+         000022f0     0340  
+     599 00002300     c003          jruc    UnFlashX
+     600                    
+     601 00002310     0d5f  UFPul   calla   PULL_ANIM
+         00002320 00000000! 
+     602 00002340           UnFlashX
+     603 00002340     0960          rets
+     604                    
+     605                    
+     606                    **************************************************************************
+     607                    *                                                                        *
+     608                    * SLINEVEL - GET THE X & Y VELOCITIES TO MAKE AN OBJECT TRAVEL           *
+     609                    *          FROM PNT. A TO PNT. B ALONG THE SHORTEST PATH.                *
+     610                    * A2 = PNT. A [Y,X] POSITION                                             *
+     611                    * A3 = PNT. B [Y,X] POSITION                                             *
+     612                    * A4 = DURATION(# OF TICKS TO GET FROM A TO B)                           *
+     613                    * RETURNS:                                                               *
+     614                    * A1 = X VEL (32 BITS)                                                   *
+     615                    * A2 = Y VEL (32 BITS)                                                   *
+     616                    * NOTE: DON'T CALL WITH THE A=B, IT'S A WAIST OF TIME AND UNDEFINED.     *
+     617                    *                                                                        *
+     618                    **************************************************************************
+     619 00002350           SLINEVEL
+     620 00002350                   PUSH    A3
+     621 00002360     e243          SUBXY   A2,A3           ;GET THE DIFFERENCE
+     622 00002370     ec61          MOVX    A3,A1           ;A1 = X DISTANCE
+     623 00002380     2e03          SRL     16,A3
+     624 00002390     2603          SLL     16,A3           ;CLEAR OUT THE X PART
+     625 000023a0     5883          DIVS    A4,A3           ;A3 = Y VELOCITY(32 BITS)
+     626 000023b0     2601          SLL     16,A1
+     627 000023c0     5881          DIVS    A4,A1           ;A1 = X VELOCITY(32 BITS)
+     628 000023d0     4c62          MOVE    A3,A2           ;RETURN Y VEL HERE FOR CONSISTENCY
+     629 000023e0                   PULLQ   A3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     630 000023f0     0960          RETS
+     631                    
+     632                            .END
+
+ No Errors,  No Warnings

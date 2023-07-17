@@ -1,0 +1,2216 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHGCTRL.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                            .INCLUDE        "HH.INC"
+      11                            .INCLUDE        "HHSTRING.H"
+      12                            .INCLUDE        "IMGTBL.GLO"
+      13                            .include        "hhgctrl.e"
+      14                            .include        "hhram.g"
+      15                            .include        "hhmath.g"
+      16                            .include        "hhgscr.g"
+      17                            .include        "hhpuck.g"
+      18                            .include        "hhplayer.g"
+      19                            .include        "hhmisc.g"
+      20                            .include        "hhproc.g"
+      21                            .include        "hhgame.g"
+      22                            .include        "hhhigher.g"
+      23                            .include        "hhutil.g"
+      24                            .include        "hhgscr2.g"
+      25                            .include        "hhcontrl.g"
+      26                            .include        "hhgscrf.g"
+      27                            .include        "hhcontr2.g"
+      28                            .include        "hhgdrone.g"
+      29                            .include        "hhspeech.g"
+      30                    
+      31                    ; end of include files
+      32                    
+      33                    ;       .BSS    BREAKON4,16             ;BREAKAWAY FLAG (ONLY TEMPORARY)
+      34                    ;       .BSS    BREAKON8,16             ;BREAKAWAY FLAG (ONLY TEMPORARY)
+      35                    
+      36 00000000                   .TEXT
+      37 00000000                   .EVEN
+      38                    
+      39                    **************************************************************************
+      40                    *                                                                        *
+      41                    * GET_TEAMMATE_BLOCKS                                                    *
+      42                    *                                                                        *
+      43                    * PASS:                                                                  *
+      44                    * A8 = PLAYER OBJECT                                                     *
+      45                    * RETURN:                                                                *
+      46                    * A0 = TEAMMATE BLOCK                                                    *
+      47                    * A1 = TEAMMATE BLOCK                                                    *
+      48                    *                                                                        *
+      49                    **************************************************************************
+      50                    
+      51 00000000           GET_TEAMMATE_BLOCKS
+      52 00000000     b501          MOVE    *A8(OID),A1,W
+         00000010     0430  
+      53 00000020     2701          SLL     24,A1
+      54 00000030     2c81          SRL     28,A1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      55 00000040     24c1          SLL     6,A1
+      56 00000050     0b21          ADDI    TEAMMATE_LIST-(020H*2),A1
+         00000060 00000070' 
+      57                    
+      58 00000080     9620          MOVE    *A1+,A0,L
+      59 00000090     9621          MOVE    *A1+,A1,L
+      60 000000a0     0960          RETS
+      61                    
+      62 000000b0           TEAMMATE_LIST
+      63 000000b0 00000000!         .long   PLAYER_2_BLOCK,PLAYER_4_BLOCK
+      64 000000f0 00000000!         .long   PLAYER_1_BLOCK,PLAYER_4_BLOCK
+      65 00000130 00000000          .long   0,0
+      66 00000170 00000000!         .long   PLAYER_1_BLOCK,PLAYER_2_BLOCK
+      67 000001b0 00000000!         .long   PLAYER_6_BLOCK,PLAYER_8_BLOCK
+      68 000001f0 00000000!         .long   PLAYER_5_BLOCK,PLAYER_8_BLOCK
+      69 00000230 00000000          .long   0,0
+      70 00000270 00000000!         .long   PLAYER_5_BLOCK,PLAYER_6_BLOCK
+      71                    
+      72                    **************************************************************************
+      73                    *                                                                        *
+      74                    * control_goalie - GOALIE CONTROL PROCESS                                *
+      75                    *                                                                        *
+      76                    * PASS:                                                                  *
+      77                    * A8  = GOALIE OBJECT                                                    *
+      78                    * A10 = PLAYER NUMBER                                                    *
+      79                    *                                                                        *
+      80                    **************************************************************************
+      81                    
+      82                            .if     DEBUG
+      83                            .BSS    GTIME4_PTR,32
+      84                            .BSS    GTIME8_PTR,32
+      85                            .BSS    GTIME4,8*100
+      86                            .BSS    GTIME8,8*100
+      87                            .endif
+      88                    
+      89 000002b0           control_goalie
+      90                    ;       P_FORK  WATCH_BREAKAWAY_PROC
+      91 000002b0                   GBLOCK  a10,a10
+      92                    
+      93 000002f0     57ce          CLR     A14
+      94 00000300     b3ca          MOVE    A14,*A10(POF_D_LASTPUCK0),L
+         00000310     06a0  
+      95 00000320     adc8          MOVB    A14,*A8(ODT_GFREEZES)
+         00000330     0740  
+      96 00000340     058e          MOVE    A14,@FIVE_HOLE,W
+         00000350 00000000! 
+      97                    
+      98                            .if     DEBUG
+      99                            MOVI    GTIME4_PTR,A0
+     100                            MOVI    GTIME4,A1
+     101                    
+     102                            MOVB    *A10(POF_NUMBER),A14
+     103                            SUBK    4,A14
+     104                            JRZ     CG_SET_PTR
+     105                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     106                            MOVI    GTIME8_PTR,A0
+     107                            MOVI    GTIME8,A1
+     108                    CG_SET_PTR
+     109                            MOVE    A1,*A0,L
+     110                            .endif
+     111                    
+     112 00000370           CG_LUPE
+     113                            .if     DEBUG
+     114                            MOVE    @VCOUNT,A14,W
+     115                            PUSHP   A14
+     116                            .endif
+     117                    
+     118 00000370     4d46          MOVE    A10,A6
+     119                    
+     120 00000380     b8c6          MOVE    *A6(POF_D_LASTPUCK1),*A6(POF_D_LASTPUCK0),W
+         00000390     06b0  
+         000003a0     06a0  
+     121 000003b0     b8c6          MOVE    *A6(POF_D_PUCK),*A6(POF_D_LASTPUCK1),W
+         000003c0     0680  
+         000003d0     06b0  
+     122                    
+     123 000003e0     b6c8          MOVE    *A6(POF_OBJECT),A8,L
+         000003f0     0280  
+     124                    
+     125 00000400     aece          MOVB    *A6(POF_NUMBER),A14
+         00000410     0000  
+     126                    
+     127                    ;       .if     DEBUG
+     128                    ;       CMPI    4,A14
+     129                    ;       JREQ    CG_NAP
+     130                    ;       .endif
+     131                    
+     132 00000420     07a0          MOVE    @PUCK_OBJECT,A0,L
+         00000430 00000000! 
+     133 00000450     b600          MOVE    *A0(OXVAL),A0,L
+         00000460     0140  
+     134                    
+     135 00000470     142e          DEC     A14
+     136 00000480     2bce          SRA     2,A14
+     137 00000490     cb05          JRNZ    CG_CHECK_R
+     138 000004a0     0b60          CMPI    LEFT_BLUELINE_X,A0
+         000004b0 00e8ffff  
+     139 000004d0     c436          JRLT    CG_GO                           ;BR = ON THE LEFT
+     140 000004e0     c004          JRUC    CG_HOME
+     141 000004f0           CG_CHECK_R
+     142 000004f0     0b60          CMPI    RGHT_BLUELINE_X,A0
+         00000500 ff16ffff  
+     143 00000520     c731          JRGT    CG_GO                           ;BR = ON THE RIGHT
+     144 00000530           CG_HOME
+     145 00000530     57ce          CLR     A14
+     146 00000540     b3c8          MOVE    A14,*A8(ODT_VEL),L
+         00000550     04d0  
+     147 00000560     b3c8          MOVE    A14,*A8(OXVEL),L
+         00000570     0100  
+     148 00000580     b3c8          MOVE    A14,*A8(OZVEL),L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+         00000590     00e0  
+     149                    
+     150 000005a0     af0e          MOVB    *A8(OFLAGS),A14
+         000005b0     0420  
+     151                    ;       JRNN    CG_NAP                          ;BR=ON DA SCREEN
+     152 000005c0     ce07          JRN     CG_SET_POS                      ;BR=OFF DA SCREEN
+     153                    
+     154 000005d0     b4ce          MOVE    *A6(POF_FLAGS),A14,W
+         000005e0     0200  
+     155 000005f0     1f6e          BTST    B_PF_HIGHER,A14
+     156                    ;       JRNZ    CG_OFFSCRN_NAP                  ;BR=UNDER HIGHER CONTROL
+     157 00000600     cb58          JRNZ    CG_NAP                          ;BR=UNDER HIGHER CONTROL
+     158 00000610     1fce          BTST    B_PF_CONTROL,A14
+     159                    ;       JRZ     CG_OFFSCRN_NAP                  ;BR=UNDER CONTROL
+     160 00000620     ca56          JRZ     CG_NAP                          ;BR=UNDER CONTROL
+     161 00000630     c014          JRUC    CG_SET_DIR                      ;SET GSKATE SCRIPT
+     162                    
+     163 00000640           CG_SET_POS
+     164                    ;       MOVI    RGHT_GOALIE_AT_GOAL,A0
+     165 00000640     09e0          MOVI    025C0000H,A0
+         00000650 025c0000  
+     166 00000670     b70e          MOVE    *A8(OXVAL),A14,L
+         00000680     0140  
+     167 00000690     cf01          JRNN    CG_R_SETX                       ;BR=ON THE RIGHT SIDE
+     168 000006a0     03a0          NEG     A0
+     169 000006b0           CG_R_SETX
+     170                            .if     BILL
+     171                            .else
+     172 000006b0     b208          MOVE    A0,*A8(OXVAL),L
+         000006c0     0140  
+     173 000006d0     09ee          MOVI    CENTER_Z,A14
+         000006e0 01538000  
+     174 00000700     b3c8          MOVE    A14,*A8(OZVAL),L
+         00000710     0180  
+     175                            .endif
+     176                    
+     177 00000720     b4ce          MOVE    *A6(POF_FLAGS),A14,W
+         00000730     0200  
+     178 00000740     1f6e          BTST    B_PF_HIGHER,A14
+     179 00000750     cb0d          JRNZ    CG_OFFSCRN_NAP                  ;BR=UNDER HIGHER CONTROL
+     180 00000760     1fce          BTST    B_PF_CONTROL,A14
+     181 00000770     ca0b          JRZ     CG_OFFSCRN_NAP                  ;BR=UNDER CONTROL
+     182                    
+     183 00000780           CG_SET_DIR
+     184 00000780     1860          MOVK    3,A0
+     185 00000790     aece          MOVB    *A6(POF_NUMBER),A14
+         000007a0     0000  
+     186 000007b0     148e          SUBK    4,A14
+     187 000007c0     ca01          JRZ     CG_DIR_SET                      ;BR=LEFT GOALIE
+     188 000007d0     18e0          MOVK    7,A0
+     189 000007e0           CG_DIR_SET
+     190 000007e0     ac06          MOVB    A0,*A6(POF_DIRECTION)
+         000007f0     0390  
+     191 00000800     0d5f          CALLA   SET_GSKATE_SCRIPT
+         00000810 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     192 00000830           CG_OFFSCRN_NAP
+     193 00000830     c035          JRUC    CG_NAP
+     194                    ;       SLEEP   1
+     195                    ;       JRUC    CG_LUPE
+     196 00000840           CG_GO
+     197 00000840                   PUSHP   A10
+     198                    
+     199 00000850     b4ce          MOVE    *A6(POF_FLAGS),A14,W
+         00000860     0200  
+     200 00000870     1f6e          BTST    B_PF_HIGHER,A14
+     201 00000880     cb2a          JRNZ    CG_GO2
+     202 00000890     1fce          BTST    B_PF_CONTROL,A14
+     203 000008a0     ca28          JRZ     CG_GO2
+     204                    
+     205 000008b0     b50e          MOVE    *A8(ODT_GFLAGS),A14,W
+         000008c0     0630  
+     206 000008d0     1fee          BTST    B_FREEZE,A14
+     207 000008e0     cb24          JRNZ    CG_GO2
+     208                    
+     209 000008f0     0d3f          CALLR   FACE_GOALIE
+         00000900     046e  
+     210 00000910     0d3f          CALLR   GOALIE_WATCH
+         00000920     002c  
+     211 00000930     0d5f          CALLA   PUCK_GOALIE_CHECK0
+         00000940 00000000! 
+     212                    
+     213 00000960     b4ce          MOVE    *A6(POF_FLAGS),A14,W
+         00000970     0200  
+     214 00000980     1f6e          BTST    B_PF_HIGHER,A14
+     215 00000990     cb1e          JRNZ    CG_GET_A10
+     216 000009a0     1fce          BTST    B_PF_CONTROL,A14
+     217 000009b0     ca1c          JRZ     CG_GET_A10
+     218                    
+     219 000009c0     b50e          MOVE    *A8(ODT_GFLAGS),A14,W
+         000009d0     0630  
+     220 000009e0     1fee          BTST    B_FREEZE,A14
+     221 000009f0     cb18          JRNZ    CG_GET_A10
+     222                    
+     223 00000a00     b4ce          MOVE    *A6(POF_MODE),A14,W
+         00000a10     0210  
+     224 00000a20                   PUSH    A14
+     225                    
+     226                    ;       CALLA   do_drone_logic_goalie
+     227 00000a30     0d5f          CALLA   DO_GOALIE_DRONE_LOGIC
+         00000a40 00000000! 
+     228                    
+     229 00000a60                   PULLQ   A14
+     230 00000a70     0b4e          CMPI    PM_GCROUCH,A14
+         00000a80     ffee  
+     231 00000a90     cb05          JRNE    CG_SCRIPT                       ;BR=DON'T RESTORE MODE
+     232 00000aa0     b500          MOVE    *A8(ODT_VEL+010H),A0,W
+         00000ab0     04e0  
+     233 00000ac0     cb02          JRNZ    CG_SCRIPT                       ;BR=STILL MOVIN'
+     234 00000ad0     b1c6          MOVE    A14,*A6(POF_MODE),W
+         00000ae0     0210  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     235 00000af0           CG_SCRIPT
+     236 00000af0                   PULLPQ  A10
+     237 00000b00     0d3f          CALLR   SET_GOALIE_SCRIPT
+         00000b10     053d  
+     238 00000b20     c006          JRUC    CG_NAP
+     239 00000b30           CG_GO2
+     240 00000b30     0d3f          CALLR   GOALIE_WATCH
+         00000b40     000a  
+     241 00000b50     0d5f          CALLA   PUCK_GOALIE_CHECK0
+         00000b60 00000000! 
+     242 00000b80           CG_GET_A10
+     243 00000b80                   PULLPQ  A10
+     244                    
+     245 00000b90           CG_NAP
+     246                            .if     DEBUG
+     247                            PULLPQ  A14
+     248                            MOVE    @VCOUNT,A0,W
+     249                            SUB     A14,A0
+     250                    
+     251                            MOVI    GTIME4_PTR,A1
+     252                            MOVI    GTIME4+(8*100),A2
+     253                    
+     254                            MOVB    *A6(POF_NUMBER),A14
+     255                            SUBK    4,A14
+     256                            JRZ     CG_CHECK_SPACE
+     257                    
+     258                            MOVI    GTIME8_PTR,A1
+     259                            MOVI    GTIME8+(8*100),A2
+     260                    CG_CHECK_SPACE
+     261                            MOVE    *A1,A14,L
+     262                            CMP     A2,A14
+     263                            JRLT    CG_TIME_SAVE
+     264                    
+     265                            SUBI    8*100,A2
+     266                            MOVE    A2,A14
+     267                    CG_TIME_SAVE
+     268                            MOVB    A0,*A14
+     269                            ADDK    8,A14
+     270                            MOVE    A14,*A1,L
+     271                            .endif
+     272                    
+     273                    ;       CALLA   fix_players_trail
+     274                    
+     275 00000b90                   SLEEP   1
+     276 00000bd0     c000          JRUC    CG_LUPE
+         00000be0     ff78  
+     277                    
+     278                    **************************************************************************
+     279                    *                                                                        *
+     280                    * GOALIE_WATCH                                                           *
+     281                    *                                                                        *
+     282                    * PASS:                                                                  *
+     283                    * A6 = PLAYER BLOCK                                                      *
+     284                    * A8 = GOALIE OBJECT                                                     *
+     285                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     286                    **************************************************************************
+     287                    
+     288 00000bf0           GOALIE_WATCH
+     289 00000bf0     05ae          MOVE    @PUCK_MODE,A14,W
+         00000c00 00000000! 
+     290 00000c20     0b4e          CMPI    PUM_ENDPER,A14
+         00000c30     ff9a  
+     291 00000c40     cb34          JRNE    GW_CHECK_FACEOFF
+     292                    
+     293 00000c50     b4ce          MOVE    *A6(POF_MODE),A14,W
+         00000c60     0210  
+     294 00000c70     0b4e          CMPI    PM_GGOAL,A14
+         00000c80     ffef  
+     295 00000c90     ca00          JREQ    GW_DONE                         ;BR=ALREADY DOIN' IT
+         00000ca0     038f  
+     296                    
+     297 00000cb0     05a2          MOVE    @team1_score,A2,W
+         00000cc0 00000000! 
+     298 00000ce0     05a3          MOVE    @team2_score,A3,W
+         00000cf0 00000000! 
+     299                    
+     300 00000d10     4843          CMP     A2,A3
+     301 00000d20     ca26          JREQ    GW_CHECK_FACEOFF                ;BR=TIE!
+     302                    
+     303 00000d30     05ae          MOVE    @period,A14,W
+         00000d40 00000000! 
+     304 00000d60     0b4e          CMPI    3,A14
+         00000d70     fffc  
+     305 00000d80     c420          JRLT    GW_CHECK_FACEOFF                ;BR=NOT END OF GAME
+     306                    
+     307 00000d90     57ce          CLR     A14
+     308 00000da0     b3c8          MOVE    A14,*A8(ODT_VEL),L
+         00000db0     04d0  
+     309 00000dc0     b3c8          MOVE    A14,*A8(OXVEL),L
+         00000dd0     0100  
+     310 00000de0     b3c8          MOVE    A14,*A8(OZVEL),L
+         00000df0     00e0  
+     311                    
+     312 00000e00     09ce          MOVI    PM_GGOAL,A14
+         00000e10     0010  
+     313 00000e20     b1c6          MOVE    A14,*A6(POF_MODE),W
+         00000e30     0210  
+     314 00000e40     0d5f          CALLA   take_player_control
+         00000e50 00000000! 
+     315                    
+     316 00000e70     aece          MOVB    *A6(POF_NUMBER),A14
+         00000e80     0000  
+     317 00000e90     148e          SUBK    4,A14
+     318 00000ea0     ca03          JRZ     GW_EOG_CHECK
+     319 00000eb0                   SWAP    A2,A3
+     320                    
+     321 00000ee0           GW_EOG_CHECK
+     322 00000ee0     09e1          MOVI    SET_GDISGRACE_SCRIPT,A1
+         00000ef0 00000000! 
+     323 00000f10     4843          CMP     A2,A3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     324 00000f20     c703          JRGT    GW_EOG_SET_ANIM
+     325 00000f30     09e1          MOVI    SET_GCHEER_SCRIPT,A1
+         00000f40 00000000! 
+     326                    
+     327 00000f60           GW_EOG_SET_ANIM
+     328 00000f60     0921          CALL    A1
+     329 00000f70     c000          JRUC    GW_DONE
+         00000f80     0361  
+     330                    
+     331 00000f90           GW_CHECK_FACEOFF
+     332 00000f90     05ae          MOVE    @PUCK_CONTROL,A14,W
+         00000fa0 00000000! 
+     333                    ;       JRNZ    GW_GO                           ;BR=SOMEBODY HAS CONTROL
+     334 00000fc0     ca0c          JRZ     GW_CF_GO                        ;BR=NOBODY HAS CONTROL
+     335                    
+     336 00000fd0     aec0          MOVB    *A6(POF_NUMBER),A0
+         00000fe0     0000  
+     337 00000ff0     480e          CMP     A0,A14
+     338 00001000     ca5f          JREQ    GW_GO                           ;BR=GOALIE GOT DA PUCK
+     339                    
+     340 00001010     07a9          MOVE    @PUCK_OBJECT,A9,L
+         00001020 00000000! 
+     341 00001040     b72e          MOVE    *A9(OYVAL),A14,L
+         00001050     0160  
+     342 00001060     ce00          JRN     GW_DONE                         ;BR=PLAYER WITH PUCK IN AIR
+         00001070     0352  
+     343 00001080     c057          JRUC    GW_GO
+     344                    
+     345 00001090           GW_CF_GO
+     346                    
+     347 00001090     05ae          MOVE    @PUCK_MODE,A14,W
+         000010a0 00000000! 
+     348 000010c0     0b4e          CMPI    PUM_FACEOFF,A14
+         000010d0     ff9b  
+     349 000010e0     cb06          JRNE    GW_CHECK_SCORE
+     350                    
+     351 000010f0     09ce          MOVI    PM_GCROUCH,A14
+         00001100     0011  
+     352 00001110     b1c6          MOVE    A14,*A6(POF_MODE),W
+         00001120     0210  
+     353 00001130     c000          JRUC    GW_DONE
+         00001140     0345  
+     354                    
+     355 00001150           GW_CHECK_SCORE
+     356 00001150     0b4e          CMPI    PUM_SCORE,A14
+         00001160     ff9c  
+     357 00001170     c448          JRLT    GW_GO
+     358 00001180     0b4e          CMPI    PUM_SCORE,A14
+         00001190     ff9c  
+     359 000011a0     cb00          JRNE    GW_DONE
+         000011b0     033e  
+     360                    
+     361 000011c0     57ce          CLR     A14
+     362 000011d0     b1c8          MOVE    A14,*A8(ODT_GTSAVES),W
+         000011e0     06d0  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     363                    
+     364 000011f0     b4ce          MOVE    *A6(POF_MODE),A14,W
+         00001200     0210  
+     365 00001210     0b4e          CMPI    PM_GSAVE,A14
+         00001220     fff3  
+     366 00001230     ca00          JREQ    GW_DONE                         ;BR=IN-A-SAVE
+         00001240     0335  
+     367 00001250     0b4e          CMPI    PM_GGOAL,A14
+         00001260     ffef  
+     368 00001270     ca00          JREQ    GW_DONE                         ;BR=ALREADY DOIN' IT
+         00001280     0331  
+     369                    
+     370 00001290     57ce          CLR     A14
+     371 000012a0     b3c8          MOVE    A14,*A8(ODT_VEL),L
+         000012b0     04d0  
+     372 000012c0     b3c8          MOVE    A14,*A8(OXVEL),L
+         000012d0     0100  
+     373 000012e0     b3c8          MOVE    A14,*A8(OZVEL),L
+         000012f0     00e0  
+     374                    
+     375 00001300     09ce          MOVI    PM_GGOAL,A14
+         00001310     0010  
+     376 00001320     b1c6          MOVE    A14,*A6(POF_MODE),W
+         00001330     0210  
+     377 00001340     0d5f          CALLA   take_player_control
+         00001350 00000000! 
+     378                    
+     379 00001370     aece          MOVB    *A6(POF_NUMBER),A14
+         00001380     0000  
+     380 00001390     2fae          SRL     3,A14
+     381 000013a0     0bce          XORI    1,A14
+         000013b0 00000001  
+     382 000013d0     24ce          SLL     6,A14
+     383 000013e0     0b2e          ADDI    team1_score,A14
+         000013f0 00000000! 
+     384 00001410     85ce          MOVE    *A14,A14,W
+     385                    
+     386 00001420     09e1          MOVI    SET_GFRUST2_SCRIPT,A1
+         00001430 00000000! 
+     387                    
+     388 00001450     0b4e          CMPI    9,A14
+         00001460     fff6  
+     389 00001470     ca15          JREQ    GW_RESPOND
+     390 00001480     0b4e          CMPI    12,A14
+         00001490     fff3  
+     391 000014a0     ca12          JREQ    GW_RESPOND
+     392 000014b0     0b4e          CMPI    15,A14
+         000014c0     fff0  
+     393 000014d0     ca0f          JREQ    GW_RESPOND
+     394 000014e0     0b4e          CMPI    19,A14
+         000014f0     ffec  
+     395 00001500     ca0c          JREQ    GW_RESPOND
+     396                    
+     397 00001510           GW_NORM_UPSET
+     398 00001510     09e1          MOVI    SET_GFRUST_SCRIPT,A1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+         00001520 00000000! 
+     399 00001540     09c0          MOVI    511,A0
+         00001550     01ff  
+     400 00001560     0d5f          CALLA   RANDPER
+         00001570 00000000! 
+     401 00001590     c803          JRC     GW_RESPOND                      ;BR=SHIT OCCURS
+     402 000015a0     09e1          MOVI    SET_GDISGRACE_SCRIPT,A1
+         000015b0 00000000! 
+     403 000015d0           GW_RESPOND
+     404 000015d0     0921          CALL    A1
+     405 000015e0     c000          JRUC    GW_DONE
+         000015f0     02fa  
+     406 00001600           GW_GO
+     407                    
+     408 00001600     b70e          MOVE    *A8(ODT_GLASTSIRQ),A14,L
+         00001610     06b0  
+     409 00001620     07a1          MOVE    @WAVEIRQS,A1,L
+         00001630 00000000! 
+     410 00001650     442e          SUB     A1,A14
+     411                    
+     412 00001660     0b4e          CMPI    -MAX_SAVE_TTIME,A14
+         00001670     0077  
+     413 00001680     c508          JRGE    GW_1
+     414                    
+     415 00001690     b50e          MOVE    *A8(ODT_GTSAVES),A14,W
+         000016a0     06d0  
+     416 000016b0     ca05          JRZ     GW_1
+     417                    
+     418 000016c0     b228          MOVE    A1,*A8(ODT_GLASTSIRQ),L
+         000016d0     06b0  
+     419                    
+     420 000016e0     142e          DEC     A14
+     421 000016f0     b1c8          MOVE    A14,*A8(ODT_GTSAVES),W
+         00001700     06d0  
+     422 00001710           GW_1
+     423 00001710     b700          MOVE    *A8(ODT_GPOSSIRQ),A0,L          ;IRQ TIME OF POSSESSION
+         00001720     06e0  
+     424                            .if     BILL
+     425                            JRUC    GW_2
+     426                    ;       JRZ     GW_2
+     427                            .else
+     428 00001730     ca44          JRZ     GW_2
+     429                            .endif
+     430                    
+     431 00001740     aec1          MOVB    *A6(POF_NUMBER),A1
+         00001750     0000  
+     432 00001760     05ae          MOVE    @PUCK_CONTROL,A14,W
+         00001770 00000000! 
+     433 00001790     49c1          CMP     A14,A1
+     434 000017a0     cb3a          JRNE    GW_1_RESET                      ;BR=GOALIE DOESN'T HAVE CONTROL
+     435 000017b0     07ae          MOVE    @WAVEIRQS,A14,L
+         000017c0 00000000! 
+     436 000017e0     440e          SUB     A0,A14
+     437                    
+     438 000017f0     0b4e          CMPI    FREEZE_TIME/2,A14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+         00001800     ffe1  
+     439 00001810     c636          JRLE    GW_2                            ;BR=NOT HELD LONG ENOUGH YET
+     440                    
+     441 00001820     b4c1          MOVE    *A6(POF_MODE),A1,W
+         00001830     0210  
+     442 00001840     0b41          CMPI    PM_GPASS,A1
+         00001850     fffd  
+     443 00001860     ca31          JREQ    GW_2                            ;BR=PASSING
+     444 00001870     0b41          CMPI    PM_GHOLDING,A1
+         00001880     fff0  
+     445 00001890     ca0b          JREQ    GW_1_CHECK_TIME                 ;BR=STANDING,DON'T FORCE SMOTHER
+     446 000018a0     0b41          CMPI    PM_GSMOTHER,A1
+         000018b0     fff1  
+     447                    ;       JREQ    GW_1_CHECK_TIME                 ;BR=ALREADY SMOTHERING
+     448 000018c0     ca2b          JREQ    GW_2                            ;BR=ALREADY SMOTHERING
+     449 000018d0     07a9          MOVE    @PUCK_OBJECT,A9,L
+         000018e0 00000000! 
+     450 00001900     0d5f          CALLA   A_INBACK                        ;PUT PUCK BEHIND GOALIE ON SMOTHER
+         00001910 00000000! 
+     451                    ;       CALLA   FIX_GOALIE_DIR
+     452 00001930     c000          JRUC    GW_2_SMOTHER                    ;GET DOWN AND SMOTHER
+         00001940     00e0  
+     453                    
+     454 00001950           GW_1_CHECK_TIME
+     455 00001950     0b4e          CMPI    FREEZE_TIME,A14
+         00001960     ffc3  
+     456 00001970     c620          JRLE    GW_2                            ;BR=NOT HELD LONG ENOUGH YET
+     457                    
+     458 00001980     af0e          MOVB    *A8(ODT_GFREEZES),A14
+         00001990     0740  
+     459 000019a0     0b4e          CMPI    MAX_FREEZES,A14
+         000019b0     fffc  
+     460 000019c0     c40f          JRLT    GW_1_FREEZE                     ;BR=FREEZE DA PUCK
+     461                    
+     462 000019d0     09c0          MOVI    FREEZE_PROB,A0
+         000019e0     0066  
+     463 000019f0     0d5f          CALLA   RANDPER
+         00001a00 00000000! 
+     464 00001a20     c809          JRC     GW_1_FREEZE                     ;BR=FREEZE MF
+     465                    
+     466 00001a30     0d5f          CALLA   GOALIE_PASS_PUCK
+         00001a40 00000000! 
+     467 00001a60     c805          JRC     GW_1_FREEZE                     ;BR=NO PASS
+     468 00001a70     18a0          MOVK    GS_PASSED,A0
+     469 00001a80     0d5f          CALLA   GOALIE_SPEECH
+         00001a90 00000000! 
+     470 00001ab0     0960          RETS
+     471                    
+     472 00001ac0           GW_1_FREEZE
+     473 00001ac0     102e          INC     A14
+     474 00001ad0     adc8          MOVB    A14,*A8(ODT_GFREEZES)
+         00001ae0     0740  
+     475                    
+     476 00001af0     57ce          CLR     A14
+     477 00001b00     b3c8          MOVE    A14,*A8(ODT_GPOSSIRQ),L         ;RESET IRQ TIME OF POSSESSION
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+         00001b10     06e0  
+     478                    
+     479 00001b20     c080          JAUC    PUCK_FROZEN
+         00001b30 00000000! 
+     480 00001b50           GW_1_RESET
+     481 00001b50     57ce          CLR     A14
+     482 00001b60     b3c8          MOVE    A14,*A8(ODT_GPOSSIRQ),L         ;RESET IRQ TIME OF POSSESSION
+         00001b70     06e0  
+     483 00001b80           GW_2
+     484 00001b80     4ec6          MOVE    A6,B6
+     485 00001b90     b4d0          MOVE    *B6(POF_MODE),B0,W
+         00001ba0     0210  
+     486                    ;       CMPI    PM_GHUGPOST,B0
+     487                    ;       JREQ    GW_ANIM_OK
+     488                    ;       CMPI    PM_GSIDESHUFF,B0
+     489                    ;       JREQ    GW_ANIM_OK
+     490 00001bb0     0b50          CMPI    PM_GSTAND,B0
+         00001bc0     ffff  
+     491 00001bd0     ca0d          JREQ    GW_ANIM_OK
+     492 00001be0     0b50          CMPI    PM_GSKATE,B0
+         00001bf0     fffe  
+     493 00001c00     ca0a          JREQ    GW_ANIM_OK
+     494 00001c10     0b50          CMPI    PM_GSKID,B0
+         00001c20     fffb  
+     495 00001c30     ca07          JREQ    GW_ANIM_OK
+     496 00001c40     0b50          CMPI    PM_GCHECKED,B0
+         00001c50     ffeb  
+     497 00001c60     ca04          JREQ    GW_ANIM_OK
+     498 00001c70     0b50          CMPI    PM_GCROSSCHECK,B0
+         00001c80     fff9  
+     499 00001c90     cb00          JRNE    GW_DONE
+         00001ca0     028f  
+     500                    ;       CMPI    PM_GSTANCE,B0
+     501                    ;       JRNE    GW_DONE
+     502 00001cb0           GW_ANIM_OK
+     503 00001cb0     05a1          MOVE    @PUCK_CONTROL,A1,W
+         00001cc0 00000000! 
+     504 00001ce0     cb09          JRNZ    GW_2_CHECK_TEAM                 ;BR=SOMEBODY HAS CONTROL
+     505                    
+     506 00001cf0     05ae          MOVE    @PUCK_MODE,A14,W
+         00001d00 00000000! 
+     507 00001d20     0b4e          CMPI    PUM_OPEN,A14
+         00001d30     ffff  
+     508 00001d40     ca0f          JREQ    GW_2_CHECK_SAVE                 ;BR=OPEN SEASON
+     509                    
+     510 00001d50     05a1          MOVE    @PUCK_LAST_CONTROL,A1,W         ;CHECK WHO HAS LAST CONTROL
+         00001d60 00000000! 
+     511 00001d80           GW_2_CHECK_TEAM
+     512 00001d80     aec0          MOVB    *A6(POF_NUMBER),A0
+         00001d90     0000  
+     513 00001da0     4820          CMP     A1,A0
+     514 00001db0     ca00          JREQ    GW_3                            ;BR=GOALIE HAS PUCK
+         00001dc0     017f  
+     515                    
+     516 00001dd0                   EQTEAM  A0,A1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     517 00001e20     ca00          JRZ     GW_3                            ;BR=GOALIES'S TEAM HAS PUCK
+         00001e30     0178  
+     518                    
+     519 00001e40           GW_2_CHECK_SAVE
+     520 00001e40     b50e          MOVE    *A8(ODT_GSAVETIME),A14,W
+         00001e50     0640  
+     521 00001e60     cb00          JRNZ    GW_3                            ;BR=SAVIN'
+         00001e70     0174  
+     522                    
+     523                    ;       MOVE    *A8(ODT_GFLAGS),A14,W
+     524                    ;       BTST    B_MISSSAVE,A14
+     525                    ;       JRNZ    GW_3                            ;BR=MISSIN' PUCK
+     526                    
+     527 00001e80     1827          MOVK    1,A7                            ;SET DRONE FLAG
+     528                    
+     529 00001e90     07a9          MOVE    @PUCK_OBJECT,A9,L
+         00001ea0 00000000! 
+     530 00001ec0     4d00          MOVE    A8,A0
+     531 00001ed0     4d28          MOVE    A9,A8
+     532 00001ee0     0d3f          CALLR   IS_A8_IN_CREASE                 ;IS PUCK INSIDE CREASE?
+         00001ef0     02d0  
+     533 00001f00     c929          JRNC    GW_2_CHECK                      ;BR=NOPE.
+     534 00001f10     4c08          MOVE    A0,A8
+     535                    
+     536 00001f20     05a1          MOVE    @PUCK_CONTROL,A1,W
+         00001f30 00000000! 
+     537 00001f50     cb00          JRNZ    GW_2_POKE_ALWAYS                ;BR=SOMEBODY HAS CONTROL
+         00001f60     00db  
+     538                    
+     539 00001f70     b4ce          MOVE    *A6(POF_D_PUCK),A14,W
+         00001f80     0680  
+     540 00001f90     0b4e          CMPI    048H,A14
+         00001fa0     ffb7  
+     541 00001fb0     c700          JRGT    GW_3                            ;BR=TOO FAR AWAY
+         00001fc0     015f  
+     542                    
+     543 00001fd0     b72e          MOVE    *A9(OYVAL),A14,L
+         00001fe0     0160  
+     544 00001ff0     0b6e          CMPI    MAX_GAIN_POSSY,A14
+         00002000 0003ffff  
+     545 00002020     c400          JRLT    GW_3                            ;BR=TOO HIGH IN THE AIR
+         00002030     0158  
+     546                    
+     547                    ;       MOVI    GOALIE_DIR_TABLE_BEHIND,A11
+     548                    ;       MOVI    GOALIE_DIR_TABLE_REV,A11
+     549                    
+     550 00002040     09eb          MOVI    GOALIE_DIR_TABLE_REV2,A11
+         00002050 00005a30' 
+     551                    
+     552 00002070     b720          MOVE    *A9(OXVAL),A0,L
+         00002080     0140  
+     553 00002090     b721          MOVE    *A9(OZVAL),A1,L
+         000020a0     0180  
+     554 000020b0     b702          MOVE    *A8(OXVAL),A2,L
+         000020c0     0140  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     555 000020d0     b703          MOVE    *A8(OZVAL),A3,L
+         000020e0     0180  
+     556 000020f0     0d3f          CALLR   GET_GDIR_TO_POINT_18_T
+         00002100     0318  
+     557 00002110     4d6b          MOVE    A11,A11
+     558 00002120     cf04          JRNN    GW_2_DO_SMOTHER                 ;BR=PUCK IN FRONT OF GOALIE
+     559                    
+     560 00002130     038b          ABS     A11
+     561 00002140     ad66          MOVB    A11,*A6(POF_DIRECTION)
+         00002150     0390  
+     562 00002160     c07d          JRUC    GW_2_REVERSE_SMOTHER
+     563                    
+     564                    ;       ABS     A11
+     565                    ;       MOVB    A11,*A6(POF_DIRECTION)
+     566                    ;       JRUC    GW_2_REAR_SMOTHER
+     567 00002170           GW_2_DO_SMOTHER
+     568 00002170     ad66          MOVB    A11,*A6(POF_DIRECTION)
+         00002180     0390  
+     569 00002190     c05b          JRUC    GW_2_SMOTHER
+     570                    
+     571 000021a0           GW_2_CHECK
+     572 000021a0     4c08          MOVE    A0,A8
+     573                    
+     574 000021b0     0b50          CMPI    PM_GCHECKED,B0
+         000021c0     ffeb  
+     575 000021d0     ca00          JREQ    GW_4                            ;BR=GETTING CHECKED
+         000021e0     023b  
+     576                    
+     577                    ;       JRUC    GW_3                            ;SKIP NORMAL SMOTHER
+     578                    
+     579 000021f0     0d3f          CALLR   IS_A8_IN_CREASE
+         00002200     029f  
+     580 00002210     c900          JRNC    GW_3                            ;BR=NOPE.
+         00002220     0139  
+     581                    
+     582 00002230     09c0          MOVI    M_SW_S|M_SW_P|M_SW_T,A0         ;SHOOT AND PASS
+         00002240     0070  
+     583 00002250     0d3f          CALLR   CHECK_GOALIE_SWITCHES
+         00002260     0244  
+     584 00002270     ca10          JRZ     GW_2_GO                         ;BR=HUMAN GOALIE SWITCHES ON
+     585 00002280     c900          JRNC    GW_3                            ;BR=NO DRONE GOALIE
+         00002290     0132  
+     586                    
+     587 000022a0     1827          MOVK    1,A7                            ;SET DRONE FLAG
+     588                    
+     589                    ;       MOVI    102,A0                          ;DECIDE IF GOALIE SMOTHER
+     590 000022b0     09c0          MOVI    51,A0                           ;DECIDE IF GOALIE SMOTHER
+         000022c0     0033  
+     591 000022d0     0d5f          CALLA   RANDPER
+         000022e0 00000000! 
+     592 00002300     c807          JRC     GW_2_GO                         ;BR=YEP
+     593                    
+     594 00002310     05a1          MOVE    @PUCK_CONTROL,A1,W
+         00002320 00000000! 
+     595 00002340     cb00          JRNZ    GW_2_POKE                       ;BR=SOMEBODY HAS CONTROL
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+         00002350     0095  
+     596 00002360     c000          JRUC    GW_3
+         00002370     0124  
+     597 00002380           GW_2_GO
+     598 00002380     05a1          MOVE    @PUCK_CONTROL,A1,W
+         00002390 00000000! 
+     599 000023b0     cb00          JRNZ    GW_2_POKE                       ;BR=SOMEBODY HAS CONTROL
+         000023c0     008e  
+     600                    
+     601 000023d0     0d3f          CALLR   IS_A8_IN_CREASE
+         000023e0     0281  
+     602 000023f0     c900          JRNC    GW_3                            ;BR=NOPE.
+         00002400     011b  
+     603                    
+     604 00002410     b4ce          MOVE    *A6(POF_D_PUCK),A14,W
+         00002420     0680  
+     605 00002430     0b4e          CMPI    048H,A14
+         00002440     ffb7  
+     606 00002450     c700          JRGT    GW_3                            ;BR=TOO FAR AWAY
+         00002460     0115  
+     607                    
+     608                    ;       MOVE    @PUCK_OBJECT,A9,L
+     609 00002470     b72e          MOVE    *A9(OYVAL),A14,L
+         00002480     0160  
+     610 00002490     0b6e          CMPI    MAX_GAIN_POSSY,A14
+         000024a0 0003ffff  
+     611 000024c0     c400          JRLT    GW_3                            ;BR=TOO HIGH IN THE AIR
+         000024d0     010e  
+     612                    
+     613 000024e0     b720          MOVE    *A9(OXVAL),A0,L
+         000024f0     0140  
+     614 00002500     b721          MOVE    *A9(OZVAL),A1,L
+         00002510     0180  
+     615 00002520     b702          MOVE    *A8(OXVAL),A2,L
+         00002530     0140  
+     616 00002540     b703          MOVE    *A8(OZVAL),A3,L
+         00002550     0180  
+     617 00002560     0d5f          CALLA   find_dir_to_point
+         00002570 00000000! 
+     618 00002590     4c01          MOVE    A0,A1
+     619                    
+     620 000025a0     aec0          MOVB    *A6(POF_DIRECTION),A0
+         000025b0     0390  
+     621 000025c0     0d5f          CALLA   dir_to_degrees
+         000025d0 00000000! 
+     622                    
+     623 000025f0     4c2e          MOVE    A1,A14
+     624 00002600     440e          SUB     A0,A14
+     625 00002610     038e          ABS     A14
+     626 00002620     0b6e          CMPI    XD1800,A14
+         00002630 ff4bffff  
+     627 00002650     c604          JRLE    GW_2_SMOTHER_ANGLE_CHECK        ;BR=CHECK ANGLE DIFFERENCE
+     628 00002660     0d0e          SUBI    XD3600,A14
+         00002670 fe97ffff  
+     629 00002690     038e          ABS     A14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     630 000026a0           GW_2_SMOTHER_ANGLE_CHECK
+     631 000026a0     0b6e          CMPI    XD0450,A14
+         000026b0 ffd2ffff  
+     632 000026d0     c700          JRGT    GW_3                            ;BR=ANGLE TOO WIDE, DON'T
+         000026e0     00ed  
+     633                    
+     634 000026f0     57ce          CLR     A14
+     635                    
+     636 00002700     4ce7          MOVE    A7,A7
+     637 00002710     cb03          JRNZ    GW_2_SMOTHER                    ;BR=DRONE SMOTHERING
+     638                    
+     639 00002720     93cb          MOVE    A14,*A11+,L                     ;RESET SHOOT SWITCH TIME
+     640 00002730     93cb          MOVE    A14,*A11+,L                     ;RESET PASS SWITCH TIME
+     641 00002740     93cb          MOVE    A14,*A11+,L                     ;RESET TURBO SWITCH TIME
+     642                    
+     643 00002750           GW_2_SMOTHER
+     644 00002750     57ce          CLR     A14
+     645 00002760     b3c8          MOVE    A14,*A8(ODT_VEL),L
+         00002770     04d0  
+     646 00002780     b3c8          MOVE    A14,*A8(OXVEL),L
+         00002790     0100  
+     647 000027a0     b3c8          MOVE    A14,*A8(OZVEL),L
+         000027b0     00e0  
+     648                    
+     649 000027c0     b3c9          MOVE    A14,*A9(ODT_VEL),L
+         000027d0     04d0  
+     650 000027e0     b3c9          MOVE    A14,*A9(OXVEL),L
+         000027f0     0100  
+     651 00002800     b3c9          MOVE    A14,*A9(OZVEL),L
+         00002810     00e0  
+     652                    
+     653 00002820     b50e          MOVE    *A8(ODT_GFLAGS),A14,W
+         00002830     0630  
+     654 00002840     0b8e          ANDNI   M_RSMOTH,A14
+         00002850 00000100  
+     655 00002870     b1c8          MOVE    A14,*A8(ODT_GFLAGS),W
+         00002880     0630  
+     656                    
+     657 00002890     19ce          MOVK    PM_GSMOTHER,A14
+     658 000028a0     b1c6          MOVE    A14,*A6(POF_MODE),W
+         000028b0     0210  
+     659 000028c0     0d5f          CALLA   take_player_control
+         000028d0 00000000! 
+     660 000028f0     0d5f          CALLA   SET_GSMOTHER_SCRIPT
+         00002900 00000000! 
+     661 00002920     c000          JRUC    GW_DONE
+         00002930     01c6  
+     662                    
+     663 00002940           GW_2_REVERSE_SMOTHER
+     664 00002940     57ce          CLR     A14
+     665 00002950     b3c8          MOVE    A14,*A8(ODT_VEL),L
+         00002960     04d0  
+     666 00002970     b3c8          MOVE    A14,*A8(OXVEL),L
+         00002980     0100  
+     667 00002990     b3c8          MOVE    A14,*A8(OZVEL),L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+         000029a0     00e0  
+     668                    
+     669 000029b0     b3c9          MOVE    A14,*A9(ODT_VEL),L
+         000029c0     04d0  
+     670 000029d0     b3c9          MOVE    A14,*A9(OXVEL),L
+         000029e0     0100  
+     671 000029f0     b3c9          MOVE    A14,*A9(OZVEL),L
+         00002a00     00e0  
+     672                    
+     673 00002a10     b50e          MOVE    *A8(ODT_GFLAGS),A14,W
+         00002a20     0630  
+     674 00002a30     0bae          ORI     M_RSMOTH,A14
+         00002a40 00000100  
+     675 00002a60     b1c8          MOVE    A14,*A8(ODT_GFLAGS),W
+         00002a70     0630  
+     676                    
+     677 00002a80     19ce          MOVK    PM_GSMOTHER,A14
+     678 00002a90     b1c6          MOVE    A14,*A6(POF_MODE),W
+         00002aa0     0210  
+     679 00002ab0     0d5f          CALLA   take_player_control
+         00002ac0 00000000! 
+     680 00002ae0     0d5f          CALLA   SET_GSMOTHER_SCRIPT
+         00002af0 00000000! 
+     681 00002b10     c000          JRUC    GW_DONE
+         00002b20     01a7  
+     682                    
+     683 00002b30           GW_2_REAR_SMOTHER
+     684 00002b30     57ce          CLR     A14
+     685 00002b40     b3c8          MOVE    A14,*A8(ODT_VEL),L
+         00002b50     04d0  
+     686 00002b60     b3c8          MOVE    A14,*A8(OXVEL),L
+         00002b70     0100  
+     687 00002b80     b3c8          MOVE    A14,*A8(OZVEL),L
+         00002b90     00e0  
+     688                    
+     689 00002ba0     b3c9          MOVE    A14,*A9(ODT_VEL),L
+         00002bb0     04d0  
+     690 00002bc0     b3c9          MOVE    A14,*A9(OXVEL),L
+         00002bd0     0100  
+     691 00002be0     b3c9          MOVE    A14,*A9(OZVEL),L
+         00002bf0     00e0  
+     692                    
+     693 00002c00     19ce          MOVK    PM_GSMOTHER,A14
+     694 00002c10     b1c6          MOVE    A14,*A6(POF_MODE),W
+         00002c20     0210  
+     695 00002c30     0d5f          CALLA   take_player_control
+         00002c40 00000000! 
+     696 00002c60     0d5f          CALLA   SET_GREARSMOTH_SCRIPT
+         00002c70 00000000! 
+     697 00002c90     c000          JRUC    GW_DONE
+         00002ca0     018f  
+     698                    
+     699 00002cb0           GW_2_POKE
+     700                    ;       MOVI    102,A0                          ;DECIDE IF GOALIE POKE
+     701 00002cb0     09c0          MOVI    51,A0                           ;DECIDE IF GOALIE POKE
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+         00002cc0     0033  
+     702 00002cd0     0d5f          CALLA   RANDPER
+         00002ce0 00000000! 
+     703 00002d00     c900          JRNC    GW_3                            ;BR=NOPE
+         00002d10     008a  
+     704                    
+     705 00002d20           GW_2_POKE_ALWAYS
+     706                    ;       MOVE    *A8(ODT_PBK),A6,L
+     707                    ;       MOVB    *A6(POF_NUMBER),A0
+     708                    ;       CMP     A1,A0
+     709                    ;       JREQ    GW_3
+     710                    ;
+     711                    ;       EQTEAM  A0,A1
+     712                    ;       JRZ     GW_3                            ;BR=GOALIES'S TEAM HAS PUCK
+     713                    
+     714 00002d20     09e4          MOVI    0340000H,A4                     ;DEFAULT NEAR LIMIT
+         00002d30 00340000  
+     715 00002d50     09e5          MOVI    0740000H,A5                     ;DEFAULT FAR LIMIT
+         00002d60 00740000  
+     716                    
+     717 00002d80     aece          MOVB    *A6(POF_DIRECTION),A14
+         00002d90     0390  
+     718 00002da0     0b8e          ANDI    3,A14
+         00002db0 fffffffc  
+     719 00002dd0     146e          SUBK    3,A14
+     720 00002de0     cb06          JRNZ    GW_2P_CHECK_LIMITS              ;BR=NOT DIRECTION 3 OR 7
+     721                    
+     722 00002df0     09e4          MOVI    0380000H,A4                     ;DIR 3(7) NEAR LIMIT
+         00002e00 00380000  
+     723 00002e20     09e5          MOVI    0800000H,A5                     ;DIR 3(7) FAR LIMIT
+         00002e30 00800000  
+     724                    
+     725 00002e50           GW_2P_CHECK_LIMITS
+     726 00002e50     07b9          MOVE    @PUCK_OBJECT,B9,L
+         00002e60 00000000! 
+     727 00002e80     b730          MOVE    *B9(OXVAL),B0,L
+         00002e90     0140  
+     728 00002ea0     b734          MOVE    *B9(OXVEL),B4,L
+         00002eb0     0100  
+     729 00002ec0     4090          ADD     B4,B0
+     730 00002ed0     4e10          MOVE    B0,A0
+     731 00002ee0     b731          MOVE    *B9(OZVAL),B1,L
+         00002ef0     0180  
+     732 00002f00     b735          MOVE    *B9(OZVEL),B5,L
+         00002f10     00e0  
+     733 00002f20     40b1          ADD     B5,B1
+     734 00002f30     4e31          MOVE    B1,A1
+     735                    
+     736 00002f40     b702          MOVE    *A8(OXVAL),A2,L
+         00002f50     0140  
+     737 00002f60     4e42          MOVE    A2,B2
+     738 00002f70     b703          MOVE    *A8(OZVAL),A3,L
+         00002f80     0180  
+     739 00002f90     4e63          MOVE    A3,B3
+     740 00002fa0     0d5f          CALLA   find_dist_quick2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+         00002fb0 00000000! 
+     741                    
+     742 00002fd0     4881          CMP     A4,A1
+     743 00002fe0     c705          JRGT    GW_2P_CHECK_FAR
+     744                    
+     745                    ;       MOVI    102,A0                          ;BR=DECIDE IF GOALIE POKE
+     746                    ;       CALLA   RANDPER
+     747                    ;       JRNC    GW_3                            ;BR=NOPE
+     748                    
+     749 00002ff0     1964          MOVK    PM_GDEFLECT,A4
+     750 00003000     09e5          MOVI    SET_GDEFLECT_SCRIPT,A5
+         00003010 00000000! 
+     751 00003030     c011          JRUC    GW_2P_CHECK_DIR
+     752                    
+     753 00003040           GW_2P_CHECK_FAR
+     754                    ;       MOVI    102,A0                          ;BR=DECIDE IF GOALIE POKE
+     755                    ;       CALLA   RANDPER
+     756                    ;       JRNC    GW_3                            ;BR=NOPE
+     757                    
+     758 00003040     4090          ADD     B4,B0
+     759 00003050     4090          ADD     B4,B0
+     760 00003060     4e10          MOVE    B0,A0
+     761 00003070     40b1          ADD     B5,B1
+     762 00003080     40b1          ADD     B5,B1
+     763 00003090     4e31          MOVE    B1,A1
+     764                    
+     765 000030a0     4e52          MOVE    B2,A2
+     766 000030b0     4e73          MOVE    B3,A3
+     767 000030c0     0d5f          CALLA   find_dist_quick2
+         000030d0 00000000! 
+     768                    
+     769 000030f0     48a1          CMP     A5,A1
+     770 00003100     c734          JRGT    GW_2P_FULLBUTT
+     771                    
+     772 00003110     19c4          MOVK    PM_GSMOTHER,A4
+     773 00003120     09e5          MOVI    SET_GPOKECHECK_SCRIPT,A5
+         00003130 00000000! 
+     774                    
+     775 00003150           GW_2P_CHECK_DIR
+     776 00003150     4e10          MOVE    B0,A0
+     777 00003160     4e31          MOVE    B1,A1
+     778 00003170     4e52          MOVE    B2,A2
+     779 00003180     4e73          MOVE    B3,A3
+     780 00003190     0d5f          CALLA   find_dir_to_point
+         000031a0 00000000! 
+     781 000031c0     4c01          MOVE    A0,A1
+     782                    
+     783 000031d0     aec0          MOVB    *A6(POF_DIRECTION),A0
+         000031e0     0390  
+     784 000031f0     0d5f          CALLA   dir_to_degrees
+         00003200 00000000! 
+     785                    
+     786 00003220     4c2e          MOVE    A1,A14
+     787 00003230     440e          SUB     A0,A14
+     788 00003240     038e          ABS     A14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+     789 00003250     0b6e          CMPI    XD1800,A14
+         00003260 ff4bffff  
+     790 00003280     c604          JRLE    GW_2P_CD_GO
+     791 00003290     0d0e          SUBI    XD3600,A14
+         000032a0 fe97ffff  
+     792 000032c0     038e          ABS     A14
+     793 000032d0           GW_2P_CD_GO
+     794 000032d0     0b6e          CMPI    XD0450,A14
+         000032e0 ffd2ffff  
+     795 00003300     c714          JRGT    GW_2P_FULLBUTT
+     796                    
+     797 00003310     57ce          CLR     A14
+     798                    
+     799 00003320     4ce7          MOVE    A7,A7
+     800 00003330     cb03          JRNZ    GW_2P_POKE                      ;BR=DRONE POKING
+     801                    
+     802 00003340     93cb          MOVE    A14,*A11+,L                     ;RESET SHOOT SWITCH TIME
+     803 00003350     93cb          MOVE    A14,*A11+,L                     ;RESET PASS SWITCH TIME
+     804 00003360     93cb          MOVE    A14,*A11+,L                     ;RESET TURBO SWITCH TIME
+     805 00003370           GW_2P_POKE
+     806                    ;       CLR     A14
+     807 00003370     b3c8          MOVE    A14,*A8(ODT_VEL),L
+         00003380     04d0  
+     808 00003390     b3c8          MOVE    A14,*A8(OXVEL),L
+         000033a0     0100  
+     809 000033b0     b3c8          MOVE    A14,*A8(OZVEL),L
+         000033c0     00e0  
+     810                    
+     811 000033d0     b086          MOVE    A4,*A6(POF_MODE),W
+         000033e0     0210  
+     812 000033f0     0d5f          CALLA   take_player_control
+         00003400 00000000! 
+     813 00003420     0925          CALL    A5
+     814                    
+     815 00003430     c000          JRUC    GW_DONE
+         00003440     0115  
+     816 00003450           GW_2P_FULLBUTT
+     817 00003450     4ce7          MOVE    A7,A7
+     818 00003460     cb15          JRNZ    GW_3                            ;BR=DON'T FEEDBACK IF DRONE
+     819                    
+     820 00003470     57ce          CLR     A14
+     821 00003480     93cb          MOVE    A14,*A11+,L                     ;RESET SHOOT SWITCH TIME
+     822 00003490     93cb          MOVE    A14,*A11+,L                     ;RESET PASS SWITCH TIME
+     823 000034a0     93cb          MOVE    A14,*A11+,L                     ;RESET TURBO SWITCH TIME
+     824                    
+     825                    ;       CLR     A14
+     826 000034b0     b3c8          MOVE    A14,*A8(ODT_VEL),L
+         000034c0     04d0  
+     827 000034d0     b3c8          MOVE    A14,*A8(OXVEL),L
+         000034e0     0100  
+     828 000034f0     b3c8          MOVE    A14,*A8(OZVEL),L
+         00003500     00e0  
+     829                    
+     830                    ;       MOVE    A14,*A8(ODT_GZIMPACT),L
+     831                    ;       MOVE    A14,*A8(ODT_GXIMPACT),L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+     832                    ;
+     833                    ;       MOVE    *A8(ODT_GFLAGS),A5,W
+     834                    ;       ANDNI   M_TMOVE|M_SAVEMADE|M_MISSSAVE,A5
+     835                    ;       ORI     M_FREEZE|M_PUCKCHECK,A5
+     836                    ;       MOVE    A5,*A8(ODT_GFLAGS),W
+     837                    
+     838 00003510     198e          MOVK    PM_GSAVE,A14
+     839 00003520     b1c6          MOVE    A14,*A6(POF_MODE),W
+         00003530     0210  
+     840 00003540     0d5f          CALLA   take_player_control
+         00003550 00000000! 
+     841 00003570     0d5f          CALLA   SET_GBUTTERFLY_SCRIPT
+         00003580 00000000! 
+     842                    
+     843 000035a0     c000          JRUC    GW_DONE
+         000035b0     00fe  
+     844 000035c0           GW_3
+     845 000035c0     0b50          CMPI    PM_GCROSSCHECK,B0
+         000035d0     fff9  
+     846 000035e0     ca00          JREQ    GW_4
+         000035f0     00fa  
+     847                    
+     848                            ;MAYBE GOALIE ONLY CHECKS INSIDE CREASE.
+     849                    
+     850 00003600     0d3f          CALLR   IS_A8_IN_CREASE
+         00003610     015e  
+     851 00003620     c900          JRNC    GW_4                            ;BR=NOPE.
+         00003630     00f6  
+     852                    
+     853                            .if     BILL
+     854                    ;       JRUC    GW_4
+     855                            .endif
+     856                    
+     857                    ;       JRUC    GW_3_DRONE                      ;DRONE GOALIE
+     858                    
+     859 00003640     09c0          MOVI    M_SW_S|M_SW_T,A0                        ;SHOOT AND TURBO
+         00003650     0050  
+     860 00003660     0d3f          CALLR   CHECK_GOALIE_SWITCHES
+         00003670     0103  
+     861                    ;       JRZ     GW_3_GO                         ;BR=HUMAN GOALIE SWITCHES ON
+     862                    ;       JRNC    GW_4                            ;BR=NO DRONE GOALIE
+     863 00003680     c863          JRC     GW_3_DRONE                      ;BR=DRONE GOALIE
+     864 00003690     cb00          JRNZ    GW_4                            ;BR=HUMAN GOALIE SWITCHES OFF
+         000036a0     00ef  
+     865                    
+     866 000036b0     05a1          MOVE    @PUCK_CONTROL,A1,W
+         000036c0 00000000! 
+     867 000036e0     ca07          JRZ     GW_3_HUMAN                      ;BR=NOBODY HAS THE PUCK
+     868 000036f0     4c23          MOVE    A1,A3                           ;GET TEAM FROM PLAYER
+     869 00003700     1423          DEC     A3
+     870 00003710     2fc3          SRL     2,A3                            ;TEAM WITH PUCK
+     871 00003720                   GBLOCK  A1,A1
+     872 00003760           GW_3_HUMAN
+     873 00003760     1831          MOVK    1,B1                            ;RIGHT GOALIE
+     874 00003770     56e7          CLR     A7                              ;LEFT TEAM
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+     875 00003780     09c0          MOVI    POF_D_1P,A0
+         00003790     0600  
+     876 000037a0     09e5          MOVI    PLAYER_1_BLOCK,A5
+         000037b0 00000000! 
+     877 000037d0     aece          MOVB    *A6(POF_NUMBER),A14
+         000037e0     0000  
+     878                    ;       MOVE    A14,B0
+     879 000037f0     148e          SUBK    4,A14
+     880 00003800     cb07          JRNZ    GW_3_H_DIST_CHECK               ;BR=GOALIE ON RIGHT SIDE
+     881 00003810     5631          CLR     B1                              ;LEFT GOALIE
+     882 00003820     1827          MOVK    1,A7                            ;RIGHT TEAM
+     883 00003830     09c0          MOVI    POF_D_5P,A0
+         00003840     0640  
+     884 00003850     09e5          MOVI    PLAYER_5_BLOCK,A5
+         00003860 00000000! 
+     885 00003880           GW_3_H_DIST_CHECK
+     886 00003880     56e3          XOR     A7,A3                           ;ZERO IF OFFENSIVE TEAM HAS PUCK
+     887 00003890     56e7          CLR     A7
+     888 000038a0     09c2          MOVI    040H,A2                         ;HITTING RANGE
+         000038b0     0040  
+     889 000038c0     40c0          ADD     A6,A0
+     890 000038d0     940e          MOVE    *A0+,A14,W                      ;1ST PLAYER'S DISTANCE
+     891 000038e0     484e          CMP     A2,A14
+     892 000038f0     c706          JRGT    GW_3_H_CHECK_2ND                ;BR=OUTSIDE RANGE
+     893 00003900     4ca7          MOVE    A5,A7
+     894 00003910     4827          CMP     A1,A7
+     895 00003920     ca18          JREQ    GW_3_H_FACE                     ;BR=PLAYER HAS PUCK
+     896 00003930     4c63          MOVE    A3,A3
+     897 00003940     ca01          JRZ     GW_3_H_CHECK_2ND                ;BR=TEAMMATE HAS PUCK
+     898 00003950     4dc2          MOVE    A14,A2
+     899 00003960           GW_3_H_CHECK_2ND
+     900 00003960     0b05          ADDI    PLAYER_BLOCK_SIZE,A5
+         00003970     1000  
+     901 00003980     840e          MOVE    *A0,A14,W                       ;2ND PLAYER'S DISTANCE
+     902 00003990     484e          CMP     A2,A14
+     903 000039a0     c506          JRGE    GW_3_H_CHECK_3RD                ;BR=WITHIN RANGE
+     904 000039b0     4ca7          MOVE    A5,A7
+     905 000039c0     4827          CMP     A1,A7
+     906 000039d0     ca0d          JREQ    GW_3_H_FACE                     ;BR=PLAYER HAS PUCK
+     907 000039e0     4c63          MOVE    A3,A3
+     908 000039f0     ca01          JRZ     GW_3_H_CHECK_3RD                ;BR=TEAMMATE HAS PUCK
+     909 00003a00     4dc2          MOVE    A14,A2
+     910 00003a10           GW_3_H_CHECK_3RD
+     911 00003a10     1000          ADDK    020H,A0
+     912 00003a20     0b05          ADDI    PLAYER_BLOCK_SIZE*2,A5
+         00003a30     2000  
+     913 00003a40     840e          MOVE    *A0,A14,W                       ;3RD PLAYER'S (GOALIE) DISTANCE
+     914 00003a50     484e          CMP     A2,A14
+     915 00003a60     c501          JRGE    GW_3_H_CLOSEST                  ;BR=OUTSIDE RANGE
+     916 00003a70     4ca7          MOVE    A5,A7
+     917 00003a80           GW_3_H_CLOSEST
+     918 00003a80     4ce7          MOVE    A7,A7
+     919                    ;       JRZ     GW_3_GO                         ;BR=NOBODY CLOSE
+     920 00003a90     ca00          JRZ     GW_4                            ;BR=NOBODY CLOSE
+         00003aa0     00af  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+     921 00003ab0           GW_3_H_FACE
+     922 00003ab0     b6e9          MOVE    *A7(POF_OBJECT),A9,L
+         00003ac0     0280  
+     923 00003ad0     b720          MOVE    *A9(OXVAL),A0,L
+         00003ae0     0140  
+     924 00003af0     b721          MOVE    *A9(OZVAL),A1,L
+         00003b00     0180  
+     925                    ;       CALLR   GOALIE_FACE_XZ
+     926 00003b10     b702          MOVE    *A8(OXVAL),A2,L
+         00003b20     0140  
+     927 00003b30     b703          MOVE    *A8(OZVAL),A3,L
+         00003b40     0180  
+     928 00003b50     4d64          MOVE    A11,A4                          ;SAVE SHOOT SWITCH TIME ADDRESS
+     929 00003b60     0d5f          CALLA   find_dir_to_point_18
+         00003b70 00000000! 
+     930 00003b90     4c8b          MOVE    A4,A11                          ;RESTORE
+     931 00003ba0     4c31          MOVE    B1,B1
+     932 00003bb0     cb09          JRNZ    GW_3_H_DIR                      ;BR=RIGHT GOALIE
+     933 00003bc0     1020          INC     A0
+     934 00003bd0     0b40          CMPI    2,A0
+         00003be0     fffd  
+     935 00003bf0     ca05          JREQ    GW_3_H_DIR                      ;BR=FIXED DIRECTION 1
+     936 00003c00     1440          SUBK    2,A0
+     937 00003c10     0b40          CMPI    4,A0
+         00003c20     fffb  
+     938 00003c30     ca01          JREQ    GW_3_H_DIR                      ;BR=FIXED DIRECTION 5
+     939 00003c40     1020          INC     A0                              ;RESTORE ORIGINAL DIRECTION
+     940 00003c50           GW_3_H_DIR
+     941 00003c50     ac06          MOVB    A0,*A6(POF_DIRECTION)
+         00003c60     0390  
+     942                    
+     943 00003c70     57ce          CLR     A14
+     944 00003c80     93cb          MOVE    A14,*A11+,L                     ;RESET SHOOT SWITCH TIME
+     945 00003c90     93cb          MOVE    A14,*A11+,L                     ;RESET PASS SWITCH TIME
+     946 00003ca0     93cb          MOVE    A14,*A11+,L                     ;RESET TURBO SWITCH TIME
+     947                    
+     948 00003cb0     c07d          JRUC    GW_3_GO
+     949 00003cc0           GW_3_DRONE
+     950                    ;       MOVI    102,A0                          ;BR=DECIDE IF GOALIE CHECK
+     951 00003cc0     09c0          MOVI    51,A0                           ;BR=DECIDE IF GOALIE CHECK
+         00003cd0     0033  
+     952 00003ce0     0d5f          CALLA   RANDPER
+         00003cf0 00000000! 
+     953 00003d10     c900          JRNC    GW_4                            ;BR=NOPE
+         00003d20     0087  
+     954 00003d30     56e7          CLR     A7
+     955 00003d40     09c0          MOVI    POF_D_1P,A0
+         00003d50     0600  
+     956 00003d60     09e5          MOVI    PLAYER_1_BLOCK,A5
+         00003d70 00000000! 
+     957 00003d90     aece          MOVB    *A6(POF_NUMBER),A14
+         00003da0     0000  
+     958 00003db0     4fc0          MOVE    A14,B0
+     959 00003dc0     148e          SUBK    4,A14
+     960 00003dd0     cb05          JRNZ    GW_3_DIST_CHECK                 ;BR=GOALIE ON RIGHT SIDE
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+     961 00003de0     09c0          MOVI    POF_D_5P,A0
+         00003df0     0640  
+     962 00003e00     09e5          MOVI    PLAYER_5_BLOCK,A5
+         00003e10 00000000! 
+     963 00003e30           GW_3_DIST_CHECK
+     964 00003e30     09c2          MOVI    040H,A2                         ;HITTING RANGE
+         00003e40     0040  
+     965 00003e50     40c0          ADD     A6,A0
+     966 00003e60     940e          MOVE    *A0+,A14,W                      ;1ST PLAYER'S DISTANCE
+     967 00003e70     484e          CMP     A2,A14
+     968 00003e80     c702          JRGT    GW_3_CHECK_2ND                  ;BR=OUTSIDE RANGE
+     969 00003e90     4ca7          MOVE    A5,A7
+     970 00003ea0     4dc2          MOVE    A14,A2
+     971 00003eb0           GW_3_CHECK_2ND
+     972 00003eb0     0b05          ADDI    PLAYER_BLOCK_SIZE,A5
+         00003ec0     1000  
+     973 00003ed0     840e          MOVE    *A0,A14,W                       ;2ND PLAYER'S DISTANCE
+     974 00003ee0     484e          CMP     A2,A14
+     975 00003ef0     c502          JRGE    GW_3_CHECK_3RD                  ;BR=WITHIN RANGE
+     976 00003f00     4ca7          MOVE    A5,A7
+     977 00003f10     4dc2          MOVE    A14,A2
+     978 00003f20           GW_3_CHECK_3RD
+     979 00003f20     1000          ADDK    020H,A0
+     980 00003f30     0b05          ADDI    PLAYER_BLOCK_SIZE*2,A5
+         00003f40     2000  
+     981 00003f50     840e          MOVE    *A0,A14,W                       ;3RD PLAYER'S (GOALIE) DISTANCE
+     982 00003f60     484e          CMP     A2,A14
+     983 00003f70     c501          JRGE    GW_3_CLOSEST                    ;BR=OUTSIDE RANGE
+     984 00003f80     4ca7          MOVE    A5,A7
+     985 00003f90           GW_3_CLOSEST
+     986 00003f90     4ce7          MOVE    A7,A7
+     987 00003fa0     ca5f          JRZ     GW_4                            ;BR=NOBODY CLOSE
+     988                    
+     989 00003fb0     b6e9          MOVE    *A7(POF_OBJECT),A9,L
+         00003fc0     0280  
+     990 00003fd0     b720          MOVE    *A9(OXVAL),A0,L
+         00003fe0     0140  
+     991 00003ff0     b721          MOVE    *A9(OZVAL),A1,L
+         00004000     0180  
+     992 00004010     b702          MOVE    *A8(OXVAL),A2,L
+         00004020     0140  
+     993 00004030     b703          MOVE    *A8(OZVAL),A3,L
+         00004040     0180  
+     994 00004050     0d5f          CALLA   find_dir_to_point_18
+         00004060 00000000! 
+     995 00004080     aece          MOVB    *A6(POF_DIRECTION),A14
+         00004090     0390  
+     996                    
+     997 000040a0     45c0          SUB     A14,A0
+     998 000040b0     ca05          JRZ     GW_3_CHECK_PUCK                 ;BR=SAME DIRECTION
+     999 000040c0     0380          ABS     A0
+    1000 000040d0     1420          SUBK    1,A0
+    1001 000040e0     ca02          JRZ     GW_3_CHECK_PUCK                 ;BR=ADJACENT DIRECTION
+    1002 000040f0     14c0          SUBK    6,A0
+    1003 00004100     cb49          JRNZ    GW_4                            ;BR=NOT THE 8 TO 1 CASE
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+    1004 00004110           GW_3_CHECK_PUCK
+    1005 00004110     05a0          MOVE    @PUCK_CONTROL,A0,W
+         00004120 00000000! 
+    1006 00004140     ca24          JRZ     GW_3_CHECK_PASS                 ;BR=NO CONTROL
+    1007                    
+    1008                    ;       MOVE    *A6(POF_MODE),A14,W
+    1009                    ;       CMPI    PM_GCHECKED,A14
+    1010                    ;       JREQ    GW_4                            ;BR=GOALIE GETTING CHECKED
+    1011                    
+    1012 00004150     aeee          MOVB    *A7(POF_NUMBER),A14
+         00004160     0000  
+    1013 00004170     480e          CMP     A0,A14
+    1014 00004180     cb18          JRNE    GW_3_NOPUCK                     ;BR=DOESN'T HAVE PUCK
+    1015 00004190     b4ee          MOVE    *A7(POF_MODE),A14,W
+         000041a0     0210  
+    1016 000041b0     0b4e          CMPI    PM_PASS,A14
+         000041c0     fffd  
+    1017 000041d0     ca3c          JREQ    GW_4                            ;BR=PASSING, PREPARE TO SAVE
+    1018 000041e0     0b4e          CMPI    PM_DUMP,A14
+         000041f0     fff7  
+    1019 00004200     ca39          JREQ    GW_4                            ;BR=DUMPING, PREPARE TO SAVE
+    1020 00004210     0b4e          CMPI    PM_ONETIME,A14
+         00004220     fff2  
+    1021 00004230     ca36          JREQ    GW_4                            ;BR=ONE TIMING, PREPARE TO SAVE
+    1022 00004240     0b4e          CMPI    PM_SHOOT,A14
+         00004250     fffc  
+    1023 00004260     cb22          JRNE    GW_3_GO                         ;BR=NOT SHOOTING
+    1024                    
+    1025 00004270     b6e1          MOVE    *A7(POF_RELEASE_TIME),A1,L
+         00004280     0220  
+    1026 00004290     07ae          MOVE    @WAVEIRQS,A14,L
+         000042a0 00000000! 
+    1027 000042c0     45c1          SUB     A14,A1
+    1028 000042d0     ce2c          JRN     GW_4                            ;BR=BOGUS RELEASE TIME
+    1029                    ;       SUBK    12,A1
+    1030 000042e0     1461          SUBK    3,A1
+    1031 000042f0     ce2a          JRN     GW_4                            ;BR=NOT ENOUGH TIME TO CHECK
+    1032                    
+    1033 00004300     c018          JRUC    GW_3_GO
+    1034 00004310           GW_3_NOPUCK
+    1035 00004310     4e1e          MOVE    B0,A14
+    1036 00004320                   EQTEAM  A0,A14
+    1037 00004370     ca11          JRZ     GW_3_GO                         ;BR=GOALIES'S TEAM HAS PUCK
+    1038 00004380     c021          JRUC    GW_4
+    1039 00004390           GW_3_CHECK_PASS
+    1040 00004390     05ae          MOVE    @PUCK_MODE,A14,W
+         000043a0 00000000! 
+    1041 000043c0     0b4e          CMPI    PUM_PASS,A14
+         000043d0     fff5  
+    1042 000043e0     ca03          JREQ    GW_3_PASS                       ;BR=PASSING
+    1043 000043f0     0b4e          CMPI    PUM_TPASS,A14
+         00004400     fff4  
+    1044 00004410     cb18          JRNE    GW_4                            ;BR=NOT PASSING
+    1045 00004420           GW_3_PASS
+    1046 00004420     05a0          MOVE    @PUCK_INTENDED,A0,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+         00004430 00000000! 
+    1047 00004450     aeee          MOVB    *A7(POF_NUMBER),A14
+         00004460     0000  
+    1048 00004470     480e          CMP     A0,A14
+    1049 00004480     cb11          JRNE    GW_4                            ;BR=NOT PASSING TO THIS PLAYER
+    1050 00004490           GW_3_GO
+    1051 00004490     57ce          CLR     A14
+    1052 000044a0     b3c8          MOVE    A14,*A8(ODT_VEL),L
+         000044b0     04d0  
+    1053 000044c0     b3c8          MOVE    A14,*A8(OXVEL),L
+         000044d0     0100  
+    1054 000044e0     b3c8          MOVE    A14,*A8(OZVEL),L
+         000044f0     00e0  
+    1055                    
+    1056 00004500     18ce          MOVK    PM_GCROSSCHECK,A14
+    1057 00004510     b1c6          MOVE    A14,*A6(POF_MODE),W
+         00004520     0210  
+    1058 00004530     0d5f          CALLA   take_player_control
+         00004540 00000000! 
+    1059 00004560     0d5f          CALLA   SET_GCCHECK_SCRIPT
+         00004570 00000000! 
+    1060 00004590     0300          JRUC    GW_DONE
+    1061 000045a0           GW_4
+    1062                    
+    1063 000045a0           GW_DONE
+    1064 000045a0     0960          RETS
+    1065                    
+    1066                    **************************************************************************
+    1067                    *                                                                        *
+    1068                    * CHECK_GOALIE_SWITCHES                                                  *
+    1069                    *                                                                        *
+    1070                    * PASS:                                                                  *
+    1071                    * A0 = SWITCHES TO CHECK                                                 *
+    1072                    * A6 = PLAYER BLOCK                                                      *
+    1073                    *                                                                        *
+    1074                    * RETURN:                                                                *
+    1075                    * A11 = SHOOT GOALIE SWITCH TIME ADDRESS                                 *
+    1076                    * IF HUMAN GOALIE, C IS CLR AND Z IS SET IF SWITCHES ON                  *
+    1077                    * IF DRONE GOALIE, C IS SET AND Z IS CLR                                 *
+    1078                    *                                                                        *
+    1079                    **************************************************************************
+    1080                    
+    1081              000f  MAX_BUTTON_TIME         EQU     15
+    1082                    
+    1083 000045b0           GOALIE_SWITCH_TABLE
+    1084 000045b0 01860000          .LONG   SWITCH,GTIMES1
+    1085 000045f0 01860008          .LONG   SWITCH+8,GTIMES2
+    1086 00004630 01860010          .LONG   SWITCH+16,GTIMES5
+    1087 00004670 01860018          .LONG   SWITCH+24,GTIMES6
+    1088                    
+    1089 000046b0           CHECK_GOALIE_SWITCHES
+    1090 000046b0     098f          MMTM    SP,A1,A2,A3
+         000046c0     7000  
+    1091                    
+    1092 000046d0     09e3          MOVI    GOALIE_CONTROL_4,A3
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   27
+
+         000046e0 00000000! 
+    1093 00004700     aece          MOVB    *A6(POF_NUMBER),A14
+         00004710     0000  
+    1094 00004720     148e          SUBK    4,A14
+    1095 00004730     ca01          JRZ     CGS_CHECK_CONTROL               ;BR=LEFT GOALIE #4
+    1096 00004740     1203          ADDK    010H,A3                         ;OFFSET FOR RIGHT GOALIE #8
+    1097 00004750           CGS_CHECK_CONTROL
+    1098 00004750     8463          MOVE    *A3,A3,W
+    1099 00004760     ca44          JRZ     CGS_DRONE_GOALIE                ;BR=DRONE GOALIE CONTROL
+    1100                    
+    1101 00004770                   GBLOCK  A3,A2                           ;PLAYER DATA BLOCK
+    1102                    
+    1103 000047c0     05a1          MOVE    @NPLAYERS,A1,W
+         000047d0 00000000! 
+    1104 000047f0     1421          DEC     A1
+    1105 00004800     ca04          JRZ     CGS_1PKIT_P1                    ;BR=1 PLAYER KIT
+    1106 00004810     1421          DEC     A1
+    1107 00004820     cb10          JRNZ    CGS_REF_TABLE                   ;BR=NOT A 2 PLAYER KIT
+    1108                    
+    1109 00004830     4dce          MOVE    A14,A14
+    1110 00004840     cb07          JRNZ    CGS_2PKIT_P2                    ;BR=PLAYER 2
+    1111 00004850           CGS_1PKIT_P1
+    1112 00004850     09e1          MOVI    SWITCH,A1                       ;PLAYER 1
+         00004860 01860000  
+    1113 00004880     09e3          MOVI    GTIMES1,A3
+         00004890 00000000! 
+    1114 000048b0     c00e          JRUC    CGS_GO
+    1115                    
+    1116 000048c0           CGS_2PKIT_P2
+    1117 000048c0     09e1          MOVI    SWITCH+8,A1                     ;PLAYER 2
+         000048d0 01860008  
+    1118 000048f0     09e3          MOVI    GTIMES2,A3
+         00004900 00000000! 
+    1119 00004920     c007          JRUC    CGS_GO
+    1120                    
+    1121 00004930           CGS_REF_TABLE
+    1122 00004930     1423          DEC     A3
+    1123 00004940     24c3          SLL     6,A3
+    1124 00004950     0b23          ADDI    GOALIE_SWITCH_TABLE,A3
+         00004960 000045b0' 
+    1125 00004980     9661          MOVE    *A3+,A1,L                       ;SWITCHES
+    1126 00004990     9663          MOVE    *A3+,A3,L                       ;SWITCH IRQ TIMES
+    1127                    
+    1128 000049a0           CGS_GO
+    1129                    ;       MOVE    *A2(POF_FLAGS),A14,W
+    1130                    ;       BTST    B_PF_HUMAN,A14
+    1131                    ;       JRZ     CGS_DRONE_GOALIE                ;BR=DRONE GOALIE
+    1132                    
+    1133 000049a0     8e21          MOVB    *A1,A1
+    1134 000049b0     5001          AND     A0,A1
+    1135 000049c0     cb19          JRNZ    CGS_FAIL                        ;BR=NO MATCH
+    1136                    
+    1137 000049d0     07a2          MOVE    @WAVEIRQS,A2,L
+         000049e0 00000000! 
+    1138                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   28
+
+    1139 00004a00     1f60          BTST    4,A0
+    1140 00004a10     ca04          JRZ     CGS_CHECK_P
+    1141 00004a20     866e          MOVE    *A3,A14,L
+    1142 00004a30     444e          SUB     A2,A14
+    1143 00004a40     11ee          ADDK    MAX_BUTTON_TIME,A14
+    1144 00004a50     ce10          JRN     CGS_FAIL                        ;BR=TOO LONG
+    1145 00004a60           CGS_CHECK_P
+    1146 00004a60     1003          ADDK    020H,A3
+    1147 00004a70     1f40          BTST    5,A0
+    1148 00004a80     ca04          JRZ     CGS_CHECK_T
+    1149 00004a90     866e          MOVE    *A3,A14,L
+    1150 00004aa0     444e          SUB     A2,A14
+    1151 00004ab0     11ee          ADDK    MAX_BUTTON_TIME,A14
+    1152 00004ac0     ce09          JRN     CGS_FAIL                        ;BR=TOO LONG
+    1153 00004ad0           CGS_CHECK_T
+    1154 00004ad0     1003          ADDK    020H,A3
+    1155                    
+    1156                    ;READING TURBO AS LEVEL!
+    1157                    ;
+    1158                    ;       BTST    6,A0
+    1159                    ;       JRZ     CGS_PASS
+    1160                    ;       MOVE    *A3,A14,L
+    1161                    ;       SUB     A2,A14
+    1162                    ;       ADDK    MAX_BUTTON_TIME,A14
+    1163                    ;       JRN     CGS_FAIL                        ;BR=TOO LONG
+    1164                    
+    1165 00004ae0           CGS_PASS
+    1166                    ;       CLR     A14
+    1167                    ;       MOVE    A14,*A3,L
+    1168                    ;       SUBK    020H,A3
+    1169                    ;       MOVE    A14,*A3,L
+    1170                    ;       SUBK    020H,A3
+    1171                    ;       MOVE    A14,*A3,L
+    1172                    
+    1173 00004ae0     0be3          SUBI    040H,A3
+         00004af0     ffbf  
+    1174 00004b00     4c6b          MOVE    A3,A11
+    1175                    
+    1176 00004b10     57ce          CLR     A14
+    1177 00004b20     0320          CLRC
+    1178 00004b30     09af          MMFM    SP,A1,A2,A3
+         00004b40     000e  
+    1179 00004b50     0960          RETS
+    1180 00004b60           CGS_FAIL
+    1181 00004b60     4c00          MOVE    A0,A0
+    1182 00004b70     0320          CLRC
+    1183 00004b80     09af          MMFM    SP,A1,A2,A3
+         00004b90     000e  
+    1184 00004ba0     0960          RETS
+    1185 00004bb0           CGS_DRONE_GOALIE
+    1186 00004bb0     4c00          MOVE    A0,A0
+    1187 00004bc0     0de0          SETC
+    1188 00004bd0     09af          MMFM    SP,A1,A2,A3
+         00004be0     000e  
+    1189 00004bf0     0960          RETS
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   29
+
+    1190                    
+    1191                    
+    1192                    **************************************************************************
+    1193                    *                                                                        *
+    1194                    * IS_A8_IN_CREASE - CHECK IF A8 IS INSIDE CREASE RADIUS                  *
+    1195                    * IS_A8_IN_GOALR  - CHECK IF A8 IS INSIDE GOAL RADIUS                    *
+    1196                    * IS_A8_IN_A14R   - CHECK IF A8 IS INSIDE RADIUS A14                     *
+    1197                    *                                                                        *
+    1198                    * PASS:                                                                  *
+    1199                    * A8  = OBJECT                                                           *
+    1200                    * A14 = RADIUS FOR IS_A8_IN_A14R                                         *
+    1201                    * RETURN:                                                                *
+    1202                    *  C IF INSIDE RADIUS                                                    *
+    1203                    * NC IF OUTSIDE                                                          *
+    1204                    *                                                                        *
+    1205                    **************************************************************************
+    1206                    
+    1207 00004c00           IS_A8_IN_CREASE
+    1208 00004c00     09ee          MOVI    CREASE_RADIUS,A14
+         00004c10 00557000  
+    1209 00004c30     c003          JRUC    IS_A8_IN_A14R
+    1210 00004c40           IS_A8_IN_GOALR
+    1211 00004c40     09ee          MOVI    GOAL_RADIUS,A14
+         00004c50 00358000  
+    1212 00004c70           IS_A8_IN_A14R
+    1213 00004c70     098f          MMTM    SP,A0,A1
+         00004c80     c000  
+    1214 00004c90     b700          MOVE    *A8(OXVAL),A0,L
+         00004ca0     0140  
+    1215 00004cb0     0380          ABS     A0
+    1216                    
+    1217 00004cc0     09e1          MOVI    RGHT_GOALLINE_X,A1
+         00004cd0 02b00000  
+    1218 00004cf0     4820          CMP     A1,A0
+    1219 00004d00     c712          JRGT    IA8I_OUTSIDE
+    1220                    
+    1221 00004d10     45c1          SUB     A14,A1
+    1222 00004d20     4820          CMP     A1,A0
+    1223 00004d30     c40f          JRLT    IA8I_OUTSIDE
+    1224                    
+    1225 00004d40     b700          MOVE    *A8(OZVAL),A0,L
+         00004d50     0180  
+    1226                    
+    1227 00004d60     09e1          MOVI    CENTER_Z,A1
+         00004d70 01538000  
+    1228 00004d90     45c1          SUB     A14,A1
+    1229 00004da0     4820          CMP     A1,A0
+    1230 00004db0     c407          JRLT    IA8I_OUTSIDE
+    1231                    
+    1232 00004dc0     41c1          ADD     A14,A1
+    1233 00004dd0     41c1          ADD     A14,A1
+    1234 00004de0     4820          CMP     A1,A0
+    1235 00004df0     c303          JRHI    IA8I_OUTSIDE                    ;SETS C IF NO JUMP
+    1236                    
+    1237 00004e00     09af          MMFM    SP,A0,A1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   30
+
+         00004e10     0003  
+    1238 00004e20     0960          RETS
+    1239 00004e30           IA8I_OUTSIDE
+    1240 00004e30     0320          CLRC
+    1241 00004e40     09af          MMFM    SP,A0,A1
+         00004e50     0003  
+    1242 00004e60     0960          RETS
+    1243                    
+    1244                    **************************************************************************
+    1245                    *                                                                        *
+    1246                    * FIND_PLAYER_CLOSER_TO_GOALIE                                           *
+    1247                    *                                                                        *
+    1248                    * PASS:                                                                  *
+    1249                    * A6 = GOALIE PLAYER BLOCK                                               *
+    1250                    * RETURN:                                                                *
+    1251                    * A0 = PLAYER NUMBER CLOSER                                              *
+    1252                    *                                                                        *
+    1253                    **************************************************************************
+    1254                    
+    1255 00004e70           FIND_PLAYER_CLOSER_TO_GOALIE
+    1256 00004e70     098f          MMTM    SP,A1,A2
+         00004e80     6000  
+    1257 00004e90     aec2          MOVB    *A6(POF_NUMBER),A2
+         00004ea0     0000  
+    1258 00004eb0     0d3f          CALLR   FPCG_GO
+         00004ec0     0003  
+    1259 00004ed0     09af          MMFM    SP,A1,A2
+         00004ee0     0006  
+    1260 00004ef0     0960          RETS
+    1261 00004f00           FPCG_GO
+    1262 00004f00     1820          MOVK    1,A0                            ;GOALIE HAS PUCK
+    1263 00004f10     09c1          MOVI    POF_D_1P,A1
+         00004f20     0600  
+    1264 00004f30     1482          SUBK    4,A2
+    1265 00004f40     ca03          JRZ     FPCG_GOT_DOFF                   ;BR=CHECK PLAYERS 1 AND 2
+    1266 00004f50     18a0          MOVK    5,A0
+    1267 00004f60     09c1          MOVI    POF_D_5P,A1                     ;CHECK PLAYERS 5 AND 6
+         00004f70     0640  
+    1268 00004f80           FPCG_GOT_DOFF
+    1269 00004f80     40c1          ADD     A6,A1
+    1270 00004f90     9422          MOVE    *A1+,A2,W
+    1271 00004fa0     842e          MOVE    *A1,A14,W
+    1272 00004fb0     484e          CMP     A2,A14
+    1273 00004fc0     c501          JRGE    FPCG_DONE                       ;BR=PLAYER 1 OR 5 IS CLOSER
+    1274 00004fd0     1020          INC     A0                              ;PLAYER 2 OR 6 IS CLOSER
+    1275 00004fe0           FPCG_DONE
+    1276 00004fe0     0960          RETS
+    1277                    
+    1278                    **************************************************************************
+    1279                    *                                                                        *
+    1280                    * FACE_GOALIE - FACE GOALIE IN PROPER DIRECTION                          *
+    1281                    *                                                                        *
+    1282                    * PASS:                                                                  *
+    1283                    * A6 = PLAYER DATA                                                       *
+    1284                    * A8 = GOALIE OBJECT                                                     *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   31
+
+    1285                    * RETURN:                                                                *
+    1286                    * NUTIN'                                                                 *
+    1287                    *                                                                        *
+    1288                    **************************************************************************
+    1289                    
+    1290 00004ff0           FACE_GOALIE
+    1291 00004ff0     05a1          MOVE    @PUCK_CONTROL,A1,W
+         00005000 00000000! 
+    1292 00005020     ca12          JRZ     FG_FACE_PUCK                    ;BR=NOBODY HAS PUCK
+    1293 00005030     aec2          MOVB    *A6(POF_NUMBER),A2
+         00005040     0000  
+    1294 00005050     4841          CMP     A2,A1
+    1295 00005060     cb0e          JRNE    FG_FACE_PUCK                    ;BR=FACE PLAYER WITH PUCK
+    1296                    
+    1297 00005070     0d3f          CALLR   FPCG_GO                         ;GOALIE HAS PUCK
+         00005080     ffe7  
+    1298 00005090                   GBLOCK  A0,A5                           ;FACE CLOSER PLAYER
+    1299 000050e0     b6ae          MOVE    *A5(POF_OBJECT),A14,L
+         000050f0     0280  
+    1300 00005100     b7c0          MOVE    *A14(OXVAL),A0,L
+         00005110     0140  
+    1301 00005120     b7c1          MOVE    *A14(OZVAL),A1,L
+         00005130     0180  
+    1302 00005140     c00d          JRUC    FG_GET_FACE_DIR
+    1303                    
+    1304 00005150           FG_FACE_PUCK
+    1305 00005150     05ae          MOVE    @PUCK_MODE,A14,W
+         00005160 00000000! 
+    1306 00005180     0b4e          CMPI    PUM_SCORE,A14
+         00005190     ff9c  
+    1307 000051a0     ca0d          JREQ    FG_ABORT                        ;BR=DON'T CHANGE DIR AFTER SCORE
+    1308                    
+    1309 000051b0     07a9          MOVE    @PUCK_OBJECT,A9,L
+         000051c0 00000000! 
+    1310 000051e0     b720          MOVE    *A9(OXVAL),A0,L
+         000051f0     0140  
+    1311 00005200     b721          MOVE    *A9(OZVAL),A1,L
+         00005210     0180  
+    1312 00005220           FG_GET_FACE_DIR
+    1313 00005220     b702          MOVE    *A8(OXVAL),A2,L
+         00005230     0140  
+    1314 00005240     b703          MOVE    *A8(OZVAL),A3,L
+         00005250     0180  
+    1315 00005260     0d3f          CALLR   SET_GDIR_TO_POINT_18H
+         00005270     0049  
+    1316 00005280           FG_ABORT
+    1317 00005280     0960          RETS
+    1318                    
+    1319                    ;FACE_CENTER
+    1320                    ;       MOVK    3,A0
+    1321                    ;       CMPI    4,A2
+    1322                    ;       JRZ     FC_SET                          ;BR=LEFT GOALIE
+    1323                    ;       MOVK    7,A0
+    1324                    ;FC_SET
+    1325                    ;       MOVB    A0,*A6(POF_DIRECTION)
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   32
+
+    1326                    ;       RETS
+    1327                    
+    1328                    
+    1329                    **************************************************************************
+    1330                    *                                                                        *
+    1331                    * GET_GDIR_TO_POINT_18_T  - GET GOALIE DIRECTION FACING A [X, Z] POINT   *
+    1332                    * GET_GDIR_TO_POINT_18H_T - GET GOALIE DIRECTION FACING A [X, Z] POINT   *
+    1333                    *                                                                        *
+    1334                    * PASS:                                                                  *
+    1335                    * A0  = X TO FACE                                                        *
+    1336                    * A1  = Z TO FACE                                                        *
+    1337                    * A2  = GOALIE X                                                         *
+    1338                    * A3  = GOALIE Z                                                         *
+    1339                    * A6  = PLAYER BLOCK                                                     *
+    1340                    * A11 = DIRECTION TABLE                                                  *
+    1341                    *                                                                        *
+    1342                    * RETURN:                                                                *
+    1343                    * NUTIN', BUT TRASH A BUNCH                                              *
+    1344                    *                                                                        *
+    1345                    **************************************************************************
+    1346                    
+    1347 00005290           GET_GDIR_TO_POINT_18_T
+    1348 00005290     0d5f          CALLA   find_dir_to_point
+         000052a0 00000000! 
+    1349 000052c0           GGP_LUPE
+    1350 000052c0     876e          MOVE    *A11,A14,L
+    1351 000052d0                   LOCKON  N
+    1352 00005320     480e          CMP     A0,A14
+    1353 00005330     c703          JRGT    GGP_CHECK
+    1354 00005340     0b0b          ADDI    020H+010H+010H,A11
+         00005350     0040  
+    1355 00005360     c0f5          JRUC    GGP_LUPE
+    1356 00005370           GGP_CHECK
+    1357 00005370     100b          ADDK    020H,A11
+    1358 00005380     aece          MOVB    *A6(POF_NUMBER),A14
+         00005390     0000  
+    1359 000053a0     148e          SUBK    4,A14
+    1360 000053b0     ca01          JRZ     GGP_GET_DIR
+    1361 000053c0     120b          ADDK    010H,A11
+    1362 000053d0           GGP_GET_DIR
+    1363 000053d0     856b          MOVE    *A11,A11,W
+    1364 000053e0     0960          RETS
+    1365                    
+    1366 000053f0           GET_GDIR_TO_POINT_18H_T
+    1367 000053f0     0d5f          CALLA   find_dir_to_point
+         00005400 00000000! 
+    1368 00005420           GGPH_LUPE
+    1369 00005420     876e          MOVE    *A11,A14,L
+    1370 00005430                   LOCKON  N
+    1371 00005480     480e          CMP     A0,A14
+    1372 00005490     c703          JRGT    GGPH_CHECK
+    1373 000054a0     0b0b          ADDI    020H+010H+010H,A11
+         000054b0     0040  
+    1374 000054c0     c0f5          JRUC    GGPH_LUPE
+    1375 000054d0           GGPH_CHECK
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   33
+
+    1376 000054d0     100b          ADDK    020H,A11
+    1377 000054e0     aece          MOVB    *A6(POF_NUMBER),A14
+         000054f0     0000  
+    1378 00005500     148e          SUBK    4,A14
+    1379 00005510     ca01          JRZ     GGPH_GET_DIR
+    1380 00005520     120b          ADDK    010H,A11
+    1381 00005530           GGPH_GET_DIR
+    1382 00005530     856b          MOVE    *A11,A11,W
+    1383 00005540     aec2          MOVB    *A6(POF_DIRECTION),A2
+         00005550     0390  
+    1384                    
+    1385                    ;       .if     DEBUG
+    1386                    ;       LOCKDIR a2
+    1387                    ;       .endif
+    1388                    
+    1389 00005560     4962          CMP     A11,A2
+    1390 00005570     ca17          JREQ    GGPH_SAME
+    1391                    
+    1392 00005580     4c01          MOVE    A0,A1
+    1393 00005590     4c40          MOVE    A2,A0
+    1394 000055a0     0b42          CMPI    3,A2
+         000055b0     fffc  
+    1395 000055c0     cb08          JRNE    GGPH_GET_ANGLE
+    1396 000055d0     0b61          CMPI    XD2925,A1
+         000055e0 fedb7fff  
+    1397 00005600     c404          JRLT    GGPH_GET_ANGLE
+    1398 00005610     09e0          MOVI    XD3600,A0
+         00005620 01680000  
+    1399 00005640     c003          JRUC    GGPH_DO_DIFF
+    1400 00005650           GGPH_GET_ANGLE
+    1401 00005650     0d5f          CALLA   dir_to_degrees
+         00005660 00000000! 
+    1402 00005680           GGPH_DO_DIFF
+    1403 00005680     4420          SUB     A1,A0
+    1404 00005690     0380          ABS     A0
+    1405 000056a0     0b60          CMPI    XD0300,A0
+         000056b0 ffe1ffff  
+    1406 000056d0     c401          JRLT    GGPH_SAME
+    1407                    ;       .if     DEBUG
+    1408                    ;       LOCKDIR a11
+    1409                    ;       .endif
+    1410 000056e0     0960          RETS
+    1411 000056f0           GGPH_SAME
+    1412 000056f0     4c4b          MOVE    A2,A11
+    1413 00005700     0960          RETS
+    1414                    
+    1415                    **************************************************************************
+    1416                    *                                                                        *
+    1417                    * SET_GDIR_TO_POINT_18H   - SET GOALIE DIRECTION FACING A [X, Z] POINT   *
+    1418                    * SET_GDIR_TO_POINT_18H_T - SET GOALIE DIRECTION FACING A [X, Z] POINT   *
+    1419                    *                                                                        *
+    1420                    * PASS:                                                                  *
+    1421                    * A0  = X TO FACE                                                        *
+    1422                    * A1  = Z TO FACE                                                        *
+    1423                    * A2  = GOALIE X                                                         *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   34
+
+    1424                    * A3  = GOALIE Z                                                         *
+    1425                    * A6  = PLAYER BLOCK                                                     *
+    1426                    * A11 = DIRECTION TABLE (FOR SET_GDIR_TO_POINT_18H_T)                    *
+    1427                    *                                                                        *
+    1428                    * RETURN:                                                                *
+    1429                    * NUTIN', BUT TRASH A BUNCH                                              *
+    1430                    *                                                                        *
+    1431                    **************************************************************************
+    1432                    
+    1433 00005710           SET_GDIR_TO_POINT_18H
+    1434 00005710     09eb          MOVI    GOALIE_DIR_TABLE,A11
+         00005720 000057d0' 
+    1435 00005740           SET_GDIR_TO_POINT_18H_T
+    1436 00005740     0d5f          CALLA   GET_GDIR_TO_POINT_18H_T
+         00005750 000053f0' 
+    1437 00005770     ad66          MOVB    A11,*A6(POF_DIRECTION)
+         00005780     0390  
+    1438 00005790     2f0b          SRL     8,A11
+    1439 000057a0     ad66          MOVB    A11,*A6(POF_BDIRECTION)
+         000057b0     03d0  
+    1440 000057c0     0960          RETS
+    1441                    
+    1442                    ;**************************************************************************
+    1443                    ;*                                                                       *
+    1444                    ;* GOALIE_FACE_XZ                                                        *
+    1445                    ;* GOALIE_FACE_PUCK                                                      *
+    1446                    ;*                                                                       *
+    1447                    ;* PASS:                                                                         *
+    1448                    ;* A0 = OXVAL FOR GOALIE_FACE_XZ                                                 *
+    1449                    ;* A1 = OZVAL FOR GOALIE_FACE_XZ                                                 *
+    1450                    ;* A6 = PLAYER DATA ADDRESS                                              *
+    1451                    ;* A8 = GOALIE OBJECT ADDRESS                                            *
+    1452                    ;* RETURN:                                                               *
+    1453                    ;* NUTIN'                                                                *
+    1454                    ;*                                                                       *
+    1455                    ;**************************************************************************
+    1456                    ;
+    1457                    ;GOALIE_FACE_XZ
+    1458                    ;       MMTM    SP,A0,A1,A2,A3,A9,A11
+    1459                    ;       MOVE    *A8(OXVAL),A2,L
+    1460                    ;       MOVE    *A8(OZVAL),A3,L
+    1461                    ;       JRUC    GFP_GO
+    1462                    ;
+    1463                    ;GOALIE_FACE_PUCK
+    1464                    ;       MMTM    SP,A0,A1,A2,A3,A9,A11
+    1465                    ;       MOVE    @PUCK_OBJECT,A9,L
+    1466                    ;       MOVE    *A9(OXVAL),A0,L
+    1467                    ;       MOVE    *A9(OZVAL),A1,L
+    1468                    ;       MOVE    *A8(OXVAL),A2,L
+    1469                    ;       MOVE    *A8(OZVAL),A3,L
+    1470                    ;GFP_GO
+    1471                    ;       CALLA   find_dir_to_point
+    1472                    ;       MOVI    GOALIE_DIR_TABLE,A11
+    1473                    ;GFP_LUPE
+    1474                    ;       MOVE    *A11,A14,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   35
+
+    1475                    ;       LOCKON  N
+    1476                    ;       CMP     A0,A14
+    1477                    ;       JRGT    GFP_CHECK
+    1478                    ;       ADDI    020H+010H+010H,A11
+    1479                    ;       JRUC    GFP_LUPE
+    1480                    ;GFP_CHECK
+    1481                    ;       ADDK    020H,A11
+    1482                    ;       MOVB    *A6(POF_NUMBER),A14
+    1483                    ;       SUBK    4,A14
+    1484                    ;       JRZ     GFP_GET_DIR
+    1485                    ;       ADDK    010H,A11
+    1486                    ;GFP_GET_DIR
+    1487                    ;       .if     DEBUG
+    1488                    ;       movb    *a11,a11
+    1489                    ;;      LOCKDIR a11
+    1490                    ;       movb    a11,*a6(POF_DIRECTION)
+    1491                    ;       .else
+    1492                    ;       MOVB    *A11(0),*A6(POF_DIRECTION)
+    1493                    ;       .endif
+    1494                    ;       MMFM    SP,A0,A1,A2,A3,A9,A11
+    1495                    ;       RETS
+    1496                    
+    1497 000057d0           GOALIE_DIR_TABLE
+    1498 000057d0                   LWW     XD0225,0003H,0007H      ;3
+    1499 00005810                   LWW     XD0675,0004H,0506H      ;4
+    1500 00005850                   LWW     XD1125,0504H,0506H      ;5
+    1501 00005890                   LWW     XD1575,0504H,0006H      ;6
+    1502 000058d0                   LWW     XD2025,0003H,0007H      ;7
+    1503 00005910                   LWW     XD2475,0102H,0008H      ;8
+    1504 00005950                   LWW     XD2925,0102H,0108H      ;1
+    1505 00005990                   LWW     XD3375,0002H,0108H      ;2
+    1506 000059d0                   LWW     XD3825,0003H,0007H      ;3
+    1507 00005a10 ffffffff          .long   -1
+    1508                    
+    1509                    ;GOALIE_DIR_TABLE_REV
+    1510                    ;       LWW     XD0225,3,3      ;3
+    1511                    ;       LWW     XD0675,4,4      ;4
+    1512                    ;       LWW     XD1125,4,6      ;5
+    1513                    ;       LWW     XD1575,6,6      ;6
+    1514                    ;       LWW     XD2025,7,7      ;7
+    1515                    ;       LWW     XD2475,8,8      ;8
+    1516                    ;       LWW     XD2925,2,8      ;1
+    1517                    ;       LWW     XD3375,2,2      ;2
+    1518                    ;       LWW     XD3825,3,3      ;3
+    1519                    ;       .long   -1
+    1520                    
+    1521 00005a30           GOALIE_DIR_TABLE_REV2
+    1522 00005a30                   LWW     XD0225, 3,-3    ;3
+    1523 00005a70                   LWW     XD0675, 4,-4    ;4
+    1524 00005ab0                   LWW     XD1125, 4, 6    ;5
+    1525 00005af0                   LWW     XD1575,-6, 6    ;6
+    1526 00005b30                   LWW     XD2025,-7, 7    ;7
+    1527 00005b70                   LWW     XD2475,-8, 8    ;8
+    1528 00005bb0                   LWW     XD2925, 2, 8    ;1
+    1529 00005bf0                   LWW     XD3375, 2,-2    ;2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   36
+
+    1530 00005c30                   LWW     XD3825, 3,-3    ;3
+    1531 00005c70 ffffffff          .long   -1
+    1532                    
+    1533 00005c90           GOALIE_DIR_TABLE_BEHIND
+    1534 00005c90                   LWW     XD0225, 3,-7    ;3
+    1535 00005cd0                   LWW     XD0675, 4,-8    ;4
+    1536 00005d10                   LWW     XD1125, 4, 6    ;5
+    1537 00005d50                   LWW     XD1575,-2, 6    ;6
+    1538 00005d90                   LWW     XD2025,-3, 7    ;7
+    1539 00005dd0                   LWW     XD2475,-4, 8    ;8
+    1540 00005e10                   LWW     XD2925, 2, 8    ;1
+    1541 00005e50                   LWW     XD3375, 2,-6    ;2
+    1542 00005e90                   LWW     XD3825, 3,-7    ;3
+    1543 00005ed0 ffffffff          .long   -1
+    1544                    
+    1545                    ;**************************************************************************
+    1546                    ;*                                                                       *
+    1547                    ;* FIX_GOALIE_DIR - FIX GOALIE'S DIRECTION (TRANSLATE DIRECTIONS 1 AND 5) *
+    1548                    ;*                                                                       *
+    1549                    ;* PASS:                                                                         *
+    1550                    ;* A8 = GOALIE OBJECT                                                    *
+    1551                    ;*                                                                       *
+    1552                    ;**************************************************************************
+    1553                    ;
+    1554                    ;FIX_GOALIE_DIR
+    1555                    ;       PUSH    A0
+    1556                    ;       MOVB    *A6(POF_DIRECTION),A0
+    1557                    ;       DEC     A0
+    1558                    ;       SLL     5,A0
+    1559                    ;       ADDI    FIX_GOALIE_DIR_TABLE,A0
+    1560                    ;       MOVB    *A6(POF_NUMBER),A14
+    1561                    ;       SRL     3,A14
+    1562                    ;       SLL     4,A14
+    1563                    ;       ADD     A14,A0
+    1564                    ;       MOVB    *A0(0),*A6(POF_DIRECTION)
+    1565                    ;       PULLQ   A0
+    1566                    ;       RETS
+    1567                    ;
+    1568                    ;FIX_GOALIE_DIR_TABLE
+    1569                    ;       .word   0102H,0108H     ;1
+    1570                    ;       .word   0002H,0108H     ;2
+    1571                    ;       .word   0003H,0007H     ;3
+    1572                    ;       .word   0004H,0506H     ;4
+    1573                    ;       .word   0504H,0506H     ;5
+    1574                    ;       .word   0504H,0006H     ;6
+    1575                    ;       .word   0003H,0007H     ;7
+    1576                    ;       .word   0102H,0008H     ;8
+    1577                    
+    1578                    **************************************************************************
+    1579                    *                                                                        *
+    1580                    * SET_GOALIE_SCRIPT                                                      *
+    1581                    *                                                                        *
+    1582                    **************************************************************************
+    1583                    
+    1584 00005ef0           SET_GOALIE_SCRIPT
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:36:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   37
+
+    1585 00005ef0     b4c0          MOVE    *A6(POF_MODE),A0,W
+         00005f00     0210  
+    1586 00005f10     24a0          SLL     5,A0
+    1587 00005f20     0b20          ADDI    GOALIE_SCRIPTS,A0
+         00005f30 00005f90' 
+    1588 00005f50     8600          MOVE    *A0,A0,L
+    1589 00005f60     ca01          JRZ     SGS_NOPE
+    1590                    
+    1591                    ;       CMPI    SET_GSKATE_SCRIPT,A0
+    1592                    ;       JREQ    SGS_SET                                 ;BR=NOT SKATE SCRIPT
+    1593                    ;       CLR     A14
+    1594                    ;       MOVB    A14,*A6(POF_BDIRECTION)
+    1595                    
+    1596                    ;       MOVB    *A6(POF_BDIRECTION),A1
+    1597                    ;       JRZ     SGS_SET                                 ;BR=DIRECTION OKAY
+    1598                    ;       CLR     A14
+    1599                    ;       MOVB    A14,*A6(POF_BDIRECTION)
+    1600                    ;       CMPI    SET_GSKATE_SCRIPT,A0
+    1601                    ;       JRNE    SGS_SET                                 ;BR=NOT SKATE SCRIPT
+    1602                    ;       MOVB    A1,*A6(POF_DIRECTION)
+    1603 00005f70           SGS_SET
+    1604 00005f70     0160          JUMP    A0
+    1605 00005f80           SGS_NOPE
+    1606 00005f80     0960          RETS
+    1607                    
+    1608 00005f90           GOALIE_SCRIPTS
+    1609 00005f90 00000000!         .long   SET_GSKATE_SCRIPT               ;STAND
+    1610 00005fb0 00000000!         .long   SET_GSKATE_SCRIPT               ;SKATE
+    1611 00005fd0 00000000          .long   0                               ;PASS
+    1612 00005ff0 00000000          .long   0                               ;SHOOT
+    1613 00006010 00000000!         .long   SET_GSKATE_SCRIPT               ;SKID
+    1614 00006030 00000000          .long   0                               ;STEAL
+    1615 00006050 00000000          .long   0                               ;CROSSCHECK
+    1616 00006070 00000000          .long   0                               ;SHAKE
+    1617 00006090 00000000          .long   0                               ;DUMP
+    1618 000060b0 00000000          .long   0                               ;STANCE
+    1619 000060d0 00000000          .long   0                               ;FALL
+    1620 000060f0 00000000          .long   0                               ;DEFLECT
+    1621 00006110 00000000          .long   0                               ;SAVE
+    1622 00006130 00000000          .long   0                               ;ONETIME
+    1623 00006150 00000000          .long   0                               ;SMOTHER
+    1624 00006170 00000000!         .long   SET_GHOLDING_SCRIPT             ;HOLDING
+    1625 00006190 00000000          .long   0                               ;AFTER GOAL
+    1626 000061b0 00000000!         .long   SET_GCROUCHF_SCRIPT             ;CROUCH AT FACEOFF
+    1627 000061d0 00000000!         .long   SET_GHUGPOST_SCRIPT             ;HUG POST
+    1628 000061f0 00000000!         .long   SET_GSIDESHUFF_SCRIPT           ;SIDE SHUFFLE
+    1629 00006210 00000000          .long   0                               ;RECEIVING A CHECK
+    1630                            
+    1631                            .end
+
+ No Errors,  No Warnings

@@ -1,0 +1,1883 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHPUP.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                            .INCLUDE        "HH.INC"
+      11                            .INCLUDE        "HHSTRING.H"
+      12                            .INCLUDE        "IMGTBL.GLO"
+      13                            .include        "HHPUP0.TBL"
+      14                            .include        "hhpup.e"
+      15                            .include        "hhd.g"
+      16                            .include        "hhplayer.g"
+      17                            .include        "hhpall.g"
+      18                            .include        "hhc.g"
+      19                            .include        "HHPROC.G"
+      20                            .include        "hhtext.g"
+      21                            .include        "hhsnd.g"
+      22                            .include        "hhgame.g"
+      23                            .include        "HHRAM.G"
+      24                            .include        "hhcmos.g"
+      25                            .include        "hhmisc.g"
+      26                            .include        "hhcx.g"
+      27                            .include        "hhspeech.g"
+      28                    
+      29                    ; end of include files
+      30                    
+      31 00000000                   .BSS    TOURN_MODE,16           ;TOURNAMENT MODE
+      32                    
+      33 00000010                   .BSS    BIG_PUCK,16             ;BIG MOTHERFUCKER
+      34 00000020                   .BSS    DARK_RINK,16            ;DARK PALETTE RINK
+      35 00000030                   .BSS    BABY_SIZE,16            ;GOO-GOO PLAYERS
+      36 00000040                   .BSS    THROW_DIS,16            ;HA! HA!
+      37 00000050                   .BSS    UNLIM_CHECK,16          ;UNLIMITED CHECK
+      38 00000060                   .BSS    UNLIM_TURBO,16          ;UNLIMITED TURBO
+      39 00000070                   .BSS    COMP_ASS_OFF,16         ;COMPUTER ASSISTANCE OFF
+      40 00000080                   .BSS    SUPER_GOALIE,16         ;GOALIE IS A BAD MOTHER
+      41 00000090                   .BSS    TOP_DISP_OFF,16         ;TOP DISPLAY OFF
+      42                    
+      43 00000000                   .TEXT
+      44 00000000                   .EVEN
+      45                    
+      46 00000000           PL1256_LIST_TABLE
+      47 00000000 00000000!         .long   PLAYER_1_BLOCK
+      48 00000020 00000000!         .long   PLAYER_2_BLOCK
+      49 00000040 00000000!         .long   PLAYER_5_BLOCK
+      50 00000060 00000000!         .long   PLAYER_6_BLOCK
+      51                    
+      52                    ;CIRCLE_CLOCKWISE
+      53                    ;       .WORD   M_SW_U
+      54                    ;       .WORD   M_SW_U|M_SW_R
+      55                    ;       .WORD   M_SW_R
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56                    ;       .WORD   M_SW_D|M_SW_R
+      57                    ;       .WORD   M_SW_D
+      58                    ;       .WORD   M_SW_D|M_SW_L
+      59                    ;       .WORD   M_SW_L
+      60                    ;       .WORD   M_SW_U|M_SW_L
+      61                    ;       .WORD   M_SW_U
+      62                    
+      63                    ;CIRCLE_COUNTER_CLOCKWISE
+      64                    ;       .WORD   M_SW_U
+      65                    ;       .WORD   M_SW_U|M_SW_L
+      66                    ;       .WORD   M_SW_L
+      67                    ;       .WORD   M_SW_D|M_SW_L
+      68                    ;       .WORD   M_SW_D
+      69                    ;       .WORD   M_SW_D|M_SW_R
+      70                    ;       .WORD   M_SW_R
+      71                    ;       .WORD   M_SW_U|M_SW_R
+      72                    ;       .WORD   M_SW_U
+      73                    
+      74                    **************************************************************************
+      75                    *                                                                        *
+      76                    * POWERUPS ON TONIGHT'S GAME SCREEN VALID FROM HELMETS TILTING           *
+      77                    *  TIL SCREEN GOES WHITE                                                 *
+      78                    *                                                                        *
+      79                    **************************************************************************
+      80                    
+      81 00000080           BIGHEAD_SEQ_TABLE
+      82 00000080     0061          .WORD   M_SW_U|M_SW_P|M_SW_T
+      83 00000090     ffff          .WORD   -1
+      84 000000a0 000031d0'         .LONG   SET_BIGHEAD
+      85                    
+      86 000000c0           HUGEHEAD_SEQ_TABLE
+      87 000000c0     0031          .WORD   M_SW_U|M_SW_S|M_SW_P
+      88 000000d0     0001          .WORD   M_SW_U
+      89 000000e0     0031          .WORD   M_SW_U|M_SW_S|M_SW_P
+      90 000000f0     0001          .WORD   M_SW_U
+      91 00000100     0031          .WORD   M_SW_U|M_SW_S|M_SW_P
+      92 00000110     0001          .WORD   M_SW_U
+      93 00000120     ffff          .WORD   -1
+      94 00000130 000031b0'         .LONG   SET_HUGEHEAD
+      95                    
+      96 00000150           TINYHEAD_SEQ_TABLE
+      97 00000150     0040          .WORD   M_SW_T
+      98 00000160     0000          .WORD   0
+      99 00000170     0040          .WORD   M_SW_T
+     100 00000180     0000          .WORD   0
+     101 00000190     0001          .WORD   M_SW_U
+     102 000001a0     0000          .WORD   0
+     103 000001b0     0010          .WORD   M_SW_S
+     104 000001c0     0000          .WORD   0
+     105 000001d0     0010          .WORD   M_SW_S
+     106 000001e0     0000          .WORD   0
+     107 000001f0     0001          .WORD   M_SW_U
+     108 00000200     0000          .WORD   0
+     109 00000210     ffff          .WORD   -1
+     110 00000220 00003190'         .LONG   SET_TINYHEAD
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     111                    
+     112 00000240           NORMHEAD_SEQ_TABLE
+     113 00000240     0012          .WORD   M_SW_D|M_SW_S
+     114 00000250     0020          .WORD   M_SW_P
+     115 00000260     ffff          .WORD   -1
+     116 00000270 00003170'         .LONG   SET_NORMHEAD
+     117                    
+     118 00000290           GBIGHEAD_SEQ_TABLE
+     119 00000290     0020          .WORD   M_SW_P
+     120 000002a0     0000          .WORD   0
+     121 000002b0     0020          .WORD   M_SW_P
+     122 000002c0     0000          .WORD   0
+     123 000002d0     0040          .WORD   M_SW_T
+     124 000002e0     0000          .WORD   0
+     125 000002f0     0010          .WORD   M_SW_S
+     126 00000300     0000          .WORD   0
+     127 00000310     0020          .WORD   M_SW_P
+     128 00000320     ffff          .WORD   -1
+     129 00000330 00003380'         .LONG   SET_GBIGHEAD
+     130                    
+     131 00000350           GHUGEHEAD_SEQ_TABLE
+     132 00000350     0021          .WORD   M_SW_U|M_SW_P
+     133 00000360     0029          .WORD   M_SW_U|M_SW_R|M_SW_P
+     134 00000370     0028          .WORD   M_SW_R|M_SW_P
+     135 00000380     002a          .WORD   M_SW_D|M_SW_R|M_SW_P
+     136 00000390     0022          .WORD   M_SW_D|M_SW_P
+     137 000003a0     0026          .WORD   M_SW_D|M_SW_L|M_SW_P
+     138 000003b0     0024          .WORD   M_SW_L|M_SW_P
+     139 000003c0     0025          .WORD   M_SW_U|M_SW_L|M_SW_P
+     140 000003d0     0021          .WORD   M_SW_U|M_SW_P
+     141 000003e0     0025          .WORD   M_SW_U|M_SW_L|M_SW_P
+     142 000003f0     0024          .WORD   M_SW_L|M_SW_P
+     143 00000400     0026          .WORD   M_SW_D|M_SW_L|M_SW_P
+     144 00000410     0022          .WORD   M_SW_D|M_SW_P
+     145 00000420     002a          .WORD   M_SW_D|M_SW_R|M_SW_P
+     146 00000430     0028          .WORD   M_SW_R|M_SW_P
+     147 00000440     0029          .WORD   M_SW_U|M_SW_R|M_SW_P
+     148 00000450     0021          .WORD   M_SW_U|M_SW_P
+     149 00000460     ffff          .WORD   -1
+     150 00000470 00003360'         .LONG   SET_GHUGEHEAD
+     151                    
+     152 00000490           GTINYHEAD_SEQ_TABLE
+     153 00000490     0011          .WORD   M_SW_U|M_SW_S
+     154 000004a0     0015          .WORD   M_SW_U|M_SW_L|M_SW_S
+     155 000004b0     0014          .WORD   M_SW_L|M_SW_S
+     156 000004c0     0016          .WORD   M_SW_D|M_SW_L|M_SW_S
+     157 000004d0     0012          .WORD   M_SW_D|M_SW_S
+     158 000004e0     001a          .WORD   M_SW_D|M_SW_R|M_SW_S
+     159 000004f0     0018          .WORD   M_SW_R|M_SW_S
+     160 00000500     0019          .WORD   M_SW_U|M_SW_R|M_SW_S
+     161 00000510     0011          .WORD   M_SW_U|M_SW_S
+     162 00000520     ffff          .WORD   -1
+     163 00000530 00003340'         .LONG   SET_GTINYHEAD
+     164                    
+     165 00000550           GNORMHEAD_SEQ_TABLE
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     166 00000550     0010          .WORD   M_SW_S
+     167 00000560     0000          .WORD   0
+     168 00000570     0040          .WORD   M_SW_T
+     169 00000580     0000          .WORD   0
+     170 00000590     0020          .WORD   M_SW_P
+     171 000005a0     ffff          .WORD   -1
+     172 000005b0 00003320'         .LONG   SET_GNORMHEAD
+     173                    
+     174 000005d0           BIGPUCK_SEQ_TABLE
+     175 000005d0     0001          .WORD   M_SW_U
+     176 000005e0     0000          .WORD   0
+     177 000005f0     0001          .WORD   M_SW_U
+     178 00000600     0000          .WORD   0
+     179 00000610     0002          .WORD   M_SW_D
+     180 00000620     0000          .WORD   0
+     181 00000630     0002          .WORD   M_SW_D
+     182 00000640     0000          .WORD   0
+     183 00000650     0040          .WORD   M_SW_T
+     184 00000660     ffff          .WORD   -1
+     185 00000670 000034f0'         .LONG   SET_BIGPUCK
+     186                    
+     187 00000690           BABYSIZE_SEQ_TABLE
+     188 00000690     0002          .WORD   M_SW_D
+     189 000006a0     000a          .WORD   M_SW_D|M_SW_R
+     190 000006b0     0008          .WORD   M_SW_R
+     191 000006c0     0009          .WORD   M_SW_U|M_SW_R
+     192 000006d0     0001          .WORD   M_SW_U
+     193 000006e0     0041          .WORD   M_SW_U|M_SW_T
+     194 000006f0     0049          .WORD   M_SW_U|M_SW_R|M_SW_T
+     195 00000700     0048          .WORD   M_SW_R|M_SW_T
+     196 00000710     004a          .WORD   M_SW_D|M_SW_R|M_SW_T
+     197 00000720     0042          .WORD   M_SW_D|M_SW_T
+     198 00000730     ffff          .WORD   -1
+     199 00000740 000035a0'         .LONG   SET_BABYSIZE
+     200                    
+     201 00000760           FORCE_FATHEAD_SEQ_TABLE
+     202 00000760     0004          .WORD   M_SW_L
+     203 00000770     0005          .WORD   M_SW_U|M_SW_L
+     204 00000780     0001          .WORD   M_SW_U
+     205 00000790     0009          .WORD   M_SW_U|M_SW_R
+     206 000007a0     0008          .WORD   M_SW_R
+     207                    
+     208 000007b0     0009          .WORD   M_SW_U|M_SW_R
+     209 000007c0     0001          .WORD   M_SW_U
+     210 000007d0     0005          .WORD   M_SW_U|M_SW_L
+     211 000007e0     0004          .WORD   M_SW_L
+     212 000007f0     0006          .WORD   M_SW_D|M_SW_L
+     213 00000800     0002          .WORD   M_SW_D
+     214 00000810     000a          .WORD   M_SW_D|M_SW_R
+     215 00000820     0008          .WORD   M_SW_R
+     216                    
+     217 00000830     ffff          .WORD   -1
+     218 00000840 00002b90'         .LONG   SET_FORCE_FATHEAD
+     219                    
+     220 00000860           DARKRINK_SEQ_TABLE
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     221 00000860     0060          .WORD   M_SW_P|M_SW_T
+     222 00000870     0020          .WORD   M_SW_P
+     223 00000880     0060          .WORD   M_SW_P|M_SW_T
+     224 00000890     0020          .WORD   M_SW_P
+     225 000008a0     0030          .WORD   M_SW_P|M_SW_S
+     226 000008b0     0020          .WORD   M_SW_P
+     227 000008c0     0030          .WORD   M_SW_P|M_SW_S
+     228 000008d0     0020          .WORD   M_SW_P
+     229 000008e0     0030          .WORD   M_SW_P|M_SW_S
+     230 000008f0     0020          .WORD   M_SW_P
+     231 00000900     0060          .WORD   M_SW_P|M_SW_T
+     232 00000910     0020          .WORD   M_SW_P
+     233 00000920     ffff          .WORD   -1
+     234 00000930 00003740'         .LONG   SET_DARKRINK
+     235                    
+     236 00000950           TOPDISPOFF_SEQ_TABLE
+     237 00000950     0044          .WORD   M_SW_L|M_SW_T
+     238 00000960     0004          .WORD   M_SW_L
+     239 00000970     0044          .WORD   M_SW_L|M_SW_T
+     240 00000980     0004          .WORD   M_SW_L
+     241 00000990     0044          .WORD   M_SW_L|M_SW_T
+     242 000009a0     0004          .WORD   M_SW_L
+     243 000009b0     0014          .WORD   M_SW_L|M_SW_S
+     244 000009c0     0004          .WORD   M_SW_L
+     245 000009d0     0014          .WORD   M_SW_L|M_SW_S
+     246 000009e0     0004          .WORD   M_SW_L
+     247 000009f0     0024          .WORD   M_SW_L|M_SW_P
+     248 00000a00     0004          .WORD   M_SW_L
+     249 00000a10     0024          .WORD   M_SW_L|M_SW_P
+     250 00000a20     0004          .WORD   M_SW_L
+     251 00000a30     0024          .WORD   M_SW_L|M_SW_P
+     252 00000a40     ffff          .WORD   -1
+     253 00000a50 000037f0'         .LONG   SET_TOPDISPOFF
+     254                    
+     255                    ;       .WORD   M_SW_L|M_SW_P
+     256                    ;       .WORD   M_SW_L
+     257                    ;       .WORD   M_SW_L|M_SW_S
+     258                    ;       .WORD   M_SW_L
+     259                    ;       .WORD   M_SW_L|M_SW_P
+     260                    ;       .WORD   M_SW_L
+     261                    ;       .WORD   M_SW_L|M_SW_S
+     262                    ;       .WORD   M_SW_L
+     263                    ;       .WORD   M_SW_L|M_SW_T
+     264                    ;       .WORD   -1
+     265                    ;       .LONG   SET_TOPDISPOFF
+     266                    
+     267                    ;AVENABLE_SEQ_TABLE
+     268                    ;       .WORD   M_SW_L|M_SW_T
+     269                    ;       .WORD   M_SW_L
+     270                    ;       .WORD   M_SW_L|M_SW_T
+     271                    ;       .WORD   M_SW_L
+     272                    ;       .WORD   M_SW_L|M_SW_T
+     273                    ;       .WORD   M_SW_L
+     274                    ;       .WORD   M_SW_L|M_SW_S
+     275                    ;       .WORD   M_SW_L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     276                    ;       .WORD   M_SW_L|M_SW_S
+     277                    ;       .WORD   M_SW_L
+     278                    ;       .WORD   M_SW_L|M_SW_P
+     279                    ;       .WORD   M_SW_L
+     280                    ;       .WORD   M_SW_L|M_SW_P
+     281                    ;       .WORD   M_SW_L
+     282                    ;       .WORD   M_SW_L|M_SW_P
+     283                    ;       .WORD   -1
+     284                    ;       .LONG   SET_AVENABLE
+     285                    
+     286                    **************************************************************************
+     287                    *                                                                        *
+     288                    * POWERUPS ON GAME START VALID FROM GAME CREATION TIL POWER-UP REPORT    *
+     289                    *                                                                        *
+     290                    **************************************************************************
+     291                                    
+     292 00000a70           THROWDIS_SEQ_TABLE
+     293 00000a70     0042          .WORD   M_SW_D|M_SW_T
+     294 00000a80     0011          .WORD   M_SW_U|M_SW_S
+     295 00000a90     ffff          .WORD   -1
+     296 00000aa0 00003650'         .LONG   SET_THROWDIS
+     297                    
+     298 00000ac0           SUPERGOALIE_SEQ_TABLE
+     299 00000ac0     0002          .WORD   M_SW_D
+     300 00000ad0     0000          .WORD   0
+     301 00000ae0     0002          .WORD   M_SW_D
+     302 00000af0     0000          .WORD   0
+     303 00000b00     0002          .WORD   M_SW_D
+     304 00000b10     0000          .WORD   0
+     305 00000b20     0002          .WORD   M_SW_D
+     306 00000b30     0000          .WORD   0
+     307 00000b40     0002          .WORD   M_SW_D
+     308 00000b50     0000          .WORD   0
+     309 00000b60     0020          .WORD   M_SW_P
+     310 00000b70     ffff          .WORD   -1
+     311 00000b80 00002470'         .LONG   SET_SUPERGOALIE
+     312                    
+     313 00000ba0           TOURNMODE_SEQ_TABLE
+     314 00000ba0     0078          .WORD   M_SW_R|M_SW_S|M_SW_P|M_SW_T
+     315 00000bb0     ffff          .WORD   -1
+     316 00000bc0 00002560'         .LONG   SET_TOURNMODE
+     317                    
+     318 00000be0           COMP_ASS_OFF_SEQ_TABLE
+     319 00000be0     0001          .WORD   M_SW_U
+     320 00000bf0     0009          .WORD   M_SW_U|M_SW_R
+     321 00000c00     0008          .WORD   M_SW_R
+     322 00000c10     000a          .WORD   M_SW_D|M_SW_R
+     323 00000c20     0002          .WORD   M_SW_D
+     324 00000c30     0006          .WORD   M_SW_D|M_SW_L
+     325 00000c40     0004          .WORD   M_SW_L
+     326 00000c50     0005          .WORD   M_SW_U|M_SW_L
+     327 00000c60     0001          .WORD   M_SW_U
+     328 00000c70     0009          .WORD   M_SW_U|M_SW_R
+     329 00000c80     0008          .WORD   M_SW_R
+     330 00000c90     000a          .WORD   M_SW_D|M_SW_R
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     331 00000ca0     0002          .WORD   M_SW_D
+     332 00000cb0     0006          .WORD   M_SW_D|M_SW_L
+     333 00000cc0     0004          .WORD   M_SW_L
+     334 00000cd0     0005          .WORD   M_SW_U|M_SW_L
+     335 00000ce0     0001          .WORD   M_SW_U
+     336 00000cf0     ffff          .WORD   -1
+     337 00000d00 00002850'         .LONG   SET_COMP_ASS_OFF
+     338                    
+     339 00000d20           UNLIM_TURBO_SEQ_TABLE
+     340 00000d20     0040          .WORD   M_SW_T
+     341 00000d30     0000          .WORD   0
+     342 00000d40     0010          .WORD   M_SW_S
+     343 00000d50     0000          .WORD   0
+     344 00000d60     0010          .WORD   M_SW_S
+     345 00000d70     0001          .WORD   M_SW_U
+     346 00000d80     0009          .WORD   M_SW_U|M_SW_R
+     347 00000d90     0008          .WORD   M_SW_R
+     348 00000da0     000a          .WORD   M_SW_D|M_SW_R
+     349 00000db0     0002          .WORD   M_SW_D
+     350 00000dc0     0006          .WORD   M_SW_D|M_SW_L
+     351 00000dd0     0004          .WORD   M_SW_L
+     352 00000de0     0005          .WORD   M_SW_U|M_SW_L
+     353 00000df0     0001          .WORD   M_SW_U
+     354 00000e00     ffff          .WORD   -1
+     355 00000e10 00002900'         .LONG   SET_UNLIM_TURBO
+     356                    
+     357 00000e30           UNLIM_CHECK_SEQ_TABLE
+     358 00000e30     0044          .WORD   M_SW_L|M_SW_T
+     359 00000e40     0004          .WORD   M_SW_L
+     360 00000e50     0044          .WORD   M_SW_L|M_SW_T
+     361 00000e60     0004          .WORD   M_SW_L
+     362 00000e70     0044          .WORD   M_SW_L|M_SW_T
+     363 00000e80     0004          .WORD   M_SW_L
+     364 00000e90     0006          .WORD   M_SW_D|M_SW_L
+     365 00000ea0     0002          .WORD   M_SW_D
+     366 00000eb0     000a          .WORD   M_SW_D|M_SW_R
+     367 00000ec0     0008          .WORD   M_SW_R
+     368 00000ed0     0048          .WORD   M_SW_R|M_SW_T
+     369 00000ee0     0008          .WORD   M_SW_R
+     370 00000ef0     0048          .WORD   M_SW_R|M_SW_T
+     371 00000f00     0008          .WORD   M_SW_R
+     372 00000f10     ffff          .WORD   -1
+     373 00000f20 00002a60'         .LONG   SET_UNLIM_CHECK
+     374                    
+     375 00000f40           INC_SPEED_TABLE
+     376 00000f40     0050          .WORD   M_SW_S|M_SW_T
+     377 00000f50     0000          .WORD   0
+     378 00000f60     0050          .WORD   M_SW_S|M_SW_T
+     379 00000f70     0000          .WORD   0
+     380 00000f80     0008          .WORD   M_SW_R
+     381 00000f90     0000          .WORD   0
+     382 00000fa0     0050          .WORD   M_SW_S|M_SW_T
+     383 00000fb0     0000          .WORD   0
+     384 00000fc0     0002          .WORD   M_SW_D
+     385 00000fd0     0000          .WORD   0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     386 00000fe0     ffff          .WORD   -1
+     387 00000ff0 00002ec0'         .LONG   SET_INC_SPEED
+     388                    
+     389 00001010           INC_SHOOT_TABLE
+     390 00001010     0010          .WORD   M_SW_S
+     391 00001020     0000          .WORD   0
+     392 00001030     0010          .WORD   M_SW_S
+     393 00001040     0000          .WORD   0
+     394 00001050     0010          .WORD   M_SW_S
+     395 00001060     0000          .WORD   0
+     396 00001070     0010          .WORD   M_SW_S
+     397 00001080     0000          .WORD   0
+     398 00001090     0010          .WORD   M_SW_S
+     399 000010a0     0000          .WORD   0
+     400 000010b0     0040          .WORD   M_SW_T
+     401 000010c0     0000          .WORD   0
+     402 000010d0     0010          .WORD   M_SW_S
+     403 000010e0     0000          .WORD   0
+     404 000010f0     0010          .WORD   M_SW_S
+     405 00001100     0000          .WORD   0
+     406 00001110     0010          .WORD   M_SW_S
+     407 00001120     0000          .WORD   0
+     408 00001130     0010          .WORD   M_SW_S
+     409 00001140     0000          .WORD   0
+     410 00001150     0020          .WORD   M_SW_P
+     411 00001160     0000          .WORD   0
+     412 00001170     ffff          .WORD   -1
+     413 00001180 00002ef0'         .LONG   SET_INC_SHOOT
+     414                    
+     415 000011a0           INC_PASS_TABLE
+     416 000011a0     0020          .WORD   M_SW_P
+     417 000011b0     0000          .WORD   0
+     418 000011c0     0040          .WORD   M_SW_T
+     419 000011d0     0000          .WORD   0
+     420 000011e0     0020          .WORD   M_SW_P
+     421 000011f0     0000          .WORD   0
+     422 00001200     0040          .WORD   M_SW_T
+     423 00001210     0000          .WORD   0
+     424 00001220     0020          .WORD   M_SW_P
+     425 00001230     0000          .WORD   0
+     426 00001240     0020          .WORD   M_SW_P
+     427 00001250     0000          .WORD   0
+     428 00001260     0020          .WORD   M_SW_P
+     429 00001270     0000          .WORD   0
+     430 00001280     0020          .WORD   M_SW_P
+     431 00001290     0000          .WORD   0
+     432 000012a0     0020          .WORD   M_SW_P
+     433 000012b0     0000          .WORD   0
+     434 000012c0     0040          .WORD   M_SW_T
+     435 000012d0     ffff          .WORD   -1
+     436 000012e0 00002f20'         .LONG   SET_INC_PASS
+     437                    
+     438 00001300           INC_CHECK_TABLE
+     439 00001300     0061          .WORD   M_SW_U|M_SW_P|M_SW_T
+     440 00001310     0060          .WORD   M_SW_P|M_SW_T
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     441 00001320     0061          .WORD   M_SW_U|M_SW_P|M_SW_T
+     442 00001330     0060          .WORD   M_SW_P|M_SW_T
+     443 00001340     0061          .WORD   M_SW_U|M_SW_P|M_SW_T
+     444 00001350     0060          .WORD   M_SW_P|M_SW_T
+     445 00001360     0064          .WORD   M_SW_L|M_SW_P|M_SW_T
+     446 00001370     0060          .WORD   M_SW_P|M_SW_T
+     447 00001380     0068          .WORD   M_SW_R|M_SW_P|M_SW_T
+     448 00001390     0060          .WORD   M_SW_P|M_SW_T
+     449 000013a0     0068          .WORD   M_SW_R|M_SW_P|M_SW_T
+     450 000013b0     0060          .WORD   M_SW_P|M_SW_T
+     451 000013c0     ffff          .WORD   -1
+     452 000013d0 00002f50'         .LONG   SET_INC_CHECK
+     453                    
+     454 000013f0           INC_PUCK_TABLE
+     455 000013f0     0030          .WORD   M_SW_S|M_SW_P
+     456 00001400     0000          .WORD   0
+     457 00001410     0030          .WORD   M_SW_S|M_SW_P
+     458 00001420     0000          .WORD   0
+     459 00001430     0020          .WORD   M_SW_P
+     460 00001440     0000          .WORD   0
+     461 00001450     0020          .WORD   M_SW_P
+     462 00001460     0000          .WORD   0
+     463 00001470     0010          .WORD   M_SW_S
+     464 00001480     0000          .WORD   0
+     465 00001490     0010          .WORD   M_SW_S
+     466 000014a0     0000          .WORD   0
+     467 000014b0     0040          .WORD   M_SW_T
+     468 000014c0     0000          .WORD   0
+     469 000014d0     0040          .WORD   M_SW_T
+     470 000014e0     0000          .WORD   0
+     471 000014f0     0040          .WORD   M_SW_T
+     472 00001500     ffff          .WORD   -1
+     473 00001510 00002f80'         .LONG   SET_INC_PUCK
+     474                    
+     475 00001530           FAST_TURBO_RECOVERY_TABLE
+     476 00001530     0008          .WORD   M_SW_R
+     477 00001540     0000          .WORD   0
+     478 00001550     0008          .WORD   M_SW_R
+     479 00001560     0000          .WORD   0
+     480 00001570     0008          .WORD   M_SW_R
+     481 00001580     0000          .WORD   0
+     482 00001590     0008          .WORD   M_SW_R
+     483 000015a0     0000          .WORD   0
+     484 000015b0     0040          .WORD   M_SW_T
+     485 000015c0     0000          .WORD   0
+     486 000015d0     0004          .WORD   M_SW_L
+     487 000015e0     0000          .WORD   0
+     488 000015f0     0004          .WORD   M_SW_L
+     489 00001600     0000          .WORD   0
+     490 00001610     0040          .WORD   M_SW_T
+     491 00001620     0000          .WORD   0
+     492 00001630     0008          .WORD   M_SW_R
+     493 00001640     0000          .WORD   0
+     494 00001650     ffff          .WORD   -1
+     495 00001660 00002fb0'         .LONG   SET_FAST_TURBO_RECOVERY
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     496                    
+     497                    
+     498                    **************************************************************************
+     499                    *                                                                        *
+     500                    * RESET_POWERUP_FLAGS                                                    *
+     501                    *                                                                        *
+     502                    **************************************************************************
+     503                    
+     504 00001680           RESET_POWERUP_FLAGS
+     505 00001680     57ce          CLR     A14
+     506 00001690     058e          MOVE    A14,@BIG_PUCK,W
+         000016a0 00000010- 
+     507 000016c0     058e          MOVE    A14,@BABY_SIZE,W
+         000016d0 00000030- 
+     508 000016f0     058e          MOVE    A14,@DARK_RINK,W
+         00001700 00000020- 
+     509 00001720     058e          MOVE    A14,@THROW_DIS,W
+         00001730 00000040- 
+     510 00001750     058e          MOVE    A14,@UNLIM_CHECK,W
+         00001760 00000050- 
+     511 00001780     058e          MOVE    A14,@UNLIM_TURBO,W
+         00001790 00000060- 
+     512 000017b0     058e          MOVE    A14,@SUPER_GOALIE,W
+         000017c0 00000080- 
+     513 000017e0     058e          MOVE    A14,@TOP_DISP_OFF,W
+         000017f0 00000090- 
+     514 00001810     0960          RETS
+     515                    
+     516                    **************************************************************************
+     517                    *                                                                        *
+     518                    * START_POWERUP_PROC                                                     *
+     519                    *                                                                        *
+     520                    **************************************************************************
+     521                    
+     522 00001820           START_TG_POWERUP_PROC
+     523                    
+     524 00001820     0d3f          CALLR   RESET_POWERUP_FLAGS
+         00001830     ffe4  
+     525                    
+     526 00001840     19c0          MOVK    ADJTOURMODE,A0
+     527 00001850     0d5f          CALLA   GET_ADJ                         ;SET TOURNAMENT MODE
+         00001860 00000000! 
+     528 00001880     03a0          NEG     A0
+     529 00001890     0580          MOVE    A0,@TOURN_MODE,W
+         000018a0 00000000- 
+     530 000018c0     0580          MOVE    A0,@COMP_ASS_OFF,W
+         000018d0 00000070- 
+     531                    ;       JRN     STGPP_SNAPSHOTS                 ;BR=SKIP SEQUENCES
+     532 000018f0     ce0e          JRN     STGPP_DONE                      ;BR=SKIP SEQUENCES
+     533                    
+     534 00001900     1869          MOVK    3,A9
+     535 00001910     09ea          MOVI    TG_SEQ_PUP_TABLE,A10
+         00001920 00002110' 
+     536 00001940           STGPP_LUPE
+     537 00001940                   CREATE  PID_POWERUP,POWERUP_SEQUENCE_PROC
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     538 000019c0     1429          DEC     A9
+     539 000019d0     cff6          JRNN    STGPP_LUPE                      ;BR=NOT DONE
+     540                    
+     541                    ;STGPP_SNAPSHOTS
+     542                    ;       MOVI    TG_POWERUP_PROC_TABLE,A11
+     543                    ;       CREATE  PID_POWERUP,POWERUP_SNAPSHOT_PROC
+     544                    
+     545 000019e0           STGPP_DONE
+     546 000019e0     0960          RETS
+     547                    
+     548                    **************************************************************************
+     549                    *                                                                        *
+     550                    * START_FACEOFF_POWERUP_PROC                                             *
+     551                    *                                                                        *
+     552                    **************************************************************************
+     553                    
+     554 000019f0           START_FACEOFF_POWERUP_PROC
+     555 000019f0                   PUSH    A1
+     556 00001a00     1869          MOVK    3,A9
+     557 00001a10     09ea          MOVI    FACEOFF_SEQ_PUP_TABLE,A10
+         00001a20 000022d0' 
+     558 00001a40           SFPP_LUPE
+     559 00001a40                   CREATE  PID_POWERUP,POWERUP_SEQUENCE_PROC
+     560 00001ac0     1429          DEC     A9
+     561 00001ad0     cff6          JRNN    SFPP_LUPE                       ;BR=NOT DONE
+     562 00001ae0                   PULLQ   A1
+     563                    
+     564 00001af0     0960          RETS
+     565                    
+     566                    
+     567                    **************************************************************************
+     568                    *                                                                        *
+     569                    * POWERUP_SEQUENCE_PROC                                                  *
+     570                    *                                                                        *
+     571                    * PASS:                                                                  *
+     572                    * A9  = PLAYER NUMBER - 1                                                *
+     573                    * A10 = SEQUENCE TABLE ADDRESS                                           *
+     574                    *                                                                        *
+     575                    **************************************************************************
+     576                    
+     577              007f  PLAYER_SWMASK   EQU     M_SW_U|M_SW_D|M_SW_L|M_SW_R|M_SW_S|M_SW_P|M_SW_T
+     578                    
+     579              0100  PPUP_TABLE      EQU     PDATA                   ;UHL TABLE ADDRESS
+     580                    
+     581              0010  PUP_SUBR_OFFSET EQU     010H                    ;SUBROUTINE OFFSET
+     582                    
+     583 00001b00           POWERUP_SEQUENCE_PROC
+     584                    
+     585 00001b00     05ae          MOVE    @PLAYER_BITS,A14,W
+         00001b10 00000000! 
+     586 00001b30     4b2e          BTST    A9,A14
+     587 00001b40     cb05          JRNZ    PSP_START                       ;BR=PLAYER NOT ACTIVE
+     588 00001b50                   SLEEP   1
+     589 00001b90     c0f6          JRUC    POWERUP_SEQUENCE_PROC   
+     590                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     591 00001ba0           PSP_START
+     592 00001ba0     b34d          MOVE    A10,*A13(PPUP_TABLE),L
+         00001bb0     0100  
+     593                    
+     594 00001bc0     4d2a          MOVE    A9,A10
+     595                    
+     596 00001bd0                   KITN    4
+     597 00001c10     ca06          JREQ    PSP_GET_SHIFT                   ;BR=4 PLAYER KIT
+     598                    
+     599 00001c20     0b49          CMPI    3,A9
+         00001c30     fffc  
+     600 00001c40     cb03          JRNE    PSP_GET_SHIFT                   ;BR=NOT PLAYER 2
+     601 00001c50     09ca          MOVI    -8,A10
+         00001c60     fff8  
+     602 00001c70     c002          JRUC    PSP_LUPE
+     603                    
+     604 00001c80           PSP_GET_SHIFT
+     605 00001c80     246a          SLL     3,A10
+     606 00001c90     03aa          NEG     A10
+     607                    
+     608 00001ca0           PSP_LUPE
+     609 00001ca0     05ae          MOVE    @HELP_WINDOW_COUNT,A14,W
+         00001cb0 00000000! 
+     610 00001cd0     cb11          JRNZ    PSP_NAP                         ;BR=HELP WINDOWS ON SCREEN
+     611                    
+     612 00001ce0     07a0          MOVE    @SWITCH,A0,L
+         00001cf0 01860000  
+     613 00001d10     03e0          NOT     A0
+     614 00001d20     6740          SRL     A10,A0
+     615 00001d30     0b80          ANDI    PLAYER_SWMASK,A0
+         00001d40 ffffff80  
+     616 00001d60     ca08          JRZ     PSP_NAP                         ;BR=NO SWITCHES
+     617                    
+     618 00001d70     b7a1          MOVE    *A13(PPUP_TABLE),A1,L
+         00001d80     0100  
+     619 00001d90           PSP_SEQ_LUPE
+     620 00001d90     9628          MOVE    *A1+,A8,L
+     621 00001da0     ca04          JRZ     PSP_NAP                         ;BR=PSP_NAP
+     622 00001db0     950e          MOVE    *A8+,A14,W
+     623 00001dc0     560e          XOR     A0,A14
+     624 00001dd0     ca06          JRZ     PSP_CHECK_SEQ                   ;BR=SEQUENCE START
+     625 00001de0     c0fa          JRUC    PSP_SEQ_LUPE    
+     626 00001df0           PSP_NAP
+     627 00001df0                   SLEEP   1
+     628 00001e30     c0e6          JRUC    PSP_LUPE
+     629                    
+     630 00001e40           PSP_CHECK_SEQ
+     631 00001e40                   CREATE  PID_POWERUP,PSP_SEQ
+     632                            .if     DEBUG
+     633                            JRZ     $
+     634                            .else
+     635 00001ec0                   LOCKON  Z
+     636                            .endif
+     637                    
+     638                    ;       DIE
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     639                    
+     640 00001f10     c0ed          JRUC    PSP_NAP
+     641                    
+     642                    
+     643 00001f20           PSP_SEQ
+     644 00001f20     19eb          MOVK    15,A11
+     645 00001f30           PSP_CS_LUPE
+     646 00001f30     07a0          MOVE    @SWITCH,A0,L
+         00001f40 01860000  
+     647 00001f60     03e0          NOT     A0
+     648 00001f70     6740          SRL     A10,A0
+     649 00001f80     0b80          ANDI    PLAYER_SWMASK,A0
+         00001f90 ffffff80  
+     650                    ;       JRZ     PSP_CS_NAP                      ;BR=NO SWITCHES
+     651                    
+     652 00001fb0     850e          MOVE    *A8,A14,W
+     653 00001fc0     ce0e          JRN     PSP_POWERUP                     ;BR=POWERUP MOTHERFUCKER!
+     654 00001fd0     560e          XOR     A0,A14
+     655 00001fe0     cb04          JRNZ    PSP_CS_NAP                      ;BR=NOT THE NEXT ONE
+     656 00001ff0     1208          ADDK    010H,A8
+     657 00002000     850e          MOVE    *A8,A14,W
+     658 00002010     ce09          JRN     PSP_POWERUP                     ;BR=POWERUP MOTHERFUCKER!
+     659 00002020     1a0b          MOVK    16,A11                          ;RESET LUPE
+     660 00002030           PSP_CS_NAP
+     661 00002030                   SLEEP   1
+     662 00002070     3eab          DSJ     A11,PSP_CS_LUPE
+     663                    
+     664 00002080                   DIE
+     665                    
+     666                    ;       JRUC    PSP_NAP
+     667 000020b0           PSP_POWERUP
+     668 000020b0     b70e          MOVE    *A8(PUP_SUBR_OFFSET),A14,L
+         000020c0     0010  
+     669 000020d0     092e          CALL    A14
+     670                    
+     671 000020e0                   DIE
+     672                    
+     673                    ;       JRUC    PSP_NAP
+     674                    
+     675                    **************************************************************************
+     676                    *                                                                        *
+     677                    * POWERUP SEQUENCE ROUTINES CANNOT TRASH:                                *
+     678                    *                                                                        *
+     679                    * A9  = PLAYER NUMBER - 1                                                *
+     680                    * A10 = PLAYER SWITCH RIGHT SHIFT                                        *
+     681                    *                                                                        *
+     682                    **************************************************************************
+     683                    
+     684 00002110           TG_SEQ_PUP_TABLE
+     685 00002110 00000080'         .LONG   BIGHEAD_SEQ_TABLE,HUGEHEAD_SEQ_TABLE
+     686 00002150 00000150'         .LONG   TINYHEAD_SEQ_TABLE,NORMHEAD_SEQ_TABLE
+     687                    
+     688 00002190 00000290'         .LONG   GBIGHEAD_SEQ_TABLE,GHUGEHEAD_SEQ_TABLE
+     689 000021d0 00000490'         .LONG   GTINYHEAD_SEQ_TABLE,GNORMHEAD_SEQ_TABLE
+     690                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     691 00002210 000005d0'         .LONG   BIGPUCK_SEQ_TABLE
+     692 00002230 00000690'         .LONG   BABYSIZE_SEQ_TABLE
+     693                    
+     694 00002250 00000760'         .LONG   FORCE_FATHEAD_SEQ_TABLE
+     695                    
+     696 00002270 00000860'         .LONG   DARKRINK_SEQ_TABLE
+     697 00002290 00000950'         .LONG   TOPDISPOFF_SEQ_TABLE
+     698                    
+     699 000022b0 00000000          .LONG   0
+     700                    
+     701                    ;       .LONG   AVENABLE_SEQ_TABLE
+     702                    ;       .LONG   0
+     703                    
+     704 000022d0           FACEOFF_SEQ_PUP_TABLE
+     705 000022d0 00000a70'         .LONG   THROWDIS_SEQ_TABLE
+     706 000022f0 00000ac0'         .LONG   SUPERGOALIE_SEQ_TABLE,TOURNMODE_SEQ_TABLE
+     707 00002330 00000be0'         .LONG   COMP_ASS_OFF_SEQ_TABLE
+     708 00002350 00000d20'         .LONG   UNLIM_TURBO_SEQ_TABLE,UNLIM_CHECK_SEQ_TABLE
+     709 00002390 00000f40'         .LONG   INC_SPEED_TABLE,INC_SHOOT_TABLE,INC_PASS_TABLE
+     710 000023f0 00001300'         .LONG   INC_CHECK_TABLE,INC_PUCK_TABLE,FAST_TURBO_RECOVERY_TABLE
+     711 00002450 00000000          .LONG   0
+     712                    
+     713                    
+     714                    **************************************************************************
+     715 00002470           SET_SUPERGOALIE
+     716 00002470     05ae          MOVE    @TOURN_MODE,A14,W
+         00002480 00000000- 
+     717 000024a0     cb0a          JRNZ    S_SG_DONE                       ;BR=TOURNAMENT MODE POWERED-UP
+     718                    
+     719 000024b0     05ae          MOVE    @SUPER_GOALIE,A14,W
+         000024c0 00000080- 
+     720 000024e0     cb06          JRNZ    S_SG_DONE                       ;BR=ALREADY SET
+     721                    
+     722 000024f0     182e          MOVK    1,A14
+     723 00002500     058e          MOVE    A14,@SUPER_GOALIE,W
+         00002510 00000080- 
+     724                    
+     725 00002530     0d3f          CALLR   POWERUP_SOUND
+         00002540     0139  
+     726 00002550           S_SG_DONE
+     727 00002550     0960          RETS
+     728                    
+     729                    **************************************************************************
+     730 00002560           SET_TOURNMODE
+     731 00002560     05ae          MOVE    @TOURN_MODE,A14,W
+         00002570 00000000- 
+     732 00002590     cb2a          JRNZ    S_TM_DONE                       ;BR=ALREADY SET
+     733                    
+     734 000025a0     0d3f          CALLR   CHECK_TOURNMODE_VALID
+         000025b0     0371  
+     735 000025c0     ca27          JRZ     S_TM_DONE                       ;BR=NOPE
+     736                    
+     737 000025d0     182e          MOVK    1,A14
+     738 000025e0     058e          MOVE    A14,@TOURN_MODE,W
+         000025f0 00000000- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     739                    
+     740 00002610     57ce          CLR     A14
+     741                    ;       MOVE    A14,@BABY_SIZE,W
+     742                    ;       MOVE    A14,@DARK_RINK,W
+     743 00002620     058e          MOVE    A14,@UNLIM_CHECK,W
+         00002630 00000050- 
+     744 00002650     058e          MOVE    A14,@UNLIM_TURBO,W
+         00002660 00000060- 
+     745 00002680     058e          MOVE    A14,@SUPER_GOALIE,W
+         00002690 00000080- 
+     746 000026b0     058e          MOVE    A14,@TOP_DISP_OFF,W
+         000026c0 00000090- 
+     747                    
+     748 000026e0     182e          MOVK    1,A14
+     749 000026f0     058e          MOVE    A14,@COMP_ASS_OFF,W
+         00002700 00000070- 
+     750                    
+     751 00002720     09e6          MOVI    PLAYER_1_BLOCK,A6
+         00002730 00000000! 
+     752 00002750           S_TM_RESET_PUP_LUPE
+     753 00002750     b4ce          MOVE    *A6(POF_PUP_FLAGS),A14,W
+         00002760     0c50  
+     754 00002770     0b8e          ANDNI   M_PUP_ATTR,A14
+         00002780 00000fc0  
+     755 000027a0     b1c6          MOVE    A14,*A6(POF_PUP_FLAGS),W
+         000027b0     0c50  
+     756                    
+     757 000027c0     0b06          ADDI    PLAYER_BLOCK_SIZE,A6
+         000027d0     1000  
+     758 000027e0     0b66          CMPI    PLAYER_8_BLOCK,A6
+         000027f0 ffffffff! 
+     759 00002810     c6f3          JRLE    S_TM_RESET_PUP_LUPE             ;BR=ANOTHER PLAYER
+     760                            
+     761 00002820     0d3f          CALLR   POWERUP_SOUND
+         00002830     010a  
+     762 00002840           S_TM_DONE
+     763 00002840     0960          RETS
+     764                    
+     765                    **************************************************************************
+     766 00002850           SET_COMP_ASS_OFF
+     767 00002850     05ae          MOVE    @COMP_ASS_OFF,A14,W
+         00002860 00000070- 
+     768 00002880     cb06          JRNZ    S_CAO_DONE                      ;BR=ALREADY SET
+     769                    
+     770 00002890     182e          MOVK    1,A14
+     771 000028a0     058e          MOVE    A14,@COMP_ASS_OFF,W
+         000028b0 00000070- 
+     772                    
+     773 000028d0     0d3f          CALLR   POWERUP_SOUND
+         000028e0     00ff  
+     774 000028f0           S_CAO_DONE
+     775 000028f0     0960          RETS
+     776                    
+     777                    **************************************************************************
+     778 00002900           SET_UNLIM_TURBO
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     779 00002900     05ae          MOVE    @TOURN_MODE,A14,W
+         00002910 00000000- 
+     780 00002930     cb11          JRNZ    S_UT_DONE                       ;BR=TOURNAMENT MODE POWERED-UP
+     781                    
+     782 00002940     05ae          MOVE    @UNLIM_TURBO,A14,W
+         00002950 00000060- 
+     783 00002970     cb0d          JRNZ    S_UT_DONE                       ;BR=ALREADY SET
+     784                    
+     785 00002980     0d3f          CALLR   CHECK_TOURNMODE_VALID
+         00002990     0333  
+     786 000029a0     ca0a          JRZ     S_UT_DONE                       ;BR=NOPE
+     787                    
+     788 000029b0     182e          MOVK    1,A14
+     789 000029c0     058e          MOVE    A14,@UNLIM_TURBO,W
+         000029d0 00000060- 
+     790                    
+     791 000029f0     57ce          CLR     A14
+     792 00002a00     058e          MOVE    A14,@UNLIM_CHECK,W
+         00002a10 00000050- 
+     793                    
+     794 00002a30     0d3f          CALLR   POWERUP_SOUND
+         00002a40     00e9  
+     795 00002a50           S_UT_DONE
+     796 00002a50     0960          RETS
+     797                    
+     798                    **************************************************************************
+     799 00002a60           SET_UNLIM_CHECK
+     800 00002a60     05ae          MOVE    @TOURN_MODE,A14,W
+         00002a70 00000000- 
+     801 00002a90     cb0e          JRNZ    S_UC_DONE                       ;BR=TOURNAMENT MODE POWERED-UP
+     802                    
+     803 00002aa0     05ae          MOVE    @UNLIM_CHECK,A14,W
+         00002ab0 00000050- 
+     804 00002ad0     cb0a          JRNZ    S_UC_DONE                       ;BR=ALREADY SET
+     805                    
+     806 00002ae0     182e          MOVK    1,A14
+     807 00002af0     058e          MOVE    A14,@UNLIM_CHECK,W
+         00002b00 00000050- 
+     808                    
+     809 00002b20     57ce          CLR     A14
+     810 00002b30     058e          MOVE    A14,@UNLIM_TURBO,W
+         00002b40 00000060- 
+     811                    
+     812 00002b60     0d3f          CALLR   POWERUP_SOUND
+         00002b70     00d6  
+     813 00002b80           S_UC_DONE
+     814 00002b80     0960          RETS
+     815                    
+     816                    **************************************************************************
+     817 00002b90           SET_FORCE_FATHEAD
+     818 00002b90     05ae          MOVE    @TOURN_MODE,A14,W
+         00002ba0 00000000- 
+     819 00002bc0     cb1e          JRNZ    S_FT_DONE                       ;BR=TOURNAMENT MODE POWERED-UP
+     820                    
+     821 00002bd0     4d26          MOVE    A9,A6
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     822 00002be0     24a6          SLL     5,A6
+     823 00002bf0     0b26          ADDI    PL1256_LIST_TABLE,A6
+         00002c00 00000000' 
+     824 00002c20     86c6          MOVE    *A6,A6,L
+     825 00002c30     b4c0          MOVE    *A6(POF_PUP_FLAGS),A0,W
+         00002c40     0c50  
+     826 00002c50     1f40          BTST    B_PUP_FORCEFAT,A0
+     827 00002c60     cb14          JRNZ    S_FT_DONE                       ;BR=ALREADY FUCKED 'EM OVER
+     828                            
+     829 00002c70     0ba0          ORI     M_PUP_FORCEFAT,A0
+         00002c80 00000020  
+     830 00002ca0     b006          MOVE    A0,*A6(POF_PUP_FLAGS),W
+         00002cb0     0c50  
+     831                    
+     832 00002cc0     1820          MOVK    1,A0
+     833 00002cd0     0b49          CMPI    1,A9
+         00002ce0     fffe  
+     834 00002cf0     c701          JRGT    S_FT_FUCKEM                     ;BR=FUCK OVER THE LEFT TEAM
+     835 00002d00     18a0          MOVK    5,A0
+     836 00002d10           S_FT_FUCKEM
+     837 00002d10     0d3f          CALLR   S_FT_FATHEAD
+         00002d20     0009  
+     838 00002d30     1020          INC     A0
+     839 00002d40     0d3f          CALLR   S_FT_FATHEAD
+         00002d50     0006  
+     840 00002d60     1040          ADDK    2,A0
+     841 00002d70     0d3f          CALLR   S_FT_FATHEAD
+         00002d80     0003  
+     842                            
+     843 00002d90     0d3f          CALLR   POWERUP_SOUND
+         00002da0     00b3  
+     844 00002db0           S_FT_DONE
+     845 00002db0     0960          RETS
+     846                    
+     847 00002dc0           S_FT_FATHEAD
+     848 00002dc0                   GBLOCK  A0,A1
+     849 00002e10     b42e          MOVE    *A1(POF_PUP_FLAGS),A14,W
+         00002e20     0c50  
+     850 00002e30     0b8e          ANDNI   M_PUP_HEADS,A14
+         00002e40 0000001f  
+     851 00002e60     0bae          ORI     M_PUP_FATHEAD,A14
+         00002e70 00000008  
+     852 00002e90     b1c1          MOVE    A14,*A1(POF_PUP_FLAGS),W
+         00002ea0     0c50  
+     853 00002eb0     0960          RETS
+     854                    
+     855                    **************************************************************************
+     856 00002ec0           SET_INC_SPEED
+     857 00002ec0     09c0          MOVI    M_PUP_SPEED,A0
+         00002ed0     0040  
+     858 00002ee0     c00e          JRUC    SET_INC
+     859 00002ef0           SET_INC_SHOOT
+     860 00002ef0     09c0          MOVI    M_PUP_SHOOT,A0
+         00002f00     0080  
+     861 00002f10     c00b          JRUC    SET_INC
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     862 00002f20           SET_INC_PASS
+     863 00002f20     09c0          MOVI    M_PUP_PASS,A0
+         00002f30     0100  
+     864 00002f40     c008          JRUC    SET_INC
+     865 00002f50           SET_INC_CHECK
+     866 00002f50     09c0          MOVI    M_PUP_CHECK,A0
+         00002f60     0200  
+     867 00002f70     c005          JRUC    SET_INC
+     868 00002f80           SET_INC_PUCK
+     869 00002f80     09c0          MOVI    M_PUP_PUCK,A0
+         00002f90     0400  
+     870 00002fa0     c002          JRUC    SET_INC
+     871 00002fb0           SET_FAST_TURBO_RECOVERY
+     872 00002fb0     09c0          MOVI    M_PUP_TURBO,A0
+         00002fc0     0800  
+     873 00002fd0           SET_INC
+     874 00002fd0     05ae          MOVE    @TOURN_MODE,A14,W
+         00002fe0 00000000- 
+     875 00003000     cb15          JRNZ    S_I_DONE                        ;BR=TOURNAMENT MODE POWERED-UP
+     876                    
+     877 00003010     4d26          MOVE    A9,A6
+     878 00003020     24a6          SLL     5,A6
+     879 00003030     0b26          ADDI    PL1256_LIST_TABLE,A6
+         00003040 00000000' 
+     880 00003060     86c6          MOVE    *A6,A6,L
+     881 00003070     b4c1          MOVE    *A6(POF_PUP_FLAGS),A1,W
+         00003080     0c50  
+     882 00003090     1f41          BTST    B_PUP_FORCEFAT,A1
+     883 000030a0     cb0b          JRNZ    S_I_DONE                        ;BR=NOT ALLOWED
+     884 000030b0     4c2e          MOVE    A1,A14
+     885 000030c0     500e          AND     A0,A14
+     886 000030d0     cb08          JRNZ    S_I_DONE                        ;BR=ALREADY SET
+     887                    
+     888 000030e0     0b81          ANDNI   M_PUP_ATTR,A1
+         000030f0 00000fc0  
+     889 00003110     5401          OR      A0,A1
+     890 00003120     b026          MOVE    A1,*A6(POF_PUP_FLAGS),W
+         00003130     0c50  
+     891                    
+     892 00003140     0d3f          CALLR   POWERUP_SOUND
+         00003150     0078  
+     893 00003160           S_I_DONE
+     894 00003160     0960          RETS
+     895                    
+     896                    **************************************************************************
+     897 00003170           SET_NORMHEAD
+     898 00003170     1a00          MOVK    M_PUP_NORMHEAD,A0
+     899 00003180     c005          JRUC    HEAD_POWERUP
+     900 00003190           SET_TINYHEAD
+     901 00003190     1880          MOVK    M_PUP_TINYHEAD,A0
+     902 000031a0     c003          JRUC    HEAD_POWERUP
+     903 000031b0           SET_HUGEHEAD
+     904 000031b0     1840          MOVK    M_PUP_HUGEHEAD,A0
+     905 000031c0     c001          JRUC    HEAD_POWERUP
+     906 000031d0           SET_BIGHEAD
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+     907 000031d0     1820          MOVK    M_PUP_BIGHEAD,A0
+     908 000031e0           HEAD_POWERUP
+     909 000031e0     4d26          MOVE    A9,A6
+     910 000031f0     24a6          SLL     5,A6
+     911 00003200     0b26          ADDI    PL1256_LIST_TABLE,A6
+         00003210 00000000' 
+     912 00003230     86c6          MOVE    *A6,A6,L
+     913 00003240           H_PUP_GO
+     914 00003240     b4c1          MOVE    *A6(POF_PUP_FLAGS),A1,W
+         00003250     0c50  
+     915 00003260     4c2e          MOVE    A1,A14
+     916 00003270     500e          AND     A0,A14
+     917 00003280     cb08          JRNZ    H_PUP_DONE                      ;BR=ALREADY SET
+     918                    
+     919 00003290     0b81          ANDNI   M_PUP_HEADS,A1
+         000032a0 0000001f  
+     920 000032c0     5401          OR      A0,A1
+     921 000032d0     b026          MOVE    A1,*A6(POF_PUP_FLAGS),W
+         000032e0     0c50  
+     922                    
+     923 000032f0     0d3f          CALLR   POWERUP_SOUND
+         00003300     005d  
+     924                    
+     925 00003310           H_PUP_DONE
+     926 00003310     0960          RETS
+     927                    
+     928                    **************************************************************************
+     929 00003320           SET_GNORMHEAD
+     930 00003320     1a00          MOVK    M_PUP_NORMHEAD,A0
+     931 00003330     c005          JRUC    GOALIE_HEAD_POWERUP
+     932 00003340           SET_GTINYHEAD
+     933 00003340     1880          MOVK    M_PUP_TINYHEAD,A0
+     934 00003350     c003          JRUC    GOALIE_HEAD_POWERUP
+     935 00003360           SET_GHUGEHEAD
+     936 00003360     1840          MOVK    M_PUP_HUGEHEAD,A0
+     937 00003370     c001          JRUC    GOALIE_HEAD_POWERUP
+     938 00003380           SET_GBIGHEAD
+     939 00003380     1820          MOVK    M_PUP_BIGHEAD,A0
+     940 00003390           GOALIE_HEAD_POWERUP
+     941 00003390     09e6          MOVI    PLAYER_4_BLOCK,A6
+         000033a0 00000000! 
+     942                    
+     943 000033c0                   KITN    4
+     944 00003400     ca07          JREQ    GBP_4P                          ;BR=4 PLAYER KIT
+     945 00003410     0b49          CMPI    3,A9
+         00003420     fffc  
+     946 00003430     cbe0          JRNE    H_PUP_GO                        ;BR=NOT PLAYER 2(4)
+     947                    
+     948 00003440     09e6          MOVI    PLAYER_8_BLOCK,A6
+         00003450 00000000! 
+     949 00003470     c0dc          JRUC    H_PUP_GO
+     950 00003480           GBP_4P
+     951 00003480     0b49          CMPI    2,A9
+         00003490     fffd  
+     952 000034a0     c4d9          JRLT    H_PUP_GO                        ;BR=LEFT GOALIE
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+     953 000034b0     09e6          MOVI    PLAYER_8_BLOCK,A6
+         000034c0 00000000! 
+     954 000034e0     c0d5          JRUC    H_PUP_GO
+     955                    
+     956                    **************************************************************************
+     957 000034f0           SET_BIGPUCK
+     958 000034f0     05ae          MOVE    @BIG_PUCK,A14,W
+         00003500 00000010- 
+     959 00003520     cb06          JRNZ    SBP_PUP_DONE                    ;BR=ALREADY BIG
+     960                    
+     961 00003530     182e          MOVK    1,A14
+     962 00003540     058e          MOVE    A14,@BIG_PUCK,W
+         00003550 00000010- 
+     963                    
+     964 00003570     0d3f          CALLR   POWERUP_SOUND
+         00003580     0035  
+     965                    
+     966 00003590           SBP_PUP_DONE
+     967 00003590     0960          RETS
+     968                    
+     969                    **************************************************************************
+     970 000035a0           SET_BABYSIZE
+     971                    ;       MOVE    @TOURN_MODE,A14,W
+     972                    ;       JRNZ    SBS_PUP_DONE                    ;BR=DIPSWITCH ON
+     973                    
+     974 000035a0     05ae          MOVE    @BABY_SIZE,A14,W
+         000035b0 00000030- 
+     975 000035d0     cb06          JRNZ    SBS_PUP_DONE                    ;BR=ALREADY BIG
+     976                    
+     977 000035e0     182e          MOVK    1,A14
+     978 000035f0     058e          MOVE    A14,@BABY_SIZE,W
+         00003600 00000030- 
+     979                    
+     980 00003620     0d3f          CALLR   POWERUP_SOUND
+         00003630     002a  
+     981                    
+     982 00003640           SBS_PUP_DONE
+     983 00003640     0960          RETS
+     984                    
+     985                    **************************************************************************
+     986 00003650           SET_THROWDIS
+     987 00003650     05ae          MOVE    @TOURN_MODE,A14,W
+         00003660 00000000- 
+     988 00003680     cb0a          JRNZ    STS_PUP_DONE                    ;BR=DIPSWITCH ON
+     989                    
+     990 00003690     05ae          MOVE    @THROW_DIS,A14,W
+         000036a0 00000040- 
+     991 000036c0     cb06          JRNZ    STS_PUP_DONE                    ;BR=ALREADY
+     992                    
+     993 000036d0     182e          MOVK    1,A14
+     994 000036e0     058e          MOVE    A14,@THROW_DIS,W
+         000036f0 00000040- 
+     995                    
+     996 00003710     0d3f          CALLR   POWERUP_SOUND
+         00003720     001b  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+     997                    
+     998 00003730           STS_PUP_DONE
+     999 00003730     0960          RETS
+    1000                    
+    1001                    **************************************************************************
+    1002 00003740           SET_DARKRINK
+    1003                    ;       MOVE    @TOURN_MODE,A14,W
+    1004                    ;       JRNZ    SDR_PUP_DONE                    ;BR=DIPSWITCH ON
+    1005                    
+    1006 00003740     05ae          MOVE    @DARK_RINK,A14,W
+         00003750 00000020- 
+    1007 00003770     cb06          JRNZ    SDR_PUP_DONE                    ;BR=ALREADY
+    1008                    
+    1009 00003780     182e          MOVK    1,A14
+    1010 00003790     058e          MOVE    A14,@DARK_RINK,W
+         000037a0 00000020- 
+    1011                    
+    1012 000037c0     0d3f          CALLR   POWERUP_SOUND
+         000037d0     0010  
+    1013                    
+    1014 000037e0           SDR_PUP_DONE
+    1015 000037e0     0960          RETS
+    1016                    
+    1017                    **************************************************************************
+    1018 000037f0           SET_TOPDISPOFF
+    1019 000037f0     05ae          MOVE    @TOURN_MODE,A14,W
+         00003800 00000000- 
+    1020 00003820     cb0a          JRNZ    STDO_PUP_DONE                   ;BR=DIPSWITCH ON
+    1021                    
+    1022 00003830     05ae          MOVE    @TOP_DISP_OFF,A14,W
+         00003840 00000090- 
+    1023 00003860     cb06          JRNZ    STDO_PUP_DONE                   ;BR=ALREADY
+    1024                    
+    1025 00003870     182e          MOVK    1,A14
+    1026 00003880     058e          MOVE    A14,@TOP_DISP_OFF,W
+         00003890 00000090- 
+    1027                    
+    1028 000038b0     0d3f          CALLR   POWERUP_SOUND
+         000038c0     0001  
+    1029                    
+    1030 000038d0           STDO_PUP_DONE
+    1031 000038d0     0960          RETS
+    1032                    
+    1033                    **************************************************************************
+    1034                    ;SET_AVENABLE
+    1035                    ;       CALLA   cx_get_game_number
+    1036                    ;       CMPI    700,A1
+    1037                    ;       JRGT    SAE_PUP_DONE
+    1038                    ;       CALLA   cx_powerup_colorado
+    1039                    ;
+    1040                    ;       CALLA   spx_avalanche
+    1041                    ;SAE_PUP_DONE
+    1042                    ;       RETS
+    1043                    
+    1044                                        
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+    1045                    **************************************************************************
+    1046                    *                                                                        *
+    1047                    * POWERUP_SOUND                                                          *
+    1048                    *                                                                        *
+    1049                    **************************************************************************
+    1050                    
+    1051 000038e0           POWERUP_SOUND
+    1052 000038e0                   PUSH    A4
+    1053 000038f0     09c4          MOVI    S_SIDE_TOGGLE,A4
+         00003900     010a  
+    1054                    ;       MOVI    S_P1_POWERUP,A4
+    1055 00003910     0d5f          CALLA   do_sound
+         00003920 00000000! 
+    1056 00003940                   PULLQ   A4
+    1057 00003950     0960          RETS
+    1058                    
+    1059                    **************************************************************************
+    1060                    *                                                                        *
+    1061                    * REPORT_POWERUPS                                                        *
+    1062                    *                                                                        *
+    1063                    **************************************************************************
+    1064                    
+    1065 00003960           REPORT_POWERUPS
+    1066 00003960     09c0          MOVI    PID_POWERUP,A0
+         00003970     090d  
+    1067 00003980     0d5f          CALLA   KILLPROC_ALL
+         00003990 00000000! 
+    1068                    
+    1069 000039b0     09e8          MOVI    ORGTXT1P,A8
+         000039c0 00000000! 
+    1070 000039e0     1889          MOVK    4,A9
+    1071 000039f0     1a8a          MOVK    20,A10
+    1072 00003a00     186b          MOVK    3,A11
+    1073 00003a10                   CREATE  PID_POWCOLOR,CYCLE16
+    1074                    
+    1075 00003a90     5729          CLR     A9
+    1076                    
+    1077 00003aa0     09e2          MOVI    TEXTZVAL,A2
+         00003ab0 84000000  
+    1078 00003ad0     05a3          MOVE    @PLAYER_BITS,A3,W
+         00003ae0 00000000! 
+    1079 00003b00     1867          MOVK    3,A7
+    1080 00003b10     09e5          MOVI    dpl_lst,A5
+         00003b20 00000000! 
+    1081                    
+    1082 00003b40           RP_LUPE
+    1083 00003b40     4ae3          BTST    A7,A3
+    1084 00003b50     ca0e          JRZ     RP_NEXT                         ;BR=PLAYER NOT ACTIVE
+    1085                    
+    1086 00003b60     86a6          MOVE    *A5,A6,L
+    1087 00003b70     b4ce          MOVE    *A6(POF_PUP_FLAGS),A14,W
+         00003b80     0c50  
+    1088 00003b90     0d3f          CALLR   RP_REPORT_ATTRIBUTES
+         00003ba0     0137  
+    1089 00003bb0     0b8e          ANDI    M_PUP_BIGHEAD|M_PUP_HUGEHEAD|M_PUP_TINYHEAD|M_PUP_FATHEAD,A14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+         00003bc0 fffffff0  
+    1090 00003be0     ca05          JRZ     RP_NEXT                         ;BR=NO HEAD POWERUP
+    1091                    
+    1092 00003bf0     09f0          MOVI    REPORT_INIT,B0
+         00003c00 000055f0' 
+    1093 00003c20     0d3f          CALLR   RP_MAKE_REPORT
+         00003c30     011b  
+    1094 00003c40           RP_NEXT
+    1095 00003c40     1005          ADDK    020H,A5
+    1096 00003c50     1427          DEC     A7
+    1097 00003c60     cfed          JRNN    RP_LUPE
+    1098                    
+    1099 00003c70     4c6e          MOVE    A3,A14
+    1100 00003c80     0b8e          ANDI    011B,A14
+         00003c90 fffffffc  
+    1101 00003cb0     ca2c          JRZ     RP_CHECK_RIGHT_GOALIE           ;BR=TEAM NOT ACTIVE
+    1102                    
+    1103 00003cc0     1887          MOVK    4,A7
+    1104 00003cd0     09e6          MOVI    PLAYER_4_BLOCK,A6
+         00003ce0 00000000! 
+    1105 00003d00     b4ce          MOVE    *A6(POF_PUP_FLAGS),A14,W
+         00003d10     0c50  
+    1106 00003d20     0b8e          ANDI    M_PUP_BIGHEAD|M_PUP_HUGEHEAD|M_PUP_TINYHEAD|M_PUP_FATHEAD,A14
+         00003d30 fffffff0  
+    1107 00003d50     ca22          JRZ     RP_CHECK_RIGHT_GOALIE           ;BR=NO HEAD POWERUP
+    1108                    
+    1109 00003d60     09f0          MOVI    REPORT_INIT,B0
+         00003d70 000055f0' 
+    1110 00003d90     0d3f          CALLR   RP_MAKE_REPORT  
+         00003da0     0104  
+    1111 00003db0     4d08          MOVE    A8,A8
+    1112 00003dc0     ca1b          JRZ     RP_CHECK_RIGHT_GOALIE           ;BR=DOESN'T EXIST
+    1113 00003dd0     09e1          MOVI    REPORT_TIMEOUT_ANIM,A1
+         00003de0 00005a90' 
+    1114 00003e00     0d5f          CALLA   STRT_ANIM
+         00003e10 00000000! 
+    1115 00003e30     09f0          MOVI    REPORT_GOALIE_INIT,B0
+         00003e40 00005a10' 
+    1116 00003e60     0d5f          CALLA   EASYMAKE
+         00003e70 00000000! 
+    1117 00003e90     09e1          MOVI    LEFT_GOALIE_REPORT_YX,A1
+         00003ea0 003c0032  
+    1118 00003ec0     0d5f          CALLA   SET_SCRNOBJ
+         00003ed0 00000000! 
+    1119 00003ef0     09e0          MOVI    BLUTXT5P,A0
+         00003f00 00000000! 
+    1120 00003f20     0d5f          CALLA   CHANGE_PAL
+         00003f30 00000000! 
+    1121 00003f50     0d5f          CALLA   INSERT_OBJ
+         00003f60 00000000! 
+    1122                    
+    1123 00003f80           RP_CHECK_RIGHT_GOALIE
+    1124 00003f80     4c6e          MOVE    A3,A14
+    1125 00003f90     0b8e          ANDI    01100B,A14
+         00003fa0 fffffff3  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+    1126 00003fc0     ca2c          JRZ     RP_MODES                        ;BR=TEAM NOT ACTIVE
+    1127                    
+    1128 00003fd0     18a7          MOVK    5,A7
+    1129 00003fe0     09e6          MOVI    PLAYER_8_BLOCK,A6
+         00003ff0 00000000! 
+    1130 00004010     b4ce          MOVE    *A6(POF_PUP_FLAGS),A14,W
+         00004020     0c50  
+    1131 00004030     0b8e          ANDI    M_PUP_BIGHEAD|M_PUP_HUGEHEAD|M_PUP_TINYHEAD|M_PUP_FATHEAD,A14
+         00004040 fffffff0  
+    1132 00004060     ca22          JRZ     RP_MODES                        ;BR=NO HEAD POWERUP
+    1133                    
+    1134 00004070     09f0          MOVI    REPORT_INIT,B0
+         00004080 000055f0' 
+    1135 000040a0     0d3f          CALLR   RP_MAKE_REPORT  
+         000040b0     00d3  
+    1136 000040c0     4d08          MOVE    A8,A8
+    1137 000040d0     ca1b          JRZ     RP_MODES                        ;BR=DOESN'T EXIST
+    1138 000040e0     09e1          MOVI    REPORT_TIMEOUT_ANIM,A1
+         000040f0 00005a90' 
+    1139 00004110     0d5f          CALLA   STRT_ANIM
+         00004120 00000000! 
+    1140 00004140     09f0          MOVI    REPORT_GOALIE_INIT,B0
+         00004150 00005a10' 
+    1141 00004170     0d5f          CALLA   EASYMAKE
+         00004180 00000000! 
+    1142 000041a0     09e1          MOVI    RGHT_GOALIE_REPORT_YX,A1
+         000041b0 003c015e  
+    1143 000041d0     0d5f          CALLA   SET_SCRNOBJ
+         000041e0 00000000! 
+    1144 00004200     09e0          MOVI    REDTXT3P,A0
+         00004210 00000000! 
+    1145 00004230     0d5f          CALLA   CHANGE_PAL
+         00004240 00000000! 
+    1146 00004260     0d5f          CALLA   INSERT_OBJ
+         00004270 00000000! 
+    1147                    
+    1148 00004290           RP_MODES
+    1149 00004290     09e3          MOVI    [154,199],A3
+         000042a0 009a00c7  
+    1150                    
+    1151 000042c0     05ae          MOVE    @BIG_PUCK,A14,W
+         000042d0 00000010- 
+    1152 000042f0     ca05          JRZ     RP_CHECK_BS                     ;BR=NORMAL PUCK
+    1153                    
+    1154 00004300     09e2          MOVI    BP_MESS,A2
+         00004310 000002d0" 
+    1155 00004330     0d3f          CALLR   REPORT_SINGLE_POWERUP
+         00004340     008a  
+    1156                    
+    1157 00004350           RP_CHECK_BS
+    1158 00004350     05ae          MOVE    @BABY_SIZE,A14,W
+         00004360 00000030- 
+    1159 00004380     ca08          JRZ     RP_CHECK_UT                     ;BR=NORMAL SIZE
+    1160                    
+    1161 00004390     09e2          MOVI    BS_MESS,A2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+         000043a0 00000360" 
+    1162 000043c0     0b23          ADDI    [13,0],A3
+         000043d0 000d0000  
+    1163 000043f0     0d3f          CALLR   REPORT_SINGLE_POWERUP
+         00004400     007e  
+    1164                    
+    1165 00004410           RP_CHECK_UT
+    1166 00004410     05ae          MOVE    @UNLIM_TURBO,A14,W
+         00004420 00000060- 
+    1167 00004440     ca08          JRZ     RP_CHECK_UC                     ;BR=NOPE
+    1168                    
+    1169 00004450     09e2          MOVI    UT_MESS,A2
+         00004460 000003f0" 
+    1170 00004480     0b23          ADDI    [13,0],A3
+         00004490 000d0000  
+    1171 000044b0     0d3f          CALLR   REPORT_SINGLE_POWERUP
+         000044c0     0072  
+    1172                    
+    1173 000044d0           RP_CHECK_UC
+    1174 000044d0     05ae          MOVE    @UNLIM_CHECK,A14,W
+         000044e0 00000050- 
+    1175 00004500     ca08          JRZ     RP_CHECK_SG                     ;BR=NOPE
+    1176                    
+    1177 00004510     09e2          MOVI    UC_MESS,A2
+         00004520 00000480" 
+    1178 00004540     0b23          ADDI    [13,0],A3
+         00004550 000d0000  
+    1179 00004570     0d3f          CALLR   REPORT_SINGLE_POWERUP
+         00004580     0066  
+    1180                    
+    1181 00004590           RP_CHECK_SG
+    1182 00004590     05ae          MOVE    @SUPER_GOALIE,A14,W
+         000045a0 00000080- 
+    1183 000045c0     ca21          JRZ     RP_CHECK_TM                     ;BR=DUMB ASS GOALIE
+    1184                    
+    1185 000045d0                   PUSH    A3
+    1186 000045e0     09f0          MOVI    REPORT_SUPER_GOALIE_INIT,B0
+         000045f0 00005b90' 
+    1187 00004610     0d5f          CALLA   MULTIMAKE
+         00004620 00000000! 
+    1188 00004640     ca19          JRZ     RP_CHECK_TM                     ;BR=COULDN'T DO IT
+    1189 00004650                   PULLQ   A3
+    1190                    
+    1191 00004660     0b23          ADDI    [13,0],A3
+         00004670 000d0000  
+    1192 00004690     4c61          MOVE    A3,A1
+    1193 000046a0     09ee          MOVI    [13,19],A14
+         000046b0 000d0013  
+    1194 000046d0     e1c1          ADDXY   A14,A1
+    1195 000046e0     09e2          MOVI    TEXTZVAL,A2
+         000046f0 84000000  
+    1196 00004710     0d5f          CALLA   SET_SCRNOBJ
+         00004720 00000000! 
+    1197                    
+    1198 00004740     09e0          MOVI    ORGTXT1P,A0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+         00004750 00000000! 
+    1199 00004770     0d5f          CALLA   CHANGE_PAL_MULTI
+         00004780 00000000! 
+    1200 000047a0     0d5f          CALLA   INSERT_OBJ
+         000047b0 00000000! 
+    1201                    
+    1202 000047d0     1029          INC     A9                              ;SOUND POWER-UP CHIME
+    1203 000047e0           RP_CHECK_TM
+    1204 000047e0     05ae          MOVE    @TOURN_MODE,A14,W
+         000047f0 00000000- 
+    1205 00004810     ca08          JRZ     RP_CHECK_CAO                    ;BR=NOPE
+    1206                    
+    1207 00004820     09e2          MOVI    TM_MESS,A2
+         00004830 000001b0" 
+    1208 00004850     0b23          ADDI    [13,0],A3
+         00004860 000d0000  
+    1209 00004880     0d3f          CALLR   REPORT_SINGLE_POWERUP
+         00004890     0035  
+    1210                    
+    1211 000048a0           RP_CHECK_CAO
+    1212 000048a0     05ae          MOVE    @COMP_ASS_OFF,A14,W
+         000048b0 00000070- 
+    1213 000048d0     ca08          JRZ     RP_CHECK_TD                     ;BR=NOPE
+    1214                    
+    1215 000048e0     09e2          MOVI    CAO_MESS,A2
+         000048f0 00000870" 
+    1216 00004910     0b23          ADDI    [13,0],A3
+         00004920 000d0000  
+    1217 00004940     0d3f          CALLR   REPORT_SINGLE_POWERUP
+         00004950     0029  
+    1218                    
+    1219 00004960           RP_CHECK_TD
+    1220 00004960     05ae          MOVE    @THROW_DIS,A14,W
+         00004970 00000040- 
+    1221 00004990     ca08          JRZ     RP_SOUND                        ;BR=NOPE
+    1222                    
+    1223 000049a0     09e2          MOVI    TD_MESS,A2
+         000049b0 00000a20" 
+    1224 000049d0     09e3          MOVI    [55,199],A3
+         000049e0 003700c7  
+    1225 00004a00     0d3f          CALLR   REPORT_SINGLE_POWERUP
+         00004a10     001d  
+    1226                    
+    1227 00004a20           RP_SOUND
+    1228 00004a20     4d29          MOVE    A9,A9
+    1229 00004a30     ca05          JRZ     RP_DONE                         ;BR=NONE
+    1230 00004a40     09c4          MOVI    S_POWERUP_REPORT,A4
+         00004a50     0125  
+    1231 00004a60     0d5f          CALLA   do_sound
+         00004a70 00000000! 
+    1232 00004a90           RP_DONE
+    1233 00004a90                   CREATE  PID_IND,KILL_POWERUP_CYCLE_PROC
+    1234                    
+    1235 00004b10     0960          RETS
+    1236                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   27
+
+    1237                    **************************************************************************
+    1238                    *                                                                        *
+    1239                    * KILL_POWERUP_CYCLE_PROC                                                *
+    1240                    *                                                                        *
+    1241                    **************************************************************************
+    1242                    
+    1243 00004b20           KILL_POWERUP_CYCLE_PROC
+    1244 00004b20                   SLEEP   90+1
+    1245 00004b70     09c0          MOVI    PID_POWCOLOR,A0
+         00004b80     2cc3  
+    1246 00004b90     0d5f          CALLA   KILLPROC_ALL
+         00004ba0 00000000! 
+    1247 00004bc0                   DIE
+    1248                    
+    1249                    **************************************************************************
+    1250                    *                                                                        *
+    1251                    * REPORT_SINGLE_POWERUP                                                  *
+    1252                    *                                                                        *
+    1253                    * PASS:                                                                  *
+    1254                    * A2  = POWER-UP IMAGE                                                   *
+    1255                    * A3  = [Y,X] SCREEN POSITION                                            *
+    1256                    * A9  = POWER-UP COUNT                                                   *
+    1257                    *                                                                        *
+    1258                    * RETURN:                                                                *
+    1259                    * A8  = OBJECT                                                           *
+    1260                    * A9  = POWER-UP COUNT                                                   *
+    1261                    *                                                                        *
+    1262                    **************************************************************************
+    1263                    
+    1264 00004bf0           REPORT_SINGLE_POWERUP
+    1265 00004bf0     09f0          MOVI    REPORT_BIGPUCK_INIT,B0
+         00004c00 00005b10' 
+    1266 00004c20     0d5f          CALLA   EASYMAKE
+         00004c30 00000000! 
+    1267 00004c50     ca18          JRZ     RSP_ABORT                       ;BR=COULDN'T DO IT
+    1268                    
+    1269 00004c60     4c41          MOVE    A2,A1
+    1270 00004c70     09e4          MOVI    DMAWNZ,A4
+         00004c80 00008002  
+    1271 00004ca0     0d5f          CALLA   ANI
+         00004cb0 00000000! 
+    1272                    
+    1273 00004cd0     4c61          MOVE    A3,A1
+    1274 00004ce0     09e2          MOVI    TEXTZVAL,A2
+         00004cf0 84000000  
+    1275 00004d10     0d5f          CALLA   SET_SCRNOBJ
+         00004d20 00000000! 
+    1276 00004d40     09e0          MOVI    ORGTXT1P,A0
+         00004d50 00000000! 
+    1277 00004d70     0d5f          CALLA   CHANGE_PAL
+         00004d80 00000000! 
+    1278 00004da0     0d5f          CALLA   INSERT_OBJ
+         00004db0 00000000! 
+    1279                    
+    1280 00004dd0     1029          INC     A9                              ;ACKNOWLEDGE POWERUP
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   28
+
+    1281 00004de0           RSP_ABORT
+    1282 00004de0     0960          RETS
+    1283                    
+    1284                    
+    1285                    **************************************************************************
+    1286                    *                                                                        *
+    1287                    * RP_MAKE_REPORT                                                         *
+    1288                    *                                                                        *
+    1289                    * PASS:                                                                  *
+    1290                    * A2  = Z POSITION                                                       *
+    1291                    * A7  = PLAYER NUMBER - 1                                                *
+    1292                    * A14 = POF_PUP_FLAGS                                                    *
+    1293                    * A9  = POWER-UP COUNT                                                   *
+    1294                    *                                                                        *
+    1295                    * RETURN:                                                                *
+    1296                    * A8  = OBJECT                                                           *
+    1297                    * A9  = POWER-UP COUNT                                                   *
+    1298                    *                                                                        *
+    1299                    **************************************************************************
+    1300                    
+    1301 00004df0           RP_MAKE_REPORT
+    1302 00004df0     098f          MMTM    SP,A3,A5
+         00004e00     1400  
+    1303                    
+    1304 00004e10     4dc6          MOVE    A14,A6
+    1305 00004e20     6ac6          LMO     A6,A6
+    1306 00004e30     17e6          SUBK    31,A6
+    1307 00004e40     0386          ABS     A6
+    1308 00004e50     24a6          SLL     5,A6
+    1309                    
+    1310 00004e60     09e3          MOVI    REPORT_MESS_TABLE,A3
+         00004e70 000053f0' 
+    1311 00004e90     09e5          MOVI    HEAD_REPORT_YX_TABLE,A5
+         00004ea0 00005470' 
+    1312 00004ec0     0d3f          CALLR   MAKE_REPORT_OBJ
+         00004ed0     0019  
+    1313                    
+    1314 00004ee0     1029          INC     A9                              ;ACKNOWLEDGE POWERUP
+    1315 00004ef0     09af          MMFM    SP,A3,A5
+         00004f00     0028  
+    1316 00004f10     0960          RETS
+    1317                    
+    1318                    **************************************************************************
+    1319                    *                                                                        *
+    1320                    * RP_REPORT_ATTRIBUTES                                                   *
+    1321                    *                                                                        *
+    1322                    * PASS:                                                                  *
+    1323                    * A2  = Z POSITION                                                       *
+    1324                    * A7  = PLAYER NUMBER - 1                                                *
+    1325                    * A14 = POF_PUP_FLAGS                                                    *
+    1326                    * A9  = POWER-UP COUNT                                                   *
+    1327                    *                                                                        *
+    1328                    * RETURN:                                                                *
+    1329                    * A8  = OBJECT                                                           *
+    1330                    * A9  = POWER-UP COUNT                                                   *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   29
+
+    1331                    *                                                                        *
+    1332                    **************************************************************************
+    1333                    
+    1334 00004f20           RP_REPORT_ATTRIBUTES
+    1335 00004f20     098f          MMTM    SP,A3,A5,A14
+         00004f30     1402  
+    1336                    
+    1337 00004f40     4dc6          MOVE    A14,A6
+    1338 00004f50     2f86          SRL     4,A6
+    1339 00004f60     ca0d          JRZ     RP_RA_DONE                      ;BR=NONE
+    1340 00004f70     6ac6          LMO     A6,A6
+    1341 00004f80     17c6          SUBK    30,A6
+    1342 00004f90     0386          ABS     A6
+    1343 00004fa0     24a6          SLL     5,A6
+    1344                    
+    1345 00004fb0     09e3          MOVI    ATTRIBUTE_MESS_TABLE,A3
+         00004fc0 00005290' 
+    1346 00004fe0     09e5          MOVI    ATTRIBUTE_YX_TABLE,A5
+         00004ff0 00005370' 
+    1347 00005010     0d3f          CALLR   MAKE_REPORT_OBJ
+         00005020     0004  
+    1348                    ;       MOVI    REPORT_TIMEOUT_ANIM,A1
+    1349                    ;       CALLA   STRT_ANIM
+    1350                    
+    1351 00005030     1029          INC     A9                              ;ACKNOWLEDGE POWERUP
+    1352 00005040           RP_RA_DONE
+    1353 00005040     09af          MMFM    SP,A3,A5,A14
+         00005050     4028  
+    1354 00005060     0960          RETS
+    1355                            
+    1356                    **************************************************************************
+    1357                    *                                                                        *
+    1358                    * MAKE_REPORT_OBJ                                                        *
+    1359                    *                                                                        *
+    1360                    * PASS:                                                                  *
+    1361                    * A2 = Z POSITION                                                        *
+    1362                    * A3 = MESSAGE TABLE                                                     *
+    1363                    * A5 = [Y,X] TABLE                                                       *
+    1364                    * A6 = TABLE OFFSET                                                      *
+    1365                    * A7 = PLAYER NUMBER -1                                                  *
+    1366                    *                                                                        *
+    1367                    * RETURN:                                                                *
+    1368                    * A8 = OBJECT                                                            *
+    1369                    *                                                                        *
+    1370                    **************************************************************************
+    1371                    
+    1372 00005070           MAKE_REPORT_OBJ
+    1373 00005070     09f0          MOVI    REPORT_INIT,B0
+         00005080 000055f0' 
+    1374 000050a0     0d5f          CALLA   EASYMAKE
+         000050b0 00000000! 
+    1375 000050d0     ca1a          JRZ     MRO_ABORT
+    1376                    
+    1377 000050e0     4066          ADD     A3,A6
+    1378 000050f0     86c1          MOVE    *A6,A1,L
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   30
+
+    1379 00005100     09e4          MOVI    DMAWNZ,A4
+         00005110 00008002  
+    1380 00005130     0d5f          CALLA   ANI
+         00005140 00000000! 
+    1381                    
+    1382 00005160     4ce6          MOVE    A7,A6
+    1383 00005170     24a6          SLL     5,A6
+    1384 00005180     4cc1          MOVE    A6,A1
+    1385 00005190     40a1          ADD     A5,A1
+    1386 000051a0     8621          MOVE    *A1,A1,L
+    1387 000051b0     0d5f          CALLA   SET_SCRNOBJ
+         000051c0 00000000! 
+    1388                    
+    1389 000051e0     0b26          ADDI    REPORT_PAL_TABLE,A6
+         000051f0 00005530' 
+    1390 00005210     86c0          MOVE    *A6,A0,L
+    1391 00005220     0d5f          CALLA   CHANGE_PAL
+         00005230 00000000! 
+    1392                    
+    1393 00005250     0d5f          CALLA   INSERT_OBJ
+         00005260 00000000! 
+    1394 00005280           MRO_ABORT
+    1395 00005280     0960          RETS
+    1396                    
+    1397 00005290           ATTRIBUTE_MESS_TABLE
+    1398 00005290 00000900"         .LONG   FFH_MESS,IS_MESS,ISH_MESS,IP_MESS,IC_MESS,IPH_MESS,FTR_MESS
+    1399                    
+    1400 00005370           ATTRIBUTE_YX_TABLE
+    1401 00005370 00e10032          .LONG   [225,50],[230,150],[230,250],[225,350]
+    1402                    
+    1403 000053f0           REPORT_MESS_TABLE
+    1404 000053f0 00000090"         .LONG   BH_MESS,HH_MESS,BAH_MESS,FH_MESS
+    1405                    
+    1406          003c0032  LEFT_GOALIE_REPORT_YX   EQU     [60,50]
+    1407          003c015e  RGHT_GOALIE_REPORT_YX   EQU     [60,350]
+    1408                    
+    1409 00005470           HEAD_REPORT_YX_TABLE
+    1410 00005470 00820046          .LONG   [130,70]
+    1411 00005490 0091008c          .LONG   [145,140]
+    1412 000054b0 00910104          .LONG   [145,260]
+    1413 000054d0 0082014a          .LONG   [130,330]
+    1414 000054f0 003c0032          .LONG   LEFT_GOALIE_REPORT_YX
+    1415 00005510 003c015e          .LONG   RGHT_GOALIE_REPORT_YX
+    1416                    
+    1417 00005530           REPORT_PAL_TABLE
+    1418 00005530 00000000!         .LONG   PRPTXT5P,BLUTXT5P,GLDTXT5P,GRNTXT5P,BLUTXT5P,REDTXT3P
+    1419                    
+    1420 000055f0           REPORT_INIT
+    1421 000055f0 00000090"         .long   BH_MESS
+    1422 00005610     8002          .word   DMAWNZ,M_SCRNOBJ|M_NOVEL
+    1423 00005630     0104          .word   OM_OID|OM_ANIM
+    1424 00005640     07ff          .word   OID_JUNK
+    1425 00005650 00005670'         .LONG   REPORT_ANIM
+    1426                    
+    1427 00005670           REPORT_ANIM
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   31
+
+    1428 00005670                   LWL     1,3|AFUNC,OBJ_CONST
+    1429 000056c0                   LWL     1,3|AFUNC,OBJ_ON
+    1430 00005710                   LWL     1,3|AFUNC,OBJ_CONST
+    1431 00005760                   LWL     1,3|AFUNC,OBJ_ON
+    1432 000057b0                   LWL     1,3|AFUNC,OBJ_CONST
+    1433 00005800                   LWL     1,3|AFUNC,OBJ_ON
+    1434 00005850                   LWL     1,3|AFUNC,OBJ_CONST
+    1435 000058a0                   LWL     1,3|AFUNC,OBJ_ON
+    1436 000058f0                   LWL     1,3|AFUNC,OBJ_CONST
+    1437 00005940                   LWL     1,3|AFUNC,OBJ_ON
+    1438 00005990                   LW      1,60
+    1439 000059c0                   LWL     1,1|AFUNC,DELETE_OBJ
+    1440                    
+    1441 00005a10           REPORT_GOALIE_INIT
+    1442 00005a10 00000000"         .long   G_MESS
+    1443 00005a30     8002          .word   DMAWNZ,M_SCRNOBJ|M_NOVEL
+    1444 00005a50     0104          .word   OM_OID|OM_ANIM
+    1445 00005a60     07ff          .word   OID_JUNK
+    1446 00005a70 00005a90'         .LONG   REPORT_TIMEOUT_ANIM
+    1447                    
+    1448 00005a90           REPORT_TIMEOUT_ANIM
+    1449 00005a90                   LW      1,90
+    1450 00005ac0                   LWL     1,1|AFUNC,DELETE_OBJ
+    1451                    
+    1452 00005b10           REPORT_BIGPUCK_INIT
+    1453 00005b10 000002d0"         .long   BP_MESS
+    1454 00005b30     8002          .word   DMAWNZ,M_SCRNOBJ|M_NOVEL
+    1455 00005b50     0104          .word   OM_OID|OM_ANIM
+    1456 00005b60     07ff          .word   OID_JUNK
+    1457 00005b70 00005a90'         .LONG   REPORT_TIMEOUT_ANIM
+    1458                    
+    1459 00005b90           REPORT_SUPER_GOALIE_INIT
+    1460 00005b90       02          .byte   2, 0, 0, 1      ;OBJCNT, PRCCNT, IMGPALCNT, PALCNT
+    1461 00005bb0 00000000!         .long   GFONT10CP       ;IMGPAL
+    1462 00005bd0     07ff          .word   OID_JUNK, 0     ;OID, GLOBAL_OPTIONS
+    1463                    *        .long IMG
+    1464                    *        .word OCTRL, OFLAGS, OZOFF
+    1465                    *        .word OPTIONS
+    1466                    
+    1467 00005bf0                   LWWWW   S_MESS, DMAWNZ, M_SCRNOBJ|M_NOVEL, 0, OM_ANIM
+    1468 00005c50 00005a90'         .LONG   REPORT_TIMEOUT_ANIM
+    1469 00005c70                   LWWWW   G_MESS, DMAWNZ, M_SCRNOBJ|M_NOVEL, 0, OM_PRVANIM
+    1470                    
+    1471                    **************************************************************************
+    1472                    *                                                                        *
+    1473                    * CHECK_TOURNMODE_VALID - CHECK IF TOURNAMENT MODE IS VALID              *
+    1474                    *                                                                        *
+    1475                    * PASS:                                                                  *
+    1476                    * NUTIN'                                                                 *
+    1477                    * RETURN:                                                                *
+    1478                    * Z CLR IF VALID                                                         *
+    1479                    *                                                                        *
+    1480                    **************************************************************************
+    1481                    
+    1482 00005cd0           CHECK_TOURNMODE_VALID
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:32 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   32
+
+    1483 00005cd0     098f          MMTM    SP,A0
+         00005ce0     8000  
+    1484 00005cf0     05a0          MOVE    @PLAYER_BITS,A0,W
+         00005d00 00000000! 
+    1485 00005d20     4c0e          MOVE    A0,A14
+    1486 00005d30     0b8e          ANDI    01100B,A14
+         00005d40 fffffff3  
+    1487 00005d60     ca03          JRZ     CTV_DONE                        ;BR=RIGHT TEAM NOT ACTIVE
+    1488 00005d70     0b80          ANDI    011B,A0                         ;CHECK LEFT TEAM
+         00005d80 fffffffc  
+    1489 00005da0           CTV_DONE
+    1490 00005da0     09af          MMFM    SP,A0
+         00005db0     0001  
+    1491 00005dc0     0960          RETS
+    1492                    
+    1493                            .END
+
+ No Errors,  No Warnings

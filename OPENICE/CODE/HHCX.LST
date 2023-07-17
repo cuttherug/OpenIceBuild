@@ -1,0 +1,2781 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHCX.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                            .INCLUDE        "HH.INC"                ;Game equates
+       8                            .INCLUDE        "hhstring.h"
+       9                            .include        "hhcmos.g"
+      10                            .include        "hhcx.e"
+      11                            .include        "hhutil.g"
+      12                            .include        "hhmisc.g"
+      13                            .include        "hhgame.g"
+      14                            .include        "hhplayer.g"
+      15                            .include        "hhselect.g"
+      16                            .include        "hhpick.g"
+      17                            .include        "hhtext.g"
+      18                            .include        "hhram.g"
+      19                    
+      20                    ; end of include files
+      21                    
+      22 00000000                   .TEXT
+      23                    
+      24 00000000                   .bss    read_data_temp,8*32
+      25 00000100                   .bss    match_b_initial1,16
+      26 00000110                   .bss    match_b_initial2,16
+      27 00000120                   .bss    match_b_initial3,16
+      28 00000130                   .bss    match_b_month,16
+      29 00000140                   .bss    match_b_day,16
+      30 00000150                   .bss    b_initial1,16           ;5
+      31 00000160                   .bss    b_initial2,16           ;5
+      32 00000170                   .bss    b_initial3,16           ;5
+      33 00000180                   .bss    b_month,16              ;4
+      34 00000190                   .bss    b_day,16                ;5
+      35                    
+      36 000001a0                   .bss    b_teamsbeat,32          ;32
+      37 000001c0                   .bss    b_nextteam,16           ;5
+      38 000001d0                   .bss    b_wins,16               ;11
+      39 000001e0                   .bss    b_losses,16             ;11
+      40                    
+      41 000001f0                   .bss    b_ties,16               ;8
+      42 00000200                   .bss    b_lastteam1,16          ;5      ;who we were
+      43 00000210                   .bss    b_lastteam2,16          ;5      ;who we played against
+      44 00000220                   .bss    b_teammate_initial1,16  ;5
+      45                    
+      46 00000230                   .bss    b_teammate_initial2,16  ;5
+      47 00000240                   .bss    b_teammate_initial3,16  ;5
+      48 00000250                   .bss    b_opp1_initial1,16      ;5
+      49 00000260                   .bss    b_opp1_initial2,16      ;5
+      50 00000270                   .bss    b_opp1_initial3,16      ;5
+      51                    
+      52 00000280                   .bss    b_opp2_initial1,16      ;5
+      53 00000290                   .bss    b_opp2_initial2,16      ;5
+      54 000002a0                   .bss    b_opp2_initial3,16      ;5
+      55 000002b0                   .bss    b_last_score1,16        ;6      ;what we scored
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56                    
+      57 000002c0                   .bss    b_last_score2,16        ;6      ;what they scored
+      58 000002d0                   .bss    b_dronemod,16           ;4      ;+/- 7 for drone mod
+      59 000002e0                   .bss    b_game_count_last,32    ;18     ;game count when last played
+      60 00000300                   .bss    b_checksum,16           ;8      ;post bitted checksum
+      61 00000310                   .bss    b_streak,16             ;8      ;winning streak
+      62                    
+      63 00000320                   .bss    b_end,0
+      64                    
+      65 00000320                   .bss    b_fightwins,16          ;
+      66 00000330                   .bss    b_fightlosses,16
+      67                    
+      68 00000340                   .bss    b_rank,16               ;computed rank (only valid from cx_player_in)
+      69                    
+      70                            ;saved copies
+      71 00000350                   .bss    s_last_score1,16        ;6      ;what we scored
+      72 00000360                   .bss    s_last_score2,16        ;6      ;what they scored
+      73                    
+      74              01e0  NUMBER_CRECS    .set    480             ;480 cmos records (15K)
+      75              000a  NUMBER_TRECS    .set    10              ;10 high score records
+      76                    
+      77 00000370                   .bss    listwlt,16*4*NUMBER_CRECS       ;keep our win/loss/ties/allbeat in easy to get at ram
+      78 00007b70                   .bss    toprecords,16*4*NUMBER_TRECS    ;records of cmos#/win/loss/tie
+      79 00007df0                   .bss    end_toprecords,0
+      80 00007df0                   .bss    mostrecords,16*4*NUMBER_TRECS   ;records of cmos#/win/loss/tie
+      81 00008070                   .bss    end_mostrecords,0
+      82 00008070                   .bss    pctrecords,16*4*NUMBER_TRECS    ;records of cmos#/win/loss/tie
+      83 000082f0                   .bss    end_pctrecords,0
+      84                    
+      85 000082f0                   .bss    stcrecords,16*4*NUMBER_TRECS    ;records of cmos#/win/loss/tie
+      86 00008570                   .bss    end_stcrecords,0
+      87                    
+      88                    
+      89 00008570                   .bss    stanley_data,16*5*3
+      90 00008660                   .bss    stanley_checksum,16
+      91                    
+      92          01414000  CM_GAME_NUMBER  .set    CM_MISC         ;4 bytes, 2 checksum bytes
+      93                    
+      94              0040  STANLEYSIZE     .set    4*16
+      95              000a  STANLEYNUM      .set    10
+      96                    
+      97 00000000           cx_powerup
+      98 00000000     09e0          movi    AUDITORG,a0
+         00000010 01400000  
+      99 00000030     09e0          movi    HSR_C,a0
+         00000040 01402600  
+     100 00000060     09e0          movi    ADJUSTORG,a0
+         00000070 01408000  
+     101 00000090     0d3f          callr   check_all_records       ;fills up listwlt
+         000000a0     0568  
+     102 000000b0     0d3f          callr   cx_build_toprecords
+         000000c0     00b9  
+     103 000000d0     0d3f          callr   check_stanley
+         000000e0     004c  
+     104 000000f0     0960          rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     105                    
+     106 00000100           add_stanley             ;assume b_data is correct
+     107                    ;       mmtm    sp,a0
+     108 00000100     0d3f          callr   check_stanley
+         00000110     0049  
+     109 00000120     0d3f          callr   bump_down_stanley
+         00000130     003d  
+     110                    ;       mmfm    sp,a0
+     111                    ;       calla   get_cmos_record_a
+     112 00000140     09e1          movi    stanley_data,a1
+         00000150 00008570- 
+     113 00000170     05ae          move    @b_initial1,a14,W
+         00000180 00000150- 
+     114 000001a0     0b4e          cmpi    26,a14
+         000001b0     ffe5  
+     115 000001c0     cb16          jrnz    as_reg
+     116 000001d0     05ae          move    @b_initial2,a14,W
+         000001e0 00000160- 
+     117 00000200     0b4e          cmpi    26,a14
+         00000210     ffe5  
+     118 00000220     cb10          jrnz    as_reg
+     119 00000230     05ae          move    @b_initial2,a14,W
+         00000240 00000160- 
+     120 00000260     0b4e          cmpi    26,a14
+         00000270     ffe5  
+     121 00000280     cb0a          jrnz    as_reg
+     122 00000290     09ce          movi    'I',a14                 ;stick bill's name in for all spaces
+         000002a0     0049  
+     123 000002b0     91c1          move    a14,*a1+,W              ;and he will shorten time for
+     124 000002c0     09ce          movi    'C',a14                 ;camera flashes
+         000002d0     0043  
+     125 000002e0     91c1          move    a14,*a1+,W
+     126 000002f0     09ce          movi    'E',a14
+         00000300     0045  
+     127 00000310     91c1          move    a14,*a1+,W
+     128 00000320     c015          jruc    as_con
+     129 00000330     05ae  as_reg  move    @b_initial1,a14,W
+         00000340 00000150- 
+     130 00000360     0d5f          calla   PENACHO_TO_ASCII
+         00000370 00000000! 
+     131 00000390     91c1          move    a14,*a1+,W
+     132 000003a0     05ae          move    @b_initial2,a14,W
+         000003b0 00000160- 
+     133 000003d0     0d5f          calla   PENACHO_TO_ASCII
+         000003e0 00000000! 
+     134 00000400     91c1          move    a14,*a1+,W
+     135 00000410     05ae          move    @b_initial3,a14,W
+         00000420 00000170- 
+     136 00000440     0d5f          calla   PENACHO_TO_ASCII
+         00000450 00000000! 
+     137 00000470     91c1          move    a14,*a1+,W
+     138 00000480     05a0  as_con  move    @b_month,a0,W
+         00000490 00000180- 
+     139 000004b0     9001          move    a0,*a1+,W
+     140 000004c0     05a0          move    @b_day,a0,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+         000004d0 00000190- 
+     141 000004f0     9001          move    a0,*a1+,W
+     142 00000500     c05e          jruc    write_stanley
+     143                    
+     144 00000510           bump_down_stanley
+     145 00000510     09e1          movi    stanley_data+10*16,a1
+         00000520 00008610- 
+     146 00000540     09e0          movi    stanley_data+15*16,a0
+         00000550 00008660- 
+     147 00000570     194e          movk    10,a14
+     148 00000580     a820  bds1    move    -*a1,-*a0,W
+     149 00000590     3c4e          dsjs    a14,bds1
+     150 000005a0     0960          rets
+     151                    
+     152 000005b0           check_stanley
+     153 000005b0     0d3f          callr   read_stanley
+         000005c0     0021  
+     154 000005d0     09e1          movi    stanley_data,a1
+         000005e0 00008570- 
+     155 00000600     1862          movk    3,a2    ;3 sets of initials
+     156 00000610     1863  cstc2   movk    3,a3    ;3 characters per set
+     157 00000620     9420  cstc1   move    *a1+,a0,W
+     158 00000630     ca12          jrz     cstc9           ;done, we have a zero
+     159 00000640     0b40          cmpi    ' ',a0
+         00000650     ffdf  
+     160 00000660     c810          jrlo    cs9e
+     161 00000670     0b40          cmpi    'Z',a0
+         00000680     ffa5  
+     162 00000690     c30d          jrhi    cs9e
+     163 000006a0     3d23          dsjs    a3,cstc1
+     164 000006b0     9420          move    *a1+,a0,W
+     165 000006c0     ce0a          jrn     cs9e
+     166 000006d0     0b40          cmpi    12,a0
+         000006e0     fff3  
+     167 000006f0     c707          jrgt    cs9e
+     168 00000700     9420          move    *a1+,a0,W
+     169 00000710     ce05          jrn     cs9e
+     170 00000720     0b40          cmpi    31,a0
+         00000730     ffe0  
+     171 00000740     c702          jrgt    cs9e
+     172 00000750     3ea2          dsjs    a2,cstc2
+     173 00000760     0960  cstc9   rets
+     174 00000770           cs9e    ;
+     175                            ;
+     176 00000770           init_stanley
+     177 00000770     098f          mmtm    sp,a0,a1,a2,a3,a7
+         00000780     f100  
+     178 00000790     0d3f          callr   is
+         000007a0     001c  
+     179 000007b0     09af          mmfm    sp,a0,a1,a2,a3,a7
+         000007c0     008f  
+     180 000007d0     0960          rets
+     181                    
+     182 000007e0           read_stanley
+     183 000007e0     09e7          movi    CM_STANLEY,a7
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+         000007f0 01454000  
+     184 00000810     09e2          movi    stanley_data,a2
+         00000820 00008570- 
+     185 00000840     19e1          movk    15,a1
+     186 00000850     5663          clr     a3
+     187 00000860     0d5f  rst1    calla   RC_WORDI
+         00000870 00000000! 
+     188 00000890     9002          move    a0,*a2+,W
+     189 000008a0     4003          add     a0,a3
+     190 000008b0     3cc1          dsjs    a1,rst1
+     191 000008c0     0b03          addi    12356,a3
+         000008d0     3044  
+     192 000008e0     0d5f          calla   RC_WORDI
+         000008f0 00000000! 
+     193 00000910     2603          sll     16,a3
+     194 00000920     2e03          srl     16,a3
+     195 00000930     2600          sll     16,a0
+     196 00000940     2e00          srl     16,a0
+     197 00000950     4803          cmp     a0,a3
+     198 00000960     ca17          jrz     rst9
+     199 00000970     09e7  is      movi    CM_STANLEY,a7
+         00000980 01454000  
+     200 000009a0     09e2          movi    stanley_data,a2
+         000009b0 00008570- 
+     201 000009d0     19e1          movk    15,a1
+     202 000009e0     5600          clr     a0
+     203 000009f0     5663          clr     a3
+     204 00000a00     9002  rst2    move    a0,*a2+,W
+     205 00000a10     0d5f          calla   WC_WORDI
+         00000a20 00000000! 
+     206 00000a40     4003          add     a0,a3
+     207 00000a50     3cc1          dsjs    a1,rst2
+     208 00000a60     0b03          addi    12356,a3
+         00000a70     3044  
+     209 00000a80     2603          sll     16,a3
+     210 00000a90     2e03          srl     16,a3
+     211 00000aa0     4c60          move    a3,a0
+     212 00000ab0     0d5f          calla   WC_WORDI
+         00000ac0 00000000! 
+     213 00000ae0     0960  rst9    rets
+     214                    
+     215 00000af0           write_stanley
+     216 00000af0     09e7          movi    CM_STANLEY,a7
+         00000b00 01454000  
+     217 00000b20     09e2          movi    stanley_data,a2
+         00000b30 00008570- 
+     218 00000b50     19e1          movk    15,a1
+     219 00000b60     5663          clr     a3
+     220 00000b70     9440  ws1     move    *a2+,a0,W
+     221 00000b80     0d5f          calla   WC_WORDI
+         00000b90 00000000! 
+     222 00000bb0     4003          add     a0,a3
+     223 00000bc0     3cc1          dsjs    a1,ws1
+     224 00000bd0     0b03          addi    12356,a3
+         00000be0     3044  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     225 00000bf0     2603          sll     16,a3
+     226 00000c00     2e03          srl     16,a3
+     227 00000c10     4c60          move    a3,a0
+     228 00000c20     0d5f          calla   WC_WORDI
+         00000c30 00000000! 
+     229 00000c50     0960          rets
+     230                    
+     231                    
+     232 00000c60           cx_build_toprecords
+     233 00000c60     09f2          movi    toprecords,b2
+         00000c70 00007b70- 
+     234 00000c90     09f3          movi    end_toprecords-(16*4),b3
+         00000ca0 00007db0- 
+     235 00000cc0     09f0          movi    is_a03_higher_than_a8x,b0
+         00000cd0 000016b0' 
+     236 00000cf0     0d3f          callr   build_10_list
+         00000d00     0017  
+     237                    
+     238 00000d10     09f2          movi    mostrecords,b2
+         00000d20 00007df0- 
+     239 00000d40     09f3          movi    end_mostrecords-(16*4),b3
+         00000d50 00008030- 
+     240 00000d70     09f0          movi    is_a03_most_higher_than_a8x,b0
+         00000d80 00001530' 
+     241 00000da0     0d3f          callr   build_10_list
+         00000db0     000c  
+     242                    
+     243 00000dc0     09f2          movi    pctrecords,b2
+         00000dd0 00008070- 
+     244 00000df0     09f3          movi    end_pctrecords-(16*4),b3
+         00000e00 000082b0- 
+     245 00000e20     09f0          movi    is_a03_pct_higher_than_a8x,b0
+         00000e30 000010e0' 
+     246 00000e50     0d3f          callr   build_10_list
+         00000e60     0001  
+     247                    
+     248 00000e70     0960          rets
+     249                    
+     250 00000e80           build_10_list
+     251 00000e80     4e52          move    b2,a2
+     252 00000e90     0d3f          callr   clear_10_list
+         00000ea0     00aa  
+     253 00000eb0     09ea          movi    listwlt,a10     ;a10 is pointer into listwlt
+         00000ec0 00000370- 
+     254 00000ee0     576b          clr     a11             ;a11 is cmos# of above pointer
+     255 00000ef0     8541  cbt4    move    *a10,a1,W       ;a1 is wins
+     256 00000f00     b542          move    *a10(16),a2,W   ;a2 is losses
+         00000f10     0010  
+     257 00000f20     b543          move    *a10(32),a3,W   ;a3 is ties
+         00000f30     0020  
+     258 00000f40     4c20          move    a1,a0
+     259 00000f50     2420          sll     1,a0
+     260 00000f60     4060          add     a3,a0           ;a0 is points
+     261 00000f70     4e78          move    b3,a8           ; end record in list of 10
+     262 00000f80     0930          call    b0              ; check routine
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     263 00000f90     c90d          jrnc    cbt5
+     264 00000fa0     09c9          movi    NUMBER_TRECS,a9
+         00000fb0     000a  
+     265 00000fc0     4e58          move    b2,a8           ; beginning of list
+     266 00000fd0     0930  cbt3    call    b0              ; check routine
+     267 00000fe0     c905          jrnc    cbt2            ;check next record lower
+     268 00000ff0     0d3f          callr   move_from_a8x_down
+         00001000     007f  
+     269 00001010     0d3f          callr   insert_a03_at_a8x
+         00001020     008a  
+     270 00001030     c003          jruc    cbt5
+     271 00001040     0b08  cbt2    addi    16*4,a8
+         00001050     0040  
+     272 00001060     3d49          dsjs    a9,cbt3         ;check all the way down the list
+     273 00001070     0b0a  cbt5    addi    16*4,a10
+         00001080     0040  
+     274 00001090     102b          inc     a11
+     275 000010a0     0b4b          cmpi    NUMBER_CRECS,a11
+         000010b0     fe1f  
+     276 000010c0     cbe2          jrnz    cbt4
+     277 000010d0     0960          rets
+     278                    
+     279 000010e0           is_a03_pct_higher_than_a8x
+     280 000010e0     098f          mmtm    sp,a9
+         000010f0     0040  
+     281 00001100     0d3f          callr   a03xx
+         00001110     0003  
+     282 00001120     09af          mmfm    sp,a9
+         00001130     0200  
+     283 00001140     0960          rets
+     284 00001150     4c27  a03xx   move    a1,a7
+     285 00001160     4047          add     a2,a7
+     286 00001170     4067          add     a3,a7           ;a7  = records games (a0 = our points)
+     287 00001180     ca27          jrz     a03p_n          ; we have no games in list, we are lower
+     288 00001190     ce26          jrn     a03p_n
+     289 000011a0     0b47          cmpi    10,a7
+         000011b0     fff5  
+     290 000011c0     c423          jrlt    a03p_n
+     291 000011d0     b504          move    *a8(16),a4,W    ;win
+         000011e0     0010  
+     292 000011f0     b505          move    *a8(32),a5,W    ;loss
+         00001200     0020  
+     293 00001210     b506          move    *a8(48),a6,W    ;tie
+         00001220     0030  
+     294 00001230     4c8e          move    a4,a14
+     295 00001240     40ae          add     a5,a14
+     296 00001250     40ce          add     a6,a14          ;a14 = our games
+     297 00001260     ca17          jrz     a03p_y          ; we have no games, we are higher
+     298 00001270     4c89          move    a4,a9
+     299 00001280     2429          sll     1,a9
+     300 00001290     40c9          add     a6,a9           ;a9  = our points
+     301 000012a0     2609          sll     16,a9           ;points shifted 16
+     302 000012b0     242e          sll     1,a14           ;games *2
+     303 000012c0     5bc9          divu    a14,a9          ;a9 = pct
+     304 000012d0     098f          mmtm    sp,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+         000012e0     8000  
+     305 000012f0     2600          sll     16,a0           ;points shifted 16
+     306 00001300     2427          sll     1,a7            ;games *2
+     307 00001310                   SWAP    a0,a7
+     308 00001340     5a07          divu    a0,a7
+     309 00001350                   SWAP    a0,a7           ;a0 = pct
+     310 00001380     4809          cmp     a0,a9
+     311 00001390     09af          mmfm    sp,a0
+         000013a0     0001  
+     312 000013b0     c704          jrgt    a03p_n
+     313 000013c0     c401          jrlt    a03p_y
+     314 000013d0     c02d          jruc    is_a03_higher_than_a8x          ;just use points for ties
+     315 000013e0     0de0  a03p_y  setc
+     316 000013f0     0960          rets
+     317 00001400     0320  a03p_n  clrc
+     318 00001410     0960          rets
+     319                    
+     320                    ;fuck up checksum here
+     321 00001420     0960          rets
+     322 00001430     0960          rets
+     323 00001440     0960          rets
+     324 00001450     0960          rets
+     325 00001460     09c0          movi    100,a0
+         00001470     0064  
+     326 00001480     09c0          movi    100,a0
+         00001490     0064  
+     327 000014a0     09c0          movi    100,a0
+         000014b0     0064  
+     328 000014c0     09c0          movi    100,a0
+         000014d0     0064  
+     329 000014e0       73          .string "sans sans",0
+     330 00001530                   .even
+     331                    
+     332 00001530           is_a03_most_higher_than_a8x
+     333 00001530     b504          move    *a8(16),a4,W    ;win
+         00001540     0010  
+     334 00001550     b505          move    *a8(32),a5,W    ;loss
+         00001560     0020  
+     335 00001570     b506          move    *a8(48),a6,W    ;tie
+         00001580     0030  
+     336 00001590     4c8e          move    a4,a14
+     337 000015a0     40ae          add     a5,a14
+     338 000015b0     40ce          add     a6,a14          ;a14 = our games
+     339 000015c0     4c27          move    a1,a7
+     340 000015d0     4047          add     a2,a7
+     341 000015e0     4067          add     a3,a7           ;records games
+     342 000015f0     49c7          cmp     a14,a7
+     343 00001600     c708          jrgt    a03m_y          ;more games
+     344 00001610     c405          jrlt    a03m_n
+     345 00001620     4881          cmp     a4,a1
+     346 00001630     c705          jrgt    a03m_y          ;more wins
+     347 00001640     c402          jrlt    a03m_n
+     348 00001650     48c3          cmp     a6,a3
+     349 00001660     c702          jrgt    a03m_y          ;more ties
+     350 00001670     0320  a03m_n  clrc
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     351 00001680     0960          rets
+     352 00001690     0de0  a03m_y  setc
+     353 000016a0     0960          rets
+     354                    
+     355                    
+     356 000016b0           is_a03_higher_than_a8x
+     357 000016b0     b504          move    *a8(16),a4,W    ;win
+         000016c0     0010  
+     358 000016d0     b505          move    *a8(32),a5,W    ;loss
+         000016e0     0020  
+     359 000016f0     b506          move    *a8(48),a6,W    ;tie
+         00001700     0030  
+     360 00001710     4c8e          move    a4,a14
+     361 00001720     242e          sll     1,a14
+     362 00001730     40ce          add     a6,a14
+     363 00001740     49c0          cmp     a14,a0
+     364 00001750     c708          jrgt    a03_y           ;more points
+     365 00001760     c405          jrlt    a03_n
+     366 00001770     4881          cmp     a4,a1
+     367 00001780     c705          jrgt    a03_y           ;more wins
+     368 00001790     c402          jrlt    a03_n
+     369 000017a0     48a2          cmp     a5,a2
+     370 000017b0     c402          jrlt    a03_y           ;less losses
+     371 000017c0     0320  a03_n   clrc
+     372 000017d0     0960          rets
+     373 000017e0     0de0  a03_y   setc
+     374 000017f0     0960          rets
+     375                    
+     376 00001800           move_from_a8x_down
+     377 00001800     4e74          move    b3,a4
+     378 00001810     4888  mfa1    cmp     a4,a8
+     379 00001820     ca09          jrz     mfa9            ;we are on last record, done
+     380 00001830     0be4          subi    (16*4),a4
+         00001840     ffbf  
+     381 00001850     ba84          move    *a4(0),*a4(16*4),L
+         00001860     0000  
+         00001870     0040  
+     382 00001880     ba84          move    *a4(32),*a4(32+(16*4)),L
+         00001890     0020  
+         000018a0     0060  
+     383 000018b0     c0f5          jruc    mfa1
+     384 000018c0     0960  mfa9    rets
+     385                    
+     386 000018d0           insert_a03_at_a8x
+     387 000018d0     8168          move    a11,*a8,W
+     388 000018e0     b028          move    a1,*a8(16),W
+         000018f0     0010  
+     389 00001900     b048          move    a2,*a8(32),W
+         00001910     0020  
+     390 00001920     b068          move    a3,*a8(48),W
+         00001930     0030  
+     391 00001940     0960          rets
+     392                    
+     393 00001950           clear_10_list
+     394 00001950     1941          movk    NUMBER_TRECS,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     395 00001960     5600          clr     a0
+     396 00001970     4c03          move    a0,a3
+     397 00001980     1420          dec     a0
+     398 00001990     9002  cbt1    move    a0,*a2+,W
+     399 000019a0     9262          move    a3,*a2+,L
+     400 000019b0     9062          move    a3,*a2+,W
+     401 000019c0     0580          move    a0,@WDOG_BONE,W         ;watchdog
+         000019d0 01860030  
+     402 000019f0     3ce1          dsjs    a1,cbt1
+     403 00001a00     0960          rets
+     404                    
+     405                    
+     406                    
+     407                    
+     408 00001a10           cx_game_start
+     409 00001a10     0d3f          callr   cx_inc_game_number
+         00001a20     02f9  
+     410 00001a30     57ce          clr     a14
+     411 00001a40     144e          subk    2,a14           ;-2 - no initials
+     412 00001a50     058e          move    a14,@PLAYER_1_BLOCK+POF_CMOS,W
+         00001a60 00000060! 
+     413 00001a80     058e          move    a14,@PLAYER_2_BLOCK+POF_CMOS,W
+         00001a90 00000060! 
+     414 00001ab0     058e          move    a14,@PLAYER_5_BLOCK+POF_CMOS,W
+         00001ac0 00000060! 
+     415 00001ae0     058e          move    a14,@PLAYER_6_BLOCK+POF_CMOS,W
+         00001af0 00000060! 
+     416 00001b10     1b6e          movk    27,a14          ;? - for no initials entered
+     417 00001b20     05ee          movb    a14,@PLAYER_1_BLOCK+POF_INITIAL1
+         00001b30 000000b0! 
+     418 00001b50     05ee          movb    a14,@PLAYER_1_BLOCK+POF_INITIAL2
+         00001b60 000000b8! 
+     419 00001b80     05ee          movb    a14,@PLAYER_1_BLOCK+POF_INITIAL3
+         00001b90 000000c0! 
+     420 00001bb0     05ee          movb    a14,@PLAYER_2_BLOCK+POF_INITIAL1
+         00001bc0 000000b0! 
+     421 00001be0     05ee          movb    a14,@PLAYER_2_BLOCK+POF_INITIAL2
+         00001bf0 000000b8! 
+     422 00001c10     05ee          movb    a14,@PLAYER_2_BLOCK+POF_INITIAL3
+         00001c20 000000c0! 
+     423 00001c40     05ee          movb    a14,@PLAYER_5_BLOCK+POF_INITIAL1
+         00001c50 000000b0! 
+     424 00001c70     05ee          movb    a14,@PLAYER_5_BLOCK+POF_INITIAL2
+         00001c80 000000b8! 
+     425 00001ca0     05ee          movb    a14,@PLAYER_5_BLOCK+POF_INITIAL3
+         00001cb0 000000c0! 
+     426 00001cd0     05ee          movb    a14,@PLAYER_6_BLOCK+POF_INITIAL1
+         00001ce0 000000b0! 
+     427 00001d00     05ee          movb    a14,@PLAYER_6_BLOCK+POF_INITIAL2
+         00001d10 000000b8! 
+     428 00001d30     05ee          movb    a14,@PLAYER_6_BLOCK+POF_INITIAL3
+         00001d40 000000c0! 
+     429 00001d60     0960          rets
+     430                    
+     431 00001d70           cx_player_in    ;a0 = block
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     432 00001d70     098f          mmtm    sp,a0,a1,A2,A3,A4,a6,a7,a8,A10
+         00001d80     fba0  
+     433 00001d90     4c06          move    a0,a6
+     434 00001da0     0d3f          callr   pbl_to_mb_
+         00001db0     00a5  
+     435 00001dc0     0d5f          calla   find_special_character
+         00001dd0 00000000! 
+     436 00001df0     4c00          MOVE    A0,A0
+     437 00001e00     ce04          JRN     CPI_CHECK                               ;BR=NO SPECIAL CHARACTER
+     438 00001e10     b006          MOVE    A0,*A6(POF_CHARACTER),W
+         00001e20     0070  
+     439 00001e30     b006          MOVE    A0,*A6(POF_LOCKED_CHAR),W
+         00001e40     0c40  
+     440                    ;mdp yescmosrecord
+     441                    ;       JRUC    cpi_9
+     442                    ;mdp yescmosrecord
+     443 00001e50           CPI_CHECK
+     444 00001e50     0d3f          callr   check_for_record
+         00001e60     03c4  
+     445 00001e70     b006          move    a0,*a6(POF_CMOS),W
+         00001e80     0060  
+     446 00001e90     4c00          move    a0,a0
+     447 00001ea0     ce04          jrn     cpi_9
+     448 00001eb0     0d3f          callr   get_cmos_record_a
+         00001ec0     0523  
+     449 00001ed0     0d3f          callr   cx_find_rank
+         00001ee0     005c  
+     450 00001ef0     09af  cpi_9   mmfm    sp,a0,a1,A2,A3,A4,a6,a7,a8,A10
+         00001f00     05df  
+     451 00001f10     0960          rets
+     452                    
+     453 00001f20           cx_game_over            ;after full game, not premature
+     454 00001f20     5621          clr     a1
+     455 00001f30     0581          move    a1,@all_beaten_bits,W
+         00001f40 00000000! 
+     456 00001f60     0d3f          callr   cx_get_game_number
+         00001f70     02aa  
+     457 00001f80     4c2b          move    a1,a11          ;save us in a11
+     458 00001f90     1820          movk    1,a0
+     459 00001fa0     0d3f          callr   cxgo_pl         ;do game over for player
+         00001fb0     000c  
+     460 00001fc0     1840          movk    2,a0
+     461 00001fd0     0d3f          callr   cxgo_pl
+         00001fe0     0009  
+     462 00001ff0     18a0          movk    5,a0
+     463 00002000     0d3f          callr   cxgo_pl
+         00002010     0006  
+     464 00002020     18c0          movk    6,a0
+     465 00002030     0d3f          callr   cxgo_pl
+         00002040     0003  
+     466 00002050     0d3f          callr   cx_build_toprecords
+         00002060     febf  
+     467                            ;..
+     468 00002070     0960          rets
+     469 00002080           cxgo_pl GBLOCK  a0,a6
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     470 000020d0     b4ce          move    *a6(POF_FLAGS),a14,W
+         000020e0     0200  
+     471 000020f0     1fee          btst    B_PF_HUMAN,a14
+     472 00002100     ca39          jrz     cxgp_9
+     473                    
+     474                    ;mdp yescmosrecord
+     475                    ;       MOVE    *A6(POF_LOCKED_CHAR),A14,W
+     476                    ;       JRNZ    cxgp_9                          ;BR=SPECIAL CHARACTER
+     477                    ;mdp yescmosrecord
+     478                    
+     479 00002110     b4c0          move    *a6(POF_CMOS),a0,W
+         00002120     0060  
+     480 00002130     0b40          cmpi    -2,a0
+         00002140     0001  
+     481 00002150     ca34          jrz     cxgp_9                  ;no initials
+     482 00002160     0b40          cmpi    -1,a0
+         00002170     0000  
+     483 00002180     cb0b          jrnz    cxg_up          ;update record
+     484 00002190     0d3f          callr   pbl_to_b_
+         000021a0     005a  
+     485 000021b0     0d3f          callr   pbl_to_mb_
+         000021c0     0064  
+     486 000021d0     0d3f          callr   get_free_cmos_record
+         000021e0     06f1  
+     487 000021f0     b006          move    a0,*a6(POF_CMOS),W
+         00002200     0060  
+     488 00002210     0d3f          callr   prep_new_record_a6
+         00002220     0397  
+     489 00002230     c002          jruc    cxg_up1
+     490 00002240     0d3f  cxg_up  callr   get_cmos_record_a
+         00002250     04ea  
+     491 00002260     07c0  cxg_up1 move    @b_last_score1,@s_last_score1,L         ;save both score1 and score2
+         00002270 000002b0- 
+         00002290 00000350- 
+     492 000022b0     0d3f          callr   did_we_win_u_scores
+         000022c0     0060  
+     493 000022d0     c104          jrp     co_win
+     494 000022e0     ce0c          jrn     co_ls
+     495 000022f0     0d3f  co_tie  callr   update_ties
+         00002300     01d1  
+     496 00002310     c00d          jruc    co_dwlt
+     497 00002320     0d3f  co_win  callr   update_teamsbeat
+         00002330     0088  
+     498 00002340     0d3f          callr   update_nextteam
+         00002350     00ca  
+     499 00002360     0d3f          callr   update_wins
+         00002370     0156  
+     500 00002380     0d3f          callr   update_droneup
+         00002390     0166  
+     501 000023a0     c004          jruc    co_dwlt
+     502 000023b0     0d3f  co_ls   callr   update_losses
+         000023c0     01d0  
+     503 000023d0     0d3f          callr   update_dronedown
+         000023e0     01ad  
+     504 000023f0     0d3f  co_dwlt callr   update_teammate
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+         00002400     01db  
+     505 00002410     0d3f          callr   update_opponents
+         00002420     01e4  
+     506 00002430     058b          move    a11,@b_game_count_last
+         00002440 000002e0- 
+     507 00002460     b4c0          move    *a6(POF_CMOS),a0,W
+         00002470     0060  
+     508 00002480     0d3f          callr   store_cmos_record_a
+         00002490     0569  
+     509 000024a0     0960  cxgp_9  rets
+     510                    
+     511 000024b0           cx_find_rank    ;taken from b_??data
+     512 000024b0     b4c1          move    *a6(POF_CMOS),a1,W
+         000024c0     0060  
+     513 000024d0     09e2          movi    toprecords,a2
+         000024e0 00007b70- 
+     514                    
+     515 00002500     1820          movk    1,a0
+     516 00002510     1943          movk    NUMBER_TRECS,a3
+     517                    
+     518 00002520     844e  fki_a1  move    *a2,a14,W
+     519 00002530     49c1          cmp     a14,a1
+     520 00002540     ca1c          jrz     fki_aa
+     521 00002550     1020          inc     a0
+     522 00002560     0b02          addi    (16*4),a2
+         00002570     0040  
+     523 00002580     3ce3          dsjs    a3,fki_a1
+     524                    
+     525 00002590     05a1          move    @b_wins,a1,W
+         000025a0 000001d0- 
+     526 000025c0     2421          sll     1,a1
+     527 000025d0     05ae          move    @b_ties,a14,W
+         000025e0 000001f0- 
+     528 00002600     41c1          add     a14,a1          ;a1 is our points
+     529 00002610     09c2          movi    NUMBER_CRECS,a2
+         00002620     01e0  
+     530 00002630     1820          movk    1,a0            ;a0 is our potential rank
+     531 00002640     09e3          movi    listwlt,a3
+         00002650 00000370- 
+     532 00002670     9464  fki2    move    *a3+,a4,W       ;wins
+     533 00002680     2424          sll     1,a4
+     534 00002690     1203          addk    16,a3           ;get us to ties
+     535 000026a0     946e          move    *a3+,a14,W
+     536 000026b0     1203          addk    16,a3           ;get us to start
+     537 000026c0     41c4          add     a14,a4          ;a4 is record points
+     538 000026d0     4881          cmp     a4,a1
+     539 000026e0     c501          jrge    fki1
+     540 000026f0     1020          inc     a0              ;our rank is down one
+     541 00002700     3d42  fki1    dsjs    a2,fki2
+     542 00002710     0580  fki_aa  move    a0,@b_rank,W
+         00002720 00000340- 
+     543 00002740     0960          rets
+     544                    
+     545 00002750           pbl_to_b_
+     546 00002750     4cc7          move    a6,a7
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     547 00002760     0b07          addi    POF_INITIAL1,a7
+         00002770     00b0  
+     548 00002780     09e8          movi    b_initial1,a8
+         00002790 00000150- 
+     549 000027b0     18a1          movk    5,a1
+     550 000027c0     8eee  cf1     movb    *a7,a14         ;copy initials, birthday
+     551 000027d0     1107          addk    8,a7
+     552 000027e0     91c8          move    a14,*a8+,W
+     553 000027f0     3c81          dsjs    a1,cf1
+     554 00002800     0960          rets
+     555                    
+     556 00002810           pbl_to_mb_
+     557 00002810     4cc7          move    a6,a7
+     558 00002820     0b07          addi    POF_INITIAL1,a7
+         00002830     00b0  
+     559 00002840     09e8          movi    match_b_initial1,a8
+         00002850 00000100- 
+     560 00002870     18a1          movk    5,a1
+     561 00002880     8eee  mcf1    movb    *a7,a14         ;copy initials, birthday
+     562 00002890     1107          addk    8,a7
+     563 000028a0     91c8          move    a14,*a8+,W
+     564 000028b0     3c81          dsjs    a1,mcf1
+     565 000028c0     0960          rets
+     566                    
+     567 000028d0           did_we_win_u_scores
+     568 000028d0     05a0          move    @team1_score,a0,W
+         000028e0 00000000! 
+     569 00002900     05a2          move    @PLAYER_1_BLOCK+POF_TEAM,a2,W
+         00002910 00000080! 
+     570 00002930     05a1          move    @team2_score,a1,W
+         00002940 00000000! 
+     571 00002960     05a3          move    @PLAYER_5_BLOCK+POF_TEAM,a3,W
+         00002970 00000080! 
+     572 00002990     aece          movb    *a6(POF_NUMBER),a14
+         000029a0     0000  
+     573 000029b0     142e          dec     a14
+     574 000029c0     2fce          srl     2,a14
+     575 000029d0     ca06          jrz     dww1
+     576 000029e0                   SWAP    a0,a1
+     577 00002a10                   SWAP    a2,a3
+     578 00002a40     0580  dww1    move    a0,@b_last_score1,W
+         00002a50 000002b0- 
+     579 00002a70     4c4e          move    a2,a14
+     580 00002a80     0b4e          cmpi    26,a14
+         00002a90     ffe5  
+     581 00002aa0     c201          jrls    dw1i1
+     582 00002ab0     1b6e          movk    27,a14
+     583 00002ac0     058e  dw1i1   move    a14,@b_lastteam1,W
+         00002ad0 00000200- 
+     584 00002af0     0581          move    a1,@b_last_score2,W
+         00002b00 000002c0- 
+     585 00002b20     4c6e          move    a3,a14
+     586 00002b30     0b4e          cmpi    26,a14
+         00002b40     ffe5  
+     587 00002b50     c201          jrls    dw1i2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     588 00002b60     1b6e          movk    27,a14
+     589 00002b70     058e  dw1i2   move    a14,@b_lastteam2,W
+         00002b80 00000210- 
+     590 00002ba0     4420          sub     a1,a0
+     591 00002bb0     0960          rets
+     592                    
+     593 00002bc0           update_teamsbeat
+     594 00002bc0     aece          movb    *a6(POF_NUMBER),a14
+         00002bd0     0000  
+     595 00002be0     142e          dec     a14
+     596 00002bf0     2fce          srl     2,a14
+     597 00002c00     03ae          neg     a14
+     598 00002c10     102e          inc     a14             ;0/1 of other team
+     599 00002c20     244e          sll     2,a14
+     600 00002c30     102e          inc     a14             ;1/5 of other team
+     601 00002c40                   GBLOCK  a14,a14
+     602 00002c80     b5ce          move    *a14(POF_TEAM),a14,W
+         00002c90     0080  
+     603 00002ca0     0b4e          cmpi    26,a14
+         00002cb0     ffe5  
+     604 00002cc0     c328          jrhi    utb_nnk
+     605 00002cd0     142e          dec     a14
+     606 00002ce0     1820          movk    1,a0
+     607 00002cf0     63c0          sll     a14,a0
+     608 00002d00     07ae          move    @b_teamsbeat,a14,L
+         00002d10 000001a0- 
+     609 00002d30     4dc1          move    a14,a1
+     610 00002d40     540e          or      a0,a14
+     611 00002d50     078e          move    a14,@b_teamsbeat,L
+         00002d60 000001a0- 
+     612 00002d80     482e          cmp     a1,a14          ;are we beating a new team
+     613 00002d90     ca19          jrz     utb_nn          ;not a new team beat
+     614 00002da0     0b6e          cmpi    03ffffffh,a14   ;26 teams
+         00002db0 fc000000  
+     615 00002dd0     cb15          jrnz    utb_nn
+     616 00002de0     09c0          movi    AUD_ALL_BEATEN,a0
+         00002df0     0045  
+     617 00002e00     0d5f          calla   AUD1
+         00002e10 00000000! 
+     618 00002e30     aece          movb    *a6(POF_NUMBER),a14
+         00002e40     0000  
+     619 00002e50     142e          dec     a14
+     620 00002e60     1820          movk    1,a0
+     621 00002e70     63c0          sll     a14,a0
+     622 00002e80     05ae          move    @all_beaten_bits,a14,W
+         00002e90 00000000! 
+     623 00002eb0     540e          or      a0,a14
+     624 00002ec0     058e          move    a14,@all_beaten_bits,W
+         00002ed0 00000000! 
+     625 00002ef0     b4c0          move    *a6(POF_CMOS),a0
+         00002f00     0060  
+     626 00002f10     0d3f          callr   add_stanley
+         00002f20     fd1d  
+     627 00002f30     0320  utb_nn  clrc
+     628 00002f40     0960          rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     629 00002f50     0de0  utb_nnk setc
+     630 00002f60     0960          rets
+     631                    
+     632                    **************************************************************************
+     633                    *                                                                        *
+     634                    * pick_beginning_nextteam                                                *
+     635                    *                                                                        *
+     636                    **************************************************************************
+     637 00002f70           pick_beginning_nextteam
+     638 00002f70     5600          clr     a0
+     639 00002f80     5621          clr     a1
+     640 00002f90     c013          jruc    uyaa
+     641 00002fa0           pick_alt_nextteam       ;if we can't use the team we pick, florida is good
+     642 00002fa0     09c0          movi    team_panthers,a0
+         00002fb0     0008  
+     643 00002fc0     0580          move    a0,@b_nextteam,W
+         00002fd0 000001c0- 
+     644 00002ff0     0960          rets
+     645 00003000           update_nextteam
+     646 00003000     05a0          move    @b_nextteam,a0,W
+         00003010 000001c0- 
+     647 00003030     07a1          move    @b_teamsbeat,a1,L
+         00003040 000001a0- 
+     648 00003060     0b61          cmpi    03ffffffh,a1
+         00003070 fc000000  
+     649 00003090     ca14          jrz     ubt000
+     650 000030a0     1420          dec     a0
+     651 000030b0     4a01          btst    a0,a1
+     652 000030c0     ca10          jrz     unt_9
+     653 000030d0     09e5  uyaa    movi    tb_list,a5
+         000030e0 000033c0' 
+     654 00003100     96a2  uy1     move    *a5+,a2,L
+     655 00003110     ca04          jrz     unt_ab          ;we have beaten them all
+     656 00003120     0d3f          callr   untsb
+         00003130     000f  
+     657 00003140     c9fb          jrnc    uy1
+     658 00003150     c002          jruc    unt_8           ;a0 is our team
+     659 00003160     5600  unt_ab  clr     a0
+     660 00003170     1420          dec     a0              ;-1 is our team, we beat them all
+     661 00003180     2760  unt_8   sll     27,a0
+     662 00003190     2ca0          srl     27,a0
+     663 000031a0     0580          move    a0,@b_nextteam,W
+         000031b0 000001c0- 
+     664 000031d0     0960  unt_9   rets
+     665 000031e0     5600  ubt000  clr     a0
+     666 000031f0     0580          move    a0,@b_nextteam,W
+         00003200 000001c0- 
+     667 00003220     0960          rets
+     668                    
+     669 00003230     4c2e  untsb   move    a1,a14
+     670 00003240     9643          move    *a2+,a3,L
+     671 00003250     506e          and     a3,a14
+     672 00003260     49c3          cmp     a14,a3
+     673 00003270     ca12          jrz     untp    ;we have beaten all teams in this slot
+     674 00003280     9440          move    *a2+,a0,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     675 00003290     4c04          move    a0,a4   ;a4 is our count
+     676 000032a0     0d5f          calla   RAND0
+         000032b0 00000000! 
+     677 000032d0     2480          sll     4,a0
+     678 000032e0     4002          add     a0,a2   ;a2 is our starting location to check
+     679 000032f0     9440  unt1    move    *a2+,a0,W
+     680 00003300     4c0e          move    a0,a14
+     681 00003310     142e          dec     a14
+     682 00003320     4bc1          btst    a14,a1
+     683 00003330     ca04          jrz     untf    ;we found a team
+     684 00003340     3cc4          dsjs    a4,unt1
+     685 00003350                   LOCKUP
+     686 00003380     0de0  untf    setc            ;a0 is our team
+     687 00003390     0960          rets
+     688 000033a0     0320  untp    clrc            ;no team found on our list
+     689 000033b0     0960          rets
+     690                    
+     691 000033c0 000034c0' tb_list .long   tnlist1,tnlist2,tnlist3,tnlist4
+     692 00003440 00003800'         .long   tnlist5,tnlist6,tnlist7,0
+     693                    
+     694 000034c0 00101210  tnlist1 .long   000000100000001001000010000b
+     695 000034e0     0004          .word   4
+     696 000034f0     000d          .word   team_lightning
+     697 00003500     0015          .word   team_mighty_ducks
+     698 00003510     000a          .word   team_islanders
+     699 00003520     0005          .word   team_senators
+     700                    
+     701 00003530     000d          .word   team_lightning
+     702 00003540     0015          .word   team_mighty_ducks
+     703 00003550     000a          .word   team_islanders
+     704                    
+     705 00003560 00c8008c  tnlist2 .long   000110010000000000010001100b
+     706 00003580     0006          .word   6
+     707 00003590     0008          .word   team_panthers
+     708 000035a0     0003          .word   team_whalers
+     709 000035b0     0004          .word   team_canadiens
+     710 000035c0     0018          .word   team_kings
+     711 000035d0     0014          .word   team_jets
+     712 000035e0     0017          .word   team_oilers
+     713                    
+     714 000035f0     0008          .word   team_panthers
+     715 00003600     0003          .word   team_whalers
+     716 00003610     0004          .word   team_canadiens
+     717 00003620     0018          .word   team_kings
+     718 00003630     0014          .word   team_jets
+     719                    
+     720                    
+     721                    
+     722 00003640 0124a043  tnlist3 .long   001001001001010000001000011b
+     723 00003660     0008          .word   8
+     724 00003670     0010          .word   team_stars
+     725 00003680     0016          .word   team_flames
+     726 00003690     0019          .word   team_sharks
+     727 000036a0     0013          .word   team_maple_leafs
+     728 000036b0     0007          .word   team_avalanche
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     729 000036c0     0002          .word   team_sabres
+     730 000036d0     000e          .word   team_capitals
+     731 000036e0     0001          .word   team_bruins
+     732                    
+     733 000036f0     0010          .word   team_stars
+     734 00003700     0016          .word   team_flames
+     735 00003710     0019          .word   team_sharks
+     736 00003720     0013          .word   team_maple_leafs
+     737 00003730     0007          .word   team_avalanche
+     738 00003740     0002          .word   team_sabres
+     739 00003750     000e          .word   team_capitals
+     740                    
+     741 00003760 02020420  tnlist4 .long   010000000100000010000100000b
+     742 00003780     0004          .word   4
+     743 00003790     0006          .word   team_penguins
+     744 000037a0     000b          .word   team_rangers
+     745 000037b0     001a          .word   team_canucks
+     746 000037c0     0012          .word   team_blues
+     747                    
+     748 000037d0     0006          .word   team_penguins
+     749 000037e0     000b          .word   team_rangers
+     750 000037f0     001a          .word   team_canucks
+     751                    
+     752 00003800 00004800  tnlist5 .long   000000000000100100000000000b
+     753 00003820     0002          .word   2
+     754 00003830     000c          .word   team_flyers
+     755 00003840     000f          .word   team_blackhawks
+     756                    
+     757 00003850     000c          .word   team_flyers
+     758                    
+     759 00003860 00010000  tnlist6 .long   000000000010000000000000000b
+     760 00003880     0001          .word   1
+     761 00003890     0011          .word   team_red_wings
+     762                    
+     763 000038a0 00000100  tnlist7 .long   000000000000000000100000000b
+     764 000038c0     0001          .word   1
+     765 000038d0     0009          .word   team_devils
+     766                    
+     767 000038e0           update_wins
+     768 000038e0     05ae          move    @b_streak,a14,W
+         000038f0 00000310- 
+     769 00003910     102e          inc     a14
+     770 00003920     058e          move    a14,@b_streak,W         ;we let all hell break loose on 256 wins (not really)
+         00003930 00000310- 
+     771 00003950     05ae          move    @b_wins,a14,W
+         00003960 000001d0- 
+     772 00003980     102e          inc     a14
+     773 00003990     0b4e          cmpi    0800h,a14
+         000039a0     f7ff  
+     774 000039b0     c903          jrhs    uw1
+     775 000039c0     058e          move    a14,@b_wins,W
+         000039d0 000001d0- 
+     776 000039f0     0960  uw1     rets
+     777                    
+     778 00003a00           update_droneup
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+     779 00003a00     05a0          move    @b_dronemod,a0,W
+         00003a10 000002d0- 
+     780 00003a30     ce25          jrn     dup2
+     781 00003a40     05a2          move    @b_losses,a2,W
+         00003a50 000001e0- 
+     782 00003a70     05ae          move    @b_wins,a14,W
+         00003a80 000001d0- 
+     783 00003aa0     41c2          add     a14,a2
+     784 00003ab0     05ae          move    @b_ties,a14,W
+         00003ac0 000001f0- 
+     785 00003ae0     41c2          add     a14,a2
+     786 00003af0     0b42          cmpi    3,a2
+         00003b00     fffc  
+     787 00003b10     c91c          jrhs    droneup_slower
+     788 00003b20     05a2          move    @team1_score,a2,W
+         00003b30 00000000! 
+     789 00003b50     05ae          move    @team2_score,a14,W
+         00003b60 00000000! 
+     790 00003b80     444e          sub     a2,a14
+     791 00003b90     038e          abs     a14
+     792 00003ba0     0b4e          cmpi    2,a14
+         00003bb0     fffd  
+     793 00003bc0     c205          jrls    dupc
+     794 00003bd0     1020          inc     a0
+     795 00003be0     0b4e          cmpi    5,a14
+         00003bf0     fffa  
+     796 00003c00     c201          jrls    dupc
+     797 00003c10     1020          inc     a0
+     798 00003c20     0b40  dupc    cmpi    10,a0
+         00003c30     fff5  
+     799 00003c40     c303          jrhi    dup1
+     800 00003c50     0580          move    a0,@b_dronemod,W
+         00003c60 000002d0- 
+     801 00003c80     0960  dup1    rets
+     802 00003c90     5600  dup2    clr     a0
+     803 00003ca0     0580          move    a0,@b_dronemod,W
+         00003cb0 000002d0- 
+     804 00003cd0     0960          rets
+     805                    
+     806 00003ce0           droneup_slower
+     807 00003ce0     05a2          move    @team1_score,a2,W
+         00003cf0 00000000! 
+     808 00003d10     05ae          move    @team2_score,a14,W
+         00003d20 00000000! 
+     809 00003d40     444e          sub     a2,a14
+     810 00003d50     038e          abs     a14
+     811 00003d60     0b4e          cmpi    6,a14
+         00003d70     fff9  
+     812 00003d80     c90a          jrhs    duxc1           ;we won by 6 or more, increase level
+     813                    
+     814 00003d90     05ae          move    @b_streak,a14,W
+         00003da0 00000310- 
+     815 00003dc0     ca07          jrz     duxc0
+     816 00003dd0     0b4e          cmpi    10,a14
+         00003de0     fff5  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+     817 00003df0     c903          jrhs    duxc1           ;every win after 10 goes up a level
+     818 00003e00     0b4e          cmpi    5,a14
+         00003e10     fffa  
+     819 00003e20     cb01          jrnz    duxc0           ;if it is not 5 wins, don't go up (go up on 5,10,11...)
+     820                    ;       cmpi    2,a14
+     821                    ;       jrls    duxc0           ;we won by 2 or less, stay same
+     822                    ;       move    @s_last_score1,a14,W
+     823                    ;       move    @s_last_score2,a2,W
+     824                    ;       cmp     a2,a14
+     825                    ;       jrls    duxc0           ;we won our first win in a row by 3-4 points, stay same
+     826 00003e30     1020  duxc1   inc     a0
+     827 00003e40     0b40  duxc0   cmpi    10,a0
+         00003e50     fff5  
+     828 00003e60     c201          jrls    duxv
+     829 00003e70     1940          movk    10,a0
+     830 00003e80     0580  duxv    move    a0,@b_dronemod,W
+         00003e90 000002d0- 
+     831 00003eb0     0960          rets
+     832                    
+     833 00003ec0           update_dronedown
+     834 00003ec0     05a0          move    @b_dronemod,a0,W
+         00003ed0 000002d0- 
+     835 00003ef0     ca11          jrz     ddn2
+     836 00003f00     1420          dec     a0
+     837 00003f10     ca0c          jrz     ddn1
+     838 00003f20     05a2          move    @team1_score,a2,W
+         00003f30 00000000! 
+     839 00003f50     05ae          move    @team2_score,a14,W
+         00003f60 00000000! 
+     840 00003f80     45c2          sub     a14,a2
+     841 00003f90     0382          abs     a2
+     842 00003fa0     0b42          cmpi    5,a2
+         00003fb0     fffa  
+     843 00003fc0     c201          jrls    ddn1
+     844 00003fd0     1420          dec     a0              ;go down 2 if we lose by a lot
+     845 00003fe0     0580  ddn1    move    a0,@b_dronemod,W
+         00003ff0 000002d0- 
+     846 00004010     0960  ddn2    rets
+     847                    
+     848 00004020           update_ties
+     849 00004020     05ae          move    @b_ties,a14,W
+         00004030 000001f0- 
+     850 00004050     102e          inc     a14
+     851 00004060     0b4e          cmpi    0100h,a14
+         00004070     feff  
+     852 00004080     c903          jrhs    ut1
+     853 00004090     058e          move    a14,@b_ties,W
+         000040a0 000001f0- 
+     854 000040c0     0960  ut1     rets
+     855                    
+     856 000040d0           update_losses
+     857 000040d0     57ce          clr     a14
+     858 000040e0     058e          move    a14,@b_streak,W
+         000040f0 00000310- 
+     859 00004110     05ae          move    @b_losses,a14,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+         00004120 000001e0- 
+     860 00004140     102e          inc     a14
+     861 00004150     0b4e          cmpi    0800h,a14
+         00004160     f7ff  
+     862 00004170     c903          jrhs    ul1
+     863 00004180     058e          move    a14,@b_losses,W
+         00004190 000001e0- 
+     864 000041b0     0960  ul1     rets
+     865                    
+     866 000041c0           update_teammate
+     867 000041c0     09e2          movi    b_teammate_initial1,a2
+         000041d0 00000220- 
+     868 000041f0     aec0          movb    *a6(POF_NUMBER),a0
+         00004200     0000  
+     869 00004210     1420          dec     a0
+     870 00004220     0bc0          xori    1,a0
+         00004230 00000001  
+     871 00004250     1020          inc     a0              ;teammate
+     872 00004260     c00f          jruc    uptpers
+     873                    
+     874 00004270           update_opponents
+     875 00004270     aec0          movb    *a6(POF_NUMBER),a0
+         00004280     0000  
+     876 00004290     1420          dec     a0
+     877 000042a0     2fc0          srl     2,a0
+     878 000042b0     03a0          neg     a0
+     879 000042c0     1020          inc     a0              ;0/1 of other team
+     880 000042d0     2440          sll     2,a0
+     881 000042e0     1020          inc     a0              ;1/5 of other team
+     882 000042f0     098f          mmtm    sp,a0
+         00004300     8000  
+     883 00004310     0d3f          callr   uptpers
+         00004320     0003  
+     884 00004330     09af          mmfm    sp,a0
+         00004340     0001  
+     885 00004350     1020          inc     a0
+     886                            ;
+     887                    
+     888 00004360           uptpers GBLOCK  a0,a1
+     889 000043b0     b42e          move    *a1(POF_FLAGS),a14,W
+         000043c0     0200  
+     890 000043d0     1fee          btst    B_PF_HUMAN,a14
+     891 000043e0     ca10          jrz     cccpu
+     892 000043f0     b42e          move    *a1(POF_CMOS),a14,W
+         00004400     0060  
+     893 00004410     0b4e          cmpi    -2,a14
+         00004420     0001  
+     894 00004430     ca01          jrz     ccnone
+     895 00004440     c014          jruc    cci
+     896                    
+     897 00004450     09ce  ccnone  movi    27,a14
+         00004460     001b  
+     898 00004470     91c2          move    a14,*a2+,W
+     899 00004480     09ce          movi    27,a14
+         00004490     001b  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+     900 000044a0     91c2          move    a14,*a2+,W
+     901 000044b0     09ce          movi    27,a14
+         000044c0     001b  
+     902 000044d0     91c2          move    a14,*a2+,W
+     903 000044e0     0960          rets
+     904                    
+     905 000044f0     09ce  cccpu   movi    'C'-'A',a14
+         00004500     0002  
+     906 00004510     91c2          move    a14,*a2+,W
+     907 00004520     09ce          movi    'P'-'A',a14
+         00004530     000f  
+     908 00004540     91c2          move    a14,*a2+,W
+     909 00004550     09ce          movi    'U'-'A',a14
+         00004560     0014  
+     910 00004570     91c2          move    a14,*a2+,W
+     911 00004580     0960          rets
+     912                    
+     913 00004590     ae2e  cci     movb    *a1(POF_INITIAL1),a14
+         000045a0     00b0  
+     914 000045b0     91c2          move    a14,*a2+,W
+     915 000045c0     ae2e          movb    *a1(POF_INITIAL2),a14
+         000045d0     00b8  
+     916 000045e0     91c2          move    a14,*a2+,W
+     917 000045f0     ae2e          movb    *a1(POF_INITIAL3),a14
+         00004600     00c0  
+     918 00004610     91c2          move    a14,*a2+,W
+     919 00004620     0960          rets
+     920                    
+     921 00004630           cx_test
+     922                    ;       callr   init_cmos_records
+     923                    ;       callr   check_all_records
+     924 00004630     09e1          movi    cxt_table,a1
+         00004640 000047c0' 
+     925 00004660     842e  cxt_2   move    *a1,a14,W
+     926 00004670     ca13          jrz     cxt_x
+     927 00004680     09e2          movi    match_b_initial1,a2
+         00004690 00000100- 
+     928 000046b0     1860          movk    3,a0
+     929 000046c0     942e  cxt_1   move    *a1+,a14,W
+     930 000046d0     0b4e          cmpi    " ",a14
+         000046e0     ffdf  
+     931 000046f0     cb03          jrnz    cxt21
+     932 00004700     09ce          movi    26,a14
+         00004710     001a  
+     933 00004720     c002          jruc    cxt22
+     934 00004730     0bee  cxt21   subi    "A",a14
+         00004740     ffbe  
+     935 00004750     91c2  cxt22   move    a14,*a2+,W
+     936 00004760     3d60          dsjs    a0,cxt_1
+     937 00004770     1840          movk    2,a0
+     938 00004780     9822  cxt_3   move    *a1+,*a2+,W
+     939 00004790     3c40          dsjs    a0,cxt_3
+     940                    ;       callr   find_match_record
+     941 000047a0     c0eb          jruc    cxt_2
+     942 000047b0     0960  cxt_x   rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+     943                    
+     944 000047c0           cxt_table
+     945 000047c0     0049          .word   "I","U","A",1,1
+     946 00004810     004a          .word   "J","V","A",1,1
+     947 00004860     004b          .word   "K","W","A",1,1
+     948 000048b0     004c          .word   "L","X","A",1,1
+     949 00004900     0000          .word   0
+     950                    
+     951 00004910           cx_powerup_colorado
+     952 00004910     0d5f          calla   cx_get_game_number
+         00004920 00004a20' 
+     953 00004940     0b41          cmpi    701,a1
+         00004950     fd42  
+     954 00004960     c904          jrhs    cx_ar                   ;we are already powered up
+     955 00004970     09c1          movi    701,a1
+         00004980     02bd  
+     956 00004990     0d3f          callr   cx_store_game_number
+         000049a0     001c  
+     957 000049b0     0960  cx_ar   rets
+     958                    
+     959 000049c0           cx_inc_game_number
+     960 000049c0     0d3f          callr   cx_get_game_number
+         000049d0     0004  
+     961 000049e0     1021          inc     a1
+     962 000049f0     25c1          sll     14,a1
+     963 00004a00     2e41          srl     14,a1           ;leave 18 bits
+     964 00004a10     c015          jruc    cx_store_game_number
+     965                    
+     966 00004a20           cx_get_game_number
+     967 00004a20     09e7          movi    CM_GAME_NUMBER,a7
+         00004a30 01414000  
+     968 00004a50     0d5f          calla   RC_LONGI
+         00004a60 00000000! 
+     969 00004a80     4c01          move    a0,a1
+     970 00004a90     0b61          cmpi    03ffffh,a1      ;18 bits of game number
+         00004aa0 fffc0000  
+     971 00004ac0     c307          jrhi    cxg_er          ;too high, error
+     972 00004ad0     0d3f          callr   compute_csn
+         00004ae0     0015  
+     973 00004af0     0d5f          calla   RC_WORDI
+         00004b00 00000000! 
+     974 00004b20     4802          cmp     a0,a2           ;does our checksum match
+     975 00004b30     ca02          jrz     cxg9
+     976 00004b40     5621  cxg_er  clr     a1
+     977 00004b50     c001          jruc    cx_store_game_number
+     978 00004b60     0960  cxg9    rets
+     979                    
+     980 00004b70           cx_store_game_number
+     981 00004b70     4c20          move    a1,a0
+     982 00004b80     09e7          movi    CM_GAME_NUMBER,a7
+         00004b90 01414000  
+     983 00004bb0     0d5f          calla   WC_LONGI
+         00004bc0 00000000! 
+     984 00004be0     0d3f          callr   compute_csn
+         00004bf0     0004  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+     985 00004c00     4c40          move    a2,a0
+     986 00004c10     c080          jauc    WC_WORDI
+         00004c20 00000000! 
+     987                    
+     988 00004c40           compute_csn                     ;get what checksum should be for a1
+     989 00004c40     4c22          move    a1,a2
+     990 00004c50     4c40          move    a2,a0
+     991 00004c60     2600          sll     16,a0
+     992 00004c70     2e00          srl     16,a0
+     993 00004c80     2e02          srl     16,a2
+     994 00004c90     4002          add     a0,a2
+     995 00004ca0     2602          sll     16,a2
+     996 00004cb0     2e02          srl     16,a2                   ;a1 is now 16 bits of high and low words added
+     997 00004cc0     0bc2          xori    1100110110100011b,a2    ;this should be our checksum
+         00004cd0 0000cda3  
+     998 00004cf0     0960          rets
+     999                    
+    1000                    **************************************************************************
+    1001                    *                                                                        *
+    1002                    * init_cmos_records                                                      *
+    1003                    *       input   none                                                     *
+    1004                    *                                                                        *
+    1005                    **************************************************************************
+    1006 00004d00           init_cmos_records
+    1007 00004d00     098f          mmtm    sp,a0,a7,a9
+         00004d10     8140  
+    1008 00004d20     0d3f          callr   init_stanley
+         00004d30     fba3  
+    1009 00004d40     5600          clr     a0
+    1010 00004d50     0580          move    a0,@b_initial1,W
+         00004d60 00000150- 
+    1011 00004d80     0580          move    a0,@b_initial2,W
+         00004d90 00000160- 
+    1012 00004db0     0580          move    a0,@b_initial3,W
+         00004dc0 00000170- 
+    1013 00004de0     0580          move    a0,@b_month,W
+         00004df0 00000180- 
+    1014 00004e10     0580          move    a0,@b_day,W
+         00004e20 00000190- 
+    1015 00004e40     1940          movk    10,a0           ;skip first 10
+    1016 00004e50     0d3f  icr_1   callr   store_cmos_record_a
+         00004e60     02cc  
+    1017 00004e70     1020          inc     a0
+    1018 00004e80     0b40          cmpi    NUMBER_CRECS,a0
+         00004e90     fe1f  
+    1019 00004ea0     c4fa          jrlt    icr_1
+    1020                    
+    1021 00004eb0     09e9          movi    default_table_start,a9
+         00004ec0 00005230' 
+    1022 00004ee0     5600          clr     a0
+    1023 00004ef0     0d5f  icr_2   calla   get_cmos_record_address
+         00004f00 00006a90' 
+    1024 00004f20     9521          move    *a9+,a1,W
+    1025 00004f30     0581          move    a1,@match_b_initial1,W
+         00004f40 00000100- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+    1026 00004f60     9521          move    *a9+,a1,W
+    1027 00004f70     0581          move    a1,@match_b_initial2,W
+         00004f80 00000110- 
+    1028 00004fa0     9521          move    *a9+,a1,W
+    1029 00004fb0     0581          move    a1,@match_b_initial3,W
+         00004fc0 00000120- 
+    1030 00004fe0     9521          move    *a9+,a1,W
+    1031 00004ff0     0581          move    a1,@match_b_month,W
+         00005000 00000130- 
+    1032 00005020     9521          move    *a9+,a1,W
+    1033 00005030     0581          move    a1,@match_b_day,W
+         00005040 00000140- 
+    1034 00005060     098f          mmtm    sp,a7
+         00005070     0100  
+    1035 00005080     0d5f          calla   prep_new_record
+         00005090 00005cd0' 
+    1036 000050b0     09af          mmfm    sp,a7
+         000050c0     0080  
+    1037 000050d0     952e          move    *a9+,a14,W
+    1038 000050e0     058e          move    a14,@b_wins,W
+         000050f0 000001d0- 
+    1039 00005110     952e          move    *a9+,a14,W
+    1040 00005120     058e          move    a14,@b_losses,W
+         00005130 000001e0- 
+    1041 00005150     952e          move    *a9+,a14,W
+    1042 00005160     058e          move    a14,@b_ties,W
+         00005170 000001f0- 
+    1043 00005190     0d5f          calla   store_cmos_record
+         000051a0 00007d30' 
+    1044 000051c0     1020          inc     a0
+    1045 000051d0     0b40          cmpi    10,a0
+         000051e0     fff5  
+    1046 000051f0     cbcf          jrnz    icr_2
+    1047 00005200     09af          mmfm    sp,a0,a7,a9
+         00005210     0281  
+    1048 00005220     0960          rets
+    1049                    
+    1050                    HSTDMAC .macro  i1,i2,i3,mn,dt,wn,ls,tt
+    1051                            .word   :i1:-'A',:i2:-'A',:i3:-'A'
+    1052                            .word   mn,dt
+    1053                            .word   wn,ls,tt
+    1054                            .endm
+    1055                    
+    1056 00005230           default_table_start
+    1057 00005230                   HSTDMAC 'T','W','G',  8, 3,11, 2, 4 
+    1058 000052b0                   HSTDMAC 'U','T','B',  1,13,10, 5, 2
+    1059 00005330                   HSTDMAC 'C','R','L',  9, 3,10, 3, 1
+    1060 000053b0                   HSTDMAC 'S','A','N',  9, 5, 9, 8, 0
+    1061 00005430                   HSTDMAC 'D','T','L', 12,25, 2, 2, 0
+    1062 000054b0                   HSTDMAC 'I','T','F',  1, 1, 3, 3, 9
+    1063 00005530                   HSTDMAC 'F','A','N',  9,11, 4,10, 3
+    1064 000055b0                   HSTDMAC 'B','T','P',  7, 4, 4,10, 2
+    1065 00005630                   HSTDMAC 'F','E','L',  5, 5, 3, 9, 3
+    1066 000056b0                   HSTDMAC 'C','H','R',  2, 1, 0, 3, 3
+    1067                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+    1068                    **************************************************************************
+    1069                    *                                                                        *
+    1070                    * check_all_records                                                      *
+    1071                    *       input   none                                                     *
+    1072                    *                                                                        *
+    1073                    **************************************************************************
+    1074 00005730           check_all_records
+    1075 00005730     5600          clr     a0
+    1076 00005740     09e9          movi    listwlt,a9
+         00005750 00000370- 
+    1077 00005770     0d3f  car_1   callr   get_cmos_record_anc
+         00005780     01a4  
+    1078 00005790     0d3f          callr   is_record_legit
+         000057a0     00c2  
+    1079 000057b0     c80a          jrc     car_ok
+    1080 000057c0     0d3f          callr   clear_record
+         000057d0     0088  
+    1081 000057e0     57ce          clr     a14
+    1082 000057f0     142e  car_11  dec     a14
+    1083 00005800     91c9          move    a14,*a9+,W
+    1084 00005810     91c9          move    a14,*a9+,W
+    1085 00005820     91c9          move    a14,*a9+,W
+    1086 00005830     57ce          clr     a14
+    1087 00005840     91c9          move    a14,*a9+,W      ;all beat=no
+    1088 00005850     c01d          jruc    car_xm
+    1089 00005860     05ae  car_ok  move    @b_month,a14,W
+         00005870 00000180- 
+    1090 00005890     caf5          jrz     car_11
+    1091 000058a0     05ae          move    @b_day,a14,W
+         000058b0 00000190- 
+    1092 000058d0     caf1          jrz     car_11
+    1093 000058e0     05ae          move    @b_wins,a14,W
+         000058f0 000001d0- 
+    1094 00005910     91c9          move    a14,*a9+,W
+    1095 00005920     05ae          move    @b_losses,a14,W
+         00005930 000001e0- 
+    1096 00005950     91c9          move    a14,*a9+,W
+    1097 00005960     05ae          move    @b_ties,a14,W
+         00005970 000001f0- 
+    1098 00005990     91c9          move    a14,*a9+,W
+    1099 000059a0     05ae          move    @b_teamsbeat,a14,W
+         000059b0 000001a0- 
+    1100 000059d0     0b6e          cmpi    03ffffffh,a14
+         000059e0 fc000000  
+    1101 00005a00     ca01          jrz     carhj
+    1102 00005a10     57ce          clr     a14
+    1103 00005a20     91c9  carhj   move    a14,*a9+,W      ;0 or all 1's for beaten
+    1104 00005a30     1020  car_xm  inc     a0
+    1105 00005a40     0580          move    a0,@WDOG_BONE,W         ;watchdog
+         00005a50 01860030  
+    1106 00005a70     0b40          cmpi    NUMBER_CRECS,a0
+         00005a80     fe1f  
+    1107 00005a90     c4cd          jrlt    car_1
+    1108 00005aa0     0960          rets
+    1109                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   27
+
+    1110                    **************************************************************************
+    1111                    *                                                                        *
+    1112                    * find_match_record                                                      *
+    1113                    *       input   match_* = initials and birthday to match                 *
+    1114                    *       output  a0 = record number                                       *
+    1115                    *               (created if no match)                                    *
+    1116                    *                                                                        *
+    1117                    **************************************************************************
+    1118                    ;find_match_record
+    1119                    ;       mmtm    sp,a7
+    1120                    ;       callr   check_for_record
+    1121                    ;       move    a0,a0
+    1122                    ;       jrnn    fmr_1
+    1123                    ;       callr   get_free_cmos_record
+    1124                    ;       callr   prep_new_record
+    1125                    ;fmr_1  mmfm    sp,a7
+    1126                    ;       rets
+    1127                    
+    1128                    **************************************************************************
+    1129                    *                                                                        *
+    1130                    * check_for_record                                                       *
+    1131                    *       input   match_* = initials and birthday to match                 *
+    1132                    *       output  a0 = record number                                       *
+    1133                    *                    -1 if no record                                     *
+    1134                    *                                                                        *
+    1135                    **************************************************************************
+    1136 00005ab0           check_for_record
+    1137 00005ab0     098f          mmtm    sp,a7
+         00005ac0     0100  
+    1138 00005ad0     5600          clr     a0
+    1139 00005ae0     0d3f  cvmr_2  callr   does_record_match
+         00005af0     0068  
+    1140 00005b00     c806          jrc     cvmr_1
+    1141 00005b10     1020          inc     a0
+    1142 00005b20     0b40          cmpi    NUMBER_CRECS,a0
+         00005b30     fe1f  
+    1143 00005b40     c4f9          jrlt    cvmr_2
+    1144 00005b50     5600          clr     a0
+    1145 00005b60     1420          dec     a0
+    1146 00005b70     09af  cvmr_1  mmfm    sp,a7
+         00005b80     0080  
+    1147 00005b90     0960          rets
+    1148                    
+    1149                    **************************************************************************
+    1150                    *                                                                        *
+    1151                    * prep_new_record                                                        *
+    1152                    *       input   match_b_initial,... = initials and birthday              *
+    1153                    *               a7 = record address                                      *
+    1154                    *                                                                        *
+    1155                    **************************************************************************
+    1156 00005ba0           prep_new_record_a6      ;use a6 as player block who just played
+    1157 00005ba0     098f          mmtm    sp,a0,a1
+         00005bb0     c000  
+    1158 00005bc0     0d3f          callr   cbd4
+         00005bd0     002e  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   28
+
+    1159 00005be0     aec0          movb    *a6(POF_NUMBER),a0
+         00005bf0     0000  
+    1160 00005c00     1420          dec     a0
+    1161 00005c10     2fc0          srl     2,a0
+    1162 00005c20     1420          dec     a0
+    1163 00005c30     0380          abs     a0
+    1164 00005c40     2440          sll     2,a0
+    1165 00005c50     1020          inc     a0
+    1166 00005c60                   GBLOCK  a0,a0
+    1167 00005ca0     b400          move    *a0(POF_TEAM),a0,W      ;our first nextteam is one we lost to
+         00005cb0     0080  
+    1168 00005cc0     c008          jruc    nprrq
+    1169 00005cd0           prep_new_record
+    1170 00005cd0     098f          mmtm    sp,a0,a1
+         00005ce0     c000  
+    1171 00005cf0     0d3f          callr   cbd4
+         00005d00     001b  
+    1172 00005d10     1b40          movk    26,a0
+    1173 00005d20     0d5f          calla   RAND0
+         00005d30 00000000! 
+    1174 00005d50     0580  nprrq   move    a0,@b_nextteam,W
+         00005d60 000001c0- 
+    1175 00005d80     5600          clr     a0
+    1176 00005d90     0580          move    a0,@b_wins,W
+         00005da0 000001d0- 
+    1177 00005dc0     0580          move    a0,@b_losses,W
+         00005dd0 000001e0- 
+    1178 00005df0     0580          move    a0,@b_ties,W
+         00005e00 000001f0- 
+    1179 00005e20     0d3f          callr   cx_get_game_number
+         00005e30     febe  
+    1180 00005e40     0781          move    a1,@b_game_count_last,L
+         00005e50 000002e0- 
+    1181                    
+    1182                    ;       movi    03fffeffh,a0
+    1183                    ;       move    a0,@b_teamsbeat,L
+    1184                    
+    1185 00005e70     0d3f          callr   store_cmos_record               ;ok to not update tables, we are stored later
+         00005e80     01ea  
+    1186 00005e90     09af          mmfm    sp,a0,a1
+         00005ea0     0003  
+    1187 00005eb0     0960          rets
+    1188                    
+    1189 00005ec0     0d3f  cbd4    callr   clear_b_data
+         00005ed0     000e  
+    1190 00005ee0     09e0          movi    b_initial1,a0
+         00005ef0 00000150- 
+    1191 00005f10     09e1          movi    match_b_initial1,a1
+         00005f20 00000100- 
+    1192 00005f40     18ae          movk    5,a14
+    1193 00005f50     9820  pnr_3   move    *a1+,*a0+,W
+    1194 00005f60     3c4e          dsjs    a14,pnr_3
+    1195 00005f70     5600          clr     a0
+    1196 00005f80     0780          move    a0,@b_teamsbeat,L
+         00005f90 000001a0- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   29
+
+    1197 00005fb0     0960          rets
+    1198                    
+    1199 00005fc0           clear_b_data
+    1200 00005fc0     5600          clr     a0
+    1201 00005fd0     09e1          movi    b_initial1,a1
+         00005fe0 00000150- 
+    1202 00006000     9001  cbd1    move    a0,*a1+,W
+    1203 00006010     0b61          cmpi    b_end,a1
+         00006020 fffffcdf- 
+    1204 00006040     c4fb          jrlt    cbd1
+    1205 00006050     0960          rets
+    1206                    
+    1207                    **************************************************************************
+    1208                    *                                                                        *
+    1209                    * clear_record                                                           *
+    1210                    *       input   a0 = record #                                            *
+    1211                    *                                                                        *
+    1212                    **************************************************************************
+    1213 00006060           clear_record
+    1214 00006060     098f          mmtm    sp,a0,a7,a9
+         00006070     8140  
+    1215 00006080     0d5f          calla   get_cmos_record_address
+         00006090 00006a90' 
+    1216 000060b0     5600          clr     a0
+    1217 000060c0     180e          movk    32,a14
+    1218 000060d0     09e9          movi    read_data_temp,a9
+         000060e0 00000000- 
+    1219 00006100     8c09  cr_st1  movb    a0,*a9
+    1220 00006110     1109          addk    8,a9
+    1221 00006120     3c6e          dsjs    a14,cr_st1
+    1222 00006130     0d3f          callr   write_32
+         00006140     035e  
+    1223 00006150     09af          mmfm    sp,a0,a7,a9
+         00006160     0281  
+    1224 00006170     0960          rets
+    1225                    
+    1226                    **************************************************************************
+    1227                    *                                                                        *
+    1228                    * does_record_match                                                      *
+    1229                    *       input   a0 = record number                                       *
+    1230                    *               match_* = initials and birthday                          *
+    1231                    *       output  c  = match                                               *
+    1232                    *               nc = no match                                            *
+    1233                    *                                                                        *
+    1234                    **************************************************************************
+    1235 00006180           does_record_match
+    1236 00006180     098f          mmtm    sp,a0,a1,a2,a3,a7
+         00006190     f100  
+    1237 000061a0     0d3f          callr   get_cmos_record_address
+         000061b0     008d  
+    1238 000061c0     0d3f          callr   get_cmos_initials_birthday
+         000061d0     00cf  
+    1239 000061e0     09e0          movi    b_initial1,a0
+         000061f0 00000150- 
+    1240 00006210     09e1          movi    match_b_initial1,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   30
+
+         00006220 00000100- 
+    1241 00006240     18ae          movk    5,a14
+    1242 00006250     9402  drm_1   move    *a0+,a2,W
+    1243 00006260     9423          move    *a1+,a3,W
+    1244 00006270     4843          cmp     a2,a3
+    1245 00006280     cb0c          jrnz    drm_n
+    1246 00006290     3cae          dsjs    a14,drm_1
+    1247 000062a0     09af          mmfm    sp,a0,a1,a2,a3,a7
+         000062b0     008f  
+    1248 000062c0     098f          mmtm    sp,a0,a1,a2,a3,a7
+         000062d0     f100  
+    1249 000062e0     0d3f          callr   get_cmos_record_anc
+         000062f0     00ed  
+    1250 00006300     0d3f          callr   is_record_legit
+         00006310     000b  
+    1251 00006320     c806          jrc     drm_y
+    1252 00006330     0d3f          callr   clear_record
+         00006340     ffd1  
+    1253 00006350     09af  drm_n   mmfm    sp,a0,a1,a2,a3,a7
+         00006360     008f  
+    1254 00006370     0320          clrc
+    1255 00006380     0960          rets
+    1256 00006390     09af  drm_y   mmfm    sp,a0,a1,a2,a3,a7
+         000063a0     008f  
+    1257 000063b0     0de0          setc
+    1258 000063c0     0960          rets
+    1259                    
+    1260                    **************************************************************************
+    1261                    *                                                                        *
+    1262                    * is_record_legit                                                        *
+    1263                    *       input   data stuffed in vars                                     *
+    1264                    *       output  c  = record is ok                                        *
+    1265                    *               nc = record is corrupted                                 *
+    1266                    *                                                                        *
+    1267                    **************************************************************************
+    1268 000063d0           is_record_legit
+    1269 000063d0     098f          mmtm    sp,a0
+         000063e0     8000  
+    1270 000063f0     05a0          move    @b_initial1,a0,W
+         00006400 00000150- 
+    1271 00006420     0b40          cmpi    27,a0
+         00006430     ffe4  
+    1272 00006440     c360          jrhi    irl_n
+    1273 00006450     05a0          move    @b_initial2,a0,W
+         00006460 00000160- 
+    1274 00006480     0b40          cmpi    27,a0
+         00006490     ffe4  
+    1275 000064a0     c35a          jrhi    irl_n
+    1276 000064b0     05a0          move    @b_initial3,a0,W
+         000064c0 00000170- 
+    1277 000064e0     0b40          cmpi    27,a0
+         000064f0     ffe4  
+    1278 00006500     c354          jrhi    irl_n
+    1279 00006510     05a0          move    @b_month,a0,W
+         00006520 00000180- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   31
+
+    1280 00006540     cb05          jrnz    irl_tn
+    1281 00006550     05a0          move    @b_day,a0,W
+         00006560 00000190- 
+    1282 00006580     ca48          jrz     irl_y
+    1283 00006590     c04b          jruc    irl_n
+    1284 000065a0     0b40  irl_tn  cmpi    12,a0
+         000065b0     fff3  
+    1285 000065c0     c348          jrhi    irl_n
+    1286 000065d0     05a0          move    @b_day,a0,W
+         000065e0 00000190- 
+    1287 00006600     ca44          jrz     irl_n
+    1288 00006610     0b40          cmpi    31,a0
+         00006620     ffe0  
+    1289 00006630     c341          jrhi    irl_n
+    1290 00006640     05a0  irl_un  move    @b_teammate_initial1,a0,W
+         00006650 00000220- 
+    1291 00006670     0b40          cmpi    27,a0
+         00006680     ffe4  
+    1292 00006690     c33b          jrhi    irl_n
+    1293 000066a0     05a0          move    @b_teammate_initial2,a0,W
+         000066b0 00000230- 
+    1294 000066d0     0b40          cmpi    27,a0
+         000066e0     ffe4  
+    1295 000066f0     c335          jrhi    irl_n
+    1296 00006700     05a0          move    @b_teammate_initial3,a0,W
+         00006710 00000240- 
+    1297 00006730     0b40          cmpi    27,a0
+         00006740     ffe4  
+    1298 00006750     c32f          jrhi    irl_n
+    1299 00006760     05a0          move    @b_opp1_initial1,a0,W
+         00006770 00000250- 
+    1300 00006790     0b40          cmpi    27,a0
+         000067a0     ffe4  
+    1301 000067b0     c329          jrhi    irl_n
+    1302 000067c0     05a0          move    @b_opp1_initial2,a0,W
+         000067d0 00000260- 
+    1303 000067f0     0b40          cmpi    27,a0
+         00006800     ffe4  
+    1304 00006810     c323          jrhi    irl_n
+    1305 00006820     05a0          move    @b_opp1_initial3,a0,W
+         00006830 00000270- 
+    1306 00006850     0b40          cmpi    27,a0
+         00006860     ffe4  
+    1307 00006870     c31d          jrhi    irl_n
+    1308 00006880     05a0          move    @b_opp2_initial1,a0,W
+         00006890 00000280- 
+    1309 000068b0     0b40          cmpi    27,a0
+         000068c0     ffe4  
+    1310 000068d0     c317          jrhi    irl_n
+    1311 000068e0     05a0          move    @b_opp2_initial2,a0,W
+         000068f0 00000290- 
+    1312 00006910     0b40          cmpi    27,a0
+         00006920     ffe4  
+    1313 00006930     c311          jrhi    irl_n
+    1314 00006940     05a0          move    @b_opp2_initial3,a0,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   32
+
+         00006950 000002a0- 
+    1315 00006970     0b40          cmpi    27,a0
+         00006980     ffe4  
+    1316 00006990     c30b          jrhi    irl_n
+    1317 000069a0     0d3f          callr   compute_bchecksum
+         000069b0     01c7  
+    1318 000069c0     05ae          move    @b_checksum,a14,W
+         000069d0 00000300- 
+    1319 000069f0     480e          cmp     a0,a14
+    1320 00006a00     cb04          jrnz    irl_n
+    1321 00006a10     0de0  irl_y   setc
+    1322 00006a20     09af          mmfm    sp,a0
+         00006a30     0001  
+    1323 00006a40     0960          rets
+    1324 00006a50     0320  irl_n   clrc
+    1325 00006a60     09af          mmfm    sp,a0
+         00006a70     0001  
+    1326 00006a80     0960          rets
+    1327                    
+    1328                    **************************************************************************
+    1329                    *                                                                        *
+    1330                    * get_cmos_record_address                                                *
+    1331                    *       input   a0 = record #                                            *
+    1332                    *       output  a7 = address                                             *
+    1333                    *                                                                        *
+    1334                    **************************************************************************
+    1335 00006a90           get_cmos_record_address
+    1336 00006a90     4c07          move    a0,a7
+    1337 00006aa0     0b47          cmpi    NUMBER_CRECS,a7
+         00006ab0     fe1f  
+    1338 00006ac0     c805          jrlo    gcra1
+    1339 00006ad0                   LOCKUP
+    1340 00006b00     09c7          movi    NUMBER_CRECS-1,a7
+         00006b10     01df  
+    1341 00006b20     2527  gcra1   sll     9,a7
+    1342 00006b30     0b27          addi    CM_PLAYERSTART,a7
+         00006b40 01418000  
+    1343 00006b60     0960          rets
+    1344                    
+    1345                    **************************************************************************
+    1346                    *                                                                        *
+    1347                    * is_record_free                                                         *
+    1348                    *       input   a7 = address                                             *
+    1349                    *       output  c  = free                                                *
+    1350                    *               nc = not free                                            *
+    1351                    *                                                                        *
+    1352                    **************************************************************************
+    1353 00006b70           is_record_free
+    1354 00006b70     098f          mmtm    sp,a0,a7
+         00006b80     8100  
+    1355 00006b90     0d3f          callr   read_4
+         00006ba0     02a7  
+    1356 00006bb0     0558          setf    24,0,0
+    1357 00006bc0     05a0          move    @read_data_temp,a0,0
+         00006bd0 00000000- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   33
+
+    1358 00006bf0     0570          setf    16,1,0
+    1359 00006c00     ca04          jrz     irf_y
+    1360 00006c10     0320  irf_n   clrc
+    1361 00006c20     09af          mmfm    sp,a0,a7
+         00006c30     0081  
+    1362 00006c40     0960          rets
+    1363 00006c50     0de0  irf_y   setc
+    1364 00006c60     09af          mmfm    sp,a0,a7
+         00006c70     0081  
+    1365 00006c80     0960          rets
+    1366                    
+    1367                    **************************************************************************
+    1368                    *                                                                        *
+    1369                    * get_cmos_total_games                                                   *
+    1370                    *       input   a7 = address of record                                   *
+    1371                    *       output  a3 = total games played                                  *
+    1372                    *                                                                        *
+    1373                    **************************************************************************
+    1374 00006c90           get_cmos_total_games
+    1375 00006c90     098f          mmtm    sp,a0,a7,a9
+         00006ca0     8140  
+    1376 00006cb0     0b07          addi    7*C_BYTE_SIZE,a7                ;skip 7 bytes
+         00006cc0     0070  
+    1377 00006cd0     0d3f          callr   read_5
+         00006ce0     0291  
+    1378 00006cf0     09e9          movi    read_data_temp+5,a9             ;and 5 bits to get to b_wins
+         00006d00 00000005- 
+    1379 00006d20     0d3f          callr   grab_11
+         00006d30     025c  
+    1380 00006d40     0580          move    a0,@b_wins,W
+         00006d50 000001d0- 
+    1381 00006d70     0d3f          callr   grab_11
+         00006d80     0257  
+    1382 00006d90     0580          move    a0,@b_losses,W
+         00006da0 000001e0- 
+    1383 00006dc0     0d3f          callr   grab_8
+         00006dd0     024e  
+    1384 00006de0     0580          move    a0,@b_ties,W
+         00006df0 000001f0- 
+    1385 00006e10     05ae          move    @b_losses,a14,W
+         00006e20 000001e0- 
+    1386 00006e40     41c0          add     a14,a0
+    1387 00006e50     05ae          move    @b_wins,a14,W
+         00006e60 000001d0- 
+    1388 00006e80     41c0          add     a14,a0
+    1389 00006e90     4c03          move    a0,a3
+    1390 00006ea0     09af          mmfm    sp,a0,a7,a9
+         00006eb0     0281  
+    1391 00006ec0     0960          rets
+    1392                    
+    1393                    **************************************************************************
+    1394                    *                                                                        *
+    1395                    * get_cmos_initials_birthday                                             *
+    1396                    *       input   a7 = address of record                                   *
+    1397                    *       output  b_initial1,2,3 = initials                                *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   34
+
+    1398                    *               b_month, b_day...                                        *
+    1399                    *                                                                        *
+    1400                    **************************************************************************
+    1401 00006ed0           get_cmos_initials_birthday
+    1402 00006ed0     098f          mmtm    sp,a0,a7,a9
+         00006ee0     8140  
+    1403 00006ef0     0d3f          callr   read_4
+         00006f00     0271  
+    1404 00006f10     09e9          movi    read_data_temp,a9
+         00006f20 00000000- 
+    1405 00006f40     0d3f          callr   grab_5
+         00006f50     022e  
+    1406 00006f60     0580          move    a0,@b_initial1,W
+         00006f70 00000150- 
+    1407 00006f90     0d3f          callr   grab_5
+         00006fa0     0229  
+    1408 00006fb0     0580          move    a0,@b_initial2,W
+         00006fc0 00000160- 
+    1409 00006fe0     0d3f          callr   grab_5
+         00006ff0     0224  
+    1410 00007000     0580          move    a0,@b_initial3,W
+         00007010 00000170- 
+    1411 00007030     0d3f          callr   grab_4
+         00007040     021b  
+    1412 00007050     0580          move    a0,@b_month,W
+         00007060 00000180- 
+    1413 00007080     0d3f          callr   grab_5
+         00007090     021a  
+    1414 000070a0     0580          move    a0,@b_day,W
+         000070b0 00000190- 
+    1415 000070d0     09af          mmfm    sp,a0,a7,a9
+         000070e0     0281  
+    1416 000070f0     0960          rets
+    1417                    
+    1418                    **************************************************************************
+    1419                    *                                                                        *
+    1420                    * get_cmos_record_a                                                      *
+    1421                    *       input   a0 = record #                                            *
+    1422                    *       output  all data stuffed                                         *
+    1423                    *                                                                        *
+    1424                    **************************************************************************
+    1425 00007100           get_cmos_record_a
+    1426 00007100     0d3f          callr   get_cmos_record_address
+         00007110     ff97  
+    1427 00007120     0d3f          callr   get_cmos_record
+         00007130     000e  
+    1428 00007140     0d3f          callr   is_record_legit
+         00007150     ff27  
+    1429 00007160     c805          jrc     gcra8
+    1430 00007170                   LOCKUP
+    1431 000071a0     0d3f          callr   clear_record
+         000071b0     feea  
+    1432 000071c0     0960  gcra8   rets
+    1433                    
+    1434 000071d0           get_cmos_record_anc
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   35
+
+    1435 000071d0     0d3f          callr   get_cmos_record_address
+         000071e0     ff8a  
+    1436 000071f0     0d3f          callr   get_cmos_record
+         00007200     0001  
+    1437 00007210     0960          rets
+    1438 00007220           get_cmos_record
+    1439 00007220     098f          mmtm    sp,a0,a7,a9,A10
+         00007230     8160  
+    1440 00007240     0d3f          callr   read_32
+         00007250     0240  
+    1441 00007260     09e9          movi    read_data_temp,a9
+         00007270 00000000- 
+    1442 00007290     0d3f          callr   grab_5
+         000072a0     01f9  
+    1443 000072b0     0580          move    a0,@b_initial1,W
+         000072c0 00000150- 
+    1444 000072e0     0d3f          callr   grab_5
+         000072f0     01f4  
+    1445 00007300     0580          move    a0,@b_initial2,W
+         00007310 00000160- 
+    1446 00007330     0d3f          callr   grab_5
+         00007340     01ef  
+    1447 00007350     0580          move    a0,@b_initial3,W
+         00007360 00000170- 
+    1448 00007380     0d3f          callr   grab_4
+         00007390     01e6  
+    1449 000073a0     0580          move    a0,@b_month,W
+         000073b0 00000180- 
+    1450 000073d0     0d3f          callr   grab_5
+         000073e0     01e5  
+    1451 000073f0     0580          move    a0,@b_day,W
+         00007400 00000190- 
+    1452 00007420     0d3f          callr   grab_32
+         00007430     01f4  
+    1453 00007440     0780          move    a0,@b_teamsbeat,L
+         00007450 000001a0- 
+    1454 00007470     0d3f          callr   grab_5
+         00007480     01db  
+    1455 00007490     0580          move    a0,@b_nextteam,W
+         000074a0 000001c0- 
+    1456 000074c0     0d3f          callr   grab_11
+         000074d0     01e2  
+    1457 000074e0     0580          move    a0,@b_wins,W
+         000074f0 000001d0- 
+    1458 00007510     0d3f          callr   grab_11
+         00007520     01dd  
+    1459 00007530     0580          move    a0,@b_losses,W
+         00007540 000001e0- 
+    1460 00007560     0d3f          callr   grab_8
+         00007570     01d4  
+    1461 00007580     0580          move    a0,@b_ties,W
+         00007590 000001f0- 
+    1462 000075b0     0d3f          callr   grab_5
+         000075c0     01c7  
+    1463 000075d0     0580          move    a0,@b_lastteam1,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   36
+
+         000075e0 00000200- 
+    1464 00007600     0d3f          callr   grab_5
+         00007610     01c2  
+    1465 00007620     0580          move    a0,@b_lastteam2,W
+         00007630 00000210- 
+    1466 00007650     0d3f          callr   grab_5
+         00007660     01bd  
+    1467 00007670     0580          move    a0,@b_teammate_initial1,W
+         00007680 00000220- 
+    1468 000076a0     0d3f          callr   grab_5
+         000076b0     01b8  
+    1469 000076c0     0580          move    a0,@b_teammate_initial2,W
+         000076d0 00000230- 
+    1470 000076f0     0d3f          callr   grab_5
+         00007700     01b3  
+    1471 00007710     0580          move    a0,@b_teammate_initial3,W
+         00007720 00000240- 
+    1472 00007740     0d3f          callr   grab_5
+         00007750     01ae  
+    1473 00007760     0580          move    a0,@b_opp1_initial1,W
+         00007770 00000250- 
+    1474 00007790     0d3f          callr   grab_5
+         000077a0     01a9  
+    1475 000077b0     0580          move    a0,@b_opp1_initial2,W
+         000077c0 00000260- 
+    1476 000077e0     0d3f          callr   grab_5
+         000077f0     01a4  
+    1477 00007800     0580          move    a0,@b_opp1_initial3,W
+         00007810 00000270- 
+    1478 00007830     0d3f          callr   grab_5
+         00007840     019f  
+    1479 00007850     0580          move    a0,@b_opp2_initial1,W
+         00007860 00000280- 
+    1480 00007880     0d3f          callr   grab_5
+         00007890     019a  
+    1481 000078a0     0580          move    a0,@b_opp2_initial2,W
+         000078b0 00000290- 
+    1482 000078d0     0d3f          callr   grab_5
+         000078e0     0195  
+    1483 000078f0     0580          move    a0,@b_opp2_initial3,W
+         00007900 000002a0- 
+    1484 00007920     0d3f          callr   grab_6
+         00007930     0194  
+    1485 00007940     0580          move    a0,@b_last_score1,W
+         00007950 000002b0- 
+    1486 00007970     0d3f          callr   grab_6
+         00007980     018f  
+    1487 00007990     0580          move    a0,@b_last_score2,W
+         000079a0 000002c0- 
+    1488 000079c0     0d3f          callr   grab_4
+         000079d0     0182  
+    1489 000079e0     0580          move    a0,@b_dronemod,W
+         000079f0 000002d0- 
+    1490 00007a10     0d3f          callr   grab_18
+         00007a20     0191  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   37
+
+    1491 00007a30     0780          move    a0,@b_game_count_last,L
+         00007a40 000002e0- 
+    1492 00007a60     0d3f          callr   grab_8
+         00007a70     0184  
+    1493 00007a80     0580          move    a0,@b_checksum,W
+         00007a90 00000300- 
+    1494 00007ab0     0d3f          callr   grab_8
+         00007ac0     017f  
+    1495 00007ad0     0580          move    a0,@b_streak,W
+         00007ae0 00000310- 
+    1496 00007b00     09af          mmfm    sp,a0,a7,a9,A10
+         00007b10     0681  
+    1497 00007b20     0960          rets
+    1498                    
+    1499                    **************************************************************************
+    1500                    *                                                                        *
+    1501                    * store_cmos_record                                                      *
+    1502                    *       input   a7 = address of record                                   *
+    1503                    *               all data stuffed                                         *
+    1504                    *                                                                        *
+    1505                    **************************************************************************
+    1506 00007b30           store_cmos_record_a
+    1507 00007b30     4c07          move    a0,a7
+    1508 00007b40     24c7          sll     6,a7
+    1509 00007b50     0b27          addi    listwlt,a7
+         00007b60 00000370- 
+    1510 00007b80     05ae          move    @b_wins,a14,W
+         00007b90 000001d0- 
+    1511 00007bb0     91c7          move    a14,*a7+,W
+    1512 00007bc0     05ae          move    @b_losses,a14,W
+         00007bd0 000001e0- 
+    1513 00007bf0     91c7          move    a14,*a7+,W
+    1514 00007c00     05ae          move    @b_ties,a14,W
+         00007c10 000001f0- 
+    1515 00007c30     91c7          move    a14,*a7+,W              ;store our record in easy to use ram
+    1516 00007c40     05ae          move    @b_teamsbeat,a14,W
+         00007c50 000001a0- 
+    1517 00007c70     0b6e          cmpi    03ffffffh,a14
+         00007c80 fc000000  
+    1518 00007ca0     ca01          jrz     cajeg
+    1519 00007cb0     57ce          clr     a14
+    1520 00007cc0     91c7  cajeg   move    a14,*a7+,W      ;0 or all 1's for beaten
+    1521 00007cd0     0d5f          calla   get_cmos_record_address
+         00007ce0 00006a90' 
+    1522 00007d00     0d3f          callr   store_cmos_record
+         00007d10     0001  
+    1523 00007d20     0960          rets
+    1524 00007d30           store_cmos_record
+    1525 00007d30     098f          mmtm    sp,a0,a7,a9
+         00007d40     8140  
+    1526 00007d50     09e9          movi    read_data_temp,a9
+         00007d60 00000000- 
+    1527 00007d80     05a0          move    @b_initial1,a0,W
+         00007d90 00000150- 
+    1528 00007db0     0d3f          callr   stab_5
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   38
+
+         00007dc0     0167  
+    1529 00007dd0     05a0          move    @b_initial2,a0,W
+         00007de0 00000160- 
+    1530 00007e00     0d3f          callr   stab_5
+         00007e10     0162  
+    1531 00007e20     05a0          move    @b_initial3,a0,W
+         00007e30 00000170- 
+    1532 00007e50     0d3f          callr   stab_5
+         00007e60     015d  
+    1533 00007e70     05a0          move    @b_month,a0,W
+         00007e80 00000180- 
+    1534 00007ea0     0d3f          callr   stab_4
+         00007eb0     0154  
+    1535 00007ec0     05a0          move    @b_day,a0,W
+         00007ed0 00000190- 
+    1536 00007ef0     0d3f          callr   stab_5
+         00007f00     0153  
+    1537 00007f10     07a0          move    @b_teamsbeat,a0,L
+         00007f20 000001a0- 
+    1538 00007f40     0d3f          callr   stab_32
+         00007f50     0162  
+    1539 00007f60     05a0          move    @b_nextteam,a0,W
+         00007f70 000001c0- 
+    1540 00007f90     0d3f          callr   stab_5
+         00007fa0     0149  
+    1541 00007fb0     05a0          move    @b_wins,a0,W
+         00007fc0 000001d0- 
+    1542 00007fe0     0d3f          callr   stab_11
+         00007ff0     0150  
+    1543 00008000     05a0          move    @b_losses,a0,W
+         00008010 000001e0- 
+    1544 00008030     0d3f          callr   stab_11
+         00008040     014b  
+    1545 00008050     05a0          move    @b_ties,a0,W
+         00008060 000001f0- 
+    1546 00008080     0d3f          callr   stab_8
+         00008090     0142  
+    1547 000080a0     05a0          move    @b_lastteam1,a0,W
+         000080b0 00000200- 
+    1548 000080d0     0d3f          callr   stab_5
+         000080e0     0135  
+    1549 000080f0     05a0          move    @b_lastteam2,a0,W
+         00008100 00000210- 
+    1550 00008120     0d3f          callr   stab_5
+         00008130     0130  
+    1551 00008140     05a0          move    @b_teammate_initial1,a0,W
+         00008150 00000220- 
+    1552 00008170     0d3f          callr   stab_5
+         00008180     012b  
+    1553 00008190     05a0          move    @b_teammate_initial2,a0,W
+         000081a0 00000230- 
+    1554 000081c0     0d3f          callr   stab_5
+         000081d0     0126  
+    1555 000081e0     05a0          move    @b_teammate_initial3,a0,W
+         000081f0 00000240- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   39
+
+    1556 00008210     0d3f          callr   stab_5
+         00008220     0121  
+    1557 00008230     05a0          move    @b_opp1_initial1,a0,W
+         00008240 00000250- 
+    1558 00008260     0d3f          callr   stab_5
+         00008270     011c  
+    1559 00008280     05a0          move    @b_opp1_initial2,a0,W
+         00008290 00000260- 
+    1560 000082b0     0d3f          callr   stab_5
+         000082c0     0117  
+    1561 000082d0     05a0          move    @b_opp1_initial3,a0,W
+         000082e0 00000270- 
+    1562 00008300     0d3f          callr   stab_5
+         00008310     0112  
+    1563 00008320     05a0          move    @b_opp2_initial1,a0,W
+         00008330 00000280- 
+    1564 00008350     0d3f          callr   stab_5
+         00008360     010d  
+    1565 00008370     05a0          move    @b_opp2_initial2,a0,W
+         00008380 00000290- 
+    1566 000083a0     0d3f          callr   stab_5
+         000083b0     0108  
+    1567 000083c0     05a0          move    @b_opp2_initial3,a0,W
+         000083d0 000002a0- 
+    1568 000083f0     0d3f          callr   stab_5
+         00008400     0103  
+    1569 00008410     05a0          move    @b_last_score1,a0,W
+         00008420 000002b0- 
+    1570 00008440     0d3f          callr   stab_6
+         00008450     0102  
+    1571 00008460     05a0          move    @b_last_score2,a0,W
+         00008470 000002c0- 
+    1572 00008490     0d3f          callr   stab_6
+         000084a0     00fd  
+    1573 000084b0     05a0          move    @b_dronemod,a0,W
+         000084c0 000002d0- 
+    1574 000084e0     0d3f          callr   stab_4
+         000084f0     00f0  
+    1575 00008500     07a0          move    @b_game_count_last,a0,L
+         00008510 000002e0- 
+    1576 00008530     0d3f          callr   stab_18
+         00008540     00ff  
+    1577 00008550     0d3f          callr   compute_bchecksum
+         00008560     000c  
+    1578 00008570     0d3f          callr   stab_8
+         00008580     00f3  
+    1579 00008590     05a0          move    @b_streak,a0,W
+         000085a0 00000310- 
+    1580 000085c0     0d3f          callr   stab_8
+         000085d0     00ee  
+    1581 000085e0     0d3f          callr   write_32
+         000085f0     0113  
+    1582 00008600     09af          mmfm    sp,a0,a7,a9
+         00008610     0281  
+    1583 00008620     0960          rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   40
+
+    1584                    
+    1585 00008630           compute_bchecksum       ;add summing of initials
+    1586 00008630     5600          clr     a0
+    1587 00008640     05ae          move    @b_initial1,a14
+         00008650 00000150- 
+    1588 00008670     41c0          add     a14,a0
+    1589 00008680     05ae          move    @b_initial2,a14
+         00008690 00000160- 
+    1590 000086b0     41c0          add     a14,a0
+    1591 000086c0     05ae          move    @b_initial3,a14
+         000086d0 00000170- 
+    1592 000086f0     41c0          add     a14,a0
+    1593 00008700     05ae          move    @b_month,a14
+         00008710 00000180- 
+    1594 00008730     41c0          add     a14,a0
+    1595 00008740     05ae          move    @b_day,a14
+         00008750 00000190- 
+    1596 00008770     41c0          add     a14,a0
+    1597 00008780     07ee          movb    @b_teamsbeat,a14
+         00008790 000001a0- 
+    1598 000087b0     41c0          add     a14,a0
+    1599 000087c0     07ee          movb    @b_teamsbeat+8,a14
+         000087d0 000001a8- 
+    1600 000087f0     41c0          add     a14,a0
+    1601 00008800     07ee          movb    @b_teamsbeat+16,a14
+         00008810 000001b0- 
+    1602 00008830     41c0          add     a14,a0
+    1603 00008840     07ee          movb    @b_teamsbeat+24,a14
+         00008850 000001b8- 
+    1604 00008870     41c0          add     a14,a0
+    1605 00008880     07ee          movb    @b_nextteam,a14
+         00008890 000001c0- 
+    1606 000088b0     41c0          add     a14,a0
+    1607 000088c0     07ee          movb    @b_wins,a14
+         000088d0 000001d0- 
+    1608 000088f0     41c0          add     a14,a0
+    1609 00008900     07ee          movb    @b_wins+8,a14
+         00008910 000001d8- 
+    1610 00008930     41c0          add     a14,a0
+    1611 00008940     07ee          movb    @b_losses,a14
+         00008950 000001e0- 
+    1612 00008970     41c0          add     a14,a0
+    1613 00008980     07ee          movb    @b_losses+8,a14
+         00008990 000001e8- 
+    1614 000089b0     41c0          add     a14,a0
+    1615 000089c0     07ee          movb    @b_ties,a14
+         000089d0 000001f0- 
+    1616 000089f0     41c0          add     a14,a0
+    1617 00008a00     07ee          movb    @b_lastteam1,a14
+         00008a10 00000200- 
+    1618 00008a30     41c0          add     a14,a0
+    1619 00008a40     07ee          movb    @b_lastteam2,a14
+         00008a50 00000210- 
+    1620 00008a70     41c0          add     a14,a0
+    1621 00008a80     07ee          movb    @b_teammate_initial1,a14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   41
+
+         00008a90 00000220- 
+    1622 00008ab0     41c0          add     a14,a0
+    1623 00008ac0     07ee          movb    @b_teammate_initial2,a14
+         00008ad0 00000230- 
+    1624 00008af0     41c0          add     a14,a0
+    1625 00008b00     07ee          movb    @b_teammate_initial3,a14
+         00008b10 00000240- 
+    1626 00008b30     41c0          add     a14,a0
+    1627 00008b40     07ee          movb    @b_opp1_initial1,a14
+         00008b50 00000250- 
+    1628 00008b70     41c0          add     a14,a0
+    1629 00008b80     07ee          movb    @b_opp1_initial2,a14
+         00008b90 00000260- 
+    1630 00008bb0     41c0          add     a14,a0
+    1631 00008bc0     07ee          movb    @b_opp1_initial3,a14
+         00008bd0 00000270- 
+    1632 00008bf0     41c0          add     a14,a0
+    1633 00008c00     07ee          movb    @b_opp2_initial1,a14
+         00008c10 00000280- 
+    1634 00008c30     41c0          add     a14,a0
+    1635 00008c40     07ee          movb    @b_opp2_initial2,a14
+         00008c50 00000290- 
+    1636 00008c70     41c0          add     a14,a0
+    1637 00008c80     07ee          movb    @b_opp2_initial3,a14
+         00008c90 000002a0- 
+    1638 00008cb0     41c0          add     a14,a0
+    1639 00008cc0     07ee          movb    @b_last_score1,a14
+         00008cd0 000002b0- 
+    1640 00008cf0     41c0          add     a14,a0
+    1641 00008d00     07ee          movb    @b_last_score2,a14
+         00008d10 000002c0- 
+    1642 00008d30     41c0          add     a14,a0
+    1643 00008d40     05ae          move    @b_dronemod,a14,W
+         00008d50 000002d0- 
+    1644 00008d70     41c0          add     a14,a0
+    1645 00008d80     07ee          movb    @b_game_count_last,a14
+         00008d90 000002e0- 
+    1646 00008db0     41c0          add     a14,a0
+    1647 00008dc0     07ee          movb    @b_game_count_last+8,a14
+         00008dd0 000002e8- 
+    1648 00008df0     41c0          add     a14,a0
+    1649 00008e00     07ee          movb    @b_game_count_last+16,a14
+         00008e10 000002f0- 
+    1650 00008e30     41c0          add     a14,a0
+    1651 00008e40     2700          sll     24,a0
+    1652 00008e50     2d00          srl     24,a0
+    1653 00008e60     0bc0          xori    10110110b,a0
+         00008e70 000000b6  
+    1654 00008e90     0960          rets
+    1655                    
+    1656                    **************************************************************************
+    1657                    *                                                                        *
+    1658                    * free_up_cmos_record                                                    *
+    1659                    *       input   nothing                                                  *
+    1660                    *       output  a0 = record # freed                                      *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   42
+
+    1661                    *               a7 = record address                                      *
+    1662                    *                                                                        *
+    1663                    **************************************************************************
+    1664 00008ea0           free_up_cmos_record
+    1665 00008ea0     5610          clr     b0
+    1666 00008eb0     5663          clr     a3                      ;our minimum
+    1667 00008ec0     0d3f          callr   cx_get_game_number
+         00008ed0     fbb4  
+    1668 00008ee0     5684          clr     a4              ;just for EXTREME safety
+    1669 00008ef0     4e10  fucr1   move    b0,a0
+    1670 00008f00     0d3f          callr   get_cmos_record_address
+         00008f10     fdb7  
+    1671 00008f20     0d3f          callr   get_cmos_pgame_number_a0
+         00008f30     0014  
+    1672 00008f40     0d3f          callr   get_18_difference
+         00008f50     000b  
+    1673 00008f60     4860          cmp     a3,a0
+    1674 00008f70     c802          jrlo    fucr2
+    1675 00008f80     4e14          move    b0,a4
+    1676 00008f90     4c03          move    a0,a3
+    1677 00008fa0     1030  fucr2   inc     b0
+    1678 00008fb0     0b50          cmpi    NUMBER_CRECS,b0
+         00008fc0     fe1f  
+    1679 00008fd0     c4f1          jrlt    fucr1
+    1680 00008fe0     4c80          move    a4,a0
+    1681 00008ff0     c000          jruc    get_cmos_record_address
+         00009000     fda8  
+    1682                    
+    1683 00009010           get_18_difference
+    1684                      ;a0 = 18 bit player last game
+    1685                      ;a1 = 18 bit current game
+    1686 00009010     4420          sub     a1,a0
+    1687 00009020     03a0          neg     a0
+    1688 00009030     c103          jrp     g18d1
+    1689 00009040     0b20          addi    40000h,a0       ;18 bits + 1
+         00009050 00040000  
+    1690 00009070     0960  g18d1   rets
+    1691                    
+    1692 00009080           get_cmos_pgame_number_a0
+    1693 00009080     0b07          addi    19*C_BYTE_SIZE,a7
+         00009090     0130  
+    1694 000090a0     0d3f          callr   read_3
+         000090b0     0058  
+    1695 000090c0     09e9          movi    read_data_temp+6,a9
+         000090d0 00000006- 
+    1696 000090f0     c024          jruc    grab_18
+    1697                    
+    1698                    **************************************************************************
+    1699                    *                                                                        *
+    1700                    * get_free_cmos_record                                                   *
+    1701                    *       input   nothing                                                  *
+    1702                    *       output  a0 = record free                                         *
+    1703                    *               a7 = record address                                      *
+    1704                    *                                                                        *
+    1705                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   43
+
+    1706 00009100           get_free_cmos_record
+    1707 00009100     5600          clr     a0
+    1708 00009110     0d3f  gfc1    callr   get_cmos_record_address
+         00009120     fd96  
+    1709 00009130     0d3f          callr   is_record_free
+         00009140     fda2  
+    1710 00009150     c805          jrc     gfcr_8
+    1711 00009160     1020          inc     a0
+    1712 00009170     0b40          cmpi    NUMBER_CRECS,a0
+         00009180     fe1f  
+    1713 00009190     c4f7          jrlt    gfc1
+    1714 000091a0     c0cf          jruc    free_up_cmos_record
+    1715 000091b0     0960  gfcr_8  rets
+    1716                    
+    1717                    
+    1718 000091c0     0541  grab_1  setf    1,0,0           ;grabs 1 bit from *a9
+    1719 000091d0     9520          move    *a9+,a0,0
+    1720 000091e0     0570          setf    16,1,0
+    1721 000091f0     0960          rets
+    1722 00009200     0544  grab_4  setf    4,0,0           ;grabs 4 bits from *a9
+    1723 00009210     9520          move    *a9+,a0,0
+    1724 00009220     0570          setf    16,1,0
+    1725 00009230     0960          rets
+    1726 00009240     0545  grab_5  setf    5,0,0           ;grabs 5 bits from *a9
+    1727 00009250     9520          move    *a9+,a0,0
+    1728 00009260     0570          setf    16,1,0
+    1729 00009270     0960          rets
+    1730 00009280     0546  grab_6  setf    6,0,0           ;grabs 6 bits from *a9
+    1731 00009290     9520          move    *a9+,a0,0
+    1732 000092a0     0570          setf    16,1,0
+    1733 000092b0     0960          rets
+    1734 000092c0     0548  grab_8  setf    8,0,0           ;grabs 8 bits from *a9
+    1735 000092d0     9520          move    *a9+,a0,0
+    1736 000092e0     0570          setf    16,1,0
+    1737 000092f0     0960          rets
+    1738 00009300     054b  grab_11 setf    11,0,0          ;grabs 11 bits from *a9
+    1739 00009310     9520          move    *a9+,a0,0
+    1740 00009320     0570          setf    16,1,0
+    1741 00009330     0960          rets
+    1742 00009340     0552  grab_18 setf    18,0,0          ;grabs 18 bits from *a9
+    1743 00009350     9520          move    *a9+,a0,0
+    1744 00009360     0570          setf    16,1,0
+    1745 00009370     0960          rets
+    1746 00009380     0540  grab_32 setf    32,0,0          ;grabs 32 bits from *a9
+    1747 00009390     9520          move    *a9+,a0,0
+    1748 000093a0     0570          setf    16,1,0
+    1749 000093b0     0960          rets
+    1750                    
+    1751 000093c0     0541  stab_1  setf    1,0,0           ;stores 1 bit from *a9
+    1752 000093d0     9009          move    a0,*a9+,0
+    1753 000093e0     0570          setf    16,1,0
+    1754 000093f0     0960          rets
+    1755 00009400     0544  stab_4  setf    4,0,0           ;stores 4 bits from *a9
+    1756 00009410     9009          move    a0,*a9+,0
+    1757 00009420     0570          setf    16,1,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   44
+
+    1758 00009430     0960          rets
+    1759 00009440     0545  stab_5  setf    5,0,0           ;stores 5 bits from *a9
+    1760 00009450     9009          move    a0,*a9+,0
+    1761 00009460     0570          setf    16,1,0
+    1762 00009470     0960          rets
+    1763 00009480     0546  stab_6  setf    6,0,0           ;stores 6 bits from *a9
+    1764 00009490     9009          move    a0,*a9+,0
+    1765 000094a0     0570          setf    16,1,0
+    1766 000094b0     0960          rets
+    1767 000094c0     0548  stab_8  setf    8,0,0           ;stores 8 bits from *a9
+    1768 000094d0     9009          move    a0,*a9+,0
+    1769 000094e0     0570          setf    16,1,0
+    1770 000094f0     0960          rets
+    1771 00009500     054b  stab_11 setf    11,0,0          ;stores 11 bits from *a9
+    1772 00009510     9009          move    a0,*a9+,0
+    1773 00009520     0570          setf    16,1,0
+    1774 00009530     0960          rets
+    1775 00009540     0552  stab_18 setf    18,0,0          ;stores 18 bits from *a9
+    1776 00009550     9009          move    a0,*a9+,0
+    1777 00009560     0570          setf    16,1,0
+    1778 00009570     0960          rets
+    1779 00009580     0540  stab_32 setf    32,0,0          ;stores 32 bits from *a9
+    1780 00009590     9009          move    a0,*a9+,0
+    1781 000095a0     0570          setf    16,1,0
+    1782 000095b0     0960          rets
+    1783                    
+    1784 000095c0     19ea  read_15 movk    15,a10
+    1785 000095d0     c009          jruc    read_a10
+    1786 000095e0     190a  read_8  movk    8,a10
+    1787 000095f0     c007          jruc    read_a10
+    1788 00009600     18aa  read_5  movk    5,a10           ;reads 5 bytes from cmos *a7
+    1789 00009610     c005          jruc    read_a10
+    1790 00009620     188a  read_4  movk    4,a10           ;reads 4 bytes from cmos *a7
+    1791 00009630     c003          jruc    read_a10
+    1792 00009640     186a  read_3  movk    3,a10           ;reads 3 bytes from cmos *a7
+    1793 00009650     c001          jruc    read_a10
+    1794 00009660     180a  read_32 movk    32,a10          ;5
+    1795 00009670           read_a10
+    1796 00009670     09e9          movi    read_data_temp,a9
+         00009680 00000000- 
+    1797 000096a0     0d5f  r321    calla   RC_BYTEI
+         000096b0 00000000! 
+    1798 000096d0     8c09          movb    a0,*a9
+    1799 000096e0     1109          addk    8,a9
+    1800 000096f0     3cca          dsjs    a10,r321
+    1801 00009700     0960          rets
+    1802                    
+    1803 00009710           write_15
+    1804 00009710     19ea          movk    15,a10
+    1805 00009720     c001          jruc    write_a10
+    1806 00009730           write_32
+    1807 00009730     180a          movk    32,a10          ;5
+    1808 00009740           write_a10
+    1809 00009740     09e9          movi    read_data_temp,a9
+         00009750 00000000- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   45
+
+    1810 00009770     8f20  w321    movb    *a9,a0
+    1811 00009780     1109          addk    8,a9
+    1812 00009790     0d5f          calla   WC_BYTEI
+         000097a0 00000000! 
+    1813 000097c0     3cca          dsjs    a10,w321
+    1814 000097d0     0960          rets
+    1815                    
+    1816 000097e0           print_cx_data
+    1817 000097e0     5600          clr     a0
+    1818 000097f0     09e2          movi    [4,10],a2
+         00009800 0004000a  
+    1819 00009820     0d3f  pcd1    callr   ininh
+         00009830     0008  
+    1820 00009840     0b22          addi    [10,0],a2
+         00009850 000a0000  
+    1821 00009870     1020          inc     a0
+    1822 00009880     0b40          cmpi    15,a0
+         00009890     fff0  
+    1823 000098a0     cbf7          jrnz    pcd1
+    1824 000098b0     0960          rets
+    1825                    
+    1826 000098c0     098f  ininh   mmtm    sp,a0
+         000098d0     8000  
+    1827 000098e0     0580          move    a0,@RAMTEMP3+16,W
+         000098f0 00000010! 
+    1828 00009910     0d3f          callr   get_cmos_record_a
+         00009920     fd7d  
+    1829 00009930     05ae          move    @b_initial1,a14,W
+         00009940 00000150- 
+    1830 00009960     0d5f          calla   PENACHO_TO_ASCII
+         00009970 00000000! 
+    1831 00009990     058e          move    a14,@RAMTEMP1,W
+         000099a0 00000000! 
+    1832 000099c0     05ae          move    @b_initial2,a14,W
+         000099d0 00000160- 
+    1833 000099f0     0d5f          calla   PENACHO_TO_ASCII
+         00009a00 00000000! 
+    1834 00009a20     058e          move    a14,@RAMTEMP1+16,W
+         00009a30 00000010! 
+    1835 00009a50     05ae          move    @b_initial3,a14,W
+         00009a60 00000170- 
+    1836 00009a80     0d5f          calla   PENACHO_TO_ASCII
+         00009a90 00000000! 
+    1837 00009ab0     058e          move    a14,@RAMTEMP2,W
+         00009ac0 00000000! 
+    1838 00009ae0     098f          mmtm    sp,a0,a2
+         00009af0     a000  
+    1839 00009b00     0d3f          callr   cx_find_rank
+         00009b10     f899  
+    1840 00009b20     09af          mmfm    sp,a0,a2
+         00009b30     0005  
+    1841                    
+    1842 00009b40     0d5f          calla   il_string_m
+         00009b50 00000000! 
+    1843 00009b70 0000a360'          .long  stg1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   46
+
+    1844 00009b90                    MESS_MAC RD7FONT,1,0,0,COLOR_PWHITE,string_left_constant,OID_TEXT
+    1845 00009c50     0d3f          callr   str1
+         00009c60     0062  
+    1846                    
+    1847 00009c70     0d5f          calla   il_string_m
+         00009c80 00000000! 
+    1848 00009ca0 0000a3a0'          .long  stg2
+    1849 00009cc0                    MESS_MAC RD7FONT,1,33,0,COLOR_PWHITE,string_left_constant,OID_TEXT
+    1850 00009d80     0d3f          callr   str1
+         00009d90     004f  
+    1851                    
+    1852 00009da0     0d5f          calla   il_string_m
+         00009db0 00000000! 
+    1853 00009dd0 0000a440'          .long  stg3
+    1854 00009df0                    MESS_MAC RD7FONT,1,80,0,COLOR_PWHITE,string_left_constant,OID_TEXT
+    1855 00009eb0     0d3f          callr   str1
+         00009ec0     003c  
+    1856                    
+    1857 00009ed0     0d5f          calla   il_string_m
+         00009ee0 00000000! 
+    1858 00009f00 0000a4b0'          .long  stg4
+    1859 00009f20                    MESS_MAC RD7FONT,1,135,0,COLOR_PWHITE,string_left_constant,OID_TEXT
+    1860 00009fe0     0d3f          callr   str1
+         00009ff0     0029  
+    1861                    
+    1862 0000a000     0d5f          calla   il_string_m
+         0000a010 00000000! 
+    1863 0000a030 0000a560'          .long  stg5
+    1864 0000a050                    MESS_MAC RD7FONT,1,190,0,COLOR_PWHITE,string_left_constant,OID_TEXT
+    1865 0000a110     0d3f          callr   str1
+         0000a120     0016  
+    1866                    
+    1867 0000a130     0d5f          calla   il_string_m
+         0000a140 00000000! 
+    1868 0000a160 0000a5a0'          .long  stg7
+    1869 0000a180                    MESS_MAC RD7FONT,1,220,0,COLOR_PWHITE,string_left_constant,OID_TEXT
+    1870 0000a240     0d3f          callr   str1
+         0000a250     0003  
+    1871 0000a260     09af          mmfm    sp,a0
+         0000a270     0001  
+    1872 0000a280     0960          rets
+    1873                    
+    1874 0000a290     e049  str1    addxy   a2,a9
+    1875 0000a2a0     098f          mmtm    sp,a2,a3,a4,a6,a7
+         0000a2b0     3b00  
+    1876 0000a2c0                   JSRP    PRINTF
+    1877 0000a330     09af          mmfm    sp,a2,a3,a4,a6,a7
+         0000a340     00dc  
+    1878 0000a350     0960          rets
+    1879                    
+    1880 0000a360       25  stg1    .string "%u",0
+    1881 0000a380 00000010!         .long   RAMTEMP3+16             ;record #
+    1882 0000a3a0       25  stg2    .string "%c%c%c",0
+    1883 0000a3e0 00000000!         .long   RAMTEMP1                ;initial 1
+    1884 0000a400 00000010!         .long   RAMTEMP1+16             ;initial 2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:33:46 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   47
+
+    1885 0000a420 00000000!         .long   RAMTEMP2                ;initial 3
+    1886 0000a440       25  stg3    .string "%u-%u",0
+    1887 0000a470 00000180-         .long   b_month
+    1888 0000a490 00000190-         .long   b_day
+    1889 0000a4b0       25  stg4    .string "%u-%u-%u",0
+    1890 0000a500 000001d0-         .long   b_wins
+    1891 0000a520 000001e0-         .long   b_losses
+    1892 0000a540 000001f0-         .long   b_ties
+    1893 0000a560       25  stg5    .string "%u",0
+    1894 0000a580 00000340-         .long   b_rank
+    1895                    ;stg6   .string "%08lX",0
+    1896                    ;       .long   b_teamsbeat
+    1897 0000a5a0       25  stg7    .string "%lu",0
+    1898 0000a5c0 000002e0-         .long   b_game_count_last
+
+ No Errors,  No Warnings

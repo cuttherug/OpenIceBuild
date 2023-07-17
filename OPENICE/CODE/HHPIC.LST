@@ -1,0 +1,1520 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                    ****************************************************************************
+       2                    *                                                                          *
+       3                    *  PIC SECURITY STUFF                                                      *
+       4                    *                                                                          *
+       5                    *  Security source for WWF-UNIT's PIC                                      *
+       6                    *                                                                          *
+       7                    *  Version 1.00                                                            *
+       8                    *  Written by:   Michael J. Lynch                                          *
+       9                    *  Copyright (c) 1994 by Williams Electronics Games Inc.                   *
+      10                    *  All rights reserved                                                     *
+      11                    *                                                                          *
+      12                    *     TTTTT   OOO  PPPP         SSS   EEEEE   CCC   RRRR  EEEEE TTTTT      *
+      13                    *       T    O   O P   P       S   S  E      C   C  R   R E       T        *
+      14                    *       T    O   O P   P       S      E      C      R   R E       T        *
+      15                    *       T    O   O PPPP         SSS   EEEE   C      RRRR  EEEE    T        *
+      16                    *       T    O   O P               S  E      C      R R   E       T        *
+      17                    *       T    O   O P           S   S  E      C   C  R  R  E       T        *
+      18                    *       T     OOO  P            SSS   EEEEE   CCC   R   R EEEEE   T        *
+      19                    *                                                                          *
+      20                    *                                                                          *
+      21                    *                    Company Confidential Information                      *
+      22                    *                        NEED TO KNOW BASIS ONLY                           *
+      23                    *                                                                          *
+      24                    * USE OR DISCLOSURE STRICTLY PROHIBITED UNLESS APPROVED IN WRITING FROM    *
+      25                    * WILLIAMS ELECTRONICS GAMES INC.                                          *
+      26                    *                                                                          *
+      27                    * Unapproved use or disclosure will result in severe torture!!!!!          *
+      28                    *                                                                          *
+      29                    ****************************************************************************
+      30                    
+      31                            .width  132
+      32                            .option b,d,l,t
+      33                            .mnolist
+      34              0001  HOCKEY  .equ    1
+      35                    
+      36                    
+      37                            .if HOCKEY = 0
+      38                            .include        macros.hdr
+      39                            .include        "dispequ.asm"           ;display processor equates
+      40                            .include        "sysequ.asm"            ;system equates
+      41                            .include        "mainequ.asm"
+      42                            .include        "imgtbl.glo"
+      43                            .include        "stringh.asm"
+      44                            .include        "diagsequ.asm"
+      45                            .include        "diagmequ.asm"
+      46                            .include        "dipequ.asm"
+      47                            .include        "diagaudn.asm"
+      48                            .else
+      49                    
+      50                            .mlib           "hhmacs.lib"
+      51                    
+      52                            .INCLUDE        "HH.INC"
+      53                            .INCLUDE        "HHSTRING.H"
+      54                            .INCLUDE        "IMGTBL.GLO"
+      55                            .include        "hhpic.e"
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56                            .include        "hhadj.g"
+      57                            .include        "hhram.g"
+      58                            .include        "hhcmos.g"
+      59                            .include        "hh.g"
+      60                            .include        "hhmenu.g"
+      61                            .include        "hhdutl.g"
+      62                            .include        "hhd.g"
+      63                            .include        "hhmisc.g"
+      64                            .include        "hhproc.g"
+      65                            .endif
+      66                            .include        "hhdtst.g"
+      67                    
+      68                            ;end of include files
+      69                    
+      70          01600000  pic_command     .equ    01600000h       ;PIC Command Port
+      71          01600000  pic_data        .equ    pic_command     ;PIC Data Port
+      72                    
+      73              0000  WRESTLE         .equ    0
+      74                    
+      75                            .if     WRESTLE=1
+      76                    game_number     .equ    430             ; Wrestlemania Game Number
+      77                            .elif   HOCKEY=0
+      78                    game_number     .equ    439             ; Mortal Kombat 3 Game Number
+      79                            .else
+      80              01b6  game_number     .equ    438             ; Hock Game Number
+      81                            .endif
+      82                    
+      83                            .if     HOCKEY=1
+      84          01860010  coin_counters   .equ    COIN_COUNTERS
+      85          01860040  soundirq        .equ    SOUNDIRQ
+      86          01860030  watchdog        .equ    WDOG_BONE
+      87          01860000  switch          .equ    SWITCH
+      88          01860010  switch2         .equ    SWITCH2
+      89          01860030  coins           .equ    COINS
+      90                    
+      91              0000  w               .equ    0
+      92              0001  l               .equ    1
+      93                    
+      94          07070101  trog_pgreen     .equ    COLOR_PGREEN
+      95          3b3b0000  trog_prgb       .equ    COLOR_PRGB
+      96              0202  trog_white      .equ    COLOR_WHITE
+      97              0303  trog_blue       .equ    COLOR_BLUE
+      98          06060101  trog_ppurple    .equ    COLOR_PPURPLE
+      99              0002  spacing20       .equ    SPACING20
+     100              0001  spacing07       .equ    SPACING07
+     101                            .endif
+     102                    
+     103                    
+     104                    *
+     105                    * Globals available to outside modules for displaying PIC information
+     106                    * Only needed in menus!!
+     107                    *
+     108                            .globl  go_hardware
+     109                            .globl  mess_hardware
+     110                            .globl  hardware_help
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     111                            .globl  copy_string
+     112                            .globl  dec_to_asc
+     113                            .globl  _serial_number
+     114                            .globl  _man_date
+     115                            .globl  message_buffer
+     116                            .globl  _read_pic_data
+     117                            .globl  InitPIC
+     118                            .globl  copy_rom_string
+     119                            .globl  concat_string
+     120                    
+     121                    *
+     122                    * Symbol references made by go_hardware
+     123                    *
+     124                            .if     HOCKEY=0
+     125                            .ref    binbcd
+     126                            .ref    clr_scrn
+     127                            .ref    l_mess
+     128                            .ref    top_box
+     129                            .ref    force_main
+     130                            .ref    rd15font
+     131                            .ref    rd7font
+     132                            .ref    strcnrm
+     133                            .else
+     134                            .ref    BINBCD
+     135                            .ref    CLR_SCRN
+     136                            .ref    L_MESS
+     137                            .ref    TOP_BOX
+     138                            .ref    FORCE_MAIN
+     139                            .ref    RD15FONT
+     140                            .ref    RD7FONT
+     141                            .ref    STRCNRM
+     142                    
+     143              0000! rd15font        .equ    RD15FONT
+     144              0000! rd7font         .equ    RD7FONT
+     145              0000! strcnrm         .equ    STRCNRM
+     146                            .endif
+     147                    
+     148                    *
+     149                    * Y Positions of Hardware information screen items
+     150                    *
+     151              0050  willy_y         .equ    80
+     152              0082  unit_y          .equ    willy_y+50
+     153              00aa  serial_y        .equ    unit_y+40
+     154              00d2  man_y           .equ    serial_y+40
+     155                    
+     156              0028  mbuff_size      .equ    40
+     157                    
+     158                    
+     159                    *
+     160                    * Local Storage for stuff in this module
+     161                    *
+     162                    
+     163 00000000                   .bss    _pic_raw,128            ;Working buffers for PIC decoding
+     164 00000080                   .bss    _pic_temp,64
+     165                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     166 000000c0                   .bss    _man_date,32            ;Date of manufacture (composite)
+     167                    
+     168 000000e0                   .bss    _serial_number,32       ;Game Serial Number  (Hexidecimal)
+     169 00000100                   .bss    _month,32               ;Date of manufacture (month: 1-12)
+     170 00000120                   .bss    _day,32                 ;Date of manufacture (date: 1-31)
+     171 00000140                   .bss    _year,32                ;Date of manufacture (year: 00-99)
+     172                    
+     173 00000160                   .bss    _setup_mess,12*16       ;Used for built messages
+     174 00000220                   .bss    _setup_mess_msg,8*40    ;Used for built message strings
+     175                    
+     176 00000360                   .bss    message_buffer, 16*mbuff_size ;null terminated string
+     177 000005e0                   .bss    message_buffer2, 16*mbuff_size
+     178                    
+     179                    
+     180 00000860                   .bss    octopus_count,16
+     181                    
+     182 00000000                   .text
+     183                    
+     184                    
+     185                    
+     186                    ***************************************************************
+     187                    * InitPIC - Initializes the PIC Microcontroller
+     188                    *
+     189 00000000           InitPIC
+     190 00000000     5600          clr     a0                      ;Reset the PIC
+     191 00000010     0580          move    a0,@coin_counters,w
+         00000020 01860010  
+     192 00000040     09c0          movi    10,a0                   ;Hold RESET fer a bit
+         00000050     000a  
+     193 00000060     3c20          dsjs    a0,$
+     194 00000070     09c0          movi    010h,a0                 ;Set no command request
+         00000080     0010  
+     195 00000090     0580          move    a0,@pic_command,w
+         000000a0 01600000  
+     196 000000c0     09c0          movi    020h,a0                 ;Allow PIC to run
+         000000d0     0020  
+     197 000000e0     0580          move    a0,@coin_counters,w
+         000000f0 01860010  
+     198 00000110     09e1          movi    200000000,a1
+         00000120 0bebc200  
+     199 00000140           _pwait_loop
+     200 00000140     05a0          move    @soundirq,a0,w
+         00000150 01860040  
+     201 00000170     1e60          btst    12,a0
+     202 00000180     ca04          jrz     _pnwait
+     203 00000190     0580          move    a0,@watchdog,w
+         000001a0 01860030  
+     204 000001c0     3d21          dsjs    a1,_pwait_loop
+     205 000001d0           _pnwait
+     206 000001d0     09c0          movi    010h,a0
+         000001e0     0010  
+     207 000001f0     0580          move    a0,@pic_command,w
+         00000200 01600000  
+     208 00000220     09e1          movi    2000000,a1
+         00000230 001e8480  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     209 00000250           _pwait_loop1
+     210 00000250     05a0          move    @soundirq,a0,w
+         00000260 01860040  
+     211 00000280     1e60          btst    12,a0
+     212 00000290     cb04          jrnz    _pwait_done
+     213 000002a0     0580          move    a0,@watchdog,w
+         000002b0 01860030  
+     214 000002d0     3d21          dsjs    a1,_pwait_loop1
+     215 000002e0           _pwait_done
+     216 000002e0     0960          rets
+     217                    
+     218                    ******************************************************************************
+     219                    *                                                                            *
+     220                    * _pic_bin2bcd - Converts a hex number in A7 to BCD and puts it in A3        *
+     221                    *                                                                            *
+     222                    * ENTRY                                                                      *
+     223                    *         A7 - Binary number to be converted                                 *
+     224                    *         B6 - Return Address                                                *
+     225                    *                                                                            *
+     226                    * EXIT                                                                       *
+     227                    *         A3 - Converted Number (BDC)                                        *
+     228                    *                                                                            *
+     229                    * USES                                                                       *
+     230                    *         A0 - A1                                                            *
+     231                    *                                                                            *
+     232                    * Written by:  Michael J. Lynch                                              *
+     233                    *                                                                            *
+     234                    ******************************************************************************
+     235 000002f0           _pic_bin2bcd:
+     236 000002f0     5663          clr     a3
+     237 00000300     09e0          movi    100000,a0
+         00000310 000186a0  
+     238 00000330           _bin2bcd_loop:
+     239 00000330     2483          sll     4,a3
+     240 00000340     4ce1          move    a7,a1
+     241 00000350     5a01          divu    a0,a1
+     242 00000360     5423          or      a1,a3
+     243 00000370     5e01          mpyu    a0,a1
+     244 00000380     4427          sub     a1,a7
+     245 00000390     4c01          move    a0,a1
+     246 000003a0     1940          movk    10,a0
+     247 000003b0     5a01          divu    a0,a1
+     248 000003c0     4c20          move    a1,a0
+     249 000003d0     cbf5          jrnz    _bin2bcd_loop
+     250                            .if     HOCKEY=0
+     251                            fret    b6
+     252                            .else
+     253 000003e0                   FRET    B6
+     254                            .endif
+     255                    
+     256                    
+     257                    ******************************************************************************
+     258                    *                                                                            *
+     259                    * _bcd2hex - Converts a 32 bit (8 digit) BCD Number to Hexidecimal           *
+     260                    *                                                                            *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     261                    * ENTRY                                                                      *
+     262                    *         A0 - BCD Number to be converted                                    *
+     263                    *         B6 - Return Address                                                *
+     264                    *                                                                            *
+     265                    * EXIT                                                                       *
+     266                    *         A2 - Converted Number (hex)                                        *
+     267                    *                                                                            *
+     268                    * USES                                                                       *
+     269                    *         A1 - Multiplier                                                    *
+     270                    *         A3 - Temporary                                                     *
+     271                    *         A4 - Digit Counter                                                 *
+     272                    *                                                                            *
+     273                    * Written by:  Michael J. Lynch                                              *
+     274                    *                                                                            *
+     275                    ******************************************************************************
+     276 000003f0           _bcd2hex:
+     277 000003f0     5642          clr     a2              ; Start with 0
+     278 00000400     1821          movk    1,a1            ; Starting Multiplier
+     279 00000410     1904          movk    8,a4            ; Number of BCD digits to convert
+     280 00000420           _b2h_loop:                      ; Main BCD to hex conversion loop
+     281 00000420     4c03          move    a0,a3           ; Put BCD number in temporary register
+     282 00000430     0b83          andi    0fh,a3          ; get rid of bits not interested in
+         00000440 fffffff0  
+     283 00000460     5e23          mpyu    a1,a3           ; multiply by current multiplier
+     284 00000470     4062          add     a3,a2           ; Accumulate into final register
+     285 00000480     2f80          srl     4,a0            ; Shift to next BCD digit
+     286 00000490     1943          movk    10,a3           ; Calculate next multiplier (mult = mult * 10)
+     287 000004a0     5e61          mpyu    a3,a1           ; New Multiplier
+     288 000004b0     3d44          dsjs    a4,_b2h_loop    ; Keep going until 8 BCD digits are done
+     289                            .if     HOCKEY=0
+     290                            fret    b6              ; return
+     291                            .else
+     292 000004c0                   FRET    B6              ; RETURN
+     293                            .endif
+     294                    
+     295                    
+     296                    
+     297                    ******************************************************************************
+     298                    *                                                                            *
+     299                    * _read_pic_data - reads the encoded information from the PIC, decodes it to *
+     300                    * memory, and checks for the proper game number.  If the game number is not  *
+     301                    * correct, this routine hangs (don't bitch - that's what management wants!). *
+     302                    *                                                                            *
+     303                    * If the game number is ok, this routine returns and the serial number and   *
+     304                    * manufacture date information will be valid in the global memory area above *
+     305                    * for use by the application.                                                *
+     306                    *                                                                            *
+     307                    * USES                                                                       *
+     308                    *         A1 - A10 and B6                                                    *
+     309                    *                                                                            *
+     310                    * Written by:  Michael J. Lynch                                              *
+     311                    *                                                                            *
+     312                    ******************************************************************************
+     313 000004d0           _read_pic_data:
+     314 000004d0     0548          setf    8,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     315 000004e0     0740          setf    32,0,1
+     316 000004f0     1a09          movk    16,a9           ; Number of bytes of data to read
+     317 00000500     09e1          movi    _pic_raw,a1     ; address at which to store raw data from PIC
+         00000510 00000000- 
+     318 00000530     1a08          movk    010h,a8         ; Send Request Serial Number Data Command
+     319 00000540     0588          move    a8,@pic_command
+         00000550 01600000  
+     320 00000570           _rp_data_loop:
+     321 00000570     0550          setf    16,0
+     322 00000580     5708          clr     a8
+     323 00000590     0588          move    a8,@pic_command
+         000005a0 01600000  
+     324 000005c0     09e2          movi    1000000,a2      ; Wait for PIC to acknowledge
+         000005d0 000f4240  
+     325 000005f0           _rp_ack_loop:
+     326 000005f0     4c42          move    a2,a2           ; Check for command timeout
+     327 00000600     ca00          jrz     gn_bad          ; WOA PIC never acknowledged - ERROR!!!!
+         00000610     010a  
+     328                            .if     WRESTLE=1
+     329                            move    @_watchdog_addr,a8,l
+     330                            move    a8,*a8
+     331                            move    @_soundirq_addr,a8,l
+     332                            move    *a8,a8
+     333                            .else
+     334 00000620     0588          move    a8,@watchdog,w
+         00000630 01860030  
+     335 00000650     05a8          move    @soundirq,a8,w
+         00000660 01860040  
+     336                            .endif
+     337 00000680     0be2          subi    1,a2
+         00000690     fffe  
+     338 000006a0     1e68          btst    12,a8           ; Data available ?
+     339 000006b0     cbf3          jrnz    _rp_ack_loop    ; NO
+     340 000006c0     0548          setf    8,0             ; YES
+     341 000006d0     05a0          move    @pic_data,a0    ; read data
+         000006e0 01600000  
+     342 00000700     9001          move    a0,*a1+         ; write to temp holding area
+     343 00000710     1a08          movk    010h,a8         ; Acknowledge reciept of data
+     344 00000720     0550          setf    16,0
+     345 00000730     0588          move    a8,@pic_command
+         00000740 01600000  
+     346 00000760     09e2          movi    1000000,a2      ; Wait for PIC n acknowlegde
+         00000770 000f4240  
+     347 00000790           _rp_nack_loop:
+     348 00000790     4c42          move    a2,a2
+     349 000007a0     ca00          jrz     gn_bad
+         000007b0     00f0  
+     350                            .if     WRESTLE=1
+     351                            move    @_watchdog_addr,a8,l
+     352                            move    a8,*a8
+     353                            move    @_soundirq_addr,a8,l
+     354                            move    *a8,a8
+     355                            .else
+     356 000007c0     0588          move    a8,@watchdog,w
+         000007d0 01860030  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     357 000007f0     05a8          move    @soundirq,a8,w
+         00000800 01860040  
+     358                            .endif
+     359 00000820     0be2          subi    1,a2
+         00000830     fffe  
+     360 00000840     1e68          btst    12,a8
+     361 00000850     caf3          jrz     _rp_nack_loop
+     362 00000860     0d89          dsj     a9,_rp_data_loop
+         00000870     ffcf  
+     363 00000880     5684          clr     a4              ; Holding Register for X
+     364 00000890     56a5          clr     a5              ; Holding Register for Y
+     365 000008a0     0548          setf    8,0
+     366 000008b0     09ea          movi    _pic_raw,a10
+         000008c0 00000000- 
+     367 000008e0     0b0a          addi    060h,a10
+         000008f0     0060  
+     368 00000900     9544          move    *a10+,a4        ; Get X
+     369 00000910     8545          move    *a10,a5         ; Get Y
+     370 00000920     0558          setf    24,0
+     371 00000930     56e7          clr     a7              ; Calculate B-3-5-9
+     372 00000940     09ea          movi    _pic_raw,a10
+         00000950 00000000- 
+     373 00000970     8547          move    *a10,a7
+     374 00000980     0be7          subi    15732,a7
+         00000990     c28b  
+     375 000009a0     09c0          movi    581,a0
+         000009b0     0245  
+     376 000009c0     5a07          divu    a0,a7
+     377 000009d0     4487          sub     a4,a7           ; B359 (binary)
+     378                            .if     HOCKEY=0
+     379                            fcall   _pic_bin2bcd,b6 ; B359 (bcd) a1 = B359
+     380                            .else
+     381 000009e0                   FCALL   _pic_bin2bcd,b6 ; B359 (bcd) a1 = B359
+     382                            .endif
+     383 00000a20     0544          setf    4,0
+     384 00000a30     2f83          srl     4,a3
+     385 00000a40     4c60          move    a3,a0
+     386 00000a50     0b80          andi    0fh,a0
+         00000a60 fffffff0  
+     387 00000a80     09ea          movi    _pic_temp,a10
+         00000a90 00000080- 
+     388 00000ab0     0b0a          addi    014h,a10
+         00000ac0     0014  
+     389 00000ad0     800a          move    a0,*a10         ; Stuff the 5
+     390 00000ae0     2f83          srl     4,a3
+     391 00000af0     4c60          move    a3,a0
+     392 00000b00     0b80          andi    0fh,a0
+         00000b10 fffffff0  
+     393 00000b30     09ea          movi    _pic_temp,a10
+         00000b40 00000080- 
+     394 00000b60     118a          addk    0ch,a10
+     395 00000b70     800a          move    a0,*a10         ; Stuff the 3
+     396                    
+     397                    
+     398 00000b80     09ea          movi    _pic_raw,a10
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+         00000b90 00000000- 
+     399 00000bb0     0b0a          addi    018h,a10
+         00000bc0     0018  
+     400 00000bd0     8747          move    *a10,a7,1       ; Calculate 2-A-0-8-6
+     401 00000be0     0d07          subi    7463513,a7
+         00000bf0 ff8e1da6  
+     402 00000c10     09c0          movi    4223,a0
+         00000c20     107f  
+     403 00000c30     5a07          divu    a0,a7
+     404 00000c40     44a7          sub     a5,a7
+     405 00000c50     44a7          sub     a5,a7
+     406 00000c60     4487          sub     a4,a7           ; 2A086 (binary)
+     407                            .if     HOCKEY=0
+     408                            fcall   _pic_bin2bcd,b6 ; 2A086 (bcd)
+     409                            .else
+     410 00000c70                   FCALL   _pic_bin2bcd,b6 ; 2A086 (bcd)
+     411                            .endif
+     412 00000cb0     4c60          move    a3,a0
+     413 00000cc0     0b80          andi    0fh,a0
+         00000cd0 fffffff0  
+     414 00000cf0     09ea          movi    _pic_temp,a10
+         00000d00 00000080- 
+     415 00000d20     130a          addk    018h,a10
+     416 00000d30     800a          move    a0,*a10         ; Stuff the 6
+     417 00000d40     2f83          srl     4,a3
+     418 00000d50     4c60          move    a3,a0
+     419 00000d60     0b80          andi    0fh,a0
+         00000d70 fffffff0  
+     420 00000d90     09ea          movi    _pic_temp,a10
+         00000da0 00000080- 
+     421 00000dc0     0b0a          addi    020h,a10
+         00000dd0     0020  
+     422 00000de0     800a          move    a0,*a10         ; Stuff the 8
+     423 00000df0     2f83          srl     4,a3
+     424 00000e00     4c60          move    a3,a0
+     425 00000e10     0b80          andi    0fh,a0
+         00000e20 fffffff0  
+     426 00000e40     09ea          movi    _pic_temp,a10
+         00000e50 00000080- 
+     427 00000e70     800a          move    a0,*a10         ; Stuff the 0
+     428 00000e80     2f03          srl     8,a3
+     429 00000e90     4c60          move    a3,a0
+     430 00000ea0     0b80          andi    0fh,a0
+         00000eb0 fffffff0  
+     431 00000ed0     09ea          movi    _pic_temp,a10
+         00000ee0 00000080- 
+     432 00000f00     110a          addk    8,a10
+     433 00000f10     800a          move    a0,*a10         ; Stuff the 2
+     434                    
+     435                    
+     436 00000f20     0558          setf    24,0            ; Calcuate 1-7-4
+     437 00000f30     09ca          movi    038h,a10
+         00000f40     0038  
+     438 00000f50     0b2a          addi    _pic_raw,a10
+         00000f60 00000000- 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     439 00000f80     8547          move    *a10,a7
+     440 00000f90     0d07          subi    127984,a7
+         00000fa0 fffe0c0f  
+     441 00000fc0     09c0          movi    7117,a0
+         00000fd0     1bcd  
+     442 00000fe0     5a07          divu    a0,a7
+     443 00000ff0     44a7          sub     a5,a7
+     444 00001000     44a7          sub     a5,a7
+     445 00001010     44a7          sub     a5,a7
+     446 00001020     44a7          sub     a5,a7
+     447 00001030     44a7          sub     a5,a7           ; 174 (binary)
+     448                            .if     HOCKEY=0
+     449                            fcall   _pic_bin2bcd,b6 ; 174 (bcd) a1 = 174
+     450                            .else
+     451 00001040                   FCALL   _pic_bin2bcd,b6 ; 174 (bcd) a1 = 174
+     452                            .endif
+     453 00001080     0544          setf    4,0
+     454 00001090     4c60          move    a3,a0
+     455 000010a0     0b80          andi    0fh,a0
+         000010b0 fffffff0  
+     456 000010d0     09ea          movi    _pic_temp,a10
+         000010e0 00000080- 
+     457 00001100     120a          addk    010h,a10
+     458 00001110     800a          move    a0,*a10         ; Stuff the 4
+     459 00001120     2f83          srl     4,a3
+     460 00001130     4c60          move    a3,a0
+     461 00001140     0b80          andi    0fh,a0
+         00001150 fffffff0  
+     462 00001170     09ea          movi    _pic_temp,a10
+         00001180 00000080- 
+     463 000011a0     138a          addk    01ch,a10
+     464 000011b0     800a          move    a0,*a10         ; Stuff the 7
+     465 000011c0     2f83          srl     4,a3
+     466 000011d0     4c60          move    a3,a0
+     467 000011e0     0b80          andi    0fh,a0
+         000011f0 fffffff0  
+     468 00001210     09ea          movi    _pic_temp,a10
+         00001220 00000080- 
+     469 00001240     108a          addk    4,a10
+     470 00001250     800a          move    a0,*a10         ; Stuff the 1
+     471                    
+     472 00001260     0550          setf    16,0
+     473 00001270     09ca          movi    050h,a10
+         00001280     0050  
+     474 00001290     0b2a          addi    _pic_raw,a10
+         000012a0 00000000- 
+     475 000012c0     8540          move    *a10,a0         ; This is a pointer to the date code
+     476 000012d0     8541          move    *a10,a1
+     477 000012e0     2501          sll     8,a1
+     478 000012f0     2f00          srl     8,a0
+     479 00001300     0b80          andi    0ffh,a0
+         00001310 ffffff00  
+     480 00001330     0b81          andi    0ff00h,a1
+         00001340 ffff00ff  
+     481 00001360     5420          or      a1,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     482 00001370     0780          move    a0,@_man_date,l
+         00001380 000000c0- 
+     483                    
+     484 000013a0     0544          setf    4,0
+     485 000013b0     09ea          movi    _pic_temp,a10
+         000013c0 00000080- 
+     486 000013e0     118a          addk    0ch,a10
+     487 000013f0     9540          move    *a10+,a0        ; Most Significant Digit (serial number)
+     488 00001400     2480          sll     4,a0
+     489 00001410     9541          move    *a10+,a1
+     490 00001420     5420          or      a1,a0
+     491 00001430     2480          sll     4,a0
+     492 00001440     9541          move    *a10+,a1
+     493 00001450     5420          or      a1,a0
+     494 00001460     2480          sll     4,a0
+     495 00001470     9541          move    *a10+,a1
+     496 00001480     5420          or      a1,a0
+     497 00001490     2480          sll     4,a0
+     498 000014a0     9541          move    *a10+,a1
+     499 000014b0     5420          or      a1,a0
+     500 000014c0     2480          sll     4,a0
+     501 000014d0     9541          move    *a10+,a1        ; Least Significant Digit (serial number)
+     502 000014e0     5420          or      a1,a0
+     503                            .if     HOCKEY=0
+     504                            fcall   _bcd2hex,b6     ; Convert to hex (a2 = serial # hex)
+     505                            .else
+     506 000014f0                   FCALL   _bcd2hex,b6     ; Convert to hex (a2 = serial # hex)
+     507                            .endif
+     508 00001530     0782          move    a2,@_serial_number,l
+         00001540 000000e0- 
+     509                    
+     510 00001560     0544          setf    4,0
+     511 00001570     09ea          movi    _pic_temp,a10
+         00001580 00000080- 
+     512 000015a0     9540          move    *a10+,a0        ; Most Significant Digit (game number)
+     513 000015b0     2480          sll     4,a0
+     514 000015c0     9541          move    *a10+,a1
+     515 000015d0     5420          or      a1,a0
+     516 000015e0     2480          sll     4,a0
+     517 000015f0     9541          move    *a10+,a1        ; Least Significant Digit (game number)
+     518 00001600     5420          or      a1,a0
+     519                            .if     HOCKEY=0
+     520                            fcall   _bcd2hex,b6     ; Convert to hex
+     521                            .else
+     522 00001610                   FCALL   _bcd2hex,b6     ; Convert to hex
+     523                            .endif
+     524                    
+     525 00001650     5621          clr     a1
+     526 00001660     0b42          cmpi    528,a2          ; Development PIC Game Number
+         00001670     fdef  
+     527 00001680     ca14          jrz     gn_good
+     528 00001690           gn_confuse_people:
+     529 00001690     0b42          cmpi    game_number,a2          ; Real Game Number (WrestleMania)
+         000016a0     fe49  
+     530 000016b0     ca11          jrz     gn_good
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     531 000016c0           gn_bad:
+     532                            .if     WRESTLE=1
+     533                            movi    sec_mess_2,a0   ; Level 2 Security Check failure
+     534                            .if     HOCKEY=0
+     535                            fcall   stringcenter,b6
+     536                            .else
+     537                            FCALL   stringcenter,b6
+     538                            .endif
+     539                            addi    [220,0],a1
+     540                            clr     a2
+     541                            movi    trog_red,a3
+     542                            .if     HOCKEY=0
+     543                            fcall   string,b6
+     544                            .else
+     545                            FCALL   string,b6
+     546                            .endif
+     547                            lockup
+     548                            .else
+     549                    *
+     550                    *       in case someone is smart enough...
+     551                    *
+     552 000016c0     0782          move    a2,@_pic_temp,L
+         000016d0 00000080- 
+     553 000016f0     c000          jruc    $
+         00001700     fffe  
+     554                    
+     555 00001710     0d5f          calla   CLR_SCRN
+         00001720 00000000! 
+     556 00001740     05a8          move    @_pic_temp,a8
+         00001750 00000080- 
+     557 00001770     0b48          cmpi    game_number,a8
+         00001780     fe49  
+     558 00001790     ca00          jrz     gn_cant_be_good
+         000017a0     012b  
+     559 000017b0     c000          jruc    gn_jump_ahead
+         000017c0     0145  
+     560                    
+     561                            .endif
+     562                    
+     563 000017d0           gn_good:
+     564 000017d0     0548          setf    8,0             ; Stomp on memory used to decode PIC
+     565 000017e0     5600          clr     a0
+     566 000017f0     09c1          movi    16,a1
+         00001800     0010  
+     567 00001810     09e2          movi    _pic_raw,a2
+         00001820 00000000- 
+     568 00001840           _stomp_temp:
+     569 00001840     9002          move    a0,*a2+
+     570 00001850     3c41          dsjs    a1,_stomp_temp
+     571 00001860     09c1          movi    8,a1
+         00001870     0008  
+     572 00001880     09e2          movi    _pic_temp,a2
+         00001890 00000080- 
+     573 000018b0           _stomp_temp1:
+     574 000018b0     9002          move    a0,*a2+
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     575 000018c0     3c41          dsjs    a1,_stomp_temp1
+     576 000018d0     0570          setf    16,1,0                  ;Field0 = Word sign extend
+     577 000018e0     0740          setf    32,0,1                  ;Field1 = Long word
+     578 000018f0           _decode_date:
+     579 000018f0     07a2          move    @_man_date,a2,l
+         00001900 000000c0- 
+     580 00001920     4c41          move    a2,a1
+     581 00001930     1421          subk    1,a1
+     582 00001940     09c0          movi    372,a0
+         00001950     0174  
+     583 00001960     5a01          divu    a0,a1
+     584 00001970     09c3          movi    372,a3
+         00001980     0174  
+     585 00001990     5e23          mpyu    a1,a3
+     586 000019a0     4462          sub     a3,a2
+     587 000019b0     0b01          addi    80,a1
+         000019c0     0050  
+     588 000019d0     0781          move    a1,@_year,1
+         000019e0 00000140- 
+     589 00001a00     4c40          move    a2,a0
+     590 00001a10     09c1          movi    31,a1
+         00001a20     001f  
+     591 00001a30     6e20          modu    a1,a0
+     592 00001a40     0780          move    a0,@_day,1
+         00001a50 00000120- 
+     593 00001a70     4c41          move    a2,a1
+     594 00001a80     1421          subk    1,a1
+     595 00001a90     09c0          movi    31,a0
+         00001aa0     001f  
+     596 00001ab0     5a01          divu    a0,a1
+     597 00001ac0     1021          addk    1,a1
+     598 00001ad0     0781          move    a1,@_month,1
+         00001ae0 00000100- 
+     599 00001b00     0960          rets
+     600                    
+     601                    
+     602                    
+     603                    
+     604 00001b10           go_hardware:
+     605                            .if     HOCKEY=0
+     606                            calla   clr_scrn                ; Clear the screen
+     607                            .else
+     608 00001b10     0d5f          calla   CLR_SCRN                ; Clear the screen
+         00001b20 00000000! 
+     609                            .endif
+     610 00001b40     09e2          movi    m_hardware_info,a2      ; Put up Title Box
+         00001b50 00003790' 
+     611 00001b70     09c3          movi    trog_white,a3
+         00001b80     0202  
+     612                            .if     HOCKEY=0
+     613                            jsrp    top_box
+     614                            .else
+     615 00001b90                   JSRP    TOP_BOX
+     616                            .endif
+     617 00001c00     09e8          movi    willy_prompt,a8
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+         00001c10 00003840' 
+     618                            .if     HOCKEY=0
+     619                            jsrp    l_mess
+     620                            .else
+     621 00001c30                   JSRP    L_MESS
+     622                            .endif
+     623                    
+     624 00001ca0     09e4          movi    m_dom,a4
+         00001cb0 00003ad0' 
+     625 00001cd0     0d5f          calla   copy_rom_string         ; Copy the Date of manufacture prompt
+         00001ce0 000034e0' 
+     626 00001d00     05a0          move    @_month,a0
+         00001d10 00000100- 
+     627 00001d30     1420          dec     a0
+     628 00001d40     24a0          sll     5,a0
+     629 00001d50     09e8          movi    month_table,a8
+         00001d60 00003f30' 
+     630 00001d80     4008          add     a0,a8
+     631 00001d90     8704          move    *a8,a4,l
+     632 00001da0     0d5f          calla   concat_rom_string       ; Copy the month name
+         00001db0 00003580' 
+     633 00001dd0     05a0          move    @_day,a0                ; Convert date to ascii
+         00001de0 00000120- 
+     634 00001e00     09c1          movi    31,a1
+         00001e10     001f  
+     635 00001e20     0d5f          calla   dec_to_asc
+         00001e30 00002db0' 
+     636 00001e50     0d5f          calla   concat_string           ; Add date to string
+         00001e60 000033e0' 
+     637 00001e80     09e4          movi    mess_hyears,a4          ; Add , 19 to string
+         00001e90 000040b0' 
+     638 00001eb0     0d5f          calla   concat_rom_string
+         00001ec0 00003580' 
+     639 00001ee0     05a0          move    @_year,a0               ; Convert year to ascii
+         00001ef0 00000140- 
+     640 00001f10     09c1          movi    99,a1
+         00001f20     0063  
+     641 00001f30     0d5f          calla   dec_to_asc
+         00001f40 00002db0' 
+     642 00001f60     0d5f          calla   concat_string           ; Add year to string
+         00001f70 000033e0' 
+     643 00001f90     09e0          movi    man_date_setup,a0       ; Setup message
+         00001fa0 000040e0' 
+     644 00001fc0     0d3f          callr   _setup_message
+         00001fd0     0092  
+     645 00001fe0     09e8          movi    _setup_mess,a8
+         00001ff0 00000160- 
+     646                            .if     HOCKEY=0
+     647                            jsrp    l_mess                  ; Print Date of Manufacture
+     648                            .else
+     649 00002010                   JSRP    L_MESS                  ; Print Date of Manufacture
+     650                            .endif
+     651                    
+     652 00002080     09e4          movi    m_serial,a4
+         00002090 000041c0' 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     653 000020b0     0d5f          calla   copy_rom_string         ; Copy serial number prompt
+         000020c0 000034e0' 
+     654 000020e0     07a0          move    @_serial_number,a0,l    ; Convert serial number to ascii
+         000020f0 000000e0- 
+     655 00002110     09e1          movi    1000000,a1
+         00002120 000f4240  
+     656 00002140     0d5f          calla   dec_to_asc
+         00002150 00002db0' 
+     657 00002170     0d5f          calla   concat_string           ; Add serial number to prompt
+         00002180 000033e0' 
+     658 000021a0     09e0          movi    serial_num_setup,a0     ; Setup the message
+         000021b0 00004250' 
+     659 000021d0     0d3f          callr   _setup_message
+         000021e0     0071  
+     660 000021f0     09e8          movi    _setup_mess,a8
+         00002200 00000160- 
+     661                            .if     HOCKEY=0
+     662                            jsrp    l_mess                  ; Print the Serial Number
+     663                            .else
+     664 00002220                   JSRP    L_MESS                  ; Print the Serial Number
+     665                            .endif
+     666 00002290     09e8          movi    mess_quit,a8
+         000022a0 00004330' 
+     667                            .if     HOCKEY=0
+     668                            jsrp    l_mess
+     669                            .else
+     670 000022c0                   JSRP    L_MESS
+     671                            .endif
+     672                    ; WBD ST
+     673                            .if     HOCKEY=1
+     674 00002330     09c8          movi    64,a8
+         00002340     0040  
+     675                            .endif
+     676 00002350           _hardware_wait_all_up:                  ; Wait for all switches to be released
+     677                            .if     HOCKEY=0
+     678                    
+     679                            sleep   2
+     680                            move    @switch,a0,w
+     681                            move    @switch+16,a1,w
+     682                            and     a1,a0
+     683                            move    @coins,a1,w
+     684                            and     a1,a0
+     685                            not     a0
+     686                            jrnz    _hardware_wait_all_up
+     687                    
+     688                            .else
+     689                    
+     690 00002350                   SLEEP   2
+     691 00002390     05ae          move    @COINS,a14,W            ; svc credit acts as button, too
+         000023a0 01860030  
+     692 000023c0     0b8e          andi    40h,a14
+         000023d0 ffffffbf  
+     693 000023f0     242e          sll     1,a14
+     694 00002400     07a0          move    @SWITCH,a0,L            ; wait for buttons to clear
+         00002410 01860000  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     695 00002430     0b80          andi    70707070h,a0
+         00002440 8f8f8f8f  
+     696 00002460     55c0          or      a14,a0
+     697 00002470     0780          move    a0,@SWSET1,L
+         00002480 00000000! 
+     698 000024a0     0b60          cmpi    707070f0h,a0
+         000024b0 8f8f8f0f  
+     699 000024d0     ca02          jreq    _hardware_check_sw
+     700 000024e0     1428          dec     a8                      ; if not, assume stuck at and accept
+     701 000024f0     cbe5          jrnz    _hardware_wait_all_up
+     702                    
+     703                            .endif
+     704 00002500           _hardware_check_sw:                     ; Wait for a button to be pressed
+     705                    
+     706                            .if HOCKEY=1
+     707                    
+     708 00002500                   SLEEP   3
+     709 00002540     05ae          move    @COINS,a14,W            ; svc credit acts as button, too
+         00002550 01860030  
+     710 00002570     0b8e          andi    40h,a14
+         00002580 ffffffbf  
+     711 000025a0     242e          sll     1,a14
+     712 000025b0     07a0          move    @SWITCH,a0,L            ; wait til button hit
+         000025c0 01860000  
+     713 000025e0     0b80          andi    70707070h,a0
+         000025f0 8f8f8f8f  
+     714 00002610     55c0          or      a14,a0
+     715 00002620     0b60          cmpi    707070f0h,a0
+         00002630 8f8f8f0f  
+     716 00002650     caea          jreq    _hardware_check_sw
+     717 00002660     07a1          move    @SWSET1,a1,L
+         00002670 00000000! 
+     718 00002690     4801          cmp     a0,a1
+     719 000026a0     cae5          jreq    _hardware_check_sw
+     720                    
+     721 000026b0           _hardware_wait_again:                   ; Wait for release again
+     722 000026b0                   SLEEP   2
+     723 000026f0     05ae          move    @COINS,a14,W            ; svc credit acts as button, too
+         00002700 01860030  
+     724 00002720     0b8e          andi    40h,a14
+         00002730 ffffffbf  
+     725 00002750     242e          sll     1,a14
+     726 00002760     07a0          move    @SWITCH,a0,L            ; wait for buttons to clear
+         00002770 01860000  
+     727 00002790     0b80          andi    70707070h,a0
+         000027a0 8f8f8f8f  
+     728 000027c0     55c0          or      a14,a0
+     729 000027d0     0b60          cmpi    707070f0h,a0
+         000027e0 8f8f8f0f  
+     730 00002800     ca05          jreq    _hardware_leave
+     731 00002810     07a1          move    @SWSET1,a1,L
+         00002820 00000000! 
+     732 00002840     4801          cmp     a0,a1
+     733 00002850     cbe5          jrne    _hardware_wait_again
+     734                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     735 00002860           _hardware_leave:
+     736 00002860                   JSRP    FORCE_MAIN
+     737 000028d0                   RETP
+     738                    
+     739                            .else
+     740                            sleep   3
+     741                                    .if     WRESTLE = 1
+     742                            move    @_switch2_addr,a0,l
+     743                            move    *a0,a0,w
+     744                            move    @_switch_addr,a1,l
+     745                            move    *a1,a1,w
+     746                                    .else
+     747                            move    @(switch+10h),a0,w
+     748                            move    @switch,a1,w
+     749                                    .endif
+     750                            sll     16,a0
+     751                            srl     16,a0
+     752                            sll     16,a1
+     753                            srl     16,a1
+     754                            and     a0,a1
+     755                                    .if     WRESTLE = 1
+     756                            move    @_coin_addr,a0,l
+     757                            move    *a0,a0
+     758                                    .else
+     759                            move    @coins,a0,w
+     760                                    .endif
+     761                            sll     16,a0
+     762                            or      a1,a0
+     763                            not     a0
+     764                            jrz     _hardware_check_sw
+     765                    ret_hardware:
+     766                    
+     767                            sleep   2
+     768                            move    @switch,a0,w
+     769                            move    @switch+16,a1,w
+     770                            and     a1,a0
+     771                            move    @coins,a1,w
+     772                            and     a1,a0
+     773                            not     a0
+     774                            jrnz    ret_hardware
+     775                            jsrp    force_main
+     776                            retp
+     777                    
+     778                            .endif
+     779                    ; WBD END
+     780                    
+     781                    ; a0 = pointer to mess_mac TO COPY message is copied from message_buffer
+     782 00002900           _setup_message:
+     783 00002900     09e1          movi    _setup_mess,a1
+         00002910 00000160- 
+     784 00002930     1982          movk    12,a2
+     785 00002940           _sm_lp1:
+     786 00002940     9801          move    *a0+,*a1+
+     787 00002950     3c42          dsjs    a2,_sm_lp1
+     788 00002960     09e1          movi    _setup_mess_msg,a1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+         00002970 00000220- 
+     789 00002990     09e0          movi    message_buffer,a0
+         000029a0 00000360- 
+     790 000029c0     01e0          pushst
+     791 000029d0     0548          setf    8,0
+     792 000029e0           _sm_lp2:
+     793 000029e0     9402          move    *a0+,a2
+     794 000029f0     9041          move    a2,*a1+
+     795 00002a00     4c42          move    a2,a2
+     796 00002a10     cbfc          jrnz    _sm_lp2
+     797 00002a20           _sm_done
+     798 00002a20     01c0          popst
+     799 00002a30     5642          clr     a2
+     800 00002a40     8041          move    a2,*a1
+     801 00002a50     0960          rets
+     802                    
+     803                    
+     804 00002a60           gn_cant_be_good:
+     805 00002a60     05ae          move    @COINS,a14,W            ; svc credit acts as button, too
+         00002a70 01860030  
+     806 00002a90     0b8e          andi    40h,a14
+         00002aa0 ffffffbf  
+     807 00002ac0     242e          sll     1,a14
+     808 00002ad0     07a0          move    @SWITCH,a0,L            ; wait for buttons to clear
+         00002ae0 01860000  
+     809 00002b00     0b80          andi    70707070h,a0
+         00002b10 8f8f8f8f  
+     810 00002b30     55c0          or      a14,a0
+     811 00002b40     0b60          cmpi    707070f0h,a0
+         00002b50 8f8f8f0f  
+     812 00002b70     caee          jreq    gn_cant_be_good
+     813 00002b80     07a1          move    @SWSET1,a1,L
+         00002b90 00000000! 
+     814 00002bb0     05a2          move    @_pic_temp,a2
+         00002bc0 00000080- 
+     815 00002be0           gn_jump_back:
+     816 00002be0     4801          cmp     a0,a1
+     817 00002bf0     cb00          jrne    gn_confuse_people
+         00002c00     fea8  
+     818 00002c10     c0e4          jruc    gn_cant_be_good
+     819                            
+     820                    
+     821 00002c20           gn_jump_ahead:
+     822 00002c20     05ae          move    @COINS,a14,W            ; svc credit acts as button, too
+         00002c30 01860030  
+     823 00002c50     0b8e          andi    40h,a14
+         00002c60 ffffffbf  
+     824 00002c80     242e          sll     1,a14
+     825 00002c90     07a0          move    @SWITCH,a0,L            ; wait for buttons to clear
+         00002ca0 01860000  
+     826 00002cc0     0b80          andi    70707070h,a0
+         00002cd0 8f8f8f8f  
+     827 00002cf0     55c0          or      a14,a0
+     828 00002d00     0b60          cmpi    707070f0h,a0
+         00002d10 8f8f8f0f  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+     829 00002d30     cad2          jreq    gn_cant_be_good
+     830 00002d40     07a1          move    @SWSET1,a1,L
+         00002d50 00000000! 
+     831 00002d70     05a2          move    @_pic_temp,a2
+         00002d80 00000080- 
+     832 00002da0     c0e3          jruc    gn_jump_back     
+     833                    
+     834                    *****************************************************************************
+     835                    *
+     836                    * INPUT:        a0 = number to convert
+     837                    *               a1 = max value
+     838                    * converts value in A0 to an decimal ASCII string in message_buffer2
+     839                    * - removes leading spaces
+     840                    *
+     841                    *-----------------------------------------------------------------------------
+     842                    
+     843 00002db0           dec_to_asc
+     844                    
+     845 00002db0     4801          cmp     a0,a1                   ;a1-a0
+     846 00002dc0     c301          jrhi    not_max
+     847 00002dd0     4c20          move    a1,a0                   ;set num to max
+     848 00002de0           not_max
+     849                    
+     850                            .if     HOCKEY=0
+     851                            calla   binbcd                  ;dec number in A0
+     852                            .else
+     853 00002de0     0d5f          calla   BINBCD                  ;dec number in A0
+         00002df0 00000000! 
+     854                            .endif
+     855 00002e10     4c01          move    a0,a1
+     856 00002e20     09e2          movi    message_buffer2,a2
+         00002e30 000005e0- 
+     857                    
+     858 00002e50           dec_to_asc_new_entry
+     859                    
+     860 00002e50     5663          clr     a3                      ;leading zero flag
+     861                    
+     862 00002e60     0b80          andi    0f000000h,a0
+         00002e70 f0ffffff  
+     863 00002e90     2d00          srl     6*4,a0
+     864 00002ea0     cb02          jrnz    no_zero_n3
+     865 00002eb0     4c63          move    a3,a3                   ;leading zero
+     866 00002ec0     ca05          jrz     skip_zero_n3
+     867 00002ed0           no_zero_n3
+     868 00002ed0     1023          inc     a3
+     869 00002ee0     0b00          addi    '0',a0
+         00002ef0     0030  
+     870 00002f00     8c02          movb    a0,*a2
+     871 00002f10     1102          addk    8,a2
+     872 00002f20           skip_zero_n3
+     873                    
+     874 00002f20     4c20          move    a1,a0
+     875 00002f30     0b80          andi    0f00000h,a0
+         00002f40 ff0fffff  
+     876 00002f60     2d80          srl     5*4,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+     877 00002f70     cb02          jrnz    no_zero_n2
+     878 00002f80     4c63          move    a3,a3                   ;leading zero
+     879 00002f90     ca05          jrz     skip_zero_n2
+     880 00002fa0           no_zero_n2
+     881 00002fa0     1023          inc     a3
+     882 00002fb0     0b00          addi    '0',a0
+         00002fc0     0030  
+     883 00002fd0     8c02          movb    a0,*a2
+     884 00002fe0     1102          addk    8,a2
+     885 00002ff0           skip_zero_n2
+     886                    
+     887 00002ff0     4c20          move    a1,a0
+     888 00003000     0b80          andi    0f0000h,a0
+         00003010 fff0ffff  
+     889 00003030     2e00          srl     4*4,a0
+     890 00003040     cb02          jrnz    no_zero_n1
+     891 00003050     4c63          move    a3,a3                   ;leading zero
+     892 00003060     ca05          jrz     skip_zero_n1
+     893 00003070           no_zero_n1
+     894 00003070     1023          inc     a3
+     895 00003080     0b00          addi    '0',a0
+         00003090     0030  
+     896 000030a0     8c02          movb    a0,*a2
+     897 000030b0     1102          addk    8,a2
+     898 000030c0           skip_zero_n1
+     899                    
+     900 000030c0     4c20          move    a1,a0
+     901                    
+     902                    
+     903 000030d0     0b80          andi    0f000h,a0
+         000030e0 ffff0fff  
+     904 00003100     2e80          srl     3*4,a0
+     905 00003110     cb02          jrnz    no_zero0
+     906 00003120     4c63          move    a3,a3                   ;leading zero
+     907 00003130     ca05          jrz     skip_zero0
+     908 00003140           no_zero0
+     909 00003140     1023          inc     a3
+     910 00003150     0b00          addi    '0',a0
+         00003160     0030  
+     911 00003170     8c02          movb    a0,*a2
+     912 00003180     1102          addk    8,a2
+     913 00003190           skip_zero0
+     914                    
+     915 00003190     4c20          move    a1,a0
+     916 000031a0     0b80          andi    0f00h,a0
+         000031b0 fffff0ff  
+     917 000031d0     2f00          srl     2*4,a0
+     918 000031e0     cb02          jrnz    no_zero1
+     919 000031f0     4c63          move    a3,a3                   ;leading zero
+     920 00003200     ca05          jrz     skip_zero1
+     921 00003210           no_zero1
+     922 00003210     1023          inc     a3
+     923 00003220     0b00          addi    '0',a0
+         00003230     0030  
+     924 00003240     8c02          movb    a0,*a2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+     925 00003250     1102          addk    8,a2
+     926 00003260           skip_zero1
+     927                    
+     928 00003260     4c20          move    a1,a0
+     929 00003270     0b80          andi    0f0h,a0
+         00003280 ffffff0f  
+     930 000032a0     2f80          srl     1*4,a0
+     931 000032b0     cb02          jrnz    no_zero2
+     932 000032c0     4c63          move    a3,a3                   ;leading zero
+     933 000032d0     ca05          jrz     skip_zero2
+     934 000032e0           no_zero2
+     935 000032e0     1023          inc     a3
+     936 000032f0     0b00          addi    '0',a0
+         00003300     0030  
+     937 00003310     8c02          movb    a0,*a2
+     938 00003320     1102          addk    8,a2
+     939 00003330           skip_zero2
+     940                    
+     941 00003330     4c20          move    a1,a0
+     942 00003340     0b80          andi    0fh,a0
+         00003350 fffffff0  
+     943 00003370     0b00          addi    '0',a0
+         00003380     0030  
+     944 00003390     8c02          movb    a0,*a2
+     945 000033a0     1102          addk    8,a2
+     946 000033b0     5600          clr     a0
+     947 000033c0     8c02          movb    a0,*a2                  ;null terminate string
+     948                    
+     949 000033d0     0960          rets
+     950                    
+     951                    
+     952                    *****************************************************************************
+     953                    *
+     954                    * concatenates string in message_buffer2 to string in message_buffer
+     955                    *
+     956                    *-----------------------------------------------------------------------------
+     957                    
+     958 000033e0           concat_string
+     959                    
+     960 000033e0     09e2          movi    message_buffer-8,a2
+         000033f0 00000358- 
+     961 00003410     09e3          movi    message_buffer2-8,a3
+         00003420 000005d8- 
+     962 00003440           next_char
+     963 00003440     1102          addk    8,a2
+     964 00003450     8e40          movb    *a2,a0
+     965 00003460     cbfd          jrnz    next_char
+     966 00003470     1502          subk    8,a2
+     967                    
+     968 00003480           next_char2
+     969 00003480     1102          addk    8,a2
+     970 00003490     1103          addk    8,a3
+     971 000034a0     9c62          movb    *a3,*a2
+     972 000034b0     8e60          movb    *a3,a0                          ;NULL?
+     973 000034c0     cbfb          jrnz    next_char2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+     974                    
+     975 000034d0     0960          rets
+     976                    
+     977                    *****************************************************************************
+     978                    *
+     979                    * INPUT:        a4 = * null terminated rom string
+     980                    *
+     981                    * copies string in rom to message_buffer
+     982                    *
+     983                    *-----------------------------------------------------------------------------
+     984                    
+     985 000034e0           copy_rom_string
+     986                    
+     987 000034e0     09e1          movi    message_buffer-8,a1
+         000034f0 00000358- 
+     988                    
+     989 00003510     1504          subk    8,a4
+     990                    
+     991 00003520           crnext_char
+     992 00003520     1101          addk    8,a1
+     993 00003530     1104          addk    8,a4
+     994 00003540     9c81          movb    *a4,*a1
+     995 00003550     8e80          movb    *a4,a0                          ;NULL ?
+     996 00003560     cbfb          jrnz    crnext_char
+     997                    
+     998 00003570     0960          rets
+     999                    
+    1000                    *****************************************************************************
+    1001                    *
+    1002                    * INPUT:        a4 = * null terminated rom string
+    1003                    *
+    1004                    * concatenates string in rom to string in message_buffer
+    1005                    *
+    1006                    *-----------------------------------------------------------------------------
+    1007                    
+    1008 00003580           concat_rom_string
+    1009                    
+    1010 00003580     09e1          movi    message_buffer-8,a1
+         00003590 00000358- 
+    1011 000035b0           ccrnext_char
+    1012 000035b0     1101          addk    8,a1
+    1013 000035c0     8e20          movb    *a1,a0
+    1014 000035d0     cbfd          jrnz    ccrnext_char
+    1015                    
+    1016 000035e0     1501          subk    8,a1
+    1017 000035f0     1504          subk    8,a4
+    1018                    
+    1019 00003600           ccrnext_char2
+    1020 00003600     1101          addk    8,a1
+    1021 00003610     1104          addk    8,a4
+    1022 00003620     9c81          movb    *a4,*a1
+    1023 00003630     8e80          movb    *a4,a0                          ;NULL ?
+    1024 00003640     cbfb          jrnz    ccrnext_char2
+    1025                    
+    1026 00003650     0960          rets
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+    1027                    
+    1028                    
+    1029                    *****************************************************************************
+    1030                    *
+    1031                    * copies string in message_buffer2 to message_buffer
+    1032                    *
+    1033                    *-----------------------------------------------------------------------------
+    1034                    
+    1035 00003660           copy_string
+    1036                    
+    1037 00003660     09e2          movi    message_buffer-8,a2
+         00003670 00000358- 
+    1038 00003690     09e3          movi    message_buffer2-8,a3
+         000036a0 000005d8- 
+    1039                    
+    1040 000036c0           csnext_char
+    1041 000036c0     1102          addk    8,a2
+    1042 000036d0     1103          addk    8,a3
+    1043 000036e0     9c62          movb    *a3,*a2
+    1044 000036f0     8e60          movb    *a3,a0                          ;NULL?
+    1045 00003700     cbfb          jrnz    csnext_char
+    1046                    
+    1047 00003710     0960          rets
+    1048                    
+    1049 00003720                   .even
+    1050                    
+    1051 00003720           mess_hardware
+    1052 00003720       48          .string "HARDWARE INFO",0
+    1053 00003790                   .even
+    1054 00003790           m_hardware_info
+    1055 00003790       48          .string "HARDWARE INFORMATION",0
+    1056 00003840                   .even
+    1057                    
+    1058 00003840           willy_prompt:
+    1059 00003840                   mess_mac rd15font, spacing07, 200, willy_y, trog_ppurple, strcnrm,0
+    1060 00003900       4d          .string "Midway Manufacturing",0
+    1061 000039b0                   .even
+    1062 000039b0     0001          .word   1
+    1063 000039c0                   mess_mac rd15font, spacing20, 200, unit_y, trog_pgreen, strcnrm, 0
+    1064 00003a80       4f          .string "OI UNIT",0
+    1065 00003ac0                   .even
+    1066 00003ac0     0000          .word   0
+    1067 00003ad0           m_dom
+    1068 00003ad0       44          .string "DATE OF MANUFACTURE:  ",0
+    1069 00003b90                   .even
+    1070 00003b90           mess_january
+    1071 00003b90       4a          .string "January  ",0
+    1072 00003be0                   .even
+    1073 00003be0           mess_february
+    1074 00003be0       46          .string "February  ",0
+    1075 00003c40                   .even
+    1076 00003c40           mess_march
+    1077 00003c40       4d          .string "March  ",0
+    1078 00003c80                   .even
+    1079 00003c80           mess_april
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+    1080 00003c80       41          .string "April  ",0
+    1081 00003cc0                   .even
+    1082 00003cc0           mess_may
+    1083 00003cc0       4d          .string "May  ",0
+    1084 00003cf0                   .even
+    1085 00003cf0           mess_june
+    1086 00003cf0       4a          .string "June  ",0
+    1087 00003d30                   .even
+    1088 00003d30           mess_july
+    1089 00003d30       4a          .string "July  ",0
+    1090 00003d70                   .even
+    1091 00003d70           mess_august
+    1092 00003d70       41          .string "August  ",0
+    1093 00003dc0                   .even
+    1094 00003dc0           mess_september
+    1095 00003dc0       53          .string "September  ",0
+    1096 00003e20                   .even
+    1097 00003e20           mess_october
+    1098 00003e20       4f          .string "October  ",0
+    1099 00003e70                   .even
+    1100 00003e70           mess_november
+    1101 00003e70       4e          .string "November  ",0
+    1102 00003ed0                   .even
+    1103 00003ed0           mess_december
+    1104 00003ed0       44          .string "December  ",0
+    1105 00003f30                   .even
+    1106 00003f30           month_table
+    1107 00003f30 00003b90'         .long   mess_january, mess_february, mess_march, mess_april
+    1108 00003fb0 00003cc0'         .long   mess_may, mess_june, mess_july, mess_august, mess_september
+    1109 00004050 00003e20'         .long   mess_october, mess_november, mess_december
+    1110 000040b0                   .even
+    1111 000040b0           mess_hyears
+    1112 000040b0       2c          .string ", 19",0
+    1113 000040e0                   .even
+    1114 000040e0           man_date_setup:
+    1115 000040e0                   mess_mac rd7font, spacing07,200, man_y, trog_pgreen,strcnrm,0
+    1116 000041a0       00          .byte   0
+    1117 000041a8       00          .byte   0,0
+    1118 000041c0                   .even
+    1119 000041c0           m_serial
+    1120 000041c0       53          .string "SERIAL NUMBER:  ",0
+    1121 00004250                   .even
+    1122 00004250           serial_num_setup:
+    1123 00004250                   mess_mac rd7font,spacing07,200,serial_y,trog_ppurple,strcnrm,0
+    1124 00004310       00          .byte   0
+    1125 00004318       00          .byte   0,0
+    1126 00004330                   .even
+    1127 00004330           mess_quit
+    1128 00004330                   mess_mac rd7font,spacing07,200,230,trog_prgb,strcnrm,0
+    1129 000043f0       50          .string "PRESS ANY BUTTON TO QUIT"
+    1130 000044b0       00          .byte   0,0
+    1131 000044c0                   .even
+    1132                    
+    1133                    
+    1134 000044c0           hardware_help
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+    1135 000044c0     0000          .word   0
+    1136 000044d0     0303          .word   trog_blue
+    1137 000044e0     0002          .word   2
+    1138 000044f0 00004530'         .long   hdwh_sn
+    1139 00004510 000045a0'         .long   hdwh_man
+    1140 00004530           hdwh_sn
+    1141 00004530       53          .string "SERIAL NUMBER",0
+    1142 000045a0                   .even
+    1143 000045a0           hdwh_man
+    1144 000045a0       4d          .string "MANUFACTURE DATE",0
+    1145 00004630                   .even
+    1146                    
+    1147 00004630           sec_mess_2:
+    1148 00004630       4c          .string "LEVEL 2 SECURITY CHECK FAILURE",0
+    1149 00004730                   .even
+    1150                    
+    1151                    
+    1152 00004730           octopus_button
+    1153 00004730     05ae          move    @GAME_STATE,a14,W
+         00004740 00000000! 
+    1154 00004760     0b4e          cmpi    INAMODE,a14
+         00004770     ffcf  
+    1155 00004780     cb06          jrnz    ob9
+    1156 00004790     0b40          cmpi    1,a0
+         000047a0     fffe  
+    1157 000047b0     ca0a          jrz     ob_l
+    1158 000047c0     0b40          cmpi    6,a0
+         000047d0     fff9  
+    1159 000047e0     ca0b          jrz     ob_r
+    1160 000047f0     5600  ob9     clr     a0
+    1161 00004800     0580          move    a0,@octopus_count,W
+         00004810 00000860- 
+    1162 00004830     c080          jauc    SUCIDE
+         00004840 00000000! 
+    1163                    
+    1164 00004860     09e1  ob_l    movi    ob_l_list,a1
+         00004870 00004a60' 
+    1165 00004890     c003          jruc    oblrg
+    1166 000048a0     09e1  ob_r    movi    ob_r_list,a1
+         000048b0 00004b80' 
+    1167 000048d0     05a2  oblrg   move    @octopus_count,a2,W
+         000048e0 00000860- 
+    1168 00004900     942e  obg1    move    *a1+,a14,W
+    1169 00004910     ceed          jrn     ob9
+    1170 00004920     49c2          cmp     a14,a2
+    1171 00004930     cbfc          jrnz    obg1
+    1172 00004940     1022          inc     a2
+    1173 00004950     0582          move    a2,@octopus_count,W
+         00004960 00000860- 
+    1174 00004980     0b42          cmpi    35,a2
+         00004990     ffdc  
+    1175 000049a0     ca35          jrz     do_octopus
+    1176 000049b0                   C_A_K   PID_OCTOPUS_BUTTON,time_octopus_button
+    1177 00004a30     c080          jauc    SUCIDE
+         00004a40 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:45 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+    1178                    
+    1179 00004a60           ob_l_list
+    1180 00004a60     0000          .word   0,1,2,3,4,15,16,17,18,19,20,21,22,29,30,31,32,-1
+    1181 00004b80           ob_r_list
+    1182 00004b80     0005          .word   5,6,7,8,9,10,11,12,13,14,23,24,25,26,27,28,33,34,-1
+    1183                    
+    1184 00004cb0           time_octopus_button
+    1185 00004cb0                   SLEEP   30
+    1186 00004cf0     c0af          jruc    ob9
+    1187                    
+    1188 00004d00           do_octopus
+    1189 00004d00     c080          jauc    octo_diag
+         00004d10 00000000! 
+
+ No Errors,  No Warnings

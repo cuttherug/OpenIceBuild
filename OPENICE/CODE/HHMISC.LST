@@ -1,0 +1,780 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHMISC.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    **************************************************************************
+       8                    *                                                                        *
+       9                    *       COPYRIGHT (C) 1994 MIDWAY MANUFACTURING COMPANY.                 *
+      10                    *                      ALL RIGHTS RESERVED.                              *
+      11                    *                                                                        *
+      12                    **************************************************************************
+      13                    
+      14                            .INCLUDE        "HH.INC"
+      15                            .INCLUDE        "HHSTRING.H"
+      16                            .INCLUDE        "IMGTBL.GLO"
+      17                            .include        "hhmisc.e"
+      18                            .include        "hhram.g"
+      19                            .include        "hhproc.g"
+      20                            .include        "hhcmos.g"
+      21                            .include        "hhpall.g"
+      22                            .include        "hhd.g"
+      23                            .include        "hhgame.g"
+      24                            .include        "hhtimer.g"
+      25                    
+      26                    ; end of include files
+      27                    
+      28                    
+      29                    *SYMBOLS IN APPROC.ASM
+      30                            .IF NOTFINAL
+      31                            .REF    THISWAKE
+      32                            .ENDIF
+      33                    
+      34                            .if     DEBUG
+      35                            .REF    NOVELADD
+      36                            .endif
+      37                    
+      38 00000000                   .EVEN
+      39 00000000                   .TEXT
+      40                    
+      41                    **************************************************************************
+      42                    *                                                                        *
+      43                    *       NOTE: PLACE THESE TWO DUMB COLLISION VECTORS IN A USABLE         *
+      44                    *             POSITION SOMEDAY!!!!                                       *
+      45                    *                                                                        *
+      46                    **************************************************************************
+      47 00000000           DUMCRETS                        ;COLLISION RETURN TO CONTINUE SCAN
+      48 00000000                   CLRZ
+      49 00000020     0960          RETS
+      50                    
+      51 00000030           DUMCOLL                         ;LABEL FOR THE COMMON CAUSE
+      52 00000030     0000          .WORD   0
+      53 00000040 00000000'         .LONG   DUMCRETS        ;DO NOTHING
+      54                    
+      55                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56                    *                                                                        *
+      57                    * DUMPPRINT - Do a register dump to the Printer, if it's installed.      *
+      58                    *               If not, then go to CMOS.                                 *
+      59                    *                                                                        *
+      60                    *               If DEBUG  then we jsut hang here.                        *
+      61                    *               If PRINTER & ~DEBUG  then PRINT registers.               *
+      62                    *               If ~PRINTER & ~DEBUG  then Write to CMOS.                *
+      63                    *                                                                        *
+      64                    **************************************************************************
+      65 00000060           DUMPPRINT
+      66                            .IF DEBUG
+      67                    
+      68                            MOVK    1,A14
+      69                            MOVE    A14,@NOVELADD,W         ;DON'T VELADD!
+      70                    
+      71                            JRUC    $
+      72                            RETS                    ;USE THIS TO JUMP BACK.
+      73                    
+      74                            .ELSE
+      75                    
+      76 00000060     01e0          PUSHST                          ;SAVE FLAGS
+      77                    
+      78 00000070     b7fe          MOVE    *SP(020h),B14,L ;Grab the return address for dump
+         00000080     0020  
+      79                    
+      80 00000090                   PUSH    A0
+      81 000000a0                   AUDIT   AUD_WARNING
+      82 000000f0                   PULLQ   A0
+      83 00000100     57ce          CLR     A14
+      84 00000110     0d3f          CALLR   DUMP_IT
+         00000120     0002  
+      85                    
+      86 00000130     01c0          POPST                           ;RESTORE FLAGS
+      87 00000140     0960          RETS
+      88                    
+      89                             .ENDIF
+      90                    
+      91                    **************************************************************************
+      92                    *                                                                        *
+      93                    * DUMP_IT - Dump Registers and relevent info to the CMOS dump pages.     *
+      94                    * A14 = Dump Code:                                                       *
+      95                    *          0 = DUMPPRINT                                                 *
+      96                    *          1 = BAD TRAP                                                  *
+      97                    *          2 = WATCH DOG                                                 *
+      98                    *          3 = WRITE TO ROM                                              *
+      99                    *                                                                        *
+     100                    * B14 = Return Address                                                   *
+     101                    *                                                                        *
+     102                    **************************************************************************
+     103 00000150           DUMP_IT
+     104 00000150     098f          MMTM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8
+         00000160     ff80  
+     105 00000170     4c07          MOVE    A0,A7
+     106                    
+     107 00000180                   PUSH    A14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     108 00000190                   PUSH    B14
+     109 000001a0     09c0          MOVI    AUD_UPTIME,A0
+         000001b0     0012  
+     110 000001c0     0d5f          CALLA   GET_AUD
+         000001d0 00000000! 
+     111 000001f0     4c27          MOVE    A1,A7
+     112 00000200                   PULLQ   B14
+     113 00000210                   PULLQ   A14
+     114                    
+     115 00000220     05a0          MOVE    @TIMER,A0,W
+         00000230 00000000! 
+     116 00000250     2480          SLL     4,A0
+     117 00000260     55c0          OR      A14,A0
+     118 00000270     2600          SLL     16,A0
+     119 00000280     05ae          MOVE    @GAME_STATE,A14,W
+         00000290 00000000! 
+     120 000002b0     edc0          MOVX    A14,A0                  ;A0 = [CODE, GSTATE]
+     121                    
+     122                    ;       MOVE    *SP(120H),A1,L          ;A1 = RETURN ADDRESS
+     123 000002c0     4fd1          MOVE    B14,A1                  ;A1 = RETURN ADDRESS
+     124                    
+     125                            .IF NOTFINAL
+     126 000002d0     07a2          MOVE    @THISWAKE,A2,L          ;A2 = LAST WAKE-UP ADDRESS
+         000002e0 00000000! 
+     127                            .ENDIF
+     128                    
+     129 00000300     05a3          move    @period,a3,W
+         00000310 00000000! 
+     130 00000330     2703          sll     24,a3                   ;a3 byte 0 = period
+     131 00000340     05ae          move    @CURPLYRS,a14,W
+         00000350 00000000! 
+     132 00000370     260e          sll     16,a14
+     133 00000380     55c3          or      a14,a3                  ;   byte 1 = number of players
+     134                    
+     135 00000390     05ae          move    @minutes,a14,W
+         000003a0 00000000! 
+     136 000003c0     258e          sll     12,a14
+     137 000003d0     55c3          or      a14,a3                  ;   nib  2.0 = minutes
+     138 000003e0     05ae          move    @tenseconds,a14,W
+         000003f0 00000000! 
+     139 00000410     250e          sll     8,a14
+     140 00000420     55c3          or      a14,a3                  ;   nib  2.1 = tenseconds
+     141 00000430     05ae          move    @seconds,a14,W
+         00000440 00000000! 
+     142 00000460     248e          sll     4,a14
+     143 00000470     55c3          or      a14,a3                  ;   nib  3.0 = seconds
+     144 00000480     05ae          move    @tenths,a14,W
+         00000490 00000000! 
+     145 000004b0     55c3          or      a14,a3                  ;   nib  3.1 = tenths
+     146                    
+     147 000004c0     b704          move    *a8(ANIMFRM),a4,L       ;a4 = animation frame of a8
+         000004d0     0320  
+     148                    
+     149 000004e0     05a5          MOVE    @team1_score,A5,W
+         000004f0 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     150 00000510     2705          SLL     24,A5                   ;4TH BYTE
+     151 00000520     05ae          MOVE    @team2_score,A14,W
+         00000530 00000000! 
+     152 00000550     260e          SLL     16,A14                  ;3RD BYTE
+     153 00000560     55c5          OR      A14,A5
+     154 00000570     05ae          MOVE    @WORLDX+010H,A14,W
+         00000580 00000010! 
+     155 000005a0     edc5          MOVX    A14,A5                  ;A5 = [SCORE, HIGH WORD OF WORLDX]
+     156                    
+     157                                                            ;A6 = MAYBE PLAYER BLOCK
+     158                    
+     159                                                            ;A7 = GAME UP TIME
+     160                    
+     161                                                            ;A8 = ?
+     162 000005b0     0d5f          CALLA   ADD_DUMP
+         000005c0 00000000! 
+     163                    
+     164 000005e0     09af          MMFM    SP,A0,A1,A2,A3,A4,A5,A6,A7,A8
+         000005f0     01ff  
+     165 00000600     0960          RETS
+     166                    
+     167                    **************************************************************************
+     168                    *                                                                        *
+     169                    * COLOR_START - START THE COLOR RAM PROCESSES                            *
+     170                    *                                                                        *
+     171                    **************************************************************************
+     172 00000610           COLOR_START
+     173 00000610     098f          MMTM    SP,A0,A1,A7
+         00000620     c100  
+     174 00000630     09c0          MOVI    PID_COLOR,A0
+         00000640     2cc0  
+     175 00000650     0d5f          CALLA   KILLPROC_ALL
+         00000660 00000000! 
+     176 00000680                   CREATE  PID_COLOR,LFLASH
+     177 00000700                   CREATE  PID_COLOR,RGB
+     178 00000780                   CREATE  PID_COLOR,BPR
+     179 00000800                   CREATE  PID_COLOR,DECAY
+     180 00000880     09af          MMFM    SP,A0,A1,A7
+         00000890     0083  
+     181 000008a0     0960          RETS
+     182                    
+     183                    **************************************************************************
+     184                    *                                                                        *
+     185                    * TABLE DRIVEN COLOR RAM PROCESSES                                       *
+     186                    *                                                                        *
+     187                    **************************************************************************
+     188                    *       xxxxxA0(10)     -       RGB
+     189                    *       xxxxxB0(11)     -       BPR
+     190                    *       xxxxxC0(12)     -       DECAY
+     191                    *       xxxxxD0(13)     -       LASER FLASH
+     192                    
+     193 000008b0     0d3f  RGB     CALLR   TABDRIVE
+         000008c0     008c  
+     194 000008d0 00000920'         .LONG   RGBTAB,COLRTEMP+0A0H
+     195 00000910     0008          .WORD   8
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     196 00000920     7c00  RGBTAB  .WORD   07C00H,001FH,077A0h,0741Ah,0FFFFH
+     197                    
+     198                    *
+     199 00000970     0d3f  DECAY   CALLR   TABDRIVE
+         00000980     0080  
+     200 00000990 000009e0'         .LONG   DCATAB,COLRTEMP+0C0H
+     201 000009d0     0002          .WORD   2
+     202 000009e0     001c  DCATAB  .WORD   001CH,001CH,011CH,021CH,031CH,039CH,239CH,2390H,2388H
+     203 00000a70     2380          .WORD   2380H,4300H,5280H,7180H,6180H,7080H,7000H,6000H,5000H
+     204 00000b00     4000          .WORD   4000H,3000H,2000H,1000H,0FFFFH
+     205                    *
+     206 00000b50     0d3f  BPR     CALLR   TABDRIVE
+         00000b60     0062  
+     207 00000b70 00000bc0'         .LONG   BPRTAB,COLRTEMP+0B0H
+     208 00000bb0     0001          .WORD   1
+     209 00000bc0     001c  BPRTAB  .WORD   001CH,101CH,201CH,301CH,401CH,501CH,601CH,701CH,7010H
+     210 00000c50     7010          .WORD   7010H,7008H,7008H,7000H,7000H,7008H,7008H,7010H,7010H
+     211 00000ce0     701c          .WORD   701CH,701CH,601CH,501CH,401CH,301CH,201CH,101CH,0FFFFH
+     212                    
+     213                    **************************************************************************
+     214                    *                                                                        *
+     215                    * LFLASH - PROCESS TO CREATE THE FAMOUS LASER FLASH COLOR                *
+     216                    *                                                                        *
+     217                    **************************************************************************
+     218 00000d70     09c0  LFLASH  MOVI    07FFFH,A0
+         00000d80     7fff  
+     219 00000d90     0580          MOVE    A0,@COLRTEMP+0D0H,W
+         00000da0 000000d0! 
+     220 00000dc0                   SLEEP   2
+     221 00000e00           LFLASH1
+     222 00000e00     05a0          MOVE    @RAND,A0,W
+         00000e10 00000000! 
+     223 00000e30     0b80          ANDI    0000001FH,A0
+         00000e40 ffffffe0  
+     224 00000e60     09e1          MOVI    COLTAB,A1
+         00000e70 00000f40' 
+     225 00000e90     2480          SLL     4,A0
+     226 00000ea0     4001          ADD     A0,A1
+     227 00000eb0     8421          MOVE    *A1,A1,W
+     228 00000ec0     0581          MOVE    A1,@COLRTEMP+0D0H,W
+         00000ed0 000000d0! 
+     229 00000ef0                   SLEEP   6
+     230 00000f30     c0e3          JRUC    LFLASH
+     231                    
+     232 00000f40     0380  COLTAB  .WORD   0380H,1380H,2380H,3380H,4380H,5380H,6380H,7380H,7300H
+     233 00000fd0     7280          .WORD   7280H,7200H,7180H,7080H,7008H,7008H,7010H,7010H,701CH
+     234 00001060     701c          .WORD   701CH,601CH,501CH,409CH,309CH,209CH,219CH,029CH,039CH
+     235 000010f0     139c          .WORD   139CH,239CH,339CH,539CH,739CH,7390H,7380H,6380H,4380H
+     236 00001180     ffff          .WORD   0FFFFH
+     237                    
+     238                    **************************************************************************
+     239                    *                                                                        *
+     240                    * THE TABLE DRIVEN PROCESS                                               *
+     241                    *                                                                        *
+     242                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     243 00001190           TABDRIVE
+     244 00001190     97e0          MOVE    *SP+,A0,L
+     245 000011a0     960b          MOVE    *A0+,A11,L      ;A11 = TABLE START
+     246 000011b0     9609          MOVE    *A0+,A9,L       ;A9 = LOCATION TO STUFF COLOR
+     247 000011c0     840a          MOVE    *A0,A10,W       ;A10 = SLEEP TIME
+     248 000011d0           TABDRV1
+     249 000011d0     4d68          MOVE    A11,A8          ;RESET TO START OF TABLE
+     250 000011e0           TABDRV2
+     251 000011e0     9500          MOVE    *A8+,A0,W       ;GET A COLOR
+     252 000011f0     cefd          JRN     TABDRV1         ;BR = END OF TABLE
+     253 00001200     8009          MOVE    A0,*A9,W
+     254 00001210     4d40          MOVE    A10,A0
+     255 00001220     09e7          MOVI    TABDRV2,A7
+         00001230 000011e0' 
+     256 00001250     c080          JAUC    PRCLSP          ;LOOP SLEEP
+         00001260 00000000! 
+     257                    
+     258                    **************************************************************************
+     259                    *                                                                        *
+     260                    * CYCLE16 - PROCESS TO CYCLE UP TO SIXTEEN COLORS OF A GIVEN PALETTE.    *
+     261                    * A8 = PTR TO PALETTE (PALETTE MUST BE ALLOCATED).                       *
+     262                    * A9 = START COLOR #                                                     *
+     263                    * A10 = END COLOR #                                                      *
+     264                    * A11 = SPEED                                                            *
+     265                    *                                                                        *
+     266                    **************************************************************************
+     267 00001280           CYCLE16:
+     268 00001280     b16d          MOVE    A11,*A13(PDATA),W       ;KEEP THE SLEEP TIME
+         00001290     0100  
+     269 000012a0     4d42          MOVE    A10,A2
+     270 000012b0     576b          CLR     A11                     ;THIS WILL BE THE DIRECTION FLAG
+     271 000012c0     4522          SUB     A9,A2
+     272 000012d0     cf05          JRNN    CYCLE16_FOR             ;BR = FOWARD CYCLE
+     273 000012e0     0382          ABS     A2
+     274 000012f0     03eb          NOT     A11                     ;FLAG A REVERSE CYCLE
+     275 00001300                   SWAP    A9,A10                  ;SWAP THESE FOR LOAD
+     276                    
+     277 00001330           CYCLE16_FOR:
+     278 00001330     b12d          MOVE    A9,*A13(PDATA+10H),W    ;STORE THE START COLOR
+         00001340     0110  
+     279 00001350     4d23          MOVE    A9,A3
+     280 00001360     4da9          MOVE    A13,A9
+     281 00001370     0b09          ADDI    PDATA+60H,A9            ;START COLOR ADDRESS
+         00001380     0160  
+     282 00001390     4d2a          MOVE    A9,A10
+     283 000013a0     4c44          MOVE    A2,A4
+     284 000013b0     2484          SLL     4,A4
+     285 000013c0     408a          ADD     A4,A10                  ;END COLOR ADDRESS
+     286                    
+     287 000013d0     4d00          MOVE    A8,A0
+     288 000013e0     4d21          MOVE    A9,A1                   ;THIS IS THE STARTING COLOR LOCATION
+     289 000013f0     1200          ADDK    16,A0                   ;SKIP THE COLOR COUNT
+     290 00001400     2483          SLL     4,A3
+     291 00001410     4060          ADD     A3,A0                   ;AND GET TO THE START COLOR
+     292 00001420     1022          INC     A2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     293 00001430     b04d          MOVE    A2,*A13(PDATA+20H),W    ;STORE THE COLOR COUNT
+         00001440     0120  
+     294                    
+     295 00001450           CYCLE16_LOAD:
+     296 00001450     9801          MOVE    *A0+,*A1+,W             ;TRANSFER THE PALETTE TO RAM
+     297 00001460     3c42          DSJS    A2,CYCLE16_LOAD
+     298                    
+     299 00001470           CYCLE16_WAIT:
+     300 00001470     4d00          MOVE    A8,A0
+     301 00001480     0d5f          CALLA   FINDPAL                 ;DOES THIS PALETTE EXIST?
+         00001490 00000000! 
+     302 000014b0     cb07          JRNZ    CYCLE16_FND             ;BR = YES, GO AHEAD AND CYCLE
+     303 000014c0                   SLOOP   6,CYCLE16_WAIT          ;WAIT FOR IT TO EXIST
+     304                    
+     305 00001530           CYCLE16_FND:
+     306 00001530     4c07          MOVE    A0,A7                   ;STORE FOUND PALETTE NUMBER HERE
+     307 00001540     b5a4          MOVE    *A13(PDATA+20H),A4,W    ;DO IT THIS MANY TIMES
+         00001550     0120  
+     308 00001560     1424          DEC     A4                      ;WATCH THE ZERO BASE
+     309                    
+     310 00001570     4d6b          MOVE    A11,A11                 ;CHECK DIRECTION
+     311 00001580     cf08          JRNN    CYCLE16_UP              ;BR = CYCLE COLORS UP
+     312 00001590     4d21          MOVE    A9,A1                   ;GET THE END COLOR
+     313 000015a0     8423          MOVE    *A1,A3,W                ;STORE THE COLOR
+     314 000015b0     4d42          MOVE    A10,A2
+     315 000015c0     4c20          MOVE    A1,A0
+     316 000015d0     1201          ADDK    16,A1
+     317 000015e0           CYCLE16_DN_LP:
+     318 000015e0     9820          MOVE    *A1+,*A0+,W
+     319 000015f0     3c44          DSJS    A4,CYCLE16_DN_LP
+     320 00001600     c007          JRUC    CYCLE16_DONE
+     321                    
+     322 00001610           CYCLE16_UP:
+     323 00001610     4d41          MOVE    A10,A1                  ;GET THE END COLOR
+     324 00001620     8423          MOVE    *A1,A3,W                ;STORE THE COLOR
+     325 00001630     4d22          MOVE    A9,A2
+     326 00001640     4c20          MOVE    A1,A0
+     327 00001650     1201          ADDK    16,A1
+     328 00001660           CYCLE16_UP_LP:
+     329 00001660     a801          MOVE    -*A0,-*A1,W
+     330 00001670     3c44          DSJS    A4,CYCLE16_UP_LP
+     331 00001680           CYCLE16_DONE:
+     332 00001680     8062          MOVE    A3,*A2,W                ;WRAP COLOR
+     333 00001690     4d20          MOVE    A9,A0
+     334 000016a0     b5a1          MOVE    *A13(PDATA+10H),A1,W
+         000016b0     0110  
+     335 000016c0     0527          ZEXT    A7
+     336 000016d0     2f07          SRL     8,A7
+     337 000016e0     2507          SLL     8,A7
+     338 000016f0     54e1          OR      A7,A1                   ;DESTINATION: 8-15 PALETTE, 0-7 START
+     339 00001700     b5a2          MOVE    *A13(PDATA+20H),A2,W    ;GET THE COUNT
+         00001710     0120  
+     340 00001720     0d5f          CALLA   PALSET                  ;SETUP A TRANSFER
+         00001730 00000000! 
+     341 00001750     b5a0          MOVE    *A13(PDATA),A0,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+         00001760     0100  
+     342 00001770                   SLOOPR  A0,CYCLE16_WAIT
+     343                    
+     344 000017e0           CYCLE16_1               ;loop once and die
+     345 000017e0     b16d          MOVE    A11,*A13(PDATA),W       ;KEEP THE SLEEP TIME
+         000017f0     0100  
+     346 00001800     4d42          MOVE    A10,A2
+     347 00001810     4522          SUB     A9,A2
+     348 00001820     4c4b          move    a2,a11
+     349 00001830     b12d          MOVE    A9,*A13(PDATA+10H),W    ;STORE THE START COLOR
+         00001840     0110  
+     350 00001850     4d23          MOVE    A9,A3
+     351 00001860     4da9          MOVE    A13,A9
+     352 00001870     0b09          ADDI    PDATA+60H,A9            ;START COLOR ADDRESS
+         00001880     0160  
+     353 00001890     4d2a          MOVE    A9,A10
+     354 000018a0     4c44          MOVE    A2,A4
+     355 000018b0     2484          SLL     4,A4
+     356 000018c0     408a          ADD     A4,A10                  ;END COLOR ADDRESS
+     357 000018d0     4d00          MOVE    A8,A0
+     358 000018e0     4d21          MOVE    A9,A1                   ;THIS IS THE STARTING COLOR LOCATION
+     359 000018f0     1200          ADDK    16,A0                   ;SKIP THE COLOR COUNT
+     360 00001900     2483          SLL     4,A3
+     361 00001910     4060          ADD     A3,A0                   ;AND GET TO THE START COLOR
+     362 00001920     1022          INC     A2
+     363 00001930     b04d          MOVE    A2,*A13(PDATA+20H),W    ;STORE THE COLOR COUNT
+         00001940     0120  
+     364 00001950     9801  c16l1   MOVE    *A0+,*A1+,W             ;TRANSFER THE PALETTE TO RAM
+     365 00001960     3c42          DSJS    A2,c16l1
+     366 00001970     4d00  c16wt   MOVE    A8,A0
+     367 00001980     0d5f          CALLA   FINDPAL                 ;DOES THIS PALETTE EXIST?
+         00001990 00000000! 
+     368 000019b0     4c07          MOVE    A0,A7                   ;STORE FOUND PALETTE NUMBER HERE
+     369 000019c0     b5a4          MOVE    *A13(PDATA+20H),A4,W    ;DO IT THIS MANY TIMES
+         000019d0     0120  
+     370 000019e0     1424          DEC     A4                      ;WATCH THE ZERO BASE
+     371 000019f0     4d41          MOVE    A10,A1                  ;GET THE END COLOR
+     372 00001a00     8423          MOVE    *A1,A3,W                ;STORE THE COLOR
+     373 00001a10     4d22          MOVE    A9,A2
+     374 00001a20     4c20          MOVE    A1,A0
+     375 00001a30     1201          ADDK    16,A1
+     376 00001a40     a801  c16ulp  MOVE    -*A0,-*A1,W
+     377 00001a50     3c44          DSJS    A4,c16ulp
+     378 00001a60     8062          MOVE    A3,*A2,W                ;WRAP COLOR
+     379 00001a70     4d20          MOVE    A9,A0
+     380 00001a80     b5a1          MOVE    *A13(PDATA+10H),A1,W
+         00001a90     0110  
+     381 00001aa0     0527          ZEXT    A7
+     382 00001ab0     2f07          SRL     8,A7
+     383 00001ac0     2507          SLL     8,A7
+     384 00001ad0     54e1          OR      A7,A1                   ;DESTINATION: 8-15 PALETTE, 0-7 START
+     385 00001ae0     b5a2          MOVE    *A13(PDATA+20H),A2,W    ;GET THE COUNT
+         00001af0     0120  
+     386 00001b00     0d5f          CALLA   PALSET                  ;SETUP A TRANSFER
+         00001b10 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     387 00001b30     b5a0          MOVE    *A13(PDATA),A0,W
+         00001b40     0100  
+     388 00001b50     09e7          movi    swk,a7
+         00001b60 00001bb0' 
+     389 00001b80     c080          jauc    PRCLSP
+         00001b90 00000000! 
+     390 00001bb0     0d8b  swk     dsj     a11,c16wt
+         00001bc0     ffda  
+     391 00001bd0     c080          jauc    SUCIDE
+         00001be0 00000000! 
+     392                    
+     393                    **************************************************************************
+     394                    *                                                                        *
+     395                    * CYCLE1 - PROCESS TO CYCLE ONE COLOR OF A PALETTE THROUGH DIFFERENT     *
+     396                    *          VALUES.                                                       *
+     397                    * A8 = PALETTE I.D. PROCESS WILL WAIT 'TIL PALETTE IS ALLOCATED.         *
+     398                    * A9 = TABLE OF COLORS                                                   *
+     399                    * A10 = COLOR #                                                          *
+     400                    * A11 = SPEED                                                            *
+     401                    *                                                                        *
+     402                    **************************************************************************
+     403 00001c00           CYCLE1:
+     404 00001c00     b32d          MOVE    A9,*A13(PDATA+10H),L    ;STORE THE TABLE START ADDRESS
+         00001c10     0110  
+     405 00001c20           CYCLE1_WAIT:
+     406 00001c20     4d00          MOVE    A8,A0
+     407 00001c30     0d5f          CALLA   FINDPAL                 ;DOES THIS PALETTE EXIST?
+         00001c40 00000000! 
+     408 00001c60     cb07          JRNZ    CYCLE1_FND              ;BR = YES, GO AHEAD AND CYCLE
+     409 00001c70                   SLOOP   6,CYCLE1_WAIT           ;WAIT FOR IT TO EXIST
+     410 00001ce0           CYCLE1_FND:
+     411 00001ce0     4c08          MOVE    A0,A8                   ;KEEP FOR SUCCESSIVE ITERATIONS
+     412 00001cf0     4c05          MOVE    A0,A5
+     413 00001d00     0d5f          CALLA   INC_PALCNT              ;SURELY YOUR NOT GOING ANYWHERE
+         00001d10 00000000! 
+     414 00001d30     0528          ZEXT    A8
+     415 00001d40     2f08          SRL     8,A8
+     416 00001d50     2508          SLL     8,A8
+     417 00001d60           CYCLE1_LP
+     418 00001d60     4d41          MOVE    A10,A1                  ;COLOR NUMBER
+     419 00001d70     5501          OR      A8,A1                   ;DESTINATION: 8-15 PALETTE, 0-7 START
+     420 00001d80     4d20          MOVE    A9,A0
+     421 00001d90     1822          MOVK    1,A2
+     422 00001da0     0d5f          CALLA   PALSET                  ;SETUP A TRANSFER
+         00001db0 00000000! 
+     423 00001dd0     1209          ADDK    16,A9                   ;INCREMENT TABLE PTR
+     424 00001de0     852e          MOVE    *A9,A14,W
+     425 00001df0     cf02          JRNN    CYCLE1_SLP
+     426 00001e00     b7a9          MOVE    *A13(PDATA+10H),A9,L    ;RESET TO THE HEAD OF THE TABLE
+         00001e10     0110  
+     427 00001e20           CYCLE1_SLP
+     428 00001e20                   SLOOPR  A11,CYCLE1_LP
+     429                    
+     430                    
+     431                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     432                    *                                                                        *
+     433                    * GWINCENT - GET THE CURRENT TEXT WINDOW CENTER POINT.                   *
+     434                    * RETURNS:                                                               *
+     435                    * A0 = CENTER PNT.                                                       *
+     436                    *                                                                        *
+     437                    **************************************************************************
+     438 00001e90           GWINCENT
+     439 00001e90     09e0          MOVI    [88,198],A0
+         00001ea0 005800c6  
+     440 00001ec0     0960          RETS
+     441                    
+     442                    **************************************************************************
+     443                    *                                                                        *
+     444                    * SKYUP - FADE UP THE SKY COLOR AND DIE                                  *
+     445                    * A9 = FADER SPEED                                                       *
+     446                    * I.D. = PID_SKY                                                                 *
+     447                    **************************************************************************
+     448 00001ed0           SKYUP
+     449 00001ed0     b5a0          MOVE    *A13(PROCID),A0,W
+         00001ee0     0020  
+     450 00001ef0     5621          CLR     A1
+     451 00001f00     03e1          NOT     A1
+     452 00001f10     0d5f          CALLA   KILALL
+         00001f20 00000000! 
+     453 00001f40     5708          CLR     A8
+     454 00001f50           SKYUP1
+     455 00001f50     05a0          MOVE    @SKYCOLOR,A0,W
+         00001f60 00000000! 
+     456 00001f80     4d01          MOVE    A8,A1
+     457 00001f90     0d5f          CALLA   XCOLOR
+         00001fa0 00002850' 
+     458 00001fc0     0580          MOVE    A0,@IRQSKYE,W
+         00001fd0 00000000! 
+     459                    
+     460                    ;       MOVE    @GROUNDCOLOR,A0,W
+     461                    ;       MOVE    A8,A1
+     462                    ;       CALLA   XCOLOR
+     463                    ;       MOVE    A0,@IRQGNDE,W
+     464                    
+     465 00001ff0                   SLEEP   1
+     466                    
+     467 00002030     4128          ADD     A9,A8
+     468 00002040     0b68          CMPI    10000H,A8
+         00002050 fffeffff  
+     469 00002070     c6ed          JRLE    SKYUP1
+     470 00002080           SKYFULL
+     471 00002080     05c0          MOVE    @SKYCOLOR,@IRQSKYE,W
+         00002090 00000000! 
+         000020b0 00000000! 
+     472                    ;       MOVE    @GROUNDCOLOR,@IRQGNDE,W
+     473 000020d0                   DIE
+     474                    
+     475                    **************************************************************************
+     476                    *                                                                        *
+     477                    * SKYDOWN - FADE DOWN THE SKY COLOR AND DIE                              *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     478                    * A9 = FADE TIME DURATION                                                *
+     479                    * I.D. = PID_SKY                                                         *
+     480                    *                                                                        *
+     481                    **************************************************************************
+     482 00002100           SKYDOWN
+     483 00002100     b5a0          MOVE    *A13(PROCID),A0,W
+         00002110     0020  
+     484 00002120     5621          CLR     A1
+     485 00002130     03e1          NOT     A1
+     486 00002140     0d5f          CALLA   KILALL
+         00002150 00000000! 
+     487 00002170     09e8          MOVI    10000H,A8
+         00002180 00010000  
+     488 000021a0     4d2e          MOVE    A9,A14
+     489 000021b0     4d09          MOVE    A8,A9
+     490 000021c0     5bc9          DIVU    A14,A9
+     491                    
+     492 000021d0     05c0          MOVE    @IRQSKYE,@SKYCOLOR,W
+         000021e0 00000000! 
+         00002200 00000000! 
+     493 00002220           SKYDOWN1
+     494 00002220     05a0          MOVE    @SKYCOLOR,A0,W
+         00002230 00000000! 
+     495 00002250     4d01          MOVE    A8,A1
+     496 00002260     0d5f          CALLA   XCOLOR
+         00002270 00002850' 
+     497 00002290     0580          MOVE    A0,@IRQSKYE,W
+         000022a0 00000000! 
+     498                    
+     499                    ;       MOVE    @GROUNDCOLOR,A0,W
+     500                    ;       MOVE    A8,A1
+     501                    ;       CALLA   XCOLOR
+     502                    ;       MOVE    A0,@IRQGNDE,W
+     503                    
+     504 000022c0                   SLEEP   1
+     505                    
+     506 00002300     4528          SUB     A9,A8
+     507 00002310     c7f0          JRGT    SKYDOWN1
+     508 00002320           SKYBLACK
+     509 00002320     5621          CLR     A1
+     510 00002330     0581          MOVE    A1,@IRQSKYE,W
+         00002340 00000000! 
+     511                    ;       MOVE    A1,@IRQGNDE,W
+     512 00002360                   DIE
+     513                    
+     514                    **************************************************************************
+     515                    *                                                                        *
+     516                    * SKYWHITE - FADE UP THE SKY COLOR TO WHITE AND DIE                      *
+     517                    * A9 = FADER SPEED                                                       *
+     518                    * I.D. = PID_SKY                                                                 *
+     519                    **************************************************************************
+     520 00002390           SKYWHITE
+     521 00002390     b5a0          MOVE    *A13(PROCID),A0,W
+         000023a0     0020  
+     522 000023b0     5621          CLR     A1
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     523 000023c0     03e1          NOT     A1
+     524 000023d0     0d5f          CALLA   KILALL
+         000023e0 00000000! 
+     525 00002400     5708          CLR     A8
+     526 00002410     4d2e          MOVE    A9,A14
+     527 00002420     09e9          MOVI    10000H,A9
+         00002430 00010000  
+     528 00002450     5bc9          DIVU    A14,A9
+     529                    
+     530 00002460     09ce          MOVI    07FFFH,A14
+         00002470     7fff  
+     531 00002480     058e          MOVE    A14,@SKYCOLOR,W
+         00002490 00000000! 
+     532 000024b0           SKYWHITE1
+     533 000024b0     09c0          MOVI    07FFFh,A0
+         000024c0     7fff  
+     534 000024d0     4d01          MOVE    A8,A1
+     535 000024e0     0d5f          CALLA   XCOLOR
+         000024f0 00002850' 
+     536 00002510     0580          MOVE    A0,@IRQSKYE,W
+         00002520 00000000! 
+     537 00002540                   SLEEP   1
+     538 00002580     4128          ADD     A9,A8
+     539 00002590     0b68          CMPI    10000H,A8
+         000025a0 fffeffff  
+     540 000025c0     c6ee          JRLE    SKYWHITE1
+     541 000025d0     c0aa          JRUC    SKYFULL
+     542                    
+     543                    **************************************************************************
+     544                    *                                                                        *
+     545                    * SKYNORM - FADE DOWN THE SKY COLOR FROM WHITE AND DIE                   *
+     546                    * A9 = FADER SPEED                                                       *
+     547                    * I.D. = PID_SKY                                                                 *
+     548                    *                                                                        *
+     549                    **************************************************************************
+     550 000025e0           SKYNORM
+     551 000025e0     b5a0          MOVE    *A13(PROCID),A0,W
+         000025f0     0020  
+     552 00002600     5621          CLR     A1
+     553 00002610     03e1          NOT     A1
+     554 00002620     0d5f          CALLA   KILALL
+         00002630 00000000! 
+     555 00002650     09e8          MOVI    10000H,A8
+         00002660 00010000  
+     556 00002680           SKYNORM1
+     557 00002680     09c0          MOVI    07FFFh,A0
+         00002690     7fff  
+     558 000026a0     4d01          MOVE    A8,A1
+     559 000026b0     0d5f          CALLA   XCOLOR
+         000026c0 00002850' 
+     560 000026e0     05ae          MOVE    @SKYCOLOR,A14,W
+         000026f0 00000000! 
+     561 00002710     49c0          CMP     A14,A0
+     562 00002720     c908          JRHS    SKY_OK
+     563 00002730     058e          MOVE    A14,@IRQSKYE,W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:40:09 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+         00002740 00000000! 
+     564 00002760                   SLEEP   1
+     565 000027a0     c0b7          JRUC    SKYBLACK
+     566 000027b0           SKY_OK
+     567 000027b0     0580          MOVE    A0,@IRQSKYE,W
+         000027c0 00000000! 
+     568 000027e0                   SLEEP   1
+     569 00002820     4528          SUB     A9,A8
+     570 00002830     cfe4          JRNN    SKYNORM1
+     571                    
+     572 00002840     c0ad          JRUC    SKYBLACK
+     573                    
+     574                    **************************************************************************
+     575                    *                                                                        *
+     576                    * XCOLOR - COLOR VALUE MULTIPLIER                                        *
+     577                    * A0 = COLOR VALUE                                                       *
+     578                    * A1 = X FACTOR (MSW:INTEGER LSW:FRACTION)                               *
+     579                    * RETURNS                                                                *
+     580                    * A0 = X COLOR VALUE                                                     *
+     581                    *                                                                        *
+     582                    **************************************************************************
+     583 00002850           XCOLOR
+     584 00002850     098f          MMTM    SP,A3,A4
+         00002860     1800  
+     585 00002870     5684          CLR     A4
+     586 00002880     4c03          MOVE    A0,A3
+     587 00002890     2763          SLL     27,A3
+     588 000028a0     2ca3          SRL     27,A3           ;NOW I GOT 'DA BLUES
+     589 000028b0     5e23          MPYU    A1,A3
+     590 000028c0     2563          SLL     11,A3
+     591 000028d0     2ca3          SRL     27,A3
+     592 000028e0     5464          OR      A3,A4
+     593 000028f0     4c03          MOVE    A0,A3
+     594 00002900     26c3          SLL     22,A3
+     595 00002910     2ca3          SRL     27,A3           ;GREENS
+     596 00002920     5e23          MPYU    A1,A3
+     597 00002930     2563          SLL     11,A3           ;STRIP GARBAGE
+     598 00002940     2ca3          SRL     27,A3
+     599 00002950     24a3          SLL     5,A3
+     600 00002960     5464          OR      A3,A4
+     601 00002970     4c03          MOVE    A0,A3
+     602 00002980     2623          SLL     17,A3
+     603 00002990     2ca3          SRL     27,A3           ;NOW REDS
+     604 000029a0     5e23          MPYU    A1,A3
+     605 000029b0     2563          SLL     11,A3
+     606 000029c0     2ca3          SRL     27,A3
+     607 000029d0     2543          SLL     10,A3
+     608 000029e0     5464          OR      A3,A4
+     609 000029f0     4c80          MOVE    A4,A0
+     610 00002a00     09af          MMFM    SP,A3,A4
+         00002a10     0018  
+     611 00002a20     0960          RETS
+     612                    
+
+ No Errors,  No Warnings

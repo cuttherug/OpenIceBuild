@@ -1,0 +1,1283 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHCMOS.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    **************************************************************************
+       8                    *                                                                        *
+       9                    *       COPYRIGHT (C) 1994 MIDWAY MANUFACTURING COMPANY.                 *
+      10                    *                      ALL RIGHTS RESERVED.                              *
+      11                    *                                                                        *
+      12                    **************************************************************************
+      13                    
+      14                            .INCLUDE        "HH.INC"                ;SYSTEM STUFF
+      15                            .INCLUDE        "HHSTRING.H"
+      16                            .INCLUDE        "IMGTBL.GLO"
+      17                            .include        "hhcmos.e"
+      18                            .include        "hhutil.g"
+      19                            .include        "hhmenu.g"
+      20                            .include        "hhtext.g"
+      21                            .include        "hhproc.g"
+      22                            .include        "hhsnd.g"
+      23                            .include        "hhcoin.g"
+      24                            .include        "hhram.g"
+      25                    
+      26                    ; end of include files
+      27                    
+      28                    
+      29                    *
+      30                    *        BAD_AUD - ANYTIME AN AUDIT NUMBER IS FETCHED, IF ITS
+      31                    *                  CHECKSUM IS BAD, THEN BAD_AUD GETS SET TO 1
+      32                    *                  THIS CAUSES "ERROR" IF ANY AUDIT IN A CALCULATION
+      33                    *                  IS CORRUPTED, AND KEEPS A BAD CHECKSUM BAD WHEN
+      34                    *                  AN AUDIT IS CHANGED.
+      35                    
+      36 00000000                   .BSS    BAD_AUD,16   ;(BAD_AUD...NOT BAD_DOG!)
+      37 00000010                   .bss    xxxx,16         ;fill space to 32 bits
+      38 00000000                   .TEXT
+      39                    
+      40                    **************************************************************************
+      41                    *                                                                        *
+      42                    *          CMOS UTILITIES                                                *
+      43                    *                                                                        *
+      44                    **************************************************************************
+      45                    
+      46                    **************************************************************************
+      47                    *                                                                        *
+      48                    *          FOR ALL OF THESE CMOS ROUTINES.                               *
+      49                    *                                                                        *
+      50                    *                  A7 = POINTER TO MEMORY                                *
+      51                    *                  A0 = DATA TO/FROM MEMORY                              *
+      52                    *                                                                        *
+      53                    **************************************************************************
+      54                    *
+      55                    *        ****  IMPORTANT NOTE ON WORD AND LONG WORD PACKING  ****
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56                    *        ****  IMPORTANT NOTE ON WORD AND LONG WORD PACKING  ****
+      57                    *        ****  IMPORTANT NOTE ON WORD AND LONG WORD PACKING  ****
+      58                    *        ****  IMPORTANT NOTE ON WORD AND LONG WORD PACKING  ****
+      59                    *        ****  IMPORTANT NOTE ON WORD AND LONG WORD PACKING  ****
+      60                    *
+      61                    *        NOTE THAT REQUESTS FOR WORDS RETURN THE 2 BYTES PACKED
+      62                    *        INTO A WORD AS <1ST BYTE><2ND BYTE>.   THIS IS NOT
+      63                    *        THE SAME WAY THAT THE GSP HANDLES A WORD POINTED AT
+      64                    *        WITH A POINTER.
+      65                    *
+      66                    *        LONG WORDS WORK SIMILARLY:
+      67                    *
+      68                    *           MSB                                              LSB
+      69                    *               <1ST BYTE> <2ND BYTE> <3RD BYTE> <4TH BYTE>
+      70                    *
+      71                    *        TOUGH LUCK INTEL HACKERS!
+      72                    *
+      73                    *
+      74                    *        RC_BYTE
+      75                    *        WC_BYTE
+      76                    *
+      77                    *        These 2 routines are the only routines that ever touch
+      78                    *        CMOS ram.  This is done to localize the effect of
+      79                    *        changes in the architecture.  All efforts to deal with
+      80                    *        CMOS should come through these routines.  Locking
+      81                    *        hardware will be easily added in the future (as well
+      82                    *        as different memory mapping).
+      83                    *
+      84 00000000           RC_BYTE
+      85 00000000     8ee0          MOVB    *A7,A0
+      86 00000010     0b80          ANDI    BYTE_MASK,A0
+         00000020 ffffff00  
+      87 00000040     0960          RETS
+      88                    
+      89 00000050           WC_BYTE
+      90                            .if     XUNIT=0
+      91                    
+      92                    ;       ori     080000h,a7
+      93                    ;       movb    a0,*a7
+      94                    ;       xori    080000h,a7
+      95                    
+      96 00000050     05e0          MOVB    A0,@01480000H
+         00000060 01480000  
+      97                    
+      98                            .endif
+      99                    
+     100 00000080     8c07          MOVB    A0,*A7          ;WRITE OUT THE BYTE
+     101 00000090     0960          RETS                    ;AND RETURN
+     102                    
+     103                    **************************************************************************
+     104                    *                                                                        *
+     105                    *       RC_BYTEI                                                         *
+     106                    *                                                                        *
+     107                    *       READ BYTE POINTED TO BY A7...INCREMENT POINTER TO                *
+     108                    *       "NEXT" BYTE.                                                     *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     109                    *                                                                        *
+     110                    **************************************************************************
+     111 000000a0           RC_BYTEI
+     112 000000a0     0d3f          CALLR   RC_BYTE
+         000000b0     fff4  
+     113 000000c0     0b07          ADDI    C_BYTE_SIZE,A7  ;WORDS SEPARATE CMOS BYTES.
+         000000d0     0010  
+     114 000000e0     4c00          MOVE    A0,A0           ;RETURN FLAGS ACCORDINGLY
+     115 000000f0     0960          RETS
+     116                    
+     117 00000100           RC_WORD
+     118 00000100     098f          MMTM    SP,A1,A7        ;USE A1 TO COMBINE BYTES
+         00000110     4100  
+     119 00000120     0d3f          CALLR   RC_BYTEI        ;GET A BYTE
+         00000130     fff6  
+     120 00000140     4c01          MOVE    A0,A1           ;SAVE IN A1
+     121 00000150     0b81          ANDI    BYTE_MASK,A1    ;MASK ONLY BYTE
+         00000160 ffffff00  
+     122 00000180     2501          SLL     8,A1            ;SHIFT TO HIGH BYTE
+     123 00000190     0d3f          CALLR   RC_BYTE         ;GET THE 2ND BYTE
+         000001a0     ffe5  
+     124 000001b0     0b80          ANDI    BYTE_MASK,A0
+         000001c0 ffffff00  
+     125 000001e0     5420          OR      A1,A0           ;A0 HAS THE WORD
+     126 000001f0     09af          MMFM    SP,A1,A7
+         00000200     0082  
+     127 00000210     0960          RETS
+     128                    
+     129 00000220           RC_WORDI
+     130 00000220     0d3f          CALLR   RC_WORD
+         00000230     ffec  
+     131 00000240     0b07          ADDI    C_WORD_SIZE,A7  ;LONG SEPARATE CMOS WORDS.
+         00000250     0020  
+     132 00000260     4c00          MOVE    A0,A0           ;RETURN FLAGS ACCORDINGLY
+     133 00000270     0960          RETS
+     134                    
+     135 00000280           RC_LONG
+     136 00000280     098f          MMTM    SP,A1,A7        ;USE A1 TO COMBINE BYTES
+         00000290     4100  
+     137 000002a0     0d3f          CALLR   RC_WORDI        ;GET A WORD
+         000002b0     fff6  
+     138 000002c0     4c01          MOVE    A0,A1           ;SAVE IN A1
+     139 000002d0     0b81          ANDI    WORD_MASK,A1    ;MASK ONLY WORD
+         000002e0 ffff0000  
+     140 00000300     2601          SLL     16,A1           ;SHIFT TO HIGH WORD
+     141 00000310     0d3f          CALLR   RC_WORD         ;GET THE 2ND WORD
+         00000320     ffdd  
+     142 00000330     0b80          ANDI    WORD_MASK,A0
+         00000340 ffff0000  
+     143 00000360     5420          OR      A1,A0           ;A0 HAS THE LONG WORD
+     144 00000370     09af          MMFM    SP,A1,A7
+         00000380     0082  
+     145 00000390     0960          RETS
+     146                    
+     147 000003a0           RC_LONGI
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     148 000003a0     0d3f          CALLR   RC_LONG
+         000003b0     ffec  
+     149 000003c0     0b07          ADDI    C_LONG_SIZE,A7  ;DOUBLE THE DISTANCE FOR BRAIN DAMIJ
+         000003d0     0040  
+     150 000003e0     4c00          MOVE    A0,A0           ;RETURN FLAGS ACCORDINGLY
+     151 000003f0     0960          RETS
+     152                    
+     153 00000400           WC_BYTEI
+     154 00000400     0d3f          CALLR   WC_BYTE
+         00000410     ffc3  
+     155 00000420     0b07          ADDI    C_BYTE_SIZE,A7
+         00000430     0010  
+     156 00000440     0960          RETS
+     157                    
+     158 00000450           WC_WORD
+     159 00000450     098f          MMTM    SP,A0,A1,A7
+         00000460     c100  
+     160 00000470     4c01          MOVE    A0,A1           ;MAKE COPY OF WORD
+     161 00000480     2f00          SRL     8,A0            ;GET HIGH BYTE IN A0
+     162 00000490     0d3f          CALLR   WC_BYTEI        ;WRITE THE HIGH BYTE
+         000004a0     fff5  
+     163 000004b0     4c20          MOVE    A1,A0           ;NOW GET THE LOW BYTE BACK
+     164 000004c0     0d3f          CALLR   WC_BYTE         ;WRITE IT
+         000004d0     ffb7  
+     165 000004e0     09af          MMFM    SP,A0,A1,A7     ;AND RESTORE ALL WE TOUCHED
+         000004f0     0083  
+     166 00000500     0960          RETS
+     167                    
+     168 00000510           WC_WORDI
+     169 00000510     0d3f          CALLR   WC_WORD
+         00000520     fff2  
+     170 00000530     0b07          ADDI    C_WORD_SIZE,A7
+         00000540     0020  
+     171 00000550     0960          RETS
+     172                    
+     173 00000560           WC_LONG
+     174 00000560     098f          MMTM    SP,A0,A1,A7
+         00000570     c100  
+     175 00000580     4c01          MOVE    A0,A1           ;MAKE COPY OF LONG
+     176 00000590     2e00          SRL     16,A0           ;GET HIGH WORD IN A0
+     177 000005a0     0d3f          CALLR   WC_WORDI        ;WRITE THE HIGH WORD
+         000005b0     fff5  
+     178 000005c0     4c20          MOVE    A1,A0           ;NOW GET THE LOW WORD BACK
+     179 000005d0     0d3f          CALLR   WC_WORD         ;WRITE IT
+         000005e0     ffe6  
+     180 000005f0     09af          MMFM    SP,A0,A1,A7     ;AND RESTORE ALL WE TOUCHED
+         00000600     0083  
+     181 00000610     0960          RETS
+     182                    
+     183 00000620           WC_LONGI
+     184 00000620     0d3f          CALLR   WC_LONG
+         00000630     fff2  
+     185 00000640     0b07          ADDI    C_LONG_SIZE,A7
+         00000650     0040  
+     186 00000660     0960          RETS
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     187                    
+     188                    **************************************************************************
+     189                    *                                                                        *
+     190                    *         AUDIT HANDLING                                                 *
+     191                    *                                                                        *
+     192                    **************************************************************************
+     193                    *                                                                        *
+     194                    *          POINT_AT_AUDIT                                                *
+     195                    *                                                                        *
+     196                    *          THIS IS CALLED TO POINT AT THE AUDIT INDICATED BY             *
+     197                    *          A0.  A0 IS THE AUDIT NUMBER 0-30.  A7 IS RETURNED             *
+     198                    *          POINTING AT THE BEGINNING OF THE AUDIT.                       *
+     199                    *                                                                        *
+     200                    **************************************************************************
+     201 00000670           POINT_AT_AUDIT
+     202 00000670     098f          MMTM    SP,A1
+         00000680     4000  
+     203 00000690     09c7          MOVI    AUD_SIZE,A7             ;THIS IS SIZE PER AUDIT
+         000006a0     0060  
+     204 000006b0     5e07          MPYU    A0,A7                   ;A1 NOW HAS OFFSET
+     205 000006c0     0b27          ADDI    AUDITORG,A7             ;ADD BASE
+         000006d0 01400000  
+     206 000006f0     09af          MMFM    SP,A1
+         00000700     0002  
+     207 00000710     0960          RETS
+     208                    
+     209                    **************************************************************************
+     210                    *                                                                        *
+     211                    *          FORM_AUD_CKSUM                                                *
+     212                    *                                                                        *
+     213                    *          THIS IS CALLED TO FORM THE CHECKSUM FOR THE AUDIT             *
+     214                    *          SPECIFIED IN A0.                                              *
+     215                    *                                                                        *
+     216                    *          A1 RETURNS THE CHECKSUM.                                      *
+     217                    *                                                                        *
+     218                    *          Z BIT IS SET BASED ON WHETHER IT MATCHES THE CHECKSUM THERE.  *
+     219                    *                                                                        *
+     220                    **************************************************************************
+     221 00000720           FORM_AUD_CKSUM
+     222 00000720     098f          MMTM    SP,A0,A4,A7
+         00000730     8900  
+     223 00000740     0d3f          CALLR   POINT_AT_AUDIT          ;A7 = POINTER TO CURRENT ENTRY
+         00000750     fff1  
+     224 00000760     098f          MMTM    SP,A7                   ;SAVE POINTER TO ENTRY
+         00000770     0100  
+     225 00000780     09c4          MOVI    AUD_BYTES_TO_CHECK,A4   ;COUNT DOWN THE BYTES
+         00000790     0004  
+     226 000007a0     5621          CLR     A1                      ;KEEP SUM IN A1
+     227 000007b0           ADD_A_BYTE
+     228 000007b0     0d5f          CALLA   RC_BYTEI                ;GET A BYTE INTO A0
+         000007c0 000000a0' 
+     229 000007e0     4001          ADD     A0,A1                   ;ADD TO SUM
+     230 000007f0     3ca4          DSJ     A4,ADD_A_BYTE           ;ONE MORE ADDED
+     231 00000800     03e1          NOT     A1                      ;CHECKSUM IS NOW IN LOW WORD
+     232 00000810     0b81          ANDI    WORD_MASK,A1            ;MASK SO ITS COOL
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+         00000820 ffff0000  
+     233 00000840     09af          MMFM    SP,A7                   ;GET POINTER BACK
+         00000850     0080  
+     234 00000860     0b07          ADDI    AUD_CKSUM,A7            ;POINT AT CHECKBYTE
+         00000870     0040  
+     235 00000880     0d5f          CALLA   RC_WORD                 ;READ IN THE CKSUM
+         00000890 00000100' 
+     236 000008b0     4801          CMP     A0,A1                   ;COMPARE WHAT'S THERE TO WHAT WE GOT
+     237 000008c0     09af          MMFM    SP,A0,A4,A7             ;Z BIT RETURNS COMPARE
+         000008d0     0091  
+     238 000008e0     0960          RETS                            ;A1 RETURNS CKSUM
+     239                    
+     240                    **************************************************************************
+     241                    *                                                                        *
+     242                    *          STORE_AUD_CKSUM                                               *
+     243                    *                                                                        *
+     244                    *          THIS WILL STORE THE AUDIT CHECKSUM IN A1 FOR THE              *
+     245                    *          AUDIT NUMBER SPECIFIED BY A0.                                 *
+     246                    *                                                                        *
+     247                    **************************************************************************
+     248 000008f0           STORE_AUD_CKSUM
+     249 000008f0     098f          MMTM    SP,A7,A0                ;POINTING REGISTER
+         00000900     8100  
+     250 00000910     0d3f          CALLR   POINT_AT_AUDIT          ;A7 POINTS AT AUDIT
+         00000920     ffd4  
+     251 00000930     0b07          ADDI    AUD_CKSUM,A7            ;POINT AT CHECKBYTE
+         00000940     0040  
+     252 00000950     4c20          MOVE    A1,A0                   ;GET CHECKBYTE IN A0
+     253 00000960     0d5f          CALLA   WC_WORD                 ;WRITE THE CKSUM
+         00000970 00000450' 
+     254 00000990     09af          MMFM    SP,A7,A0                ;POINTING REGISTER
+         000009a0     0081  
+     255 000009b0     0960          RETS
+     256                    
+     257                    **************************************************************************
+     258                    *                                                                        *
+     259                    *          FORM_AUD_CKSUM_AND_STORE                                      *
+     260                    *                                                                        *
+     261                    *          THE VALUE AT BAD_AUD IS USED TO DETERMINE WHETHER TO STORE    *
+     262                    *          THE CORRECT OR INCORRECT VALUE!                               *
+     263                    *                                                                        *
+     264                    *          A0 = AUDIT NUMBER                                             *
+     265                    *                                                                        *
+     266                    **************************************************************************
+     267 000009c0           FORM_AUD_CKSUM_AND_STORE
+     268 000009c0     098f          MMTM    SP,A1,A2
+         000009d0     6000  
+     269 000009e0     0d3f          CALLR   FORM_AUD_CKSUM
+         000009f0     ffd2  
+     270 00000a00     05a2          MOVE    @BAD_AUD,A2,W           ;GET THE "FUDGE" WORD
+         00000a10 00000000- 
+     271 00000a30     5641          XOR     A2,A1                   ;MAKE CKSUM BAD IF AUDIT IS BAD
+     272 00000a40     0d3f          CALLR   STORE_AUD_CKSUM
+         00000a50     ffe9  
+     273 00000a60     09af          MMFM    SP,A1,A2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+         00000a70     0006  
+     274 00000a80     0960          RETS
+     275                    
+     276                    **************************************************************************
+     277                    *                                                                        *
+     278                    *          GET_AUD                                                       *
+     279                    *                                                                        *
+     280                    *          THIS IS CALLED TO FETCH THE AUDIT VALUE FOR THE AUDIT         *
+     281                    *          SPECIFIED IN A0 INTO A1.  IF THE CHECKBYTE FOR THE            *
+     282                    *          AUDIT IS INCORRECT, THEN RAM LOCATION BAD_AUD WILL BE         *
+     283                    *          SET TO 1.                                                     *
+     284                    *                                                                        *
+     285                    **************************************************************************
+     286 00000a90           GET_AUD
+     287 00000a90     098f          MMTM    SP,A7,A0
+         00000aa0     8100  
+     288 00000ab0     0d3f          CALLR   FORM_AUD_CKSUM          ;SEE IF CKSUM IS OK
+         00000ac0     ffc5  
+     289 00000ad0     ca04          JRZ     FETCH_AUDIT_1           ;ITS OK....
+     290                    *
+     291                    *       CHECKSUM IS BAD....SET GLOBAL
+     292                    *
+     293 00000ae0     1821          MOVK    1,A1
+     294 00000af0     0581          MOVE    A1,@BAD_AUD,W           ;SET THE FLAG!
+         00000b00 00000000- 
+     295                    
+     296 00000b20           FETCH_AUDIT_1
+     297 00000b20     0d3f          CALLR   POINT_AT_AUDIT          ;A7 POINTS AT AUDIT
+         00000b30     ffb3  
+     298 00000b40     0b07          ADDI    AUD_DATA,A7             ;ADD ZERO OFFSET
+         00000b50     0000  
+     299 00000b60     0d5f          CALLA   RC_LONG                 ;FETCH THE LONG WORD TO A0
+         00000b70 00000280' 
+     300 00000b90     4c01          MOVE    A0,A1                   ;RETURN IN A1
+     301 00000ba0     09af          MMFM    SP,A7,A0
+         00000bb0     0081  
+     302 00000bc0     0960          RETS
+     303                    
+     304                    **************************************************************************
+     305                    *                                                                        *
+     306                    *          STORE_AUDIT                                                   *
+     307                    *                                                                        *
+     308                    *          A0 = AUDIT NUMBER TO STORE VALUE FOR                          *
+     309                    *          A1 = VALUE TO STORE.                                          *
+     310                    *          BAD_AUD = NON ZERO IF BAD CHECKSUM IS TO BE MAINTAINED.       *
+     311                    *                                                                        *
+     312                    **************************************************************************
+     313 00000bd0           STORE_AUDIT
+     314 00000bd0     098f          MMTM    SP,A0,A7
+         00000be0     8100  
+     315 00000bf0     0d3f          callr  CMOSUNLOCK
+         00000c00     00fb  
+     316 00000c10     0d3f          CALLR   POINT_AT_AUDIT          ;A7 POINTS AT AUDIT
+         00000c20     ffa4  
+     317 00000c30     0b07          ADDI    AUD_DATA,A7             ;ADD ZERO OFFSET
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+         00000c40     0000  
+     318 00000c50     4c20          MOVE    A1,A0                   ;MOVE DATA TO WRITING REGISTER
+     319 00000c60     0d5f          CALLA   WC_LONG                 ;WRITE THE DATA BACK
+         00000c70 00000560' 
+     320 00000c90     09af          MMFM    SP,A0,A7                ;GET AUDIT NUMBER BACK
+         00000ca0     0081  
+     321 00000cb0     0d3f          CALLR   FORM_AUD_CKSUM_AND_STORE ;STORE GOOD OR BAD CKSUM BASED
+         00000cc0     ffcf  
+     322                    *                                        ;ON BAD_AUD
+     323 00000cd0     c000          jruc    CMOSLOCK
+         00000ce0     00ee  
+     324                    **************************************************************************
+     325                    *                                                                        *
+     326                    *          CLR_SUBS                                                      *
+     327                    *                                                                        *
+     328                    *          THIS IS CALLED TO CLEAR OUT THE COINAGE SUB-TOTALS.           *
+     329                    *                                                                        *
+     330                    **************************************************************************
+     331 00000cf0           CLR_SUBS
+     332 00000cf0                   RETP
+     333                    *       MOVI    FRST_SUB,A0
+     334                    *       MOVI    LAST_SUB,A1
+     335                    *       CALLR   CLR_AUDR                ;CLEAR EM OUT!
+     336                    *       RETP
+     337                    
+     338                    **************************************************************************
+     339                    *                                                                        *
+     340                    *          CLR_AUDR                                                      *
+     341                    *                                                                        *
+     342                    *          THIS IS CALLED TO CLEAR OUT A RANGE OF AUDITS.                *
+     343                    *          A0 = 1ST AUDIT NUMBER                                         *
+     344                    *          A1 = LAST AUDIT NUMBER (INCLUSIVE)                            *
+     345                    *                                                                        *
+     346                    **************************************************************************
+     347 00000d20           CLR_AUDR
+     348 00000d20     098f          MMTM    SP,A0,A1,A2
+         00000d30     e000  
+     349 00000d40     4c22          MOVE    A1,A2                   ;MOVE "LAST" TO A2
+     350 00000d50     5621          CLR     A1                      ;WE'LL STORE ZEROS
+     351 00000d60     0581          MOVE    A1,@BAD_AUD             ;MAKE CKSUMS GOOD ON STORING
+         00000d70 00000000- 
+     352 00000d90     0d3f  CAR1    CALLR   STORE_AUDIT             ;STORE THIS AUDIT
+         00000da0     ffe2  
+     353 00000db0     1020          INC     A0                      ;KICK TO NEXT AUDIT
+     354 00000dc0     4840          CMP     A2,A0
+     355 00000dd0     c2fb          JRLS    CAR1
+     356 00000de0     09af          MMFM    SP,A0,A1,A2
+         00000df0     0007  
+     357 00000e00     0960          RETS
+     358                    
+     359                    **************************************************************************
+     360                    *                                                                        *
+     361                    *       KILL_AUD                                                         *
+     362                    *                                                                        *
+     363                    *       This is called to clear out an audit.                            *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     364                    *                                                                        *
+     365                    *       A0 = audit number.                                               *
+     366                    *                                                                        *
+     367                    **************************************************************************
+     368 00000e10           KILL_AUD
+     369 00000e10     098f          MMTM    SP,A1
+         00000e20     4000  
+     370 00000e30     5621          CLR     A1                      ;WE'LL STORE ZEROS
+     371 00000e40     0581          MOVE    A1,@BAD_AUD             ;MAKE CKSUMS GOOD ON STORING
+         00000e50 00000000- 
+     372 00000e70     0d3f          CALLR   STORE_AUDIT             ;STORE THIS AUDIT
+         00000e80     ffd4  
+     373 00000e90     09af          MMFM    SP,A1
+         00000ea0     0002  
+     374 00000eb0     0960          RETS
+     375                    
+     376                    **************************************************************************
+     377                    *                                                                        *
+     378                    *          AUD                                                           *
+     379                    *                                                                        *
+     380                    *          A0 = AUDIT NUMBER.......A1 = COUNT TO ADD.                    *
+     381                    *                                                                        *
+     382                    **************************************************************************
+     383 00000ec0     098f  AUD     MMTM    SP,A1,A2
+         00000ed0     6000  
+     384 00000ee0     5642          CLR     A2              ;SET "BAD_AUD" GOOD UNTIL OTHERWISE PROVEN!
+     385 00000ef0     0582          MOVE    A2,@BAD_AUD,W   ;ITS GOOD.
+         00000f00 00000000- 
+     386 00000f20     4c22          MOVE    A1,A2           ;COPY OUR COUNT
+     387 00000f30     0d3f          CALLR   GET_AUD         ;FETCH THE CURRENT AUDIT COUNTER
+         00000f40     ffb4  
+     388 00000f50     4041          ADD     A2,A1           ;ADD THE NEW COUNT
+     389 00000f60     0d3f          CALLR   STORE_AUDIT     ;STORE IT BACK
+         00000f70     ffc5  
+     390 00000f80     09af          MMFM    SP,A1,A2
+         00000f90     0006  
+     391 00000fa0     0960          RETS
+     392                    
+     393 00000fb0     098f  AUD1    MMTM    SP,A1
+         00000fc0     4000  
+     394 00000fd0     1821          MOVK    1,A1
+     395 00000fe0     0d3f          CALLR   AUD
+         00000ff0     ffec  
+     396 00001000     09af          MMFM    SP,A1
+         00001010     0002  
+     397 00001020     0960          RETS
+     398                    
+     399                    **************************************************************************
+     400                    *                                                                        *
+     401                    *          CLR_AUD                                                       *
+     402                    *                                                                        *
+     403                    *          This is called to clear out all of the audits.                *
+     404                    *                                                                        *
+     405                    *          A relatively easy task given the primitives available.        *
+     406                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     407                    **************************************************************************
+     408 00001030           CLR_AUD
+     409 00001030     098f          MMTM    SP,A0,A1
+         00001040     c000  
+     410 00001050     09c0          MOVI    1,A0                    ;START AT AUDIT 1
+         00001060     0001  
+     411 00001070     09c1          MOVI    LAST_AUDIT,A1           ;THIS IS TOTAL ALLOCATED
+         00001080     004e  
+     412 00001090     0d3f          CALLR   CLR_AUDR
+         000010a0     ffc7  
+     413 000010b0     09af          MMFM    SP,A0,A1
+         000010c0     0003  
+     414 000010d0     0960          RETS
+     415                    
+     416                    **************************************************************************
+     417                    *                                                                        *
+     418                    *          ADJUSTMENTS                                                   *
+     419                    *                                                                        *
+     420                    **************************************************************************
+     421                    
+     422                    **************************************************************************
+     423                    *                                                                        *
+     424                    *       CMOS_VAL                                                         *
+     425                    *                                                                        *
+     426                    *       VALIDATE THE CMOS VALUES                                         *
+     427                    *                                                                        *
+     428                    *       ENTRY                                                            *
+     429                    *               NOTHING                                                  *
+     430                    *                                                                        *
+     431                    *       EXIT                                                             *
+     432                    *               .EQ.    COOL                                             *
+     433                    *               .NE.    IT IS HOSED                                      *
+     434                    *                                                                        *
+     435                    **************************************************************************
+     436 000010e0           CMOS_VAL
+     437 000010e0     0d3f          CALLR   FORM_ADC                ;SEE IF CKSUM IS OK.
+         000010f0     0004  
+     438 00001100     cb02          JRNZ    CMOS_BAD                ;NOPE....RETURN .NE.
+     439 00001110     0d3f          CALLR   CHECK_NAME_AND_REV      ;HOW ABOUT THE NAME AND REV?
+         00001120     005b  
+     440 00001130           CMOS_BAD
+     441 00001130     0960          RETS
+     442                    
+     443                    **************************************************************************
+     444                    *                                                                        *
+     445                    *       FORM_ADC                                                         *
+     446                    *                                                                        *
+     447                    *       DO A CHECKSUM OF THE ADJUSTMENTS AREA -- RETURNED IN A1          *
+     448                    *                                                                        *
+     449                    *       ENTRY                                                            *
+     450                    *               NOTHING                                                  *
+     451                    *                                                                        *
+     452                    *       EXIT                                                             *
+     453                    *               A1      CHECKSUM VALUE                                   *
+     454                    *               .EQ.    AGREES WITH STORED CHECKSUM                      *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     455                    *               .NE.    IT DON'T                                         *
+     456                    *                                                                        *
+     457                    **************************************************************************
+     458 00001140           FORM_ADC:
+     459 00001140     098f          MMTM    SP,A7,A0,A6
+         00001150     8300  
+     460 00001160     09e7          MOVI    ADJUSTORG,A7            ;POINT AT FIRST BYTE
+         00001170 01408000  
+     461 00001190     09c6          MOVI    ADJ_BYTES_TO_CHECK,A6   ;NUMBER OF BYTES
+         000011a0     00cc  
+     462 000011b0     5621          CLR     A1                      ;ACCUMULATE CKSUM HERE
+     463 000011c0     0d5f  ADJ_C1  CALLA   RC_BYTEI                ;READ A BYTE
+         000011d0 000000a0' 
+     464 000011f0     4001          ADD     A0,A1                   ;ADD THE BYTE TO THE SUM
+     465 00001200     3ca6          DSJS    A6,ADJ_C1
+     466 00001210     03e1          NOT     A1                      ;COMPLEMENT THE SUM
+     467 00001220     0b81          ANDI    WORD_MASK,A1            ;KEEP A WORD.
+         00001230 ffff0000  
+     468 00001250     09e7          MOVI    ADJ_CKSUM,A7
+         00001260 01408cc0  
+     469 00001280     0d5f          CALLA   RC_WORD                 ;FETCH THE CHECKSUM
+         00001290 00000100' 
+     470 000012b0     4801          CMP     A0,A1                   ;COMPARE TO FETCHED VALUE
+     471 000012c0     09af          MMFM    SP,A7,A0,A6
+         000012d0     00c1  
+     472 000012e0     0960          RETS
+     473                    
+     474                    **************************************************************************
+     475                    *                                                                        *
+     476                    *       F_ADC_S                                                          *
+     477                    *                                                                        *
+     478                    *       FORM AN ADJUSTMENT CHECKSUM AND STORE THE VALUE                  *
+     479                    *                                                                        *
+     480                    *       ENTRY                                                            *
+     481                    *               NOTHING                                                  *
+     482                    *                                                                        *
+     483                    *       EXIT                                                             *
+     484                    *               NOTHING                                                  *
+     485                    *                                                                        *
+     486                    **************************************************************************
+     487 000012f0           F_ADC_S:
+     488 000012f0     098f          MMTM    SP,A0,A1,A7
+         00001300     c100  
+     489 00001310     0d3f          CALLR   CMOSUNLOCK
+         00001320     0089  
+     490 00001330     0d3f          CALLR   FORM_ADC                ;FORM THE CKSUM
+         00001340     ffdf  
+     491 00001350     4c20          MOVE    A1,A0                   ;PUT IN CMOS WRITING REGGIE
+     492 00001360     09e7          MOVI    ADJ_CKSUM,A7
+         00001370 01408cc0  
+     493 00001390     0d5f          CALLA   WC_WORD                 ;AND STORE IT
+         000013a0 00000450' 
+     494 000013c0     0d3f          CALLR   CMOSLOCK
+         000013d0     007f  
+     495 000013e0     09af          MMFM    SP,A0,A1,A7
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+         000013f0     0083  
+     496 00001400     0960          RETS
+     497                    
+     498                    **************************************************************************
+     499                    *                                                                        *
+     500                    *       GET_ADJ                                                          *
+     501                    *                                                                        *
+     502                    *       GETS AN ADJUSTMENT VALUE                                         *
+     503                    *                                                                        *
+     504                    *       ENTRY                                                            *
+     505                    *               A0      ADJUSTMENT NUMBER TO GET                         *
+     506                    *                                                                        *
+     507                    *       EXIT                                                             *
+     508                    *               A0      VALUE OF ADJUSTMENT                              *
+     509                    *                                                                        *
+     510                    **************************************************************************
+     511 00001410           GET_ADJ:
+     512 00001410     098f          MMTM    SP,A1,A7
+         00001420     4100  
+     513                            .IF     FORCEFREE
+     514                            CMPI    ADJFREPL,A0
+     515                            JRNZ    GANOTFREE
+     516                            MOVK    1,A0
+     517                            JRUC    GADONE
+     518                    GANOTFREE
+     519                            .ENDIF
+     520 00001430                   PUSH    A0
+     521 00001440     0d3f          CALLR   FORM_ADC                ;CHECKSUM THINGS
+         00001450     ffce  
+     522 00001460                   PULL    A0
+     523 00001480     ca06          JRZ     GACOOL                  ;BR = CMOS IS COOL
+     524 00001490     24a0          SLL     5,A0
+     525 000014a0     0b20          ADDI    FACTORY_TABLE,A0
+         000014b0 00002ec0' 
+     526 000014d0     8600          MOVE    *A0,A0,L                ;READ UP THE FACTORY ADJUSTMENT
+     527 000014e0     c005          JRUC    GADONE
+     528 000014f0     0d3f  GACOOL  CALLR   ADJPOINT                ;POINT AT ADJUSTMENT
+         00001500     0016  
+     529 00001510     0d5f          CALLA   RC_LONG                 ;FETCH THE ADJUST PLEASE
+         00001520 00000280' 
+     530 00001540     4c00  GADONE  MOVE    A0,A0                   ;RETURN Z BIT BASED ON ADJUSTMENT!
+     531 00001550     09af          MMFM    SP,A1,A7
+         00001560     0082  
+     532 00001570     0960          RETS
+     533                    
+     534                    **************************************************************************
+     535                    *                                                                        *
+     536                    *       PUT_ADJ                                                          *
+     537                    *                                                                        *
+     538                    *       STORE AN ADJUSTMENT VALUE.  NOTE!  DOES NOT RECHECKSUM!!         *
+     539                    *                                                                        *
+     540                    *       ENTRY                                                            *
+     541                    *               A0      ADJUSTMENT NUMBER                                *
+     542                    *               A1      ADJUSTMENT VALUE                                 *
+     543                    *                                                                        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     544                    *       EXIT                                                             *
+     545                    *               NOTHING                                                  *
+     546                    *                                                                        *
+     547                    **************************************************************************
+     548 00001580           PUT_ADJ:
+     549 00001580     098f          MMTM    SP,A7,A0
+         00001590     8100  
+     550 000015a0     0d3f          CALLR   CMOSUNLOCK
+         000015b0     0060  
+     551 000015c0     0d3f          CALLR   ADJPOINT                ;POINT AT REQUESTED ADJ.
+         000015d0     0009  
+     552 000015e0     4c20          MOVE    A1,A0                   ;GET VALUE IN WRITING REGGIE!
+     553 000015f0     0d5f          CALLA   WC_LONG                 ;WRITE THE ADJUSTMENT
+         00001600 00000560' 
+     554 00001620     0d3f          CALLR   CMOSLOCK
+         00001630     0059  
+     555 00001640     09af          MMFM    SP,A7,A0
+         00001650     0081  
+     556 00001660     0960          RETS
+     557                    
+     558                    **************************************************************************
+     559                    *                                                                        *
+     560                    *       ADJPOINT                                                         *
+     561                    *                                                                        *
+     562                    *       POINT A7 AT THE CMOS MEMLOC FOR THE ADJUSTMENT                   *
+     563                    *                                                                        *
+     564                    *       ENTRY                                                            *
+     565                    *               A0      ADJUSTMENT NUMBER                                *
+     566                    *                                                                        *
+     567                    *       EXIT                                                             *
+     568                    *               A7      POINTER TO CMOS MEMORY                           *
+     569                    *                                                                        *
+     570                    **************************************************************************
+     571 00001670           ADJPOINT:
+     572 00001670     09c7          MOVI    ADJ_SIZE,A7             ;SIZE PER ADJUSTMENT IN A7
+         00001680     0040  
+     573 00001690     5e07          MPYU    A0,A7                   ;TIMES ADJUSTMENT REQUESTED.
+     574 000016a0     0b27          ADDI    ADJUSTORG,A7            ;ADD TO BASE
+         000016b0 01408000  
+     575 000016d0     0960          RETS
+     576                    
+     577                    **************************************************************************
+     578                    *                                                                        *
+     579                    *       CHECK_NAME_AND_REV                                               *
+     580                    *                                                                        *
+     581                    *       CHECK THE NAME AND THE REVISION AGAINST THE CMOS                 *
+     582                    *                                                                        *
+     583                    *       ENTRY                                                            *
+     584                    *               NOTHING                                                  *
+     585                    *                                                                        *
+     586                    *       EXIT                                                             *
+     587                    *               .EQ.    COOL                                             *
+     588                    *               .NE.    NOT COOL                                         *
+     589                    *                                                                        *
+     590                    **************************************************************************
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     591 000016e0           CHECK_NAME_AND_REV:
+     592 000016e0     098f          MMTM    SP,A0,A1,A2,A3,A7
+         000016f0     f100  
+     593 00001700     09e7          MOVI    NAME_REV,A7             ;POINT AT CMOS NAME STORAGE
+         00001710 01408ce0  
+     594 00001730     09e1          MOVI    ROM_NAME,A1             ;POINT AT OUR VERSION
+         00001740 00000000! 
+     595 00001760     09c2          MOVI    NAME_REV_SIZE,A2        ;MAXIMUM NAME SIZE
+         00001770     001e  
+     596                    
+     597 00001780           NEXT_LET1
+     598 00001780     0d5f          CALLA   RC_BYTEI                ;FETCH A BYTE
+         00001790 000000a0' 
+     599 000017b0     8e23          MOVB    *A1,A3                  ;GET 1 FROM ROM
+     600 000017c0     0b83          ANDI    BYTE_MASK,A3            ;MASK ANY SIGN EXTENDS
+         000017d0 ffffff00  
+     601                    
+     602 000017f0     4860          CMP     A3,A0                   ;THEY BETTER BE THE SAME
+     603 00001800     cb06          JRNZ    RETURN_NOW              ;NOPE....BYE  (RETURN .NE.)
+     604                    
+     605 00001810     0b01          ADDI    BYTE_SIZE,A1            ;KICK SOURCE POINTER
+         00001820     0008  
+     606 00001830     4c00          MOVE    A0,A0                   ;WAS IT A ZERO?
+     607 00001840     ca02          JRZ     RETURN_NOW              ;YEP....NO MORE (RETURN .EQ.)
+     608 00001850     3dc2          DSJS    A2,NEXT_LET1
+     609 00001860     5600          CLR     A0                      ;RETURN .EQ.
+     610                    
+     611 00001870           RETURN_NOW
+     612 00001870     09af          MMFM    SP,A0,A1,A2,A3,A7
+         00001880     008f  
+     613 00001890     0960          RETS
+     614                    
+     615                    **************************************************************************
+     616                    *                                                                        *
+     617                    *       FAC_SET                                                          *
+     618                    *                                                                        *
+     619                    *       RESTORE THE FACTORY SETTINGS TO THE ADJUSTMENT CMOS              *
+     620                    *                                                                        *
+     621                    *       ENTRY                                                            *
+     622                    *               NOTHING                                                  *
+     623                    *                                                                        *
+     624                    *       EXIT                                                             *
+     625                    *               NOTHING                                                  *
+     626                    *                                                                        *
+     627                    **************************************************************************
+     628 000018a0           FAC_SET:
+     629 000018a0     098f          MMTM    SP,A0,A1,A2,A7
+         000018b0     e100  
+     630 000018c0     0d3f          CALLR   DUMP_FS
+         000018d0     0030  
+     631 000018e0     0d5f          CALLA   NO_CREDS                ;REMOVE ANY COINS
+         000018f0 00000000! 
+     632 00001910     0d3f          CALLR   CMOSUNLOCK
+         00001920     0029  
+     633                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     634 00001930     09e1          MOVI    FACTORY_TABLE,A1        ;ROM
+         00001940 00002ec0' 
+     635 00001960     09e7          MOVI    ADJUSTORG,A7            ;CMOS
+         00001970 01408000  
+     636 00001990     09c2          MOVI    N_ADJUSTS,A2            ;NUMBER OF ADJUSTMENTS ALLOCATED
+         000019a0     0025  
+     637 000019b0           FACS1
+     638 000019b0     9620          MOVE    *A1+,A0,L               ;FETCH A ROM LONG WORD
+     639 000019c0     0d5f          CALLA   WC_LONGI                ;WRITE THE WORD TO CMOS
+         000019d0 00000620' 
+     640 000019f0     3ca2          DSJS    A2,FACS1                ;WRITE 1 LONG WORD PER ADJUST
+     641                    
+     642                    ;       CALLR   SWITCH_FOR_JUMPER       ;CHANGE COINAGE BASED ON JUMPER.
+     643                    ;       CALLR   LD_CTAB                 ;EXPAND THE CSELCT VALUE
+     644                    
+     645 00001a00     0d3f          CALLR   CMOSLOCK
+         00001a10     001b  
+     646                    
+     647 00001a20     0d3f          CALLR   F_ADC_S                 ;MAKE THE CHECKSUM CORRECT.
+         00001a30     ff8b  
+     648                    
+     649 00001a40     0d3f          CALLR   CMOSUNLOCK
+         00001a50     0016  
+     650                    *
+     651                    *       NOW STORE THE GAME NAME AND REVISION INFO
+     652                    *
+     653 00001a60     09e7          MOVI    NAME_REV,A7             ;POINT AT CMOS NAME STORAGE
+         00001a70 01408ce0  
+     654 00001a90     09e1          MOVI    ROM_NAME,A1             ;POINT AT OUR VERSION
+         00001aa0 00000000! 
+     655 00001ac0     09c2          MOVI    NAME_REV_SIZE,A2        ;MAXIMUM NAME SIZE
+         00001ad0     001e  
+     656                    
+     657 00001ae0           NEXT_LETTER
+     658 00001ae0     8e20          MOVB    *A1,A0                  ;FETCH A BYTE
+     659 00001af0     0d5f          CALLA   WC_BYTEI                ;WRITE IT TO CMOS
+         00001b00 00000400' 
+     660 00001b20     0b01          ADDI    BYTE_SIZE,A1            ;KICK SOURCE POINTER
+         00001b30     0008  
+     661 00001b40     4c00          MOVE    A0,A0                   ;WAS IT A ZERO?
+     662 00001b50     ca01          JRZ     NAME_DONE               ;YEP....NO MORE!
+     663 00001b60     3d22          DSJS    A2,NEXT_LETTER
+     664                    
+     665 00001b70           NAME_DONE
+     666 00001b70     0d3f          CALLR   CMOSLOCK
+         00001b80     0004  
+     667 00001b90     09af          MMFM    SP,A0,A1,A2,A7
+         00001ba0     0087  
+     668 00001bb0     0960          RETS
+     669                    
+     670                    **************************************************************************
+     671                    *                                                                        *
+     672                    *          CMOSUNLOCK and CMOSLOCK                                       *
+     673                    *                                                                        *
+     674                    *          THIS SETS (CLRS) THE WRITE CMOS ENABLE BIT IN SYSCTRL0        *
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     675                    *                                                                        *
+     676                    **************************************************************************
+     677 00001bc0           CMOSUNLOCK:
+     678                            .if     XUNIT=1
+     679                            MOVE    @SYSCOPY,a14,L
+     680                            ori     CMOSENAB,a14
+     681                            move    a14,@SYSCOPY,L
+     682                            move    a14,@SYSCTRL0
+     683                            .endif
+     684 00001bc0     0960          rets
+     685                    
+     686 00001bd0           CMOSLOCK:
+     687                            .if     XUNIT=1
+     688                            MOVE    @SYSCOPY,a14,L
+     689                            andni   CMOSENAB,a14
+     690                            move    a14,@SYSCOPY,L
+     691                            move    a14,@SYSCTRL0
+     692                            .endif
+     693 00001bd0     0960          rets
+     694                    
+     695                    
+     696                    **************************************************************************
+     697                    *                                                                        *
+     698                    *          DUMPING SOFTWARE                                              *
+     699                    *                                                                        *
+     700                    **************************************************************************
+     701 00001be0           DUMP_FS
+     702 00001be0     0d3f          callr   CMOSUNLOCK
+         00001bf0     fffc  
+     703 00001c00     5600          CLR     A0
+     704 00001c10     09e7          MOVI    DUMP_PTR,A7
+         00001c20 0140c000  
+     705 00001c40     0d5f          CALLA   WC_WORD         ;SET NUMBER OF DUMPS TO ZERO
+         00001c50 00000450' 
+     706 00001c70     0d3f          callr   CMOSLOCK
+         00001c80     fff4  
+     707 00001c90     0960          RETS
+     708                    
+     709                    **************************************************************************
+     710                    *                                                                        *
+     711                    *       CLR_DUMP_AUD                                                     *
+     712                    *                                                                        *
+     713                    *       This is called if both BOMB buttons pressed while looking        *
+     714                    *       at dump page.   It clears out the audits associated              *
+     715                    *       with that page.                                                  *
+     716                    *                                                                        *
+     717                    **************************************************************************
+     718 00001ca0           CLR_DUMP_AUD
+     719 00001ca0     09c0          MOVI    AUD_DOG,A0
+         00001cb0     004a  
+     720 00001cc0     0d3f          CALLR   KILL_AUD
+         00001cd0     ff13  
+     721 00001ce0     09c0          MOVI    AUD_WARNING,A0
+         00001cf0     004b  
+     722 00001d00     0d3f          CALLR   KILL_AUD
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+         00001d10     ff0f  
+     723 00001d20     09c0          MOVI    AUD_BADTRAP,A0
+         00001d30     004c  
+     724 00001d40     0d3f          CALLR   KILL_AUD
+         00001d50     ff0b  
+     725 00001d60     0960          RETS
+     726                    
+     727                    **************************************************************************
+     728                    *                                                                        *
+     729                    *          ADD_DUMP                                                      *
+     730                    *                                                                        *
+     731                    *          THIS IS CALLED TO RECORD A DUMP.  A0 THROUGH A8 ARE           *
+     732                    *          RECORDED IN CMOS MEMORY.                                      *
+     733                    *                                                                        *
+     734                    **************************************************************************
+     735 00000020                   .BSS    DUMP_ARRAY,9*32 ;DUMP PRINT ARRAY
+     736                    
+     737              0240  DUMP_SIZE       .EQU    9*C_LONG_SIZE   ;9 LONG WORDS.
+     738          01413dc0  DUMP_LAST       .EQU    DUMP_END-DUMP_SIZE ;ALLOW EM TO USE THE WHOLE PAGE!
+     739              0038  TOTAL_DUMPS     .EQU    (DUMP_END-DUMP_ORG)/DUMP_SIZE   ;THIS MANY DUMPS ALLOWED
+     740              0009  DUMPS_PP        .EQU    9               ;MAX DUMPS PER PAGE
+     741                    
+     742 00001d70           ADD_DUMP
+     743 00001d70     099f          MMTM    SP,B0,B1,B2
+         00001d80     e000  
+     744 00001d90     098f          MMTM    SP,A0,A1,A7
+         00001da0     c100  
+     745 00001db0     0d3f          callr   CMOSUNLOCK
+         00001dc0     ffdf  
+     746 00001dd0     4e00          MOVE    A0,B0
+     747 00001de0     4ee2          MOVE    A7,B2                   ;SAVE THESE!
+     748 00001df0     4e21          MOVE    A1,B1
+     749                    
+     750 00001e00     09e7          MOVI    DUMP_PTR,A7
+         00001e10 0140c000  
+     751 00001e30     0d5f          CALLA   RC_WORD                 ;GET THE INDICATOR OF HOW MANY.
+         00001e40 00000100' 
+     752 00001e60     09c1          MOVI    DUMP_SIZE,A1
+         00001e70     0240  
+     753 00001e80     5e01          MPYU    A0,A1                   ;THIS IS OFFSET INTO CMOS FOR THIS ENTRY!
+     754                    
+     755 00001e90     0b21          ADDI    DUMP_DATA,A1            ;NOW A1 POINTS WHERE WE'RE PUTTING THE DATA!
+         00001ea0 0140c020  
+     756 00001ec0     0b61          CMPI    DUMP_LAST,A1            ;ARE WE TOO FAR FOR ANOTHER?
+         00001ed0 febec23f  
+     757 00001ef0     c929          JRHS    NO_DUMP                 ;YEP....SKIP IT
+     758                    
+     759 00001f00     1020          INC     A0                      ;1 MORE OUT THERE!
+     760 00001f10     0d5f          CALLA   WC_WORD                 ;CHALK IT!
+         00001f20 00000450' 
+     761                    
+     762 00001f40     4c27          MOVE    A1,A7                   ;THIS IS POINTER TO STORE DATA.
+     763 00001f50     4e10          MOVE    B0,A0                   ;THIS IS A0
+     764 00001f60     0d5f          CALLA   WC_LONGI
+         00001f70 00000620' 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     765 00001f90     4e30          MOVE    B1,A0                   ;THIS IS A1
+     766 00001fa0     0d5f          CALLA   WC_LONGI
+         00001fb0 00000620' 
+     767 00001fd0     4c40          MOVE    A2,A0                   ;THIS IS A2
+     768 00001fe0     0d5f          CALLA   WC_LONGI
+         00001ff0 00000620' 
+     769 00002010     4c60          MOVE    A3,A0                   ;THIS IS A3
+     770 00002020     0d5f          CALLA   WC_LONGI
+         00002030 00000620' 
+     771 00002050     4c80          MOVE    A4,A0                   ;THIS IS A4
+     772 00002060     0d5f          CALLA   WC_LONGI
+         00002070 00000620' 
+     773 00002090     4ca0          MOVE    A5,A0                   ;THIS IS A5
+     774 000020a0     0d5f          CALLA   WC_LONGI
+         000020b0 00000620' 
+     775 000020d0     4cc0          MOVE    A6,A0                   ;THIS IS A6
+     776 000020e0     0d5f          CALLA   WC_LONGI
+         000020f0 00000620' 
+     777 00002110     4e50          MOVE    B2,A0                   ;THIS IS A7
+     778 00002120     0d5f          CALLA   WC_LONGI
+         00002130 00000620' 
+     779 00002150     4d00          MOVE    A8,A0                   ;THIS IS A8
+     780 00002160     0d5f          CALLA   WC_LONGI
+         00002170 00000620' 
+     781 00002190           NO_DUMP
+     782 00002190     0d3f          callr   CMOSLOCK
+         000021a0     ffa2  
+     783 000021b0     09af          MMFM    SP,A0,A1,A7
+         000021c0     0083  
+     784 000021d0     09bf          MMFM    SP,B0,B1,B2
+         000021e0     0007  
+     785 000021f0     0960          RETS
+     786                    
+     787                    **************************************************************************
+     788                    *                                                                        *
+     789                    * DISPDUMP - PAGE THROUGH ALL OF THE CURRENT DUMP DATA.                  *
+     790                    *                                                                        *
+     791                    **************************************************************************
+     792 00002200           DISPDUMP
+     793 00002200     09e7          MOVI    DUMP_PTR,A7
+         00002210 0140c000  
+     794 00002230     0d5f          CALLA   RC_WORD                 ;GET THE INDICATOR OF HOW MANY.
+         00002240 00000100' 
+     795 00002260     ca2a          JRZ     DUMP_NONE
+     796 00002270     0b40          CMPI    TOTAL_DUMPS,A0          ;TOO MANY INDICATED?
+         00002280     ffc7  
+     797 00002290     c202          JRLS    DD_NUM_OK               ;BR = NO
+     798 000022a0     09c0          MOVI    TOTAL_DUMPS,A0          ;JUST DISPLAY MAX NUMBER
+         000022b0     0038  
+     799 000022c0           DD_NUM_OK
+     800 000022c0     5729          CLR     A9                      ;THIS IS CURRENT ONE
+     801 000022d0     4c08          MOVE    A0,A8                   ;THIS IS THE LAST ONE TO DO
+     802                    
+     803 000022e0           DO_ANOTHER_DPAGE
+     804 000022e0     0d5f          CALLA   CLR_SCRN                ;CLEAR SCREEN
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+         000022f0 00000000! 
+     805 00002310     09ca          MOVI    20,A10                  ;THIS IS Y COORDIANTE OF CURRENT ONE!
+         00002320     0014  
+     806 00002330     09cb          MOVI    DUMPS_PP,A11            ;THIS IS MAX NUMBER PER PAGE.
+         00002340     0009  
+     807                    
+     808 00002350           DO_ANOTHER_DUMP
+     809 00002350                   JSRP    DO_DUMP
+     810 000023c0     0b0a          ADDI    25,A10                  ;KICK Y UP
+         000023d0     0019  
+     811 000023e0     1029          INC     A9                      ;KICK TO NEXT DUMP
+     812 000023f0     4909          CMP     A8,A9                   ;UNTIL THEY'RE ALL DONE!
+     813 00002400     c909          JRHS    DUMP_DONE               ;WE'RE NOT ALL DONE YET!
+     814                    
+     815 00002410     3dab          DSJS    A11,DO_ANOTHER_DUMP     ;NOT FOR THIS PAGE EITHER!
+     816                    
+     817 00002420                   JSRP    WAIT_MUT                ;WAIT AND WATCH FOR CLEAR
+     818 00002490     c0e4          JRUC    DO_ANOTHER_DPAGE
+     819                    
+     820 000024a0           DUMP_DONE
+     821 000024a0                   JSRP    WAIT_MUT
+     822 00002510           DUMP_NONE
+     823 00002510                    RETP                         ;AND RETURN TO CALLER!
+     824                    
+     825                    **************************************************************************
+     826                    *                                                                        *
+     827                    *          WAIT_MUT                                                      *
+     828                    *                                                                        *
+     829                    *          THIS IS LIKE "WAIT_BUT"....WAIT FOR ANY BUTTON EXCEPT         *
+     830                    *          THAT IT WILL CLEAR OUT THE DUMPS IF BOTH BOMB BUTTONS ARE     *
+     831                    *          PUSHED IN.                                                    *
+     832                    *                                                                        *
+     833                    **************************************************************************
+     834 00002540           WAIT_MUT
+     835 00002540     0d5f          CALLA   FORM_SWS        ;1ST STATE DOESN'T COUNT
+         00002550 00000000! 
+     836                    *
+     837                    *        RETURN CURRENT STATE IN A0..PREVIOUS STATE IN A1.
+     838                    *
+     839 00002570           WB1
+     840 00002570                   SLEEP   1
+     841                    
+     842 000025b0     0d5f          CALLA   FORM_SWS
+         000025c0 00000000! 
+     843 000025e0     4c02          MOVE    A0,A2
+     844 000025f0     0b82          ANDI    2020H,A2
+         00002600 ffffdfdf  
+     845 00002620     0b42          CMPI    2020H,A2
+         00002630     dfdf  
+     846 00002640     cb0a          JRNZ    WB2             ;NOT "CLEAR"
+     847                    
+     848 00002650     09c4          movi    air_horn_blast,a4
+         00002660     00ee  
+     849 00002670     0d5f          calla   do_sound
+         00002680 00000000! 
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+     850 000026a0     0d3f          CALLR   DUMP_FS         ;CLEAR OUT THE DUMPS!
+         000026b0     ff52  
+     851 000026c0     0d3f          CALLR   CLR_DUMP_AUD    ;AND THE AUDITS
+         000026d0     ff5c  
+     852 000026e0     c0e8          JRUC    WB1
+     853                    
+     854 000026f0           WB2
+     855 000026f0     03e1          NOT     A1              ;LAST = 0 AND NOW = 1 MEANS EDGE!
+     856                    
+     857 00002700     5020          AND     A1,A0           ;1'S WHERE WE HAVE POSITIVE EDGE.
+     858 00002710     0b80          ANDI    00241010H,A0    ;TRIGGER OR START BUTTON?
+         00002720 ffdbefef  
+     859 00002740     cae2          JRZ     WB1
+     860 00002750     09c4          movi    S_CURSOR_SELECT,a4
+         00002760     0108  
+     861 00002770     0d5f          calla   do_sound
+         00002780 00000000! 
+     862 000027a0                   RETP
+     863                    
+     864 000027d0           DCLR_SND
+     865 000027d0     f1fe          .WORD   0F1FEH,030H,08164H,0    ;DUMP CLEAR SOUND
+     866                    
+     867                    **************************************************************************
+     868                    *                                                                        *
+     869                    *          DO_DUMP                                                       *
+     870                    *                                                                        *
+     871                    *          A9 = DUMP NUMBER TO DO                                        *
+     872                    *          A10 = Y POSITION.                                             *
+     873                    *                                                                        *
+     874                    **************************************************************************
+     875 00002810           DO_DUMP
+     876 00002810     098c          MMTM    A12,A8,A9,A10,A11
+         00002820     00f0  
+     877                    
+     878 00002830     09c7          MOVI    DUMP_SIZE,A7
+         00002840     0240  
+     879 00002850     5f27          MPYU    A9,A7           ;THIS IS OFFSET INTO CMOS FOR THIS ENTRY!
+     880                    
+     881 00002860     09c5          MOVI    9,A5            ;NUMBER OF LONGS TO DUMP
+         00002870     0009  
+     882 00002880     0b27          ADDI    DUMP_DATA,A7    ;NOW A1 POINTS WHERE WE'RE PUTTING THE DATA!
+         00002890 0140c020  
+     883 000028b0     09e6          MOVI    DUMP_ARRAY,A6
+         000028c0 00000020- 
+     884 000028e0           NEXT_ELE
+     885 000028e0     0d5f          CALLA   RC_LONGI        ;GET A REGISTER
+         000028f0 000003a0' 
+     886 00002910     9206          MOVE    A0,*A6+,L       ;AND STORE IT
+     887 00002920           NO_SKIP_NOW
+     888 00002920     3ca5          DSJS    A5,NEXT_ELE
+     889 00002930     09e8          MOVI    MESS_DUMP,A8
+         00002940 00002b20' 
+     890 00002960     1fe9          BTST    0,A9            ;SELECT ALTERNATING COLOR, WHITE = EVEN
+     891 00002970     ca04          JREQ    DD_WHITE        ;                          PURPLE = ODD
+     892 00002980     09e2          MOVI    COLOR_PPURPLE,A2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+         00002990 06060101  
+     893 000029b0     c003          JRUC    DD_LOADY
+     894 000029c0           DD_WHITE
+     895 000029c0     09e2          MOVI    COLOR_PWHITE,A2
+         000029d0 02020101  
+     896 000029f0           DD_LOADY
+     897 000029f0     4d43          MOVE    A10,A3          ;Y IN A3
+     898 00002a00     0d5f          CALLA   LM_SETUP
+         00002a10 00000000! 
+     899 00002a30     4c45          MOVE    A2,A5
+     900 00002a40     2603          SLL     16,A3
+     901 00002a50     ee69          MOVY    A3,A9
+     902 00002a60                   JSRP    PRINTF
+     903                    
+     904 00002ad0     09ac          MMFM    A12,A8,A9,A10,A11
+         00002ae0     0f00  
+     905 00002af0                   RETP
+     906                    
+     907 00002b20           MESS_DUMP
+     908 00002b20                   MESS_MAC  RD7FONT,1,10,355,COLOR_PWHITE,STRLNRM,0
+     909 00002be0       25          .STRING "%08lX %08lX %08lX %08lX %08lX %08lX\n%08lX %08lX %08lX",0
+     910 00002da0 00000020-         .LONG   DUMP_ARRAY
+     911 00002dc0 00000040-         .LONG   DUMP_ARRAY+20H
+     912 00002de0 00000060-         .LONG   DUMP_ARRAY+40H
+     913 00002e00 00000080-         .LONG   DUMP_ARRAY+60H
+     914 00002e20 000000a0-         .LONG   DUMP_ARRAY+80H
+     915 00002e40 000000c0-         .LONG   DUMP_ARRAY+0A0H
+     916 00002e60 000000e0-         .LONG   DUMP_ARRAY+0C0H
+     917 00002e80 00000100-         .LONG   DUMP_ARRAY+0E0H
+     918 00002ea0 00000120-         .LONG   DUMP_ARRAY+100H
+     919                    
+     920                    
+     921 00002ec0           FACTORY_TABLE
+     922 00002ec0 00000000          .LONG   0000H   ;ADJ_UNUSED             EQU     0
+     923 00002ee0 00000001          .LONG   0001H   ;ADJ_PRICING            EQU     1
+     924 00002f00 00000001          .LONG   0001H   ;ADJ_LEFT_MULT          EQU     2
+     925 00002f20 00000004          .LONG   0004H   ;ADJ_CENTER_MULT        EQU     3
+     926 00002f40 00000001          .LONG   0001H   ;ADJ_RIGHT_MULT         EQU     4
+     927 00002f60 00000001          .LONG   0001H   ;ADJ_FOURTH_MULT        EQU     5
+     928 00002f80 00000001          .LONG   0001H   ;ADJ_UNITS_CREDIT       EQU     6
+     929 00002fa0 00000000          .LONG   0000H   ;ADJ_UNITS_BONUS        EQU     7
+     930 00002fc0 00000000          .LONG   0000H   ;ADJ_MIN_UNITS          EQU     8
+     931 00002fe0 00000004          .LONG   0004H   ;ADJCDIV                EQU     9
+     932 00003000 00000001          .LONG   0001H   ;SHOW FRACTIONS         EQU     10
+     933 00003020 00000002          .LONG   0002H   ;ADJ_START_CRED         EQU     11
+     934 00003040 00000002          .LONG   0002H   ;ADJ_CONT_CRED          EQU     12
+     935 00003060 00000005          .LONG   0005H   ;ADJ_DIFFICULTY         EQU     13
+     936 00003080 00000000          .LONG       0   ;ADJ_TOURMODE           EQU     14
+     937 000030a0 00000003          .LONG       3   ;ADJ_CHALMODE           EQU     15
+     938 000030c0 00000006          .LONG       6   ;ADJ_FULL GAME          EQU     16 
+     939 000030e0 00000002          .LONG       2   ;ADJ_NUM_EXTRA_MEN      EQU     17
+     940 00003100 00000000          .LONG       0   ;ATTRACT MODE SOUND     EQU     18
+     941 00003120 00000032          .LONG      50   ;MAXIMUM CREDITS        EQU     19
+     942 00003140 00000000          .LONG   0000H   ;FREEPLAY               EQU     20
+     943 00003160 00000001          .LONG   0001H   ;NON-ZERO MEANS COIN BLOCK (1ST 8) UNTOUCHED 21
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:41:12 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+     944 00003180 00000000          .LONG   0000H   ;PAY FOR 3 MIN OVERTIME EQU     22
+     945 000031a0 00000001          .LONG   0001H   ;NON-ZERO MEANS 1ST 6 UNTOUCHED.           23
+     946 000031c0 00000000          .LONG   0000H   ;NON-ZERO MEANS NO COIN-SPECIFIC MESSAGE ON COIN PAGE  24
+     947 000031e0 00000002          .LONG   0002H   ;25 ADJBUYIN - 0 = NEVER, 1 = SOMETIMES, 2 = ALWAYS
+     948 00003200 00000001          .LONG   0001H   ;26 ADJHSON  - 0 = NO, 1 = YES
+     949 00003220 00000002          .LONG      2    ;ADJ_TMRSPD             EQU     27
+     950 00003240 00000000!         .LONG   FACTORY_VOLUME  ;ADJVOLUME              EQU     28
+     951 00003260 00000000!         .LONG   FACTORY_MINVOL  ;ADJMINVOL              EQU     29
+     952 00003280 00000004          .LONG   0004H   ;ADJDBVMULT     EQU     30
+     953 000032a0 00000001          .LONG   0001H   ;ADJTOTALIZER   EQU     31
+     954 000032c0 00000001          .LONG   0001H   ;ADJLTOTMULT    EQU     32
+     955 000032e0 00000000          .LONG   0000H   ;ADJCTOTMULT    EQU     33
+     956 00003300 00000001          .LONG   0001H   ;ADJRTOTMULT    EQU     34
+     957 00003320 00000000          .LONG   0000H   ;ADJXTOTMULT    EQU     35
+     958 00003340 00000004          .LONG   0004H   ;ADJBTOTMULT    EQU     36
+     959                    
+
+ No Errors,  No Warnings

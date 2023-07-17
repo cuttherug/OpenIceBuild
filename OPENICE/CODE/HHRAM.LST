@@ -1,0 +1,187 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:56 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .WIDTH  132
+       2                            .OPTION B,D,L,T
+       3                            .MNOLIST
+       4                    
+       5                    **************************************************************************
+       6                    *                                                                        *
+       7                    *       COPYRIGHT (C) 1994 MIDWAY MANUFACTURING COMPANY.                 *
+       8                    *                      ALL RIGHTS RESERVED.                              *
+       9                    *                                                                        *
+      10                    **************************************************************************
+      11                    
+      12                            .INCLUDE        "HH.INC"
+      13                            .include        "hhram.e"
+      14                    
+      15                            .if     DEBUG
+      16                    
+      17                            .DEF    WAVEDMABOG, WAVECPUBOG, NOVELADD
+      18                            .def            VCOUNT0
+      19                            .def            VCOUNT1
+      20                            .def            VCOUNT2
+      21                            .def            VCOUNT3
+      22                            .def            VC_DIRQ
+      23                            .def            VC_ANIM
+      24                    
+      25                            .endif
+      26                    
+      27                    ; end of include files
+      28                    
+      29                    *IN THIS MODULE
+      30                    
+      31 00000000                   .EVEN
+      32                    
+      33 00000000                   .BSS    DMACFIGCOPY,32  ;RAM COPY OF DMACONFIG REGISTER
+      34                    
+      35 00000020                   .BSS    NOAUTOE,16      ;TURN AUTO ERASE OFF FOR DEBUG
+      36                    ;       .BSS    CURPAL,16       ;CURRENT PALETTE FOR STUFOBJ TO USE
+      37 00000030                   .BSS    RAMTEMP1,32     ;TEMP STORAGE FOR ANYONE
+      38 00000050                   .BSS    RAMTEMP2,32     ;MORE TEMP STORAGE FOR ANYONE
+      39 00000070                   .BSS    RAMTEMP3,32     ;MORE TEMP STORAGE FOR ANYONE
+      40                    
+      41 00000090                   .BSS    RAND,32
+      42                    
+      43                    ;       .BSS    SWLOGIC,16      ;LOGICAL SWITCH STATE (FIRST 16)
+      44                    ;       .BSS    SWLOGIC2,16     ;LOGICAL SWITCH STATE (LAST 16)
+      45 000000b0                   .BSS    SWSTACK,32      ;SWITCH STACK
+      46 000000d0                   .BSS    SWTEMP1,32      ;SWITCH TIMING STORAGE FOR SWITCH
+      47 000000f0                   .BSS    SWTEMP2,32
+      48 00000110                   .BSS    SW2TEMP1,32     ;SWITCH TIMING STORAGE FOR SWITCH2
+      49 00000130                   .BSS    SW2TEMP2,32
+      50 00000150                   .BSS    SWSTMN,256      ;BOTTOM OF STACK
+      51 00000250                   .BSS    SWSTST,0        ;START SWITCH STACK
+      52                            .if     XUNIT
+      53                            .BSS    SYSCOPY,16      ;RAM COPY OF SYSCTRL LATCH
+      54                            .endif
+      55 00000250                   .BSS    MISCOUT_COPY,16 ;RAM COPY OF MISCELLANOUS OUTPUTS
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:56 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56                    
+      57 00000260                   .BSS    PAGE,16         ;CURRENT GRAPHICS PAGE # (0-1)
+      58 00000270                   .BSS    PAGEADDR,32     ;CURRENT GRAPHICS PAGE ADDRESS
+      59 00000290                   .BSS    CPULOW,16       ;LOWEST CPU TIME LEFT
+      60 000002a0                   .BSS    CPUHI,16        ;HIGHEST CPU TIME LEFT
+      61 000002b0                   .BSS    CPULEFT,16      ;CPU TIME LEFT
+      62 000002c0                   .BSS    CPUAVG,16       ;AVERAGE CPU TIME LEFT
+      63 000002d0                   .BSS    SKIPDISP,16     ;USED TO SKIP THE DISPLAY PROCESSING
+      64 000002e0                   .BSS    NOPGFLIP,16     ;IF <> 0, THEN NO PAGE FLIPPING, FORCE TO 0
+      65 000002f0                   .BSS    COUNTER_COPY,16 ;CURRENT COPY OF THE COIN COUNTER LATCH
+      66 00000300                   .BSS    SOUND_COPY,16   ;CURRENT COPY OF SOUND LATCH
+      67                    
+      68 00000310                   .BSS    PALRAM,0        ;PALETTE ALLOCATOR RAM
+      69 00000310                   .BSS    FPALRAM,PALRSIZ*NMFPAL
+      70 00002310                   .BSS    COLRTEMP,16*16  ;RAM COPY OF CYCLING COLORS
+      71 00002410                   .BSS    COLRTEND,0      ;MARKER
+      72                    
+      73 00002410                   .BSS    NewAECol,32     ;DESIRED AUTO-ERASE COLOR
+      74 00002430                   .BSS    OldAECol,32     ;CURRENT AUTO-ERASE COLOR
+      75                    
+      76 00002450                   .BSS    NewGNDCol,32    ;DESIRED AUTO-ERASE COLOR for Ground
+      77 00002470                   .BSS    OldGNDCol,32    ;CURRENT AUTO-ERASE COLOR for Ground
+      78                    
+      79 00002490                   .BSS    SKYCOLOR,16     ;CURRENT FULL BRIGHTNESS SKY COLOR VALUE
+      80 000024a0                   .BSS    GROUNDCOLOR,16  ;CURRENT FULL BRIGHT GROUND COLOR VALUE
+      81 000024b0                   .BSS    IRQSKYE,16      ;ACTUAL SKY COLOR (AUTOERASE)
+      82 000024c0                   .BSS    IRQGNDE,16      ;ACTUAL GROUND COLOR (AUTOERASE)
+      83                    
+      84 000024d0                   .BSS    NPLAYERS,16     ;MAX # OF PLAYERS ALLOWED (BASE 0)
+      85                    
+      86 000024e0                   .BSS    GAME_STATE,16   ;GAME STATE VARIABLE (LOW 3 BITS ARE SUB-STATE):
+      87                                                    ;                       10 = INGAME
+      88                                                    ;                       18 = ININTRO
+      89                                                    ;                       20 = INPLAY
+      90                                                    ;                       30 = INAMODE
+      91                                                    ;                       40 = INDIAG
+      92                                                    ;                       50 = INGAMEOV
+      93                                                    ;                       60 = INEPILOG
+      94                                                    ;                       70 = INSTAT
+      95                                                    ;                       80 = INSUBST
+      96                                                    ;                       90 = INBUYIN
+      97                    
+      98 000024f0                   .BSS    VOLUME_SET,16   ;If = 1, then sound volume has been set
+      99                    
+     100 00002500                   .BSS    SUPRESS_PAGE_FLIP,16    ;If=1, then do not touch DPYST
+     101                    
+     102                    *
+     103                    *Game RAM -
+     104                    *        Anything from here thru GRAMEND is cleared at the start of each game.
+     105                    *
+     106                    
+     107 00002510                   .BSS    GRAMSTRT,0      ;START OF GAME RAM
+     108 00002510                   .BSS    CURPLYRS,16     ;CURRENT NUMBER OF PLAYERS
+     109 00002520                   .BSS    PLAYER_BITS,16  ;bit status of players (to determine above)
+     110 00002530                   .BSS    PLAYERLBITS,16  ;bit status of players at last drone level set
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:56 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     111 00002540                   .BSS    SOUNDSUP,16     ;IF NON-ZERO THEN NO SOUNDS SHALL BE MADE
+     112 00002550                   .BSS    GAMERASE,16     ;0 = NO AUTO-ERASE SCHEME
+     113                                                    ;1 = AUTO-ERASE WHOLE SCREEN
+     114 00002560                   .BSS    DIAG_DFLAG,16   ;IF<00H DO DIAG DIRQ
+     115 00002570                   .bss    LAST_PLAYER_BITS,16             ;player bits from last game (valid in game over)
+     116                    
+     117 00002580                   .BSS    BLACKOUT,16             ;SET BLACKPAL FLAG
+     118                    
+     119 00002590                   .BSS    DISPATCH_DELAY,16       ;TICKS BEFORE WE DISPATCH AGAIN
+     120 000025a0                   .BSS    WAVEDISPS,16
+     121 000025b0                   .BSS    WAVEIRQS,32
+     122                    
+     123                            .if     DEBUG
+     124                            .BSS    WAVEDMABOG,32           ;ELAPSED WAVE DMA BOGS
+     125                            .BSS    WAVECPUBOG,32           ;ELAPSED WAVE CPU BOGS
+     126                    
+     127                            .BSS    NOVELADD,16             ;DON'T VELADD DURING LOCKUP
+     128                    
+     129                            .BSS    VC_DIRQ,16              ;VCOUNT CHECK POINTS
+     130                            .BSS    VC_ANIM,16
+     131                            .BSS    VCOUNT0,16
+     132                            .BSS    VCOUNT1,16
+     133                            .BSS    VCOUNT2,16
+     134                            .BSS    VCOUNT3,16
+     135                            .endif
+     136                    
+     137 000025d0                   .BSS    GTIMES1,32              ;GOALIE TIME FOR SHOOT SWITCH
+     138 000025f0                   .BSS    GTIMEP1,32              ;GOALIE TIME FOR PASS SWITCH
+     139 00002610                   .BSS    GTIMET1,32              ;GOALIE TIME FOR TURBO SWITCH
+     140 00002630                   .BSS    GTIMES2,32              ;GOALIE TIME FOR SHOOT SWITCH
+     141 00002650                   .BSS    GTIMEP2,32              ;GOALIE TIME FOR PASS SWITCH
+     142 00002670                   .BSS    GTIMET2,32              ;GOALIE TIME FOR TURBO SWITCH
+     143                    
+     144 00002690                   .BSS    GTIMES5,32              ;GOALIE TIME FOR SHOOT SWITCH
+     145 000026b0                   .BSS    GTIMEP5,32              ;GOALIE TIME FOR PASS SWITCH
+     146 000026d0                   .BSS    GTIMET5,32              ;GOALIE TIME FOR TURBO SWITCH
+     147 000026f0                   .BSS    GTIMES6,32              ;GOALIE TIME FOR SHOOT SWITCH
+     148 00002710                   .BSS    GTIMEP6,32              ;GOALIE TIME FOR PASS SWITCH
+     149 00002730                   .BSS    GTIMET6,32              ;GOALIE TIME FOR TURBO SWITCH
+     150                    
+     151 00002750                   .BSS    GOALIE_CONTROL_4,16     ;HUMAN PLAYER CONTROLLING LEFT GOALIE
+     152 00002760                   .BSS    GOALIE_CONTROL_8,16     ;HUMAN PLAYER CONTROLLING RIGHT GOALIE
+     153                    
+     154 00002770                   .BSS    STARTSW,16              ;START SWITCHES
+     155                    
+     156 00002780                   .bss    game_frozen,16          ;game is frozen
+     157                    
+     158 00002790                   .BSS    GRAMEND,0
+     159                    
+     160                            .IF NOTFINAL
+     161 00002790                   .BSS    INTADDR,32 ;FOR DEBUGGING, PTR TO INTERRUPTED PC (or 0)
+     162 000027b0                   .BSS    LASTINT,32 ;LAST INTADDR
+     163                            .ENDIF
+     164                    
+     165                            .end
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:30:56 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+
+ No Errors,  No Warnings

@@ -1,0 +1,1526 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHSTABL4.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                    
+      11                            .INCLUDE        "HH.INC"
+      12                            .INCLUDE        "IMGTBL.GLO"
+      13                            .INCLUDE        "HEADS3.TBL"
+      14                            .include        "hhstabl4.e"
+      15                    
+      16                    ; end of include files
+      17                    
+      18 00000000                   LWW     F_MARTINE,0,0
+      19 00000040           martinez_heads
+      20 00000040                   LWW     F_MARTINE,0,0
+      21 00000080                   LWW     MARTIN_2,0,0
+      22 000000c0                   LWW     MARTIN_3,0,0
+      23 00000100                   LWW     MARTIN_4,0,0
+      24 00000140                   LWW     MARTIN_5,0,0
+      25 00000180                   LWW     F_MARTINE,0,0
+      26 000001c0                   LWW     MARTIN_2,0,0
+      27 00000200                   LWW     MARTIN_3,0,0
+      28 00000240                   LWW     MARTIN_4,0,0
+      29 00000280                   LWW     MARTIN_5,0,0
+      30 000002c0                   LWW     MARTIN_11,0,0
+      31 00000300                   LWW     MARTIN_12,0,0
+      32 00000340                   LWW     MARTIN_13,0,0
+      33 00000380                   LWW     MARTIN_14,0,0
+      34 000003c0                   LWW     MARTIN_15,0,0
+      35 00000400                   LWW     MARTIN_2,M_FLIPH,0
+      36 00000440                   LWW     MARTIN_3,M_FLIPH,0
+      37 00000480                   LWW     MARTIN_4,M_FLIPH,0
+      38 000004c0                   LWW     MARTIN_2,M_FLIPH,0
+      39 00000500                   LWW     MARTIN_3,M_FLIPH,0
+      40 00000540                   LWW     MARTIN_4,M_FLIPH,0
+      41 00000580                   LWW     MARTIN_12,M_FLIPH,0
+      42 000005c0                   LWW     MARTIN_13,M_FLIPH,0
+      43 00000600                   LWW     MARTIN_14,M_FLIPH,0
+      44                    
+      45 00000640                   LWW     F_HAEGER,0,0
+      46 00000680           haeger_heads
+      47 00000680                   LWW     F_HAEGER,0,0
+      48 000006c0                   LWW     HAEGER2,0,0
+      49 00000700                   LWW     HAEGER3,0,0
+      50 00000740                   LWW     HAEGER4,0,0
+      51 00000780                   LWW     HAEGER5,0,0
+      52 000007c0                   LWW     F_HAEGER,0,0
+      53 00000800                   LWW     HAEGER2,0,0
+      54 00000840                   LWW     HAEGER3,0,0
+      55 00000880                   LWW     HAEGER4,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      56 000008c0                   LWW     HAEGER5,0,0
+      57 00000900                   LWW     HAEGER11,0,0
+      58 00000940                   LWW     HAEGER12,0,0
+      59 00000980                   LWW     HAEGER13,0,0
+      60 000009c0                   LWW     HAEGER14,0,0
+      61 00000a00                   LWW     HAEGER15,0,0
+      62 00000a40                   LWW     HAEGER2,M_FLIPH,0
+      63 00000a80                   LWW     HAEGER3,M_FLIPH,0
+      64 00000ac0                   LWW     HAEGER4,M_FLIPH,0
+      65 00000b00                   LWW     HAEGER2,M_FLIPH,0
+      66 00000b40                   LWW     HAEGER3,M_FLIPH,0
+      67 00000b80                   LWW     HAEGER4,M_FLIPH,0
+      68 00000bc0                   LWW     HAEGER12,M_FLIPH,0
+      69 00000c00                   LWW     HAEGER13,M_FLIPH,0
+      70 00000c40                   LWW     HAEGER14,M_FLIPH,0
+      71                    
+      72 00000c80                   LWW     F_DABELS,0,0
+      73 00000cc0           dabelstein_heads
+      74 00000cc0                   LWW     F_DABELS,0,0
+      75 00000d00                   LWW     DABELS_2,0,0
+      76 00000d40                   LWW     DABELS_3,0,0
+      77 00000d80                   LWW     DABELS_4,0,0
+      78 00000dc0                   LWW     DABELS_5,0,0
+      79 00000e00                   LWW     F_DABELS,0,0
+      80 00000e40                   LWW     DABELS_2,0,0
+      81 00000e80                   LWW     DABELS_3,0,0
+      82 00000ec0                   LWW     DABELS_4,0,0
+      83 00000f00                   LWW     DABELS_5,0,0
+      84 00000f40                   LWW     DABELS_11,0,0
+      85 00000f80                   LWW     DABELS_12,0,0
+      86 00000fc0                   LWW     DABELS_13,0,0
+      87 00001000                   LWW     DABELS_14,0,0
+      88 00001040                   LWW     DABELS_15,0,0
+      89 00001080                   LWW     DABELS_2,M_FLIPH,0
+      90 000010c0                   LWW     DABELS_3,M_FLIPH,0
+      91 00001100                   LWW     DABELS_4,M_FLIPH,0
+      92 00001140                   LWW     DABELS_2,M_FLIPH,0
+      93 00001180                   LWW     DABELS_3,M_FLIPH,0
+      94 000011c0                   LWW     DABELS_4,M_FLIPH,0
+      95 00001200                   LWW     DABELS_12,M_FLIPH,0
+      96 00001240                   LWW     DABELS_13,M_FLIPH,0
+      97 00001280                   LWW     DABELS_14,M_FLIPH,0
+      98                    
+      99 000012c0                   LWW     F_TSUI,0,0
+     100 00001300           tsui_heads
+     101 00001300                   LWW     F_TSUI,0,0
+     102 00001340                   LWW     TSUI_2,0,0
+     103 00001380                   LWW     TSUI_3,0,0
+     104 000013c0                   LWW     TSUI_4,0,0
+     105 00001400                   LWW     TSUI_5,0,0
+     106 00001440                   LWW     F_TSUI,0,0
+     107 00001480                   LWW     TSUI_2,0,0
+     108 000014c0                   LWW     TSUI_3,0,0
+     109 00001500                   LWW     TSUI_4,0,0
+     110 00001540                   LWW     TSUI_5,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+     111 00001580                   LWW     TSUI_11,0,0
+     112 000015c0                   LWW     TSUI_12,0,0
+     113 00001600                   LWW     TSUI_13,0,0
+     114 00001640                   LWW     TSUI_14,0,0
+     115 00001680                   LWW     TSUI_15,0,0
+     116 000016c0                   LWW     TSUI_2,M_FLIPH,0
+     117 00001700                   LWW     TSUI_3,M_FLIPH,0
+     118 00001740                   LWW     TSUI_4,M_FLIPH,0
+     119 00001780                   LWW     TSUI_2,M_FLIPH,0
+     120 000017c0                   LWW     TSUI_3,M_FLIPH,0
+     121 00001800                   LWW     TSUI_4,M_FLIPH,0
+     122 00001840                   LWW     TSUI_12,M_FLIPH,0
+     123 00001880                   LWW     TSUI_13,M_FLIPH,0
+     124 000018c0                   LWW     TSUI_14,M_FLIPH,0
+     125                    
+     126 00001900                   LWW     F_PENACHO,0,0
+     127 00001940           penacho_heads
+     128 00001940                   LWW     F_PENACHO,0,0
+     129 00001980                   LWW     PENACHO2,0,0
+     130 000019c0                   LWW     PENACHO3,0,0
+     131 00001a00                   LWW     PENACHO4,0,0
+     132 00001a40                   LWW     PENACHO5,0,0
+     133 00001a80                   LWW     F_PENACHO,0,0
+     134 00001ac0                   LWW     PENACHO2,0,0
+     135 00001b00                   LWW     PENACHO3,0,0
+     136 00001b40                   LWW     PENACHO4,0,0
+     137 00001b80                   LWW     PENACHO5,0,0
+     138 00001bc0                   LWW     PENACHO11,0,0
+     139 00001c00                   LWW     PENACHO12,0,0
+     140 00001c40                   LWW     PENACHO13,0,0
+     141 00001c80                   LWW     PENACHO14,0,0
+     142 00001cc0                   LWW     PENACHO15,0,0
+     143 00001d00                   LWW     PENACHO2,M_FLIPH,0
+     144 00001d40                   LWW     PENACHO3,M_FLIPH,0
+     145 00001d80                   LWW     PENACHO4,M_FLIPH,0
+     146 00001dc0                   LWW     PENACHO2,M_FLIPH,0
+     147 00001e00                   LWW     PENACHO3,M_FLIPH,0
+     148 00001e40                   LWW     PENACHO4,M_FLIPH,0
+     149 00001e80                   LWW     PENACHO12,M_FLIPH,0
+     150 00001ec0                   LWW     PENACHO13,M_FLIPH,0
+     151 00001f00                   LWW     PENACHO14,M_FLIPH,0
+     152                    
+     153 00001f40                   LWW     F_ROHN,0,0
+     154 00001f80           rohnm_heads
+     155 00001f80                   LWW     F_ROHN,0,0
+     156 00001fc0                   LWW     ROHN_2,0,0
+     157 00002000                   LWW     ROHN_3,0,0
+     158 00002040                   LWW     ROHN_4,0,0
+     159 00002080                   LWW     ROHN_5,0,0
+     160 000020c0                   LWW     F_ROHN,0,0
+     161 00002100                   LWW     ROHN_2,0,0
+     162 00002140                   LWW     ROHN_3,0,0
+     163 00002180                   LWW     ROHN_4,0,0
+     164 000021c0                   LWW     ROHN_5,0,0
+     165 00002200                   LWW     ROHN_11,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     166 00002240                   LWW     ROHN_12,0,0
+     167 00002280                   LWW     ROHN_13,0,0
+     168 000022c0                   LWW     ROHN_14,0,0
+     169 00002300                   LWW     ROHN_15,0,0
+     170 00002340                   LWW     ROHN_2,M_FLIPH,0
+     171 00002380                   LWW     ROHN_3,M_FLIPH,0
+     172 000023c0                   LWW     ROHN_4,M_FLIPH,0
+     173 00002400                   LWW     ROHN_2,M_FLIPH,0
+     174 00002440                   LWW     ROHN_3,M_FLIPH,0
+     175 00002480                   LWW     ROHN_4,M_FLIPH,0
+     176 000024c0                   LWW     ROHN_12,M_FLIPH,0
+     177 00002500                   LWW     ROHN_13,M_FLIPH,0
+     178 00002540                   LWW     ROHN_14,M_FLIPH,0
+     179                    
+     180 00002580                   LWW     F_PESINA,0,0
+     181 000025c0           pesina_heads
+     182 000025c0                   LWW     F_PESINA,0,0
+     183 00002600                   LWW     PESINA_2,0,0
+     184 00002640                   LWW     PESINA_3,0,0
+     185 00002680                   LWW     PESINA_4,0,0
+     186 000026c0                   LWW     PESINA_5,0,0
+     187 00002700                   LWW     F_PESINA,0,0
+     188 00002740                   LWW     PESINA_2,0,0
+     189 00002780                   LWW     PESINA_3,0,0
+     190 000027c0                   LWW     PESINA_4,0,0
+     191 00002800                   LWW     PESINA_5,0,0
+     192 00002840                   LWW     PESINA_11,0,0
+     193 00002880                   LWW     PESINA_12,0,0
+     194 000028c0                   LWW     PESINA_13,0,0
+     195 00002900                   LWW     PESINA_14,0,0
+     196 00002940                   LWW     PESINA_15,0,0
+     197 00002980                   LWW     PESINA_2,M_FLIPH,0
+     198 000029c0                   LWW     PESINA_3,M_FLIPH,0
+     199 00002a00                   LWW     PESINA_4,M_FLIPH,0
+     200 00002a40                   LWW     PESINA_2,M_FLIPH,0
+     201 00002a80                   LWW     PESINA_3,M_FLIPH,0
+     202 00002ac0                   LWW     PESINA_4,M_FLIPH,0
+     203 00002b00                   LWW     PESINA_12,M_FLIPH,0
+     204 00002b40                   LWW     PESINA_13,M_FLIPH,0
+     205 00002b80                   LWW     PESINA_14,M_FLIPH,0
+     206                    
+     207 00002bc0                   LWW     F_TIAN,0,0
+     208 00002c00           jtianis_heads
+     209 00002c00                   LWW     F_TIAN,0,0
+     210 00002c40                   LWW     TIANA_2,0,0
+     211 00002c80                   LWW     TIANA_3,0,0
+     212 00002cc0                   LWW     TIANA_4,0,0
+     213 00002d00                   LWW     TIANA_5,0,0
+     214 00002d40                   LWW     F_TIAN,0,0
+     215 00002d80                   LWW     TIANA_2,0,0
+     216 00002dc0                   LWW     TIANA_3,0,0
+     217 00002e00                   LWW     TIANA_4,0,0
+     218 00002e40                   LWW     TIANA_5,0,0
+     219 00002e80                   LWW     TIANA_11,0,0
+     220 00002ec0                   LWW     TIANA_12,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     221 00002f00                   LWW     TIANA_13,0,0
+     222 00002f40                   LWW     TIANA_14,0,0
+     223 00002f80                   LWW     TIANA_15,0,0
+     224 00002fc0                   LWW     TIANA_2,M_FLIPH,0
+     225 00003000                   LWW     TIANA_3,M_FLIPH,0
+     226 00003040                   LWW     TIANA_4,M_FLIPH,0
+     227 00003080                   LWW     TIANA_2,M_FLIPH,0
+     228 000030c0                   LWW     TIANA_3,M_FLIPH,0
+     229 00003100                   LWW     TIANA_4,M_FLIPH,0
+     230 00003140                   LWW     TIANA_12,M_FLIPH,0
+     231 00003180                   LWW     TIANA_13,M_FLIPH,0
+     232 000031c0                   LWW     TIANA_14,M_FLIPH,0
+     233                    
+     234 00003200                   LWW     F_WALDR,0,0
+     235 00003240           waldron_heads
+     236 00003240                   LWW     F_WALDR,0,0
+     237 00003280                   LWW     WALDR_2,0,0
+     238 000032c0                   LWW     WALDR_3,0,0
+     239 00003300                   LWW     WALDR_4,0,0
+     240 00003340                   LWW     WALDR_5,0,0
+     241 00003380                   LWW     F_WALDR,0,0
+     242 000033c0                   LWW     WALDR_2,0,0
+     243 00003400                   LWW     WALDR_3,0,0
+     244 00003440                   LWW     WALDR_4,0,0
+     245 00003480                   LWW     WALDR_5,0,0
+     246 000034c0                   LWW     WALDR_11,0,0
+     247 00003500                   LWW     WALDR_12,0,0
+     248 00003540                   LWW     WALDR_13,0,0
+     249 00003580                   LWW     WALDR_14,0,0
+     250 000035c0                   LWW     WALDR_15,0,0
+     251 00003600                   LWW     WALDR_2,M_FLIPH,0
+     252 00003640                   LWW     WALDR_3,M_FLIPH,0
+     253 00003680                   LWW     WALDR_4,M_FLIPH,0
+     254 000036c0                   LWW     WALDR_2,M_FLIPH,0
+     255 00003700                   LWW     WALDR_3,M_FLIPH,0
+     256 00003740                   LWW     WALDR_4,M_FLIPH,0
+     257 00003780                   LWW     WALDR_12,M_FLIPH,0
+     258 000037c0                   LWW     WALDR_13,M_FLIPH,0
+     259 00003800                   LWW     WALDR_14,M_FLIPH,0
+     260                    
+     261 00003840                   LWW     F_VINI,0,0
+     262 00003880           vinikour_heads
+     263 00003880                   LWW     F_VINI,0,0
+     264 000038c0                   LWW     VINI_2,0,0
+     265 00003900                   LWW     VINI_3,0,0
+     266 00003940                   LWW     VINI_4,0,0
+     267 00003980                   LWW     VINI_5,0,0
+     268 000039c0                   LWW     F_VINI,0,0
+     269 00003a00                   LWW     VINI_2,0,0
+     270 00003a40                   LWW     VINI_3,0,0
+     271 00003a80                   LWW     VINI_4,0,0
+     272 00003ac0                   LWW     VINI_5,0,0
+     273 00003b00                   LWW     VINI_11,0,0
+     274 00003b40                   LWW     VINI_12,0,0
+     275 00003b80                   LWW     VINI_13,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+     276 00003bc0                   LWW     VINI_14,0,0
+     277 00003c00                   LWW     VINI_15,0,0
+     278 00003c40                   LWW     VINI_2,M_FLIPH,0
+     279 00003c80                   LWW     VINI_3,M_FLIPH,0
+     280 00003cc0                   LWW     VINI_4,M_FLIPH,0
+     281 00003d00                   LWW     VINI_2,M_FLIPH,0
+     282 00003d40                   LWW     VINI_3,M_FLIPH,0
+     283 00003d80                   LWW     VINI_4,M_FLIPH,0
+     284 00003dc0                   LWW     VINI_12,M_FLIPH,0
+     285 00003e00                   LWW     VINI_13,M_FLIPH,0
+     286 00003e40                   LWW     VINI_14,M_FLIPH,0
+     287                    
+     288 00003e80                   LWW     f_davis,0,0
+     289 00003ec0           wdavis_heads
+     290 00003ec0                   LWW     f_davis,0,0
+     291 00003f00                   LWW     DAVIS_2,0,0
+     292 00003f40                   LWW     DAVIS_3,0,0
+     293 00003f80                   LWW     DAVIS_4,0,0
+     294 00003fc0                   LWW     DAVIS_5,0,0
+     295 00004000                   LWW     f_davis,0,0
+     296 00004040                   LWW     DAVIS_2,0,0
+     297 00004080                   LWW     DAVIS_3,0,0
+     298 000040c0                   LWW     DAVIS_4,0,0
+     299 00004100                   LWW     DAVIS_5,0,0
+     300 00004140                   LWW     DAVIS_11,0,0
+     301 00004180                   LWW     DAVIS_12,0,0
+     302 000041c0                   LWW     DAVIS_13,0,0
+     303 00004200                   LWW     DAVIS_14,0,0
+     304 00004240                   LWW     DAVIS_15,0,0
+     305 00004280                   LWW     DAVIS_2,M_FLIPH,0
+     306 000042c0                   LWW     DAVIS_3,M_FLIPH,0
+     307 00004300                   LWW     DAVIS_4,M_FLIPH,0
+     308 00004340                   LWW     DAVIS_2,M_FLIPH,0
+     309 00004380                   LWW     DAVIS_3,M_FLIPH,0
+     310 000043c0                   LWW     DAVIS_4,M_FLIPH,0
+     311 00004400                   LWW     DAVIS_12,M_FLIPH,0
+     312 00004440                   LWW     DAVIS_13,M_FLIPH,0
+     313 00004480                   LWW     DAVIS_14,M_FLIPH,0
+     314                    
+     315 000044c0                   LWW     F_BOON,0,0
+     316 00004500           boon_heads
+     317 00004500                   LWW     F_BOON,0,0
+     318 00004540                   LWW     BOON_2,0,0
+     319 00004580                   LWW     BOON_3,0,0
+     320 000045c0                   LWW     BOON_4,0,0
+     321 00004600                   LWW     BOON_5,0,0
+     322 00004640                   LWW     F_BOON,0,0
+     323 00004680                   LWW     BOON_2,0,0
+     324 000046c0                   LWW     BOON_3,0,0
+     325 00004700                   LWW     BOON_4,0,0
+     326 00004740                   LWW     BOON_5,0,0
+     327 00004780                   LWW     BOON_11,0,0
+     328 000047c0                   LWW     BOON_12,0,0
+     329 00004800                   LWW     BOON_13,0,0
+     330 00004840                   LWW     BOON_14,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     331 00004880                   LWW     BOON_15,0,0
+     332 000048c0                   LWW     BOON_2,M_FLIPH,0
+     333 00004900                   LWW     BOON_3,M_FLIPH,0
+     334 00004940                   LWW     BOON_4,M_FLIPH,0
+     335 00004980                   LWW     BOON_2,M_FLIPH,0
+     336 000049c0                   LWW     BOON_3,M_FLIPH,0
+     337 00004a00                   LWW     BOON_4,M_FLIPH,0
+     338 00004a40                   LWW     BOON_12,M_FLIPH,0
+     339 00004a80                   LWW     BOON_13,M_FLIPH,0
+     340 00004ac0                   LWW     BOON_14,M_FLIPH,0
+     341                    
+     342 00004b00                   LWW     F_TOBIAS,0,0
+     343 00004b40           tobias_heads
+     344 00004b40                   LWW     F_TOBIAS,0,0
+     345 00004b80                   LWW     TOBIAS_2,0,0
+     346 00004bc0                   LWW     TOBIAS_3,0,0
+     347 00004c00                   LWW     TOBIAS_4,0,0
+     348 00004c40                   LWW     TOBIAS_5,0,0
+     349 00004c80                   LWW     F_TOBIAS,0,0
+     350 00004cc0                   LWW     TOBIAS_2,0,0
+     351 00004d00                   LWW     TOBIAS_3,0,0
+     352 00004d40                   LWW     TOBIAS_4,0,0
+     353 00004d80                   LWW     TOBIAS_5,0,0
+     354 00004dc0                   LWW     TOBIAS_11,0,0
+     355 00004e00                   LWW     TOBIAS_12,0,0
+     356 00004e40                   LWW     TOBIAS_13,0,0
+     357 00004e80                   LWW     TOBIAS_14,0,0
+     358 00004ec0                   LWW     TOBIAS_15,0,0
+     359 00004f00                   LWW     TOBIAS_2,M_FLIPH,0
+     360 00004f40                   LWW     TOBIAS_3,M_FLIPH,0
+     361 00004f80                   LWW     TOBIAS_4,M_FLIPH,0
+     362 00004fc0                   LWW     TOBIAS_2,M_FLIPH,0
+     363 00005000                   LWW     TOBIAS_3,M_FLIPH,0
+     364 00005040                   LWW     TOBIAS_4,M_FLIPH,0
+     365 00005080                   LWW     TOBIAS_12,M_FLIPH,0
+     366 000050c0                   LWW     TOBIAS_13,M_FLIPH,0
+     367 00005100                   LWW     TOBIAS_14,M_FLIPH,0
+     368                    
+     369 00005140                   LWW     F_BARAN,0,0
+     370 00005180           beran_heads
+     371 00005180                   LWW     F_BARAN,0,0
+     372 000051c0                   LWW     BARAN_2,0,0
+     373 00005200                   LWW     BARAN_3,0,0
+     374 00005240                   LWW     BARAN_4,0,0
+     375 00005280                   LWW     BARAN_5,0,0
+     376 000052c0                   LWW     F_BARAN,0,0
+     377 00005300                   LWW     BARAN_2,0,0
+     378 00005340                   LWW     BARAN_3,0,0
+     379 00005380                   LWW     BARAN_4,0,0
+     380 000053c0                   LWW     BARAN_5,0,0
+     381 00005400                   LWW     BARAN_11,0,0
+     382 00005440                   LWW     BARAN_12,0,0
+     383 00005480                   LWW     BARAN_13,0,0
+     384 000054c0                   LWW     BARAN_14,0,0
+     385 00005500                   LWW     BARAN_15,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     386 00005540                   LWW     BARAN_2,M_FLIPH,0
+     387 00005580                   LWW     BARAN_3,M_FLIPH,0
+     388 000055c0                   LWW     BARAN_4,M_FLIPH,0
+     389 00005600                   LWW     BARAN_2,M_FLIPH,0
+     390 00005640                   LWW     BARAN_3,M_FLIPH,0
+     391 00005680                   LWW     BARAN_4,M_FLIPH,0
+     392 000056c0                   LWW     BARAN_12,M_FLIPH,0
+     393 00005700                   LWW     BARAN_13,M_FLIPH,0
+     394 00005740                   LWW     BARAN_14,M_FLIPH,0
+     395                    
+     396 00005780                   LWW     F_COX,0,0
+     397 000057c0           cox_heads
+     398 000057c0                   LWW     F_COX,0,0
+     399 00005800                   LWW     COX_2,0,0
+     400 00005840                   LWW     COX_3,0,0
+     401 00005880                   LWW     COX_4,0,0
+     402 000058c0                   LWW     COX_5,0,0
+     403 00005900                   LWW     F_COX,0,0
+     404 00005940                   LWW     COX_2,0,0
+     405 00005980                   LWW     COX_3,0,0
+     406 000059c0                   LWW     COX_4,0,0
+     407 00005a00                   LWW     COX_5,0,0
+     408 00005a40                   LWW     COX_11,0,0
+     409 00005a80                   LWW     COX_12,0,0
+     410 00005ac0                   LWW     COX_13,0,0
+     411 00005b00                   LWW     COX_14,0,0
+     412 00005b40                   LWW     COX_15,0,0
+     413 00005b80                   LWW     COX_2,M_FLIPH,0
+     414 00005bc0                   LWW     COX_3,M_FLIPH,0
+     415 00005c00                   LWW     COX_4,M_FLIPH,0
+     416 00005c40                   LWW     COX_2,M_FLIPH,0
+     417 00005c80                   LWW     COX_3,M_FLIPH,0
+     418 00005cc0                   LWW     COX_4,M_FLIPH,0
+     419 00005d00                   LWW     COX_12,M_FLIPH,0
+     420 00005d40                   LWW     COX_13,M_FLIPH,0
+     421 00005d80                   LWW     COX_14,M_FLIPH,0
+     422                    
+     423 00005dc0                   LWW     F_GENTIL,0,0
+     424 00005e00           gentile_heads
+     425 00005e00                   LWW     F_GENTIL,0,0
+     426 00005e40                   LWW     GENTIL_2,0,0
+     427 00005e80                   LWW     GENTIL_3,0,0
+     428 00005ec0                   LWW     GENTIL_4,0,0
+     429 00005f00                   LWW     GENTIL_5,0,0
+     430 00005f40                   LWW     F_GENTIL,0,0
+     431 00005f80                   LWW     GENTIL_2,0,0
+     432 00005fc0                   LWW     GENTIL_3,0,0
+     433 00006000                   LWW     GENTIL_4,0,0
+     434 00006040                   LWW     GENTIL_5,0,0
+     435 00006080                   LWW     GENTIL_11,0,0
+     436 000060c0                   LWW     GENTIL_12,0,0
+     437 00006100                   LWW     GENTIL_13,0,0
+     438 00006140                   LWW     GENTIL_14,0,0
+     439 00006180                   LWW     GENTIL_15,0,0
+     440 000061c0                   LWW     GENTIL_2,M_FLIPH,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     441 00006200                   LWW     GENTIL_3,M_FLIPH,0
+     442 00006240                   LWW     GENTIL_4,M_FLIPH,0
+     443 00006280                   LWW     GENTIL_2,M_FLIPH,0
+     444 000062c0                   LWW     GENTIL_3,M_FLIPH,0
+     445 00006300                   LWW     GENTIL_4,M_FLIPH,0
+     446 00006340                   LWW     GENTIL_12,M_FLIPH,0
+     447 00006380                   LWW     GENTIL_13,M_FLIPH,0
+     448 000063c0                   LWW     GENTIL_14,M_FLIPH,0
+     449                    
+     450 00006400                   LWW     F_DAVITA,0,0
+     451 00006440           divita_heads
+     452 00006440                   LWW     F_DAVITA,0,0
+     453 00006480                   LWW     DAVITA_2,0,0
+     454 000064c0                   LWW     DAVITA_3,0,0
+     455 00006500                   LWW     DAVITA_4,0,0
+     456 00006540                   LWW     DAVITA_5,0,0
+     457 00006580                   LWW     F_DAVITA,0,0
+     458 000065c0                   LWW     DAVITA_2,0,0
+     459 00006600                   LWW     DAVITA_3,0,0
+     460 00006640                   LWW     DAVITA_4,0,0
+     461 00006680                   LWW     DAVITA_5,0,0
+     462 000066c0                   LWW     DAVITA_11,0,0
+     463 00006700                   LWW     DAVITA_12,0,0
+     464 00006740                   LWW     DAVITA_13,0,0
+     465 00006780                   LWW     DAVITA_14,0,0
+     466 000067c0                   LWW     DAVITA_15,0,0
+     467 00006800                   LWW     DAVITA_2,M_FLIPH,0
+     468 00006840                   LWW     DAVITA_3,M_FLIPH,0
+     469 00006880                   LWW     DAVITA_4,M_FLIPH,0
+     470 000068c0                   LWW     DAVITA_2,M_FLIPH,0
+     471 00006900                   LWW     DAVITA_3,M_FLIPH,0
+     472 00006940                   LWW     DAVITA_4,M_FLIPH,0
+     473 00006980                   LWW     DAVITA_12,M_FLIPH,0
+     474 000069c0                   LWW     DAVITA_13,M_FLIPH,0
+     475 00006a00                   LWW     DAVITA_14,M_FLIPH,0
+     476                    
+     477 00006a40                   LWW     F_ERLIK,0,0
+     478 00006a80           ehrlich_heads
+     479 00006a80                   LWW     F_ERLIK,0,0
+     480 00006ac0                   LWW     ERLIK_2,0,0
+     481 00006b00                   LWW     ERLIK_3,0,0
+     482 00006b40                   LWW     ERLIK_4,0,0
+     483 00006b80                   LWW     ERLIK_5,0,0
+     484 00006bc0                   LWW     F_ERLIK,0,0
+     485 00006c00                   LWW     ERLIK_2,0,0
+     486 00006c40                   LWW     ERLIK_3,0,0
+     487 00006c80                   LWW     ERLIK_4,0,0
+     488 00006cc0                   LWW     ERLIK_5,0,0
+     489 00006d00                   LWW     ERLIK_11,0,0
+     490 00006d40                   LWW     ERLIK_12,0,0
+     491 00006d80                   LWW     ERLIK_13,0,0
+     492 00006dc0                   LWW     ERLIK_14,0,0
+     493 00006e00                   LWW     ERLIK_15,0,0
+     494 00006e40                   LWW     ERLIK_2,M_FLIPH,0
+     495 00006e80                   LWW     ERLIK_3,M_FLIPH,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     496 00006ec0                   LWW     ERLIK_4,M_FLIPH,0
+     497 00006f00                   LWW     ERLIK_2,M_FLIPH,0
+     498 00006f40                   LWW     ERLIK_3,M_FLIPH,0
+     499 00006f80                   LWW     ERLIK_4,M_FLIPH,0
+     500 00006fc0                   LWW     ERLIK_12,M_FLIPH,0
+     501 00007000                   LWW     ERLIK_13,M_FLIPH,0
+     502 00007040                   LWW     ERLIK_14,M_FLIPH,0
+     503                    
+     504 00007080                   LWW     F_FERRI,0,0
+     505 000070c0           ferrier_heads
+     506 000070c0                   LWW     F_FERRI,0,0
+     507 00007100                   LWW     FERRI_2,0,0
+     508 00007140                   LWW     FERRI_3,0,0
+     509 00007180                   LWW     FERRI_4,0,0
+     510 000071c0                   LWW     FERRI_5,0,0
+     511 00007200                   LWW     F_FERRI,0,0
+     512 00007240                   LWW     FERRI_2,0,0
+     513 00007280                   LWW     FERRI_3,0,0
+     514 000072c0                   LWW     FERRI_4,0,0
+     515 00007300                   LWW     FERRI_5,0,0
+     516 00007340                   LWW     FERRI_11,0,0
+     517 00007380                   LWW     FERRI_12,0,0
+     518 000073c0                   LWW     FERRI_13,0,0
+     519 00007400                   LWW     FERRI_14,0,0
+     520 00007440                   LWW     FERRI_15,0,0
+     521 00007480                   LWW     FERRI_2,M_FLIPH,0
+     522 000074c0                   LWW     FERRI_3,M_FLIPH,0
+     523 00007500                   LWW     FERRI_4,M_FLIPH,0
+     524 00007540                   LWW     FERRI_2,M_FLIPH,0
+     525 00007580                   LWW     FERRI_3,M_FLIPH,0
+     526 000075c0                   LWW     FERRI_4,M_FLIPH,0
+     527 00007600                   LWW     FERRI_12,M_FLIPH,0
+     528 00007640                   LWW     FERRI_13,M_FLIPH,0
+     529 00007680                   LWW     FERRI_14,M_FLIPH,0
+     530                    
+     531 000076c0                   LWW     F_GEER,0,0
+     532 00007700           geer_heads
+     533 00007700                   LWW     F_GEER,0,0
+     534 00007740                   LWW     GEER_2,0,0
+     535 00007780                   LWW     GEER_3,0,0
+     536 000077c0                   LWW     GEER_4,0,0
+     537 00007800                   LWW     GEER_5,0,0
+     538 00007840                   LWW     F_GEER,0,0
+     539 00007880                   LWW     GEER_2,0,0
+     540 000078c0                   LWW     GEER_3,0,0
+     541 00007900                   LWW     GEER_4,0,0
+     542 00007940                   LWW     GEER_5,0,0
+     543 00007980                   LWW     GEER_11,0,0
+     544 000079c0                   LWW     GEER_12,0,0
+     545 00007a00                   LWW     GEER_13,0,0
+     546 00007a40                   LWW     GEER_14,0,0
+     547 00007a80                   LWW     GEER_15,0,0
+     548 00007ac0                   LWW     GEER_2,M_FLIPH,0
+     549 00007b00                   LWW     GEER_3,M_FLIPH,0
+     550 00007b40                   LWW     GEER_4,M_FLIPH,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     551 00007b80                   LWW     GEER_2,M_FLIPH,0
+     552 00007bc0                   LWW     GEER_3,M_FLIPH,0
+     553 00007c00                   LWW     GEER_4,M_FLIPH,0
+     554 00007c40                   LWW     GEER_12,M_FLIPH,0
+     555 00007c80                   LWW     GEER_13,M_FLIPH,0
+     556 00007cc0                   LWW     GEER_14,M_FLIPH,0
+     557                    
+     558 00007d00                   LWW     F_GOSKIE,0,0
+     559 00007d40           goskie_heads
+     560 00007d40                   LWW     F_GOSKIE,0,0
+     561 00007d80                   LWW     GOSKIE_2,0,0
+     562 00007dc0                   LWW     GOSKIE_3,0,0
+     563 00007e00                   LWW     GOSKIE_4,0,0
+     564 00007e40                   LWW     GOSKIE_5,0,0
+     565 00007e80                   LWW     F_GOSKIE,0,0
+     566 00007ec0                   LWW     GOSKIE_2,0,0
+     567 00007f00                   LWW     GOSKIE_3,0,0
+     568 00007f40                   LWW     GOSKIE_4,0,0
+     569 00007f80                   LWW     GOSKIE_5,0,0
+     570 00007fc0                   LWW     GOSKIE_11,0,0
+     571 00008000                   LWW     GOSKIE_12,0,0
+     572 00008040                   LWW     GOSKIE_13,0,0
+     573 00008080                   LWW     GOSKIE_14,0,0
+     574 000080c0                   LWW     GOSKIE_15,0,0
+     575 00008100                   LWW     GOSKIE_2,M_FLIPH,0
+     576 00008140                   LWW     GOSKIE_3,M_FLIPH,0
+     577 00008180                   LWW     GOSKIE_4,M_FLIPH,0
+     578 000081c0                   LWW     GOSKIE_2,M_FLIPH,0
+     579 00008200                   LWW     GOSKIE_3,M_FLIPH,0
+     580 00008240                   LWW     GOSKIE_4,M_FLIPH,0
+     581 00008280                   LWW     GOSKIE_12,M_FLIPH,0
+     582 000082c0                   LWW     GOSKIE_13,M_FLIPH,0
+     583 00008300                   LWW     GOSKIE_14,M_FLIPH,0
+     584                    
+     585 00008340                   LWW     F_HEDRIC,0,0
+     586 00008380           hedrick_heads
+     587 00008380                   LWW     F_HEDRIC,0,0
+     588 000083c0                   LWW     HEDRIC_2,0,0
+     589 00008400                   LWW     HEDRIC_3,0,0
+     590 00008440                   LWW     HEDRIC_4,0,0
+     591 00008480                   LWW     HEDRIC_5,0,0
+     592 000084c0                   LWW     F_HEDRIC,0,0
+     593 00008500                   LWW     HEDRIC_2,0,0
+     594 00008540                   LWW     HEDRIC_3,0,0
+     595 00008580                   LWW     HEDRIC_4,0,0
+     596 000085c0                   LWW     HEDRIC_5,0,0
+     597 00008600                   LWW     HEDRIC_11,0,0
+     598 00008640                   LWW     HEDRIC_12,0,0
+     599 00008680                   LWW     HEDRIC_13,0,0
+     600 000086c0                   LWW     HEDRIC_14,0,0
+     601 00008700                   LWW     HEDRIC_15,0,0
+     602 00008740                   LWW     HEDRIC_2,M_FLIPH,0
+     603 00008780                   LWW     HEDRIC_3,M_FLIPH,0
+     604 000087c0                   LWW     HEDRIC_4,M_FLIPH,0
+     605 00008800                   LWW     HEDRIC_2,M_FLIPH,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     606 00008840                   LWW     HEDRIC_3,M_FLIPH,0
+     607 00008880                   LWW     HEDRIC_4,M_FLIPH,0
+     608 000088c0                   LWW     HEDRIC_12,M_FLIPH,0
+     609 00008900                   LWW     HEDRIC_13,M_FLIPH,0
+     610 00008940                   LWW     HEDRIC_14,M_FLIPH,0
+     611                    
+     612 00008980                   LWW     F_HEY,0,0
+     613 000089c0           hey_heads
+     614 000089c0                   LWW     F_HEY,0,0
+     615 00008a00                   LWW     HEY_2,0,0
+     616 00008a40                   LWW     HEY_3,0,0
+     617 00008a80                   LWW     HEY_4,0,0
+     618 00008ac0                   LWW     HEY_5,0,0
+     619 00008b00                   LWW     F_HEY,0,0
+     620 00008b40                   LWW     HEY_2,0,0
+     621 00008b80                   LWW     HEY_3,0,0
+     622 00008bc0                   LWW     HEY_4,0,0
+     623 00008c00                   LWW     HEY_5,0,0
+     624 00008c40                   LWW     HEY_11,0,0
+     625 00008c80                   LWW     HEY_12,0,0
+     626 00008cc0                   LWW     HEY_13,0,0
+     627 00008d00                   LWW     HEY_14,0,0
+     628 00008d40                   LWW     HEY_15,0,0
+     629 00008d80                   LWW     HEY_2,M_FLIPH,0
+     630 00008dc0                   LWW     HEY_3,M_FLIPH,0
+     631 00008e00                   LWW     HEY_4,M_FLIPH,0
+     632 00008e40                   LWW     HEY_2,M_FLIPH,0
+     633 00008e80                   LWW     HEY_3,M_FLIPH,0
+     634 00008ec0                   LWW     HEY_4,M_FLIPH,0
+     635 00008f00                   LWW     HEY_12,M_FLIPH,0
+     636 00008f40                   LWW     HEY_13,M_FLIPH,0
+     637 00008f80                   LWW     HEY_14,M_FLIPH,0
+     638                    
+     639 00008fc0                   LWW     F_LYNCH,0,0
+     640 00009000           lynch_heads
+     641 00009000                   LWW     F_LYNCH,0,0
+     642 00009040                   LWW     LYNCH_2,0,0
+     643 00009080                   LWW     LYNCH_3,0,0
+     644 000090c0                   LWW     LYNCH_4,0,0
+     645 00009100                   LWW     LYNCH_5,0,0
+     646 00009140                   LWW     F_LYNCH,0,0
+     647 00009180                   LWW     LYNCH_2,0,0
+     648 000091c0                   LWW     LYNCH_3,0,0
+     649 00009200                   LWW     LYNCH_4,0,0
+     650 00009240                   LWW     LYNCH_5,0,0
+     651 00009280                   LWW     LYNCH_11,0,0
+     652 000092c0                   LWW     LYNCH_12,0,0
+     653 00009300                   LWW     LYNCH_13,0,0
+     654 00009340                   LWW     LYNCH_14,0,0
+     655 00009380                   LWW     LYNCH_15,0,0
+     656 000093c0                   LWW     LYNCH_2,M_FLIPH,0
+     657 00009400                   LWW     LYNCH_3,M_FLIPH,0
+     658 00009440                   LWW     LYNCH_4,M_FLIPH,0
+     659 00009480                   LWW     LYNCH_2,M_FLIPH,0
+     660 000094c0                   LWW     LYNCH_3,M_FLIPH,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     661 00009500                   LWW     LYNCH_4,M_FLIPH,0
+     662 00009540                   LWW     LYNCH_12,M_FLIPH,0
+     663 00009580                   LWW     LYNCH_13,M_FLIPH,0
+     664 000095c0                   LWW     LYNCH_14,M_FLIPH,0
+     665                    
+     666 00009600                   LWW     F_MICICH,0,0
+     667 00009640           michicich_heads
+     668 00009640                   LWW     F_MICICH,0,0
+     669 00009680                   LWW     MICICH_2,0,0
+     670 000096c0                   LWW     MICICH_3,0,0
+     671 00009700                   LWW     MICICH_4,0,0
+     672 00009740                   LWW     MICICH_5,0,0
+     673 00009780                   LWW     F_MICICH,0,0
+     674 000097c0                   LWW     MICICH_2,0,0
+     675 00009800                   LWW     MICICH_3,0,0
+     676 00009840                   LWW     MICICH_4,0,0
+     677 00009880                   LWW     MICICH_5,0,0
+     678 000098c0                   LWW     MICICH_11,0,0
+     679 00009900                   LWW     MICICH_12,0,0
+     680 00009940                   LWW     MICICH_13,0,0
+     681 00009980                   LWW     MICICH_14,0,0
+     682 000099c0                   LWW     MICICH_15,0,0
+     683 00009a00                   LWW     MICICH_2,M_FLIPH,0
+     684 00009a40                   LWW     MICICH_3,M_FLIPH,0
+     685 00009a80                   LWW     MICICH_4,M_FLIPH,0
+     686 00009ac0                   LWW     MICICH_2,M_FLIPH,0
+     687 00009b00                   LWW     MICICH_3,M_FLIPH,0
+     688 00009b40                   LWW     MICICH_4,M_FLIPH,0
+     689 00009b80                   LWW     MICICH_12,M_FLIPH,0
+     690 00009bc0                   LWW     MICICH_13,M_FLIPH,0
+     691 00009c00                   LWW     MICICH_14,M_FLIPH,0
+     692                    
+     693 00009c40                   LWW     F_CARLTON,0,0
+     694 00009c80           carlton_heads
+     695 00009c80                   LWW     F_CARLTON,0,0
+     696 00009cc0                   LWW     CARLTO_2,0,0
+     697 00009d00                   LWW     CARLTO_3,0,0
+     698 00009d40                   LWW     CARLTO_4,0,0
+     699 00009d80                   LWW     CARLTO_5,0,0
+     700 00009dc0                   LWW     F_CARLTON,0,0
+     701 00009e00                   LWW     CARLTO_2,0,0
+     702 00009e40                   LWW     CARLTO_3,0,0
+     703 00009e80                   LWW     CARLTO_4,0,0
+     704 00009ec0                   LWW     CARLTO_5,0,0
+     705 00009f00                   LWW     CARLTO_11,0,0
+     706 00009f40                   LWW     CARLTO_12,0,0
+     707 00009f80                   LWW     CARLTO_13,0,0
+     708 00009fc0                   LWW     CARLTO_14,0,0
+     709 0000a000                   LWW     CARLTO_15,0,0
+     710 0000a040                   LWW     CARLTO_2,M_FLIPH,0
+     711 0000a080                   LWW     CARLTO_3,M_FLIPH,0
+     712 0000a0c0                   LWW     CARLTO_4,M_FLIPH,0
+     713 0000a100                   LWW     CARLTO_2,M_FLIPH,0
+     714 0000a140                   LWW     CARLTO_3,M_FLIPH,0
+     715 0000a180                   LWW     CARLTO_4,M_FLIPH,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     716 0000a1c0                   LWW     CARLTO_12,M_FLIPH,0
+     717 0000a200                   LWW     CARLTO_13,M_FLIPH,0
+     718 0000a240                   LWW     CARLTO_14,M_FLIPH,0
+     719                    
+     720 0000a280                   LWW     F_EDDIE,0,0
+     721 0000a2c0           eddie_heads
+     722 0000a2c0                   LWW     F_EDDIE,0,0
+     723 0000a300                   LWW     EDDIE_2,0,0
+     724 0000a340                   LWW     EDDIE_3,0,0
+     725 0000a380                   LWW     EDDIE_4,0,0
+     726 0000a3c0                   LWW     EDDIE_5,0,0
+     727 0000a400                   LWW     F_EDDIE,0,0
+     728 0000a440                   LWW     EDDIE_2,0,0
+     729 0000a480                   LWW     EDDIE_3,0,0
+     730 0000a4c0                   LWW     EDDIE_4,0,0
+     731 0000a500                   LWW     EDDIE_5,0,0
+     732 0000a540                   LWW     EDDIE_11,0,0
+     733 0000a580                   LWW     EDDIE_12,0,0
+     734 0000a5c0                   LWW     EDDIE_13,0,0
+     735 0000a600                   LWW     EDDIE_14,0,0
+     736 0000a640                   LWW     EDDIE_15,0,0
+     737 0000a680                   LWW     EDDIE_2,M_FLIPH,0
+     738 0000a6c0                   LWW     EDDIE_3,M_FLIPH,0
+     739 0000a700                   LWW     EDDIE_4,M_FLIPH,0
+     740 0000a740                   LWW     EDDIE_2,M_FLIPH,0
+     741 0000a780                   LWW     EDDIE_3,M_FLIPH,0
+     742 0000a7c0                   LWW     EDDIE_4,M_FLIPH,0
+     743 0000a800                   LWW     EDDIE_12,M_FLIPH,0
+     744 0000a840                   LWW     EDDIE_13,M_FLIPH,0
+     745 0000a880                   LWW     EDDIE_14,M_FLIPH,0
+     746                    
+     747 0000a8c0                   LWW     F_LAFREDO,0,0
+     748 0000a900           loffredo_heads
+     749 0000a900                   LWW     F_LAFREDO,0,0
+     750 0000a940                   LWW     LAFRED_2,0,0
+     751 0000a980                   LWW     LAFRED_3,0,0
+     752 0000a9c0                   LWW     LAFRED_4,0,0
+     753 0000aa00                   LWW     LAFRED_5,0,0
+     754 0000aa40                   LWW     F_LAFREDO,0,0
+     755 0000aa80                   LWW     LAFRED_2,0,0
+     756 0000aac0                   LWW     LAFRED_3,0,0
+     757 0000ab00                   LWW     LAFRED_4,0,0
+     758 0000ab40                   LWW     LAFRED_5,0,0
+     759 0000ab80                   LWW     LAFRED_11,0,0
+     760 0000abc0                   LWW     LAFRED_12,0,0
+     761 0000ac00                   LWW     LAFRED_13,0,0
+     762 0000ac40                   LWW     LAFRED_14,0,0
+     763 0000ac80                   LWW     LAFRED_15,0,0
+     764 0000acc0                   LWW     LAFRED_2,M_FLIPH,0
+     765 0000ad00                   LWW     LAFRED_3,M_FLIPH,0
+     766 0000ad40                   LWW     LAFRED_4,M_FLIPH,0
+     767 0000ad80                   LWW     LAFRED_2,M_FLIPH,0
+     768 0000adc0                   LWW     LAFRED_3,M_FLIPH,0
+     769 0000ae00                   LWW     LAFRED_4,M_FLIPH,0
+     770 0000ae40                   LWW     LAFRED_12,M_FLIPH,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     771 0000ae80                   LWW     LAFRED_13,M_FLIPH,0
+     772 0000aec0                   LWW     LAFRED_14,M_FLIPH,0
+     773                    
+     774 0000af00                   LWW     F_MEDNIC,0,0
+     775 0000af40           mednick_heads
+     776 0000af40                   LWW     F_MEDNIC,0,0
+     777 0000af80                   LWW     MEDNIC_2,0,0
+     778 0000afc0                   LWW     MEDNIC_3,0,0
+     779 0000b000                   LWW     MEDNIC_4,0,0
+     780 0000b040                   LWW     MEDNIC_5,0,0
+     781 0000b080                   LWW     F_MEDNIC,0,0
+     782 0000b0c0                   LWW     MEDNIC_2,0,0
+     783 0000b100                   LWW     MEDNIC_3,0,0
+     784 0000b140                   LWW     MEDNIC_4,0,0
+     785 0000b180                   LWW     MEDNIC_5,0,0
+     786 0000b1c0                   LWW     MEDNIC_11,0,0
+     787 0000b200                   LWW     MEDNIC_12,0,0
+     788 0000b240                   LWW     MEDNIC_13,0,0
+     789 0000b280                   LWW     MEDNIC_14,0,0
+     790 0000b2c0                   LWW     MEDNIC_15,0,0
+     791 0000b300                   LWW     MEDNIC_2,M_FLIPH,0
+     792 0000b340                   LWW     MEDNIC_3,M_FLIPH,0
+     793 0000b380                   LWW     MEDNIC_4,M_FLIPH,0
+     794 0000b3c0                   LWW     MEDNIC_2,M_FLIPH,0
+     795 0000b400                   LWW     MEDNIC_3,M_FLIPH,0
+     796 0000b440                   LWW     MEDNIC_4,M_FLIPH,0
+     797 0000b480                   LWW     MEDNIC_12,M_FLIPH,0
+     798 0000b4c0                   LWW     MEDNIC_13,M_FLIPH,0
+     799 0000b500                   LWW     MEDNIC_14,M_FLIPH,0
+     800                    
+     801 0000b540                   LWW     F_JARVIS,0,0
+     802 0000b580           jarvis_heads
+     803 0000b580                   LWW     F_JARVIS,0,0
+     804 0000b5c0                   LWW     JARVIS_2,0,0
+     805 0000b600                   LWW     JARVIS_3,0,0
+     806 0000b640                   LWW     JARVIS_4,0,0
+     807 0000b680                   LWW     JARVIS_5,0,0
+     808 0000b6c0                   LWW     F_JARVIS,0,0
+     809 0000b700                   LWW     JARVIS_2,0,0
+     810 0000b740                   LWW     JARVIS_3,0,0
+     811 0000b780                   LWW     JARVIS_4,0,0
+     812 0000b7c0                   LWW     JARVIS_5,0,0
+     813 0000b800                   LWW     JARVIS_11,0,0
+     814 0000b840                   LWW     JARVIS_12,0,0
+     815 0000b880                   LWW     JARVIS_13,0,0
+     816 0000b8c0                   LWW     JARVIS_14,0,0
+     817 0000b900                   LWW     JARVIS_15,0,0
+     818 0000b940                   LWW     JARVIS_2,M_FLIPH,0
+     819 0000b980                   LWW     JARVIS_3,M_FLIPH,0
+     820 0000b9c0                   LWW     JARVIS_4,M_FLIPH,0
+     821 0000ba00                   LWW     JARVIS_2,M_FLIPH,0
+     822 0000ba40                   LWW     JARVIS_3,M_FLIPH,0
+     823 0000ba80                   LWW     JARVIS_4,M_FLIPH,0
+     824 0000bac0                   LWW     JARVIS_12,M_FLIPH,0
+     825 0000bb00                   LWW     JARVIS_13,M_FLIPH,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     826 0000bb40                   LWW     JARVIS_14,M_FLIPH,0
+     827                    
+     828 0000bb80                   LWW     F_OCEAN,0,0
+     829 0000bbc0           ossian_heads
+     830 0000bbc0                   LWW     F_OCEAN,0,0
+     831 0000bc00                   LWW     OCEAN_2,0,0
+     832 0000bc40                   LWW     OCEAN_3,0,0
+     833 0000bc80                   LWW     OCEAN_4,0,0
+     834 0000bcc0                   LWW     OCEAN_5,0,0
+     835 0000bd00                   LWW     F_OCEAN,0,0
+     836 0000bd40                   LWW     OCEAN_2,0,0
+     837 0000bd80                   LWW     OCEAN_3,0,0
+     838 0000bdc0                   LWW     OCEAN_4,0,0
+     839 0000be00                   LWW     OCEAN_5,0,0
+     840 0000be40                   LWW     OCEAN_11,0,0
+     841 0000be80                   LWW     OCEAN_12,0,0
+     842 0000bec0                   LWW     OCEAN_13,0,0
+     843 0000bf00                   LWW     OCEAN_14,0,0
+     844 0000bf40                   LWW     OCEAN_15,0,0
+     845 0000bf80                   LWW     OCEAN_2,M_FLIPH,0
+     846 0000bfc0                   LWW     OCEAN_3,M_FLIPH,0
+     847 0000c000                   LWW     OCEAN_4,M_FLIPH,0
+     848 0000c040                   LWW     OCEAN_2,M_FLIPH,0
+     849 0000c080                   LWW     OCEAN_3,M_FLIPH,0
+     850 0000c0c0                   LWW     OCEAN_4,M_FLIPH,0
+     851 0000c100                   LWW     OCEAN_12,M_FLIPH,0
+     852 0000c140                   LWW     OCEAN_13,M_FLIPH,0
+     853 0000c180                   LWW     OCEAN_14,M_FLIPH,0
+     854                    
+     855 0000c1c0                   LWW     F_FAUX,0,0
+     856 0000c200           faux_heads
+     857 0000c200                   LWW     F_FAUX,0,0
+     858 0000c240                   LWW     FAUX_2,0,0
+     859 0000c280                   LWW     FAUX_3,0,0
+     860 0000c2c0                   LWW     FAUX_4,0,0
+     861 0000c300                   LWW     FAUX_5,0,0
+     862 0000c340                   LWW     F_FAUX,0,0
+     863 0000c380                   LWW     FAUX_2,0,0
+     864 0000c3c0                   LWW     FAUX_3,0,0
+     865 0000c400                   LWW     FAUX_4,0,0
+     866 0000c440                   LWW     FAUX_5,0,0
+     867 0000c480                   LWW     FAUX_11,0,0
+     868 0000c4c0                   LWW     FAUX_12,0,0
+     869 0000c500                   LWW     FAUX_13,0,0
+     870 0000c540                   LWW     FAUX_14,0,0
+     871 0000c580                   LWW     FAUX_15,0,0
+     872 0000c5c0                   LWW     FAUX_2,M_FLIPH,0
+     873 0000c600                   LWW     FAUX_3,M_FLIPH,0
+     874 0000c640                   LWW     FAUX_4,M_FLIPH,0
+     875 0000c680                   LWW     FAUX_2,M_FLIPH,0
+     876 0000c6c0                   LWW     FAUX_3,M_FLIPH,0
+     877 0000c700                   LWW     FAUX_4,M_FLIPH,0
+     878 0000c740                   LWW     FAUX_12,M_FLIPH,0
+     879 0000c780                   LWW     FAUX_13,M_FLIPH,0
+     880 0000c7c0                   LWW     FAUX_14,M_FLIPH,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     881                    
+     882 0000c800                   LWW     F_MAN,0,0
+     883 0000c840           mangubot_heads
+     884 0000c840                   LWW     F_MAN,0,0
+     885 0000c880                   LWW     MAN_2,0,0
+     886 0000c8c0                   LWW     MAN_3,0,0
+     887 0000c900                   LWW     MAN_4,0,0
+     888 0000c940                   LWW     MAN_5,0,0
+     889 0000c980                   LWW     F_MAN,0,0
+     890 0000c9c0                   LWW     MAN_2,0,0
+     891 0000ca00                   LWW     MAN_3,0,0
+     892 0000ca40                   LWW     MAN_4,0,0
+     893 0000ca80                   LWW     MAN_5,0,0
+     894 0000cac0                   LWW     MAN_11,0,0
+     895 0000cb00                   LWW     MAN_12,0,0
+     896 0000cb40                   LWW     MAN_13,0,0
+     897 0000cb80                   LWW     MAN_14,0,0
+     898 0000cbc0                   LWW     MAN_15,0,0
+     899 0000cc00                   LWW     MAN_2,M_FLIPH,0
+     900 0000cc40                   LWW     MAN_3,M_FLIPH,0
+     901 0000cc80                   LWW     MAN_4,M_FLIPH,0
+     902 0000ccc0                   LWW     MAN_2,M_FLIPH,0
+     903 0000cd00                   LWW     MAN_3,M_FLIPH,0
+     904 0000cd40                   LWW     MAN_4,M_FLIPH,0
+     905 0000cd80                   LWW     MAN_12,M_FLIPH,0
+     906 0000cdc0                   LWW     MAN_13,M_FLIPH,0
+     907 0000ce00                   LWW     MAN_14,M_FLIPH,0
+     908                    
+     909 0000ce40                   LWW     F_LASKO,0,0
+     910 0000ce80           lasko_heads
+     911 0000ce80                   LWW     F_LASKO,0,0
+     912 0000cec0                   LWW     LASKO_2,0,0
+     913 0000cf00                   LWW     LASKO_3,0,0
+     914 0000cf40                   LWW     LASKO_4,0,0
+     915 0000cf80                   LWW     LASKO_5,0,0
+     916 0000cfc0                   LWW     F_LASKO,0,0
+     917 0000d000                   LWW     LASKO_2,0,0
+     918 0000d040                   LWW     LASKO_3,0,0
+     919 0000d080                   LWW     LASKO_4,0,0
+     920 0000d0c0                   LWW     LASKO_5,0,0
+     921 0000d100                   LWW     LASKO_11,0,0
+     922 0000d140                   LWW     LASKO_12,0,0
+     923 0000d180                   LWW     LASKO_13,0,0
+     924 0000d1c0                   LWW     LASKO_14,0,0
+     925 0000d200                   LWW     LASKO_15,0,0
+     926 0000d240                   LWW     LASKO_2,M_FLIPH,0
+     927 0000d280                   LWW     LASKO_3,M_FLIPH,0
+     928 0000d2c0                   LWW     LASKO_4,M_FLIPH,0
+     929 0000d300                   LWW     LASKO_2,M_FLIPH,0
+     930 0000d340                   LWW     LASKO_3,M_FLIPH,0
+     931 0000d380                   LWW     LASKO_4,M_FLIPH,0
+     932 0000d3c0                   LWW     LASKO_12,M_FLIPH,0
+     933 0000d400                   LWW     LASKO_13,M_FLIPH,0
+     934 0000d440                   LWW     LASKO_14,M_FLIPH,0
+     935                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     936 0000d480                   LWW     F_ROHNJ,0,0
+     937 0000d4c0           jrohn_heads
+     938 0000d4c0                   LWW     F_ROHNJ,0,0
+     939 0000d500                   LWW     ROHNJ_2,0,0
+     940 0000d540                   LWW     ROHNJ_3,0,0
+     941 0000d580                   LWW     ROHNJ_4,0,0
+     942 0000d5c0                   LWW     ROHNJ_5,0,0
+     943 0000d600                   LWW     F_ROHNJ,0,0
+     944 0000d640                   LWW     ROHNJ_2,0,0
+     945 0000d680                   LWW     ROHNJ_3,0,0
+     946 0000d6c0                   LWW     ROHNJ_4,0,0
+     947 0000d700                   LWW     ROHNJ_5,0,0
+     948 0000d740                   LWW     ROHNJ_11,0,0
+     949 0000d780                   LWW     ROHNJ_12,0,0
+     950 0000d7c0                   LWW     ROHNJ_13,0,0
+     951 0000d800                   LWW     ROHNJ_14,0,0
+     952 0000d840                   LWW     ROHNJ_15,0,0
+     953 0000d880                   LWW     ROHNJ_2,M_FLIPH,0
+     954 0000d8c0                   LWW     ROHNJ_3,M_FLIPH,0
+     955 0000d900                   LWW     ROHNJ_4,M_FLIPH,0
+     956 0000d940                   LWW     ROHNJ_2,M_FLIPH,0
+     957 0000d980                   LWW     ROHNJ_3,M_FLIPH,0
+     958 0000d9c0                   LWW     ROHNJ_4,M_FLIPH,0
+     959 0000da00                   LWW     ROHNJ_12,M_FLIPH,0
+     960 0000da40                   LWW     ROHNJ_13,M_FLIPH,0
+     961 0000da80                   LWW     ROHNJ_14,M_FLIPH,0
+     962                    
+     963 0000dac0                   LWW     F_GAY,0,0
+     964 0000db00           gay_heads
+     965 0000db00                   LWW     F_GAY,0,0
+     966 0000db40                   LWW     GAY_2,0,0
+     967 0000db80                   LWW     GAY_3,0,0
+     968 0000dbc0                   LWW     GAY_4,0,0
+     969 0000dc00                   LWW     GAY_5,0,0
+     970 0000dc40                   LWW     F_GAY,0,0
+     971 0000dc80                   LWW     GAY_2,0,0
+     972 0000dcc0                   LWW     GAY_3,0,0
+     973 0000dd00                   LWW     GAY_4,0,0
+     974 0000dd40                   LWW     GAY_5,0,0
+     975 0000dd80                   LWW     GAY_11,0,0
+     976 0000ddc0                   LWW     GAY_12,0,0
+     977 0000de00                   LWW     GAY_13,0,0
+     978 0000de40                   LWW     GAY_14,0,0
+     979 0000de80                   LWW     GAY_15,0,0
+     980 0000dec0                   LWW     GAY_2,M_FLIPH,0
+     981 0000df00                   LWW     GAY_3,M_FLIPH,0
+     982 0000df40                   LWW     GAY_4,M_FLIPH,0
+     983 0000df80                   LWW     GAY_2,M_FLIPH,0
+     984 0000dfc0                   LWW     GAY_3,M_FLIPH,0
+     985 0000e000                   LWW     GAY_4,M_FLIPH,0
+     986 0000e040                   LWW     GAY_12,M_FLIPH,0
+     987 0000e080                   LWW     GAY_13,M_FLIPH,0
+     988 0000e0c0                   LWW     GAY_14,M_FLIPH,0
+     989                    
+     990                    ;       LWW     F_PETRO,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   19
+
+     991                    ;petro_heads
+     992                    ;       LWW     F_PETRO,0,0
+     993                    ;       LWW     PETRO_2,0,0
+     994                    ;       LWW     PETRO_3,0,0
+     995                    ;       LWW     PETRO_4,0,0
+     996                    ;       LWW     PETRO_5,0,0
+     997                    ;       LWW     F_PETRO,0,0
+     998                    ;       LWW     PETRO_2,0,0
+     999                    ;       LWW     PETRO_3,0,0
+    1000                    ;       LWW     PETRO_4,0,0
+    1001                    ;       LWW     PETRO_5,0,0
+    1002                    ;       LWW     PETRO_11,0,0
+    1003                    ;       LWW     PETRO_12,0,0
+    1004                    ;       LWW     PETRO_13,0,0
+    1005                    ;       LWW     PETRO_14,0,0
+    1006                    ;       LWW     PETRO_15,0,0
+    1007                    ;       LWW     PETRO_2,M_FLIPH,0
+    1008                    ;       LWW     PETRO_3,M_FLIPH,0
+    1009                    ;       LWW     PETRO_4,M_FLIPH,0
+    1010                    ;       LWW     PETRO_2,M_FLIPH,0
+    1011                    ;       LWW     PETRO_3,M_FLIPH,0
+    1012                    ;       LWW     PETRO_4,M_FLIPH,0
+    1013                    ;       LWW     PETRO_12,M_FLIPH,0
+    1014                    ;       LWW     PETRO_13,M_FLIPH,0
+    1015                    ;       LWW     PETRO_14,M_FLIPH,0
+    1016                    
+    1017 0000e100                   LWW     F_BARBER,0,0
+    1018 0000e140           barber_heads
+    1019 0000e140                   LWW     F_BARBER,0,0
+    1020 0000e180                   LWW     BARBER_2,0,0
+    1021 0000e1c0                   LWW     BARBER_3,0,0
+    1022 0000e200                   LWW     BARBER_4,0,0
+    1023 0000e240                   LWW     BARBER_5,0,0
+    1024 0000e280                   LWW     F_BARBER,0,0
+    1025 0000e2c0                   LWW     BARBER_2,0,0
+    1026 0000e300                   LWW     BARBER_3,0,0
+    1027 0000e340                   LWW     BARBER_4,0,0
+    1028 0000e380                   LWW     BARBER_5,0,0
+    1029 0000e3c0                   LWW     BARBER_11,0,0
+    1030 0000e400                   LWW     BARBER_12,0,0
+    1031 0000e440                   LWW     BARBER_13,0,0
+    1032 0000e480                   LWW     BARBER_14,0,0
+    1033 0000e4c0                   LWW     BARBER_15,0,0
+    1034 0000e500                   LWW     BARBER_2,M_FLIPH,0
+    1035 0000e540                   LWW     BARBER_3,M_FLIPH,0
+    1036 0000e580                   LWW     BARBER_4,M_FLIPH,0
+    1037 0000e5c0                   LWW     BARBER_2,M_FLIPH,0
+    1038 0000e600                   LWW     BARBER_3,M_FLIPH,0
+    1039 0000e640                   LWW     BARBER_4,M_FLIPH,0
+    1040 0000e680                   LWW     BARBER_12,M_FLIPH,0
+    1041 0000e6c0                   LWW     BARBER_13,M_FLIPH,0
+    1042 0000e700                   LWW     BARBER_14,M_FLIPH,0
+    1043                    
+    1044 0000e740                   LWW     F_DUSSAL,0,0
+    1045 0000e780           dussault_heads
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   20
+
+    1046 0000e780                   LWW     F_DUSSAL,0,0
+    1047 0000e7c0                   LWW     DASSAL_2,0,0
+    1048 0000e800                   LWW     DASSAL_3,0,0
+    1049 0000e840                   LWW     DASSAL_4,0,0
+    1050 0000e880                   LWW     DASSAL_5,0,0
+    1051 0000e8c0                   LWW     F_DUSSAL,0,0
+    1052 0000e900                   LWW     DASSAL_2,0,0
+    1053 0000e940                   LWW     DASSAL_3,0,0
+    1054 0000e980                   LWW     DASSAL_4,0,0
+    1055 0000e9c0                   LWW     DASSAL_5,0,0
+    1056 0000ea00                   LWW     DASSAL_11,0,0
+    1057 0000ea40                   LWW     DASSAL_12,0,0
+    1058 0000ea80                   LWW     DASSAL_13,0,0
+    1059 0000eac0                   LWW     DASSAL_14,0,0
+    1060 0000eb00                   LWW     DASSAL_15,0,0
+    1061 0000eb40                   LWW     DASSAL_2,M_FLIPH,0
+    1062 0000eb80                   LWW     DASSAL_3,M_FLIPH,0
+    1063 0000ebc0                   LWW     DASSAL_4,M_FLIPH,0
+    1064 0000ec00                   LWW     DASSAL_2,M_FLIPH,0
+    1065 0000ec40                   LWW     DASSAL_3,M_FLIPH,0
+    1066 0000ec80                   LWW     DASSAL_4,M_FLIPH,0
+    1067 0000ecc0                   LWW     DASSAL_12,M_FLIPH,0
+    1068 0000ed00                   LWW     DASSAL_13,M_FLIPH,0
+    1069 0000ed40                   LWW     DASSAL_14,M_FLIPH,0
+    1070                    
+    1071 0000ed80                   LWW     F_HAEJH,0,0
+    1072 0000edc0           jhhaeger_heads
+    1073 0000edc0                   LWW     F_HAEJH,0,0
+    1074 0000ee00                   LWW     HAEJH_2,0,0
+    1075 0000ee40                   LWW     HAEJH_3,0,0
+    1076 0000ee80                   LWW     HAEJH_4,0,0
+    1077 0000eec0                   LWW     HAEJH_5,0,0
+    1078 0000ef00                   LWW     F_HAEJH,0,0
+    1079 0000ef40                   LWW     HAEJH_2,0,0
+    1080 0000ef80                   LWW     HAEJH_3,0,0
+    1081 0000efc0                   LWW     HAEJH_4,0,0
+    1082 0000f000                   LWW     HAEJH_5,0,0
+    1083 0000f040                   LWW     HAEJH_11,0,0
+    1084 0000f080                   LWW     HAEJH_12,0,0
+    1085 0000f0c0                   LWW     HAEJH_13,0,0
+    1086 0000f100                   LWW     HAEJH_14,0,0
+    1087 0000f140                   LWW     HAEJH_15,0,0
+    1088 0000f180                   LWW     HAEJH_2,M_FLIPH,0
+    1089 0000f1c0                   LWW     HAEJH_3,M_FLIPH,0
+    1090 0000f200                   LWW     HAEJH_4,M_FLIPH,0
+    1091 0000f240                   LWW     HAEJH_2,M_FLIPH,0
+    1092 0000f280                   LWW     HAEJH_3,M_FLIPH,0
+    1093 0000f2c0                   LWW     HAEJH_4,M_FLIPH,0
+    1094 0000f300                   LWW     HAEJH_12,M_FLIPH,0
+    1095 0000f340                   LWW     HAEJH_13,M_FLIPH,0
+    1096 0000f380                   LWW     HAEJH_14,M_FLIPH,0
+    1097                    
+    1098 0000f3c0                   LWW     F_FEDNJ,0,0
+    1099 0000f400           jfedesna_heads
+    1100 0000f400                   LWW     F_FEDNJ,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   21
+
+    1101 0000f440                   LWW     FEDN_2,0,0
+    1102 0000f480                   LWW     FEDN_3,0,0
+    1103 0000f4c0                   LWW     FEDN_4,0,0
+    1104 0000f500                   LWW     FEDN_5,0,0
+    1105 0000f540                   LWW     F_FEDNJ,0,0
+    1106 0000f580                   LWW     FEDN_2,0,0
+    1107 0000f5c0                   LWW     FEDN_3,0,0
+    1108 0000f600                   LWW     FEDN_4,0,0
+    1109 0000f640                   LWW     FEDN_5,0,0
+    1110 0000f680                   LWW     FEDN_11,0,0
+    1111 0000f6c0                   LWW     FEDN_12,0,0
+    1112 0000f700                   LWW     FEDN_13,0,0
+    1113 0000f740                   LWW     FEDN_14,0,0
+    1114 0000f780                   LWW     FEDN_15,0,0
+    1115 0000f7c0                   LWW     FEDN_2,M_FLIPH,0
+    1116 0000f800                   LWW     FEDN_3,M_FLIPH,0
+    1117 0000f840                   LWW     FEDN_4,M_FLIPH,0
+    1118 0000f880                   LWW     FEDN_2,M_FLIPH,0
+    1119 0000f8c0                   LWW     FEDN_3,M_FLIPH,0
+    1120 0000f900                   LWW     FEDN_4,M_FLIPH,0
+    1121 0000f940                   LWW     FEDN_12,M_FLIPH,0
+    1122 0000f980                   LWW     FEDN_13,M_FLIPH,0
+    1123 0000f9c0                   LWW     FEDN_14,M_FLIPH,0
+    1124                    
+    1125 0000fa00                   LWW     F_FEDB,0,0
+    1126 0000fa40           bfedesna_heads
+    1127 0000fa40                   LWW     F_FEDB,0,0
+    1128 0000fa80                   LWW     FEDB_2,0,0
+    1129 0000fac0                   LWW     FEDB_3,0,0
+    1130 0000fb00                   LWW     FEDB_4,0,0
+    1131 0000fb40                   LWW     FEDB_5,0,0
+    1132 0000fb80                   LWW     F_FEDB,0,0
+    1133 0000fbc0                   LWW     FEDB_2,0,0
+    1134 0000fc00                   LWW     FEDB_3,0,0
+    1135 0000fc40                   LWW     FEDB_4,0,0
+    1136 0000fc80                   LWW     FEDB_5,0,0
+    1137 0000fcc0                   LWW     FEDB_11,0,0
+    1138 0000fd00                   LWW     FEDB_12,0,0
+    1139 0000fd40                   LWW     FEDB_13,0,0
+    1140 0000fd80                   LWW     FEDB_14,0,0
+    1141 0000fdc0                   LWW     FEDB_15,0,0
+    1142 0000fe00                   LWW     FEDB_2,M_FLIPH,0
+    1143 0000fe40                   LWW     FEDB_3,M_FLIPH,0
+    1144 0000fe80                   LWW     FEDB_4,M_FLIPH,0
+    1145 0000fec0                   LWW     FEDB_2,M_FLIPH,0
+    1146 0000ff00                   LWW     FEDB_3,M_FLIPH,0
+    1147 0000ff40                   LWW     FEDB_4,M_FLIPH,0
+    1148 0000ff80                   LWW     FEDB_12,M_FLIPH,0
+    1149 0000ffc0                   LWW     FEDB_13,M_FLIPH,0
+    1150 00010000                   LWW     FEDB_14,M_FLIPH,0
+    1151                    
+    1152 00010040                   LWW     F_GREENE,0,0
+    1153 00010080           greene_heads
+    1154 00010080                   LWW     F_GREENE,0,0
+    1155 000100c0                   LWW     GREENE_2,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   22
+
+    1156 00010100                   LWW     GREENE_3,0,0
+    1157 00010140                   LWW     GREENE_4,0,0
+    1158 00010180                   LWW     GREENE_5,0,0
+    1159 000101c0                   LWW     F_GREENE,0,0
+    1160 00010200                   LWW     GREENE_2,0,0
+    1161 00010240                   LWW     GREENE_3,0,0
+    1162 00010280                   LWW     GREENE_4,0,0
+    1163 000102c0                   LWW     GREENE_5,0,0
+    1164 00010300                   LWW     GREENE_11,0,0
+    1165 00010340                   LWW     GREENE_12,0,0
+    1166 00010380                   LWW     GREENE_13,0,0
+    1167 000103c0                   LWW     GREENE_14,0,0
+    1168 00010400                   LWW     GREENE_15,0,0
+    1169 00010440                   LWW     GREENE_2,M_FLIPH,0
+    1170 00010480                   LWW     GREENE_3,M_FLIPH,0
+    1171 000104c0                   LWW     GREENE_4,M_FLIPH,0
+    1172 00010500                   LWW     GREENE_2,M_FLIPH,0
+    1173 00010540                   LWW     GREENE_3,M_FLIPH,0
+    1174 00010580                   LWW     GREENE_4,M_FLIPH,0
+    1175 000105c0                   LWW     GREENE_12,M_FLIPH,0
+    1176 00010600                   LWW     GREENE_13,M_FLIPH,0
+    1177 00010640                   LWW     GREENE_14,M_FLIPH,0
+    1178                    
+    1179 00010680                   LWW     F_OURSLER,0,0
+    1180 000106c0           oursler_heads
+    1181 000106c0                   LWW     F_OURSLER,0,0
+    1182 00010700                   LWW     OURSLER_2,0,0
+    1183 00010740                   LWW     OURSLER_3,0,0
+    1184 00010780                   LWW     OURSLER_4,0,0
+    1185 000107c0                   LWW     OURSLER_5,0,0
+    1186 00010800                   LWW     F_OURSLER,0,0
+    1187 00010840                   LWW     OURSLER_2,0,0
+    1188 00010880                   LWW     OURSLER_3,0,0
+    1189 000108c0                   LWW     OURSLER_4,0,0
+    1190 00010900                   LWW     OURSLER_5,0,0
+    1191 00010940                   LWW     OURSLER_11,0,0
+    1192 00010980                   LWW     OURSLER_12,0,0
+    1193 000109c0                   LWW     OURSLER_13,0,0
+    1194 00010a00                   LWW     OURSLER_14,0,0
+    1195 00010a40                   LWW     OURSLER_15,0,0
+    1196 00010a80                   LWW     OURSLER_2,M_FLIPH,0
+    1197 00010ac0                   LWW     OURSLER_3,M_FLIPH,0
+    1198 00010b00                   LWW     OURSLER_4,M_FLIPH,0
+    1199 00010b40                   LWW     OURSLER_2,M_FLIPH,0
+    1200 00010b80                   LWW     OURSLER_3,M_FLIPH,0
+    1201 00010bc0                   LWW     OURSLER_4,M_FLIPH,0
+    1202 00010c00                   LWW     OURSLER_12,M_FLIPH,0
+    1203 00010c40                   LWW     OURSLER_13,M_FLIPH,0
+    1204 00010c80                   LWW     OURSLER_14,M_FLIPH,0
+    1205                    
+    1206 00010cc0                   LWW     F_KEEN,0,0
+    1207 00010d00           keenan_heads
+    1208 00010d00                   LWW     F_KEEN,0,0
+    1209 00010d40                   LWW     KEEN_2,0,0
+    1210 00010d80                   LWW     KEEN_3,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   23
+
+    1211 00010dc0                   LWW     KEEN_4,0,0
+    1212 00010e00                   LWW     KEEN_5,0,0
+    1213 00010e40                   LWW     F_KEEN,0,0
+    1214 00010e80                   LWW     KEEN_2,0,0
+    1215 00010ec0                   LWW     KEEN_3,0,0
+    1216 00010f00                   LWW     KEEN_4,0,0
+    1217 00010f40                   LWW     KEEN_5,0,0
+    1218 00010f80                   LWW     KEEN_11,0,0
+    1219 00010fc0                   LWW     KEEN_12,0,0
+    1220 00011000                   LWW     KEEN_13,0,0
+    1221 00011040                   LWW     KEEN_14,0,0
+    1222 00011080                   LWW     KEEN_15,0,0
+    1223 000110c0                   LWW     KEEN_2,M_FLIPH,0
+    1224 00011100                   LWW     KEEN_3,M_FLIPH,0
+    1225 00011140                   LWW     KEEN_4,M_FLIPH,0
+    1226 00011180                   LWW     KEEN_2,M_FLIPH,0
+    1227 000111c0                   LWW     KEEN_3,M_FLIPH,0
+    1228 00011200                   LWW     KEEN_4,M_FLIPH,0
+    1229 00011240                   LWW     KEEN_12,M_FLIPH,0
+    1230 00011280                   LWW     KEEN_13,M_FLIPH,0
+    1231 000112c0                   LWW     KEEN_14,M_FLIPH,0
+    1232                    
+    1233 00011300                   LWW     F_BOOTY,0,0
+    1234 00011340           booty_heads
+    1235 00011340                   LWW     F_BOOTY,0,0
+    1236 00011380                   LWW     BOOTY_2,0,0
+    1237 000113c0                   LWW     BOOTY_3,0,0
+    1238 00011400                   LWW     BOOTY_4,0,0
+    1239 00011440                   LWW     BOOTY_5,0,0
+    1240 00011480                   LWW     F_BOOTY,0,0
+    1241 000114c0                   LWW     BOOTY_2,0,0
+    1242 00011500                   LWW     BOOTY_3,0,0
+    1243 00011540                   LWW     BOOTY_4,0,0
+    1244 00011580                   LWW     BOOTY_5,0,0
+    1245 000115c0                   LWW     BOOTY_11,0,0
+    1246 00011600                   LWW     BOOTY_12,0,0
+    1247 00011640                   LWW     BOOTY_13,0,0
+    1248 00011680                   LWW     BOOTY_14,0,0
+    1249 000116c0                   LWW     BOOTY_15,0,0
+    1250 00011700                   LWW     BOOTY_2,M_FLIPH,0
+    1251 00011740                   LWW     BOOTY_3,M_FLIPH,0
+    1252 00011780                   LWW     BOOTY_4,M_FLIPH,0
+    1253 000117c0                   LWW     BOOTY_2,M_FLIPH,0
+    1254 00011800                   LWW     BOOTY_3,M_FLIPH,0
+    1255 00011840                   LWW     BOOTY_4,M_FLIPH,0
+    1256 00011880                   LWW     BOOTY_12,M_FLIPH,0
+    1257 000118c0                   LWW     BOOTY_13,M_FLIPH,0
+    1258 00011900                   LWW     BOOTY_14,M_FLIPH,0
+    1259                    
+    1260 00011940                   LWW     F_MDAVIS,0,0
+    1261 00011980           mdavis_heads
+    1262 00011980                   LWW     F_MDAVIS,0,0
+    1263 000119c0                   LWW     MDAVIS_2,0,0
+    1264 00011a00                   LWW     MDAVIS_3,0,0
+    1265 00011a40                   LWW     MDAVIS_4,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   24
+
+    1266 00011a80                   LWW     MDAVIS_5,0,0
+    1267 00011ac0                   LWW     F_MDAVIS,0,0
+    1268 00011b00                   LWW     MDAVIS_2,0,0
+    1269 00011b40                   LWW     MDAVIS_3,0,0
+    1270 00011b80                   LWW     MDAVIS_4,0,0
+    1271 00011bc0                   LWW     MDAVIS_5,0,0
+    1272 00011c00                   LWW     MDAVIS_11,0,0
+    1273 00011c40                   LWW     MDAVIS_12,0,0
+    1274 00011c80                   LWW     MDAVIS_13,0,0
+    1275 00011cc0                   LWW     MDAVIS_14,0,0
+    1276 00011d00                   LWW     MDAVIS_15,0,0
+    1277 00011d40                   LWW     MDAVIS_2,M_FLIPH,0
+    1278 00011d80                   LWW     MDAVIS_3,M_FLIPH,0
+    1279 00011dc0                   LWW     MDAVIS_4,M_FLIPH,0
+    1280 00011e00                   LWW     MDAVIS_2,M_FLIPH,0
+    1281 00011e40                   LWW     MDAVIS_3,M_FLIPH,0
+    1282 00011e80                   LWW     MDAVIS_4,M_FLIPH,0
+    1283 00011ec0                   LWW     MDAVIS_12,M_FLIPH,0
+    1284 00011f00                   LWW     MDAVIS_13,M_FLIPH,0
+    1285 00011f40                   LWW     MDAVIS_14,M_FLIPH,0
+    1286                    
+    1287                    
+    1288 00011f80                   LWW     F_MACIE,0,0
+    1289 00011fc0           macika_heads
+    1290 00011fc0                   LWW     F_MACIE,0,0
+    1291 00012000                   LWW     MACIE_2,0,0
+    1292 00012040                   LWW     MACIE_3,0,0
+    1293 00012080                   LWW     MACIE_4,0,0
+    1294 000120c0                   LWW     MACIE_5,0,0
+    1295 00012100                   LWW     F_MACIE,0,0
+    1296 00012140                   LWW     MACIE_2,0,0
+    1297 00012180                   LWW     MACIE_3,0,0
+    1298 000121c0                   LWW     MACIE_4,0,0
+    1299 00012200                   LWW     MACIE_5,0,0
+    1300 00012240                   LWW     MACIE_11,0,0
+    1301 00012280                   LWW     MACIE_12,0,0
+    1302 000122c0                   LWW     MACIE_13,0,0
+    1303 00012300                   LWW     MACIE_14,0,0
+    1304 00012340                   LWW     MACIE_15,0,0
+    1305 00012380                   LWW     MACIE_2,M_FLIPH,0
+    1306 000123c0                   LWW     MACIE_3,M_FLIPH,0
+    1307 00012400                   LWW     MACIE_4,M_FLIPH,0
+    1308 00012440                   LWW     MACIE_2,M_FLIPH,0
+    1309 00012480                   LWW     MACIE_3,M_FLIPH,0
+    1310 000124c0                   LWW     MACIE_4,M_FLIPH,0
+    1311 00012500                   LWW     MACIE_12,M_FLIPH,0
+    1312 00012540                   LWW     MACIE_13,M_FLIPH,0
+    1313 00012580                   LWW     MACIE_14,M_FLIPH,0
+    1314                    
+    1315 000125c0                   LWW     F_SIMPSN,0,0
+    1316 00012600           simpson_heads
+    1317 00012600                   LWW     F_SIMPSN,0,0
+    1318 00012640                   LWW     SIMPSN_2,0,0
+    1319 00012680                   LWW     SIMPSN_3,0,0
+    1320 000126c0                   LWW     SIMPSN_4,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   25
+
+    1321 00012700                   LWW     SIMPSN_5,0,0
+    1322 00012740                   LWW     F_SIMPSN,0,0
+    1323 00012780                   LWW     SIMPSN_2,0,0
+    1324 000127c0                   LWW     SIMPSN_3,0,0
+    1325 00012800                   LWW     SIMPSN_4,0,0
+    1326 00012840                   LWW     SIMPSN_5,0,0
+    1327 00012880                   LWW     SIMPSN_11,0,0
+    1328 000128c0                   LWW     SIMPSN_12,0,0
+    1329 00012900                   LWW     SIMPSN_13,0,0
+    1330 00012940                   LWW     SIMPSN_14,0,0
+    1331 00012980                   LWW     SIMPSN_15,0,0
+    1332 000129c0                   LWW     SIMPSN_2,M_FLIPH,0
+    1333 00012a00                   LWW     SIMPSN_3,M_FLIPH,0
+    1334 00012a40                   LWW     SIMPSN_4,M_FLIPH,0
+    1335 00012a80                   LWW     SIMPSN_2,M_FLIPH,0
+    1336 00012ac0                   LWW     SIMPSN_3,M_FLIPH,0
+    1337 00012b00                   LWW     SIMPSN_4,M_FLIPH,0
+    1338 00012b40                   LWW     SIMPSN_12,M_FLIPH,0
+    1339 00012b80                   LWW     SIMPSN_13,M_FLIPH,0
+    1340 00012bc0                   LWW     SIMPSN_14,M_FLIPH,0
+    1341                    
+    1342 00012c00                   LWW     F_NEWC,0,0
+    1343 00012c40           newcomer_heads
+    1344 00012c40                   LWW     F_NEWC,0,0
+    1345 00012c80                   LWW     NEWC_2,0,0
+    1346 00012cc0                   LWW     NEWC_3,0,0
+    1347 00012d00                   LWW     NEWC_4,0,0
+    1348 00012d40                   LWW     NEWC_5,0,0
+    1349 00012d80                   LWW     F_NEWC,0,0
+    1350 00012dc0                   LWW     NEWC_2,0,0
+    1351 00012e00                   LWW     NEWC_3,0,0
+    1352 00012e40                   LWW     NEWC_4,0,0
+    1353 00012e80                   LWW     NEWC_5,0,0
+    1354 00012ec0                   LWW     NEWC_11,0,0
+    1355 00012f00                   LWW     NEWC_12,0,0
+    1356 00012f40                   LWW     NEWC_13,0,0
+    1357 00012f80                   LWW     NEWC_14,0,0
+    1358 00012fc0                   LWW     NEWC_15,0,0
+    1359 00013000                   LWW     NEWC_2,M_FLIPH,0
+    1360 00013040                   LWW     NEWC_3,M_FLIPH,0
+    1361 00013080                   LWW     NEWC_4,M_FLIPH,0
+    1362 000130c0                   LWW     NEWC_2,M_FLIPH,0
+    1363 00013100                   LWW     NEWC_3,M_FLIPH,0
+    1364 00013140                   LWW     NEWC_4,M_FLIPH,0
+    1365 00013180                   LWW     NEWC_12,M_FLIPH,0
+    1366 000131c0                   LWW     NEWC_13,M_FLIPH,0
+    1367 00013200                   LWW     NEWC_14,M_FLIPH,0
+    1368                    
+    1369 00013240                   LWW     F_LICH,0,0
+    1370 00013280           lycke_heads
+    1371 00013280                   LWW     F_LICH,0,0
+    1372 000132c0                   LWW     LICH_2,0,0
+    1373 00013300                   LWW     LICH_3,0,0
+    1374 00013340                   LWW     LICH_4,0,0
+    1375 00013380                   LWW     LICH_5,0,0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:32:54 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   26
+
+    1376 000133c0                   LWW     F_LICH,0,0
+    1377 00013400                   LWW     LICH_2,0,0
+    1378 00013440                   LWW     LICH_3,0,0
+    1379 00013480                   LWW     LICH_4,0,0
+    1380 000134c0                   LWW     LICH_5,0,0
+    1381 00013500                   LWW     LICH_11,0,0
+    1382 00013540                   LWW     LICH_12,0,0
+    1383 00013580                   LWW     LICH_13,0,0
+    1384 000135c0                   LWW     LICH_14,0,0
+    1385 00013600                   LWW     LICH_15,0,0
+    1386 00013640                   LWW     LICH_2,M_FLIPH,0
+    1387 00013680                   LWW     LICH_3,M_FLIPH,0
+    1388 000136c0                   LWW     LICH_4,M_FLIPH,0
+    1389 00013700                   LWW     LICH_2,M_FLIPH,0
+    1390 00013740                   LWW     LICH_3,M_FLIPH,0
+    1391 00013780                   LWW     LICH_4,M_FLIPH,0
+    1392 000137c0                   LWW     LICH_12,M_FLIPH,0
+    1393 00013800                   LWW     LICH_13,M_FLIPH,0
+    1394 00013840                   LWW     LICH_14,M_FLIPH,0
+
+ No Errors,  No Warnings

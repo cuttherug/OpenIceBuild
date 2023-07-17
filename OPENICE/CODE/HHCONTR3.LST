@@ -1,0 +1,1066 @@
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    1
+
+       1                            .MLIB   "HHMACS.LIB"
+       2                            .FILE   "HHCONTR3.ASM"
+       3                            .WIDTH  132
+       4                            .OPTION B,D,L,T
+       5                            .MNOLIST
+       6                    
+       7                    *
+       8                    *GET THE SYSTEM STUFF
+       9                    *
+      10                            .INCLUDE        "HH.INC"
+      11                            .INCLUDE        "HHSTRING.H"
+      12                            .INCLUDE        "IMGTBL.GLO"
+      13                            .include        "hhboards.tbl"
+      14                            .include        "edge.tbl"
+      15                            .include        "hhcontr3.e"
+      16                            .include        "hhutil.g"
+      17                            .include        "hhd.g"
+      18                            .include        "hhpuck.g"
+      19                            .include        "hhgame.g"
+      20                            .include        "hhscore.g"
+      21                            .include        "hhshow.g"
+      22                            .include        "hhram.g"
+      23                            .include        "hhproc.g"
+      24                    
+      25                    ; end of include files
+      26                    
+      27 00000000                   .TEXT
+      28 00000000                   .EVEN
+      29                    
+      30 00000000                   .bss    glass_hit,16
+      31 00000010                   .bss    glass_break,16
+      32 00000020                   .bss    glass_break_now,16
+      33                    
+      34                    **************************************************************************
+      35                    *                                                                        *
+      36                    * screen_shake                                                           *
+      37                    *                                                                        *
+      38                    **************************************************************************
+      39 00000000           screen_shake
+      40 00000000                   C_O_R   PID_SHAKE,scrnshk
+      41 00000080     0960          rets
+      42 00000090     05a8  scrnshk move    @WORLDY+010h,a8,W
+         000000a0 00000010! 
+      43 000000c0     09e9          movi    shscl,a9
+         000000d0 00000250' 
+      44 000000f0     9520  sce1    move    *a9+,a0,W
+      45 00000100     ca11          jrz     sce9
+      46 00000110     4100          add     a8,a0
+      47 00000120     0d5f          calla   game_set_worldy
+         00000130 00000000! 
+      48 00000150                   SLEEP   2
+      49 00000190     4d00          move    a8,a0
+      50 000001a0     0d5f          calla   game_set_worldy
+         000001b0 00000000! 
+      51 000001d0                   SLEEP   2
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    2
+
+      52 00000210     c0ed          jruc    sce1
+      53 00000220     c080  sce9    jauc    SUCIDE
+         00000230 00000000! 
+      54                    
+      55 00000250     fffb  shscl   .word   -5,-5,0
+      56                    
+      57                    **************************************************************************
+      58                    *                                                                        *
+      59                    * shoot_board_animate                                                    *
+      60                    *                                                                        *
+      61                    **************************************************************************
+      62 00000280           shoot_board_animate
+      63 00000280     098f          mmtm    sp,a0,a1,a8
+         00000290     c080  
+      64 000002a0     09c0          movi    300,a0
+         000002b0     012c  
+      65 000002c0     0d5f          calla   RANDPER
+         000002d0 00000000! 
+      66 000002f0     c905          jrnc    sban9
+      67 00000300     09e1          movi    board_stand_up_script,a1
+         00000310 000013e0' 
+      68 00000330     0d3f          callr   smart_start_board_anim
+         00000340     00bc  
+      69 00000350     09af  sban9   mmfm    sp,a0,a1,a8
+         00000360     0103  
+      70 00000370     0960          rets
+      71                    
+      72                    **************************************************************************
+      73                    *                                                                        *
+      74                    * score_board_animate                                                    *
+      75                    *                                                                        *
+      76                    **************************************************************************
+      77 00000380           score_board_animate
+      78 00000380     1860          movk    3,a0
+      79 00000390     0d5f          calla   RAND0
+         000003a0 00000000! 
+      80 000003c0     24a0          sll     5,a0
+      81 000003d0     0b20          addi    sbarlt,a0
+         000003e0 00000440' 
+      82 00000400     8601          move    *a0,a1,L
+      83 00000410     0d3f          callr   smart_start_board_anim
+         00000420     00ae  
+      84 00000430     0960          rets
+      85 00000440 00001f20' sbarlt  .long   board_stand_and_clap_script
+      86 00000460 000025b0'         .long   board_clap_script
+      87 00000480 00002ac0'         .long   board_stand_and_turn_wave_script
+      88                    
+      89                    **************************************************************************
+      90                    *                                                                        *
+      91                    * check_into_boards             ;no break - a6=player doing check        *
+      92                    *                                                                        *
+      93                    **************************************************************************
+      94 000004a0           check_into_boards               ;no break - a6=player doing check
+      95 000004a0     0d3f          callr   can_we_break_glass
+         000004b0     006b  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    3
+
+      96 000004c0     c812          jrc     cib_break
+      97 000004d0     0d3f          callr   get_board_side
+         000004e0     005f  
+      98 000004f0     aec1          movb    *a6(POF_NUMBER),a1
+         00000500     0000  
+      99 00000510     1421          dec     a1
+     100 00000520     2bc1          sra     2,a1
+     101 00000530     4801          cmp     a0,a1
+     102 00000540     ca05          jrz     cb_bad          ;we are pissed about check
+     103 00000550     09e1  cb_good movi    board_hit_good_script,a1
+         00000560 000030c0' 
+     104 00000580     c000          jruc    smart_start_board_anim
+         00000590     0097  
+     105 000005a0     09e1  cb_bad  movi    board_hit_bad_script,a1
+         000005b0 00003570' 
+     106 000005d0     c000          jruc    smart_start_board_anim
+         000005e0     0092  
+     107                    
+     108 000005f0           cib_break
+     109 000005f0     09e1          movi    board_glass_break_inner,a1
+         00000600 00003990' 
+     110 00000620     0d3f          callr   smart_start_glass_anim
+         00000630     007e  
+     111 00000640     0d5f          calla   break_glass_sound
+         00000650 00000000! 
+     112 00000670     0960          rets
+     113                    
+     114 00000680           init_board_script
+     115 00000680     09e1          movi    board_stand_script,a1
+         00000690 00003e70' 
+     116 000006b0     c080          jauc    STRT_ANIM
+         000006c0 00000000! 
+     117                    
+     118 000006e0           animate_boards          ;a0 = [z,x] of impact
+     119 000006e0     098f          mmtm    sp,a1,a2,a3,a7,a8
+         000006f0     7180  
+     120 00000700     09e7          movi    abl_list,a7
+         00000710 00000880' 
+     121 00000730     0d3f          callr   abc_go
+         00000740     0003  
+     122 00000750     09af          mmfm    sp,a1,a2,a3,a7,a8
+         00000760     018e  
+     123 00000770     0960          rets
+     124                    
+     125 00000780     09ee  abc_go  movi    [1,1],a14
+         00000790 00010001  
+     126 000007b0     09a7  abc_1   mmfm    a7,a1,a2,a3
+         000007c0     000e  
+     127 000007d0     41c2          add     a14,a2
+     128 000007e0     4c63          move    a3,a3
+     129 000007f0     ca07          jrz     abl_85
+     130 00000800     e460          cmpxy   a3,a0
+     131 00000810     c2f9          jryle   abc_1
+     132 00000820     c4f8          jrxle   abc_1
+     133 00000830     e440          cmpxy   a2,a0
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    4
+
+     134 00000840     c3f6          jrygt   abc_1
+     135 00000850     c5f5          jrxgt   abc_1
+     136 00000860     0161          jump    a1
+     137 00000870     0960  abl_85  rets            ;no hit
+     138                    
+     139 00000880           abl_list
+     140 00000880 fed4f830          .long   [-300,-2000],[120,-625],bounce_ll_corner
+     141 000008e0 fed40271          .long   [-300,625],[120,2000],bounce_lr_corner
+     142 00000940 0073f830          .long   [115,-2000],[630,-700],edge_bounce
+     143 000009a0 007302bc          .long   [115,700],[630,2000],edge_bounce
+     144 00000a00 00000000          .long   0,0,0
+     145                    
+     146 00000a60           bounce_ll_corner
+     147 00000a60     07a8          move    @ledge2_object,a8,L
+         00000a70 00000000! 
+     148 00000a90     c0a0          jruc    check_into_boards
+     149 00000aa0           bounce_lr_corner
+     150 00000aa0     07a8          move    @redge2_object,a8,L
+         00000ab0 00000000! 
+     151 00000ad0     c09c          jruc    check_into_boards
+     152                    
+     153 00000ae0           get_board_side
+     154 00000ae0     5600          clr     a0
+     155 00000af0     07ae          move    @PUCK_OBJECT,a14,L
+         00000b00 00000000! 
+     156 00000b20     b5ce          move    *a14(OXPOS),a14,W
+         00000b30     0150  
+     157 00000b40     ce01          jrn     gbs9
+     158 00000b50     1820          movk    1,a0
+     159 00000b60     0960  gbs9    rets
+     160                    
+     161 00000b70           can_we_break_glass
+     162                    ;       setc
+     163                    ;       rets
+     164 00000b70     b6ce          move    *a6(POF_OBJECT),a14,L
+         00000b80     0280  
+     165 00000b90     b5ce          move    *a14(OXPOS),a14,W
+         00000ba0     0150  
+     166 00000bb0     038e          abs     a14
+     167 00000bc0     0b4e          cmpi    700,a14
+         00000bd0     fd43  
+     168 00000be0     c31d          jrhi    cwbgn
+     169 00000bf0     05ae          move    @glass_break,a14,W
+         00000c00 00000010- 
+     170 00000c20     cb19          jrnz    cwbgn
+     171 00000c30     05ae          move    @glass_hit,a14,W
+         00000c40 00000000- 
+     172 00000c60     102e          inc     a14
+     173 00000c70     058e          move    a14,@glass_hit,W
+         00000c80 00000000- 
+     174 00000ca0     0b4e          cmpi    2,a14
+         00000cb0     fffd  
+     175 00000cc0     c20f          jrls    cwbgn
+     176                    ;       move    @period,a14,W
+     177                    ;       cmpi    3,a14
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    5
+
+     178                    ;       jrnz    cwbgn
+     179 00000cd0     09c0          movi    750,a0
+         00000ce0     02ee  
+     180 00000cf0     0d5f          calla   RANDPER
+         00000d00 00000000! 
+     181 00000d20     c909          jrnc    cwbgn
+     182 00000d30     182e  cwbgy   movk    1,a14
+     183 00000d40     058e          move    a14,@glass_break,W
+         00000d50 00000010- 
+     184 00000d70     058e          move    a14,@glass_break_now,W
+         00000d80 00000020- 
+     185 00000da0     0de0          setc
+     186 00000db0     0960          rets
+     187 00000dc0     57ce  cwbgn   clr     a14
+     188 00000dd0     058e          move    a14,@glass_break_now,W
+         00000de0 00000020- 
+     189 00000e00     0320          clrc
+     190 00000e10     0960          rets
+     191                    
+     192 00000e20           smart_start_glass_anim
+     193 00000e20     07a8          move    @ledge2_object,a8,L
+         00000e30 00000000! 
+     194 00000e50     07ae          move    @PUCK_OBJECT,a14,L
+         00000e60 00000000! 
+     195 00000e80     b5ce          move    *a14(OXPOS),a14,W
+         00000e90     0150  
+     196 00000ea0     ce12          jrn     start_board_anim
+     197 00000eb0     07a8          move    @redge2_object,a8,L
+         00000ec0 00000000! 
+     198 00000ee0     c080  ssg1    jauc    STRT_ANIM
+         00000ef0 00000000! 
+     199                    
+     200 00000f10           smart_start_board_anim
+     201 00000f10     07a8          move    @ledge2_object,a8,L
+         00000f20 00000000! 
+     202 00000f40     07ae          move    @PUCK_OBJECT,a14,L
+         00000f50 00000000! 
+     203 00000f70     b5ce          move    *a14(OXPOS),a14,W
+         00000f80     0150  
+     204 00000f90     ce03          jrn     start_board_anim
+     205 00000fa0     07a8          move    @redge2_object,a8,L
+         00000fb0 00000000! 
+     206 00000fd0           start_board_anim
+     207 00000fd0     b70e          move    *a8(ANIMSCR),a14,L
+         00000fe0     0340  
+     208 00000ff0     0b6e          cmpi    board_stand_script,a14
+         00001000 ffffc18f' 
+     209 00001020     cb03          jrnz    sba9
+     210 00001030     c080          jauc    STRT_ANIM
+         00001040 00000000! 
+     211 00001060     0960  sba9    rets
+     212                    
+     213 00001070           a_clear_wc
+     214 00001070     1a8e          movk    20,a14
+     215 00001080     b1c8          move    a14,*a8(ODT_TEMP1),W
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    6
+
+         00001090     0750  
+     216 000010a0     0960          rets
+     217                    
+     218 000010b0           a_wait_score_wc
+     219 000010b0     05ae          move    @has_scored,a14,W
+         000010c0 00000000! 
+     220 000010e0     cb11          jrnz    kwg1
+     221 000010f0     b50e          move    *a8(ODT_TEMP1),a14,W
+         00001100     0750  
+     222 00001110     142e          dec     a14
+     223 00001120     b1c8          move    a14,*a8(ODT_TEMP1),W
+         00001130     0750  
+     224 00001140     ca17          jrz     aws5                    ;no score after timeout
+     225 00001150     b700          move    *a8(ANIMARG),a0,L
+         00001160     03e0  
+     226 00001170     960e          move    *a0+,a14,L
+     227 00001180     b701          move    *a8(ANIMSCR),a1,L
+         00001190     0340  
+     228 000011a0     482e          cmp     a1,a14
+     229 000011b0     cb21          jrnz    aws9            ;we are changed
+     230 000011c0     960e          move    *a0+,a14,L
+     231 000011d0     b3c8          move    a14,*a8(ANIMFRM),L
+         000011e0     0320  
+     232 000011f0     c01d          jruc    aws9
+     233 00001200     b700  kwg1    move    *a8(ANIMARG),a0,L
+         00001210     03e0  
+     234 00001220     960e          move    *a0+,a14,L
+     235 00001230     b701          move    *a8(ANIMSCR),a1,L
+         00001240     0340  
+     236 00001250     482e          cmp     a1,a14
+     237 00001260     cb16          jrnz    aws9            ;we are changed
+     238 00001270     b60e          move    *a0(020h),a14,L
+         00001280     0020  
+     239 00001290     b3c8          move    a14,*a8(ANIMFRM),L      ;branch to here on score
+         000012a0     0320  
+     240 000012b0     c011          jruc    aws9
+     241 000012c0     b700  aws5    move    *a8(ANIMARG),a0,L
+         000012d0     03e0  
+     242 000012e0     960e          move    *a0+,a14,L
+     243 000012f0     b701          move    *a8(ANIMSCR),a1,L
+         00001300     0340  
+     244 00001310     482e          cmp     a1,a14
+     245 00001320     cb0a          jrnz    aws9            ;we are changed
+     246 00001330     b601          move    *a0(040h),a1,L
+         00001340     0040  
+     247 00001350     09c0          movi    500,a0
+         00001360     01f4  
+     248 00001370     0d5f          calla   RANDPER
+         00001380 00000000! 
+     249 000013a0     c902          jrnc    aws9
+     250 000013b0     b228          move    a1,*a8(ANIMFRM),L
+         000013c0     0320  
+     251 000013d0     0960  aws9    rets
+     252                    
+     253 000013e0           board_stand_up_script
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    7
+
+     254 000013e0           ast0    LW      PLEXIB01,6
+     255 00001410                   LW      PLEXIB02,4
+     256 00001440                   LWL     1,AFUNC|1,a_clear_wc
+     257 00001490                   LW      PLEXIB03,1
+     258 000014c0           ast1    LWLLLL  1,AFUNC|1,a_wait_score_wc+8,ast0,ast1,ast2,ast3
+     259 00001590                   LW      PLEXIB02,6
+     260 000015c0                   LW      PLEXIB01,6
+     261 000015f0                   LWL     1,AFUNC|1,board_end_if+2,bsus1
+     262 00001660 00000000  bsus1   .long   0
+     263 00001680           ast2    LW      PLEXIA06,4              ;on score go here
+     264 000016b0                   LW      PLEXIA07,4
+     265 000016e0                   LW      PLEXIA08,4
+     266 00001710                   LW      PLEXIA05,4
+     267 00001740                   LW      PLEXIA06,4
+     268 00001770                   LW      PLEXIA07,4
+     269 000017a0                   LW      PLEXIA08,4
+     270 000017d0                   LW      PLEXIA05,4
+     271 00001800                   LW      PLEXIA06,4
+     272 00001830                   LW      PLEXIA07,4
+     273 00001860                   LW      PLEXIA08,4
+     274 00001890                   LW      PLEXIA05,4
+     275 000018c0                   LW      PLEXIA06,4
+     276 000018f0                   LW      PLEXIA07,4
+     277 00001920                   LW      PLEXIA08,4
+     278 00001950                   LW      PLEXIA05,4
+     279 00001980                   LW      PLEXIA06,4
+     280 000019b0                   LW      PLEXIA07,4
+     281 000019e0                   LW      PLEXIA08,4
+     282 00001a10                   LW      PLEXIA05,4
+     283 00001a40                   LW      PLEXIA06,4
+     284 00001a70                   LW      PLEXIA07,4
+     285 00001aa0                   LW      PLEXIA08,4
+     286 00001ad0                   LW      PLEXIA05,4
+     287 00001b00                   LW      PLEXIA04,4
+     288 00001b30                   LW      PLEXIA03,4
+     289 00001b60                   LW      PLEXIA02,4
+     290 00001b90                   LWL     1,AFUNC|1,board_end_if+2,awst29
+     291 00001c00 00000000  awst29  .long   0
+     292 00001c20           ast3    LW      PLEXIA05,4              ;50% of no score go here
+     293 00001c50                   LW      PLEXIA04,4
+     294 00001c80                   LW      PLEXIA03,4
+     295 00001cb0                   LW      PLEXIA02,4
+     296 00001ce0                   LW      PLEXIE01,4
+     297 00001d10                   LW      PLEXIE02,4
+     298 00001d40                   LW      PLEXIE03,4
+     299 00001d70                   LW      PLEXIE04,4
+     300 00001da0                   LW      PLEXIE05,4
+     301 00001dd0                   LW      PLEXIE06,4
+     302 00001e00                   LW      PLEXIE07,4
+     303 00001e30                   LW      PLEXIE08,4
+     304 00001e60                   LW      PLEXIE09,4
+     305 00001e90                   LWL     1,AFUNC|1,board_end_if+2,awst39
+     306 00001f00 00000000  awst39  .long   0
+     307                    
+     308 00001f20           board_stand_and_clap_script
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    8
+
+     309 00001f20                   LW      PLEXIA02,4
+     310 00001f50                   LW      PLEXIA03,4
+     311 00001f80                   LW      PLEXIA04,4
+     312 00001fb0                   LW      PLEXIA05,4
+     313 00001fe0                   LW      PLEXIA06,4
+     314 00002010                   LW      PLEXIA07,4
+     315 00002040                   LW      PLEXIA08,4
+     316 00002070                   LW      PLEXIA05,4
+     317 000020a0                   LW      PLEXIA06,4
+     318 000020d0                   LW      PLEXIA07,4
+     319 00002100                   LW      PLEXIA08,4
+     320 00002130                   LW      PLEXIA05,4
+     321 00002160                   LW      PLEXIA06,4
+     322 00002190                   LW      PLEXIA07,4
+     323 000021c0                   LW      PLEXIA08,4
+     324 000021f0                   LW      PLEXIA05,4
+     325 00002220                   LW      PLEXIA06,4
+     326 00002250                   LW      PLEXIA07,4
+     327 00002280                   LW      PLEXIA08,4
+     328 000022b0                   LW      PLEXIA05,4
+     329 000022e0                   LW      PLEXIA06,4
+     330 00002310                   LW      PLEXIA07,4
+     331 00002340                   LW      PLEXIA08,4
+     332 00002370                   LW      PLEXIA05,4
+     333 000023a0                   LW      PLEXIA06,4
+     334 000023d0                   LW      PLEXIA07,4
+     335 00002400                   LW      PLEXIA08,4
+     336 00002430                   LW      PLEXIA05,4
+     337 00002460                   LW      PLEXIA05,4
+     338 00002490                   LW      PLEXIA04,4
+     339 000024c0                   LW      PLEXIA03,4
+     340 000024f0                   LW      PLEXIA02,4
+     341 00002520                   LWL     1,AFUNC|1,board_end_if+2,bsace
+     342 00002590 00000000  bsace   .long   0
+     343                    
+     344 000025b0           board_clap_script
+     345 000025b0                   LW      PLEXIC01,4
+     346 000025e0                   LW      PLEXIC02,4
+     347 00002610                   LW      PLEXIC03,4
+     348 00002640                   LW      PLEXIC01,4
+     349 00002670                   LW      PLEXIC02,4
+     350 000026a0                   LW      PLEXIC03,4
+     351 000026d0                   LW      PLEXIC01,4
+     352 00002700                   LW      PLEXIC02,4
+     353 00002730                   LW      PLEXIC03,4
+     354 00002760                   LW      PLEXIC01,4
+     355 00002790                   LW      PLEXIC02,4
+     356 000027c0                   LW      PLEXIC03,4
+     357 000027f0                   LW      PLEXIC01,4
+     358 00002820                   LW      PLEXIC02,4
+     359 00002850                   LW      PLEXIC03,4
+     360 00002880                   LW      PLEXIC01,4
+     361 000028b0                   LW      PLEXIC02,4
+     362 000028e0                   LW      PLEXIC03,4
+     363 00002910                   LW      PLEXIC01,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE    9
+
+     364 00002940                   LW      PLEXIC02,4
+     365 00002970                   LW      PLEXIC03,4
+     366 000029a0                   LW      PLEXIC01,4
+     367 000029d0                   LW      PLEXIC02,4
+     368 00002a00                   LW      PLEXIC03,4
+     369 00002a30                   LWL     1,AFUNC|1,board_end_if+2,bcas_e
+     370 00002aa0 00000000  bcas_e  .long   0
+     371                    
+     372 00002ac0           board_stand_and_turn_wave_script
+     373 00002ac0                   LW      PLEXIA02,4
+     374 00002af0                   LW      PLEXID01i1,4
+     375 00002b20                   LW      PLEXID01i2,4
+     376 00002b50                   LW      PLEXID01,4
+     377 00002b80                   LW      PLEXID02,4
+     378 00002bb0                   LW      PLEXID03,4
+     379 00002be0                   LW      PLEXID04,4
+     380 00002c10                   LW      PLEXID05,4
+     381 00002c40                   LW      PLEXID06,4
+     382 00002c70                   LW      PLEXID01,4
+     383 00002ca0                   LW      PLEXID02,4
+     384 00002cd0                   LW      PLEXID03,4
+     385 00002d00                   LW      PLEXID04,4
+     386 00002d30                   LW      PLEXID05,4
+     387 00002d60                   LW      PLEXID06,4
+     388 00002d90                   LW      PLEXID01,4
+     389 00002dc0                   LW      PLEXID02,4
+     390 00002df0                   LW      PLEXID03,4
+     391 00002e20                   LW      PLEXID04,4
+     392 00002e50                   LW      PLEXID05,4
+     393 00002e80                   LW      PLEXID06,4
+     394 00002eb0                   LW      PLEXID01,4
+     395 00002ee0                   LW      PLEXID02,4
+     396 00002f10                   LW      PLEXID03,4
+     397 00002f40                   LW      PLEXID04,4
+     398 00002f70                   LW      PLEXID05,4
+     399 00002fa0                   LW      PLEXID06,4
+     400 00002fd0                   LW      PLEXIA02,4
+     401 00003000                   LW      PLEXID01,4
+     402 00003030                   LWL     1,AFUNC|1,board_end_if+2,bstwt
+     403 000030a0 00000000  bstwt   .long   0
+     404                    
+     405 000030c0           board_hit_good_script
+     406 000030c0                   LW      SLAM1,5
+     407 000030f0                   LW      SLAM2,5
+     408 00003120                   LW      SLAM3,5
+     409 00003150                   LW      SLAM4,2
+     410 00003180                   LW      PLXSLAM5,3
+     411 000031b0                   LW      SLAM6,2
+     412 000031e0                   LW      SLAM7,3
+     413 00003210                   LW      SLAM8,2
+     414 00003240                   LW      SLAM7,1
+     415 00003270                   LW      SLAM6,2
+     416 000032a0                   LW      PLEXIC01,4
+     417 000032d0                   LW      PLEXIC02,4
+     418 00003300                   LW      PLEXIC03,4
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   10
+
+     419 00003330                   LW      PLEXIC01,4
+     420 00003360                   LW      PLEXIC02,4
+     421 00003390                   LW      PLEXIC03,4
+     422 000033c0                   LW      PLEXIC01,4
+     423 000033f0                   LW      PLEXIC02,4
+     424 00003420                   LW      PLEXIC03,4
+     425 00003450                   LW      PLEXIC01,4
+     426 00003480                   LW      PLEXIC02,4
+     427 000034b0                   LW      PLEXIC03,4
+     428 000034e0                   LWL     1,AFUNC|1,board_end_if+2,bhg_e
+     429 00003550 00000000  bhg_e   .long   0
+     430                    
+     431 00003570           board_hit_bad_script
+     432 00003570                   LW      SLAM1,5
+     433 000035a0                   LW      SLAM2,5
+     434 000035d0                   LW      SLAM3,5
+     435 00003600                   LW      SLAM4,2
+     436 00003630                   LW      PLXSLAM5,3
+     437 00003660                   LW      SLAM6,2
+     438 00003690                   LW      SLAM7,3
+     439 000036c0                   LW      SLAM8,2
+     440 000036f0                   LW      SLAM7,1
+     441 00003720                   LW      SLAM6,2
+     442 00003750                   LW      PLEXIE01,4
+     443 00003780                   LW      PLEXIE02,4
+     444 000037b0                   LW      PLEXIE03,4
+     445 000037e0                   LW      PLEXIE04,4
+     446 00003810                   LW      PLEXIE05,4
+     447 00003840                   LW      PLEXIE06,4
+     448 00003870                   LW      PLEXIE07,4
+     449 000038a0                   LW      PLEXIE08,4
+     450 000038d0                   LW      PLEXIE09,4
+     451 00003900                   LWL     1,AFUNC|1,board_end_if+2,bhbs
+     452 00003970 00000000  bhbs    .long   0
+     453                    
+     454 00003990           board_glass_break_inner
+     455 00003990           bgbo0   LW      SLAMXR1,4
+     456 000039c0                   LW      SLAMXR2,4
+     457 000039f0                   LW      SLAMXR3,4
+     458 00003a20                   LW      SLAMXR4,4
+     459 00003a50                   LW      SLAMXR5,4
+     460 00003a80                   LW      SLAMXR6,4
+     461 00003ab0                   LW      SLAMXR7,4
+     462 00003ae0                   LW      SLAMXR8,4
+     463 00003b10                   LW      SLAMXR7,4
+     464 00003b40                   LW      SLAMXR6,4
+     465 00003b70           bgbo1   LWL     1,AFUNC|1,board_wait_offscreen+4,bgbo0,bgbo1
+     466 00003c00                   LWL     1,AFUNC|1,board_end_if+2,bgbo2  ;should wait until off screen
+     467 00003c70 00000000  bgbo2   .long   0
+     468                    
+     469 00003c90           board_wait_offscreen
+     470 00003c90     b50e          move    *a8(OFLAGS),a14,W
+         00003ca0     0420  
+     471 00003cb0     1f0e          btst    B_OFSCRN,a14
+     472 00003cc0     cb0a          jrnz    bwo9
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   11
+
+     473 00003cd0     b701          move    *a8(ANIMARG),a1,L
+         00003ce0     03e0  
+     474 00003cf0     9629          move    *a1+,a9,L
+     475 00003d00     b70e          move    *a8(ANIMSCR),a14,L
+         00003d10     0340  
+     476 00003d20     492e          cmp     a9,a14
+     477 00003d30     cb03          jrnz    bwo9
+     478 00003d40     962e          move    *a1+,a14,L
+     479 00003d50     b3c8          move    a14,*a8(ANIMFRM),L
+         00003d60     0320  
+     480 00003d70     0960  bwo9    rets
+     481                    
+     482 00003d80           board_end_if
+     483 00003d80     b701          move    *a8(ANIMARG),a1,L
+         00003d90     03e0  
+     484 00003da0     8629          move    *a1,a9,L
+     485 00003db0     b70e          move    *a8(ANIMFRM),a14,L
+         00003dc0     0320  
+     486 00003dd0     492e          cmp     a9,a14
+     487 00003de0     cb07          jrnz    bef1
+     488 00003df0     09e1          movi    board_stand_script,a1
+         00003e00 00003e70' 
+     489 00003e20     b228          move    a1,*a8(ANIMFRM),L
+         00003e30     0320  
+     490 00003e40     b228          move    a1,*a8(ANIMSCR),L
+         00003e50     0340  
+     491 00003e60     0960  bef1    rets
+     492                    
+     493 00003e70           board_stand_script
+     494 00003e70                   LW      PLEXIB01,4
+     495 00003ea0                   LW      PLEXIB02,5
+     496 00003ed0                   LW      PLEXIB03,7
+     497 00003f00                   LW      PLEXIB02,3
+     498 00003f30 00000000          .long   0
+     499                    
+     500 00003f50           edge_bounce
+     501 00003f50     07ae          move    @back_wall_script,a14,L
+         00003f60 00000000! 
+     502 00003f80     cb06          jrnz    ebnc9
+     503 00003f90     09ee          movi    edbsc,a14
+         00003fa0 00004000' 
+     504 00003fc0     078e          move    a14,@edge_28_script,L
+         00003fd0 00000000! 
+     505 00003ff0     0960  ebnc9   rets
+     506                    
+     507 00004000 000044a0" edbsc   .long   DSIDEB28c,DSIDEB28c,DSIDEB28c
+     508 00004060 00004530"         .long   DSIDEB28d,DSIDEB28d
+     509 000040a0 00004380"         .long   DSIDEB28,DSIDEB28
+     510 000040e0 00004650"         .long   DSIDEB28f,DSIDEB28f
+     511 00004120 000046e0"         .long   DSIDEB28g
+     512 00004140 00004650"         .long   DSIDEB28f,DSIDEB28f
+     513 00004180 00004380"         .long   DSIDEB28,DSIDEB28
+     514 000041c0 000045c0"         .long   DSIDEB28e,DSIDEB28e
+     515 00004200 00004530"         .long   DSIDEB28d,DSIDEB28d
+     516 00004240 000045c0"         .long   DSIDEB28e,DSIDEB28e
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   12
+
+     517 00004280 00004380"         .long   DSIDEB28
+     518 000042a0 00004650"         .long   DSIDEB28f,DSIDEB28f
+     519 000042e0 00004380"         .long   DSIDEB28
+     520 00004300 000045c0"         .long   DSIDEB28e
+     521 00004320 00004380"         .long   DSIDEB28
+     522 00004340 00004650"         .long   DSIDEB28f
+     523 00004360 00004380"         .long   DSIDEB28
+     524 00004380 00000000          .long   0
+     525                    
+     526 000043a0           wall_goal
+     527 000043a0     05ae          move    @team_scored,a14,W
+         000043b0 00000000! 
+     528 000043d0     0b4e          cmpi    1,a14
+         000043e0     fffe  
+     529 000043f0     ca0b          jrz     wgt1
+     530 00004400     09ee          movi    wgcbt2b,a14
+         00004410 00006b00' 
+     531 00004430     078e          move    a14,@back_wall_script,L
+         00004440 00000000! 
+     532 00004460     57ce          clr     a14
+     533 00004470     078e          move    a14,@edge_28_script,L
+         00004480 00000000! 
+     534 000044a0     0960          rets
+     535 000044b0     09ee  wgt1    movi    wgcbt1b,a14
+         000044c0 00005920' 
+     536 000044e0     078e          move    a14,@back_wall_script,L
+         000044f0 00000000! 
+     537 00004510     57ce          clr     a14
+     538 00004520     078e          move    a14,@edge_28_script,L
+         00004530 00000000! 
+     539 00004550     0960          rets
+     540                    
+     541 00004560           update_walls
+     542 00004560     05ae          move    @WAVEIRQS,a14,W
+         00004570 00000000! 
+     543 00004590     27ee          sll     31,a14                  ;1/2
+     544 000045a0     cb1b          jrnz    bbs9
+     545 000045b0     07a3          move    @back_wall_script,a3,L
+         000045c0 00000000! 
+     546 000045e0     ca1d          jrz     bbsc28
+     547 000045f0     9662          move    *a3+,a2,L
+     548 00004600     ca16          jrz     bbsd9
+     549 00004610     0783          move    a3,@back_wall_script,L
+         00004620 00000000! 
+     550 00004640     964e          move    *a2+,a14,L
+     551 00004650     078e          move    a14,@edge_28_piece,L
+         00004660 00000000! 
+     552 00004680     07a1          move    @SUPPLSTS+3*020h,a1,L
+         00004690 00000060! 
+     553 000046b0     ca0a          jrz     bbs9
+     554 000046c0     964e  bbs1    move    *a2+,a14,L
+     555 000046d0     b3c1          move    a14,*a1(OIMG),L
+         000046e0     02c0  
+     556 000046f0     b7ce          move    *a14(ISAG),a14,L
+         00004700     0030  
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   13
+
+     557 00004710     b3c1          move    a14,*a1(OSAG),L
+         00004720     0200  
+     558 00004730     b621          move    *a1(OSLINK),a1,L
+         00004740     0040  
+     559 00004750     cbf6          jrnz    bbs1
+     560 00004760     0960  bbs9    rets
+     561 00004770     57ce  bbsd9   clr     a14
+     562 00004780     078e          move    a14,@back_wall_script,L
+         00004790 00000000! 
+     563 000047b0     0960          rets
+     564 000047c0     07a3  bbsc28  move    @edge_28_script,a3,L
+         000047d0 00000000! 
+     565 000047f0     caf6          jrz     bbs9
+     566 00004800     9662          move    *a3+,a2,L
+     567 00004810     ca07          jrz     bbs289
+     568 00004820     0783          move    a3,@edge_28_script,L
+         00004830 00000000! 
+     569 00004850     0782          move    a2,@edge_28_piece,L
+         00004860 00000000! 
+     570 00004880     0960          rets
+     571 00004890     57ce  bbs289  clr     a14
+     572 000048a0     078e          move    a14,@edge_28_script,L
+         000048b0 00000000! 
+     573 000048d0     0960          rets
+     574                    
+     575 000048e0 000074c0' wgcbt0  .long   bbacc,bbacc
+     576 00004920 00007840'         .long   bbbcc,bbbcc
+     577 00004960 000074c0'         .long   bbacc,bbacc
+     578 000049a0 00007840'         .long   bbbcc,bbbcc,bbbcc
+     579 00004a00 000074c0'         .long   bbacc,bbacc,bbacc
+     580 00004a60 00007840'         .long   bbbcc,bbbcc,bbbcc
+     581 00004ac0 000074c0'         .long   bbacc,bbacc,bbacc,bbacc
+     582 00004b40 00007840'         .long   bbbcc,bbbcc
+     583 00004b80 000074c0'         .long   bbacc,bbacc
+     584 00004bc0 00007840'         .long   bbbcc,bbbcc,bbbcc
+     585 00004c20 000074c0'         .long   bbacc,bbacc,bbacc
+     586 00004c80 00007840'         .long   bbbcc,bbbcc,bbbcc
+     587 00004ce0 000074c0'         .long   bbacc,bbacc,bbacc,bbacc
+     588 00004d60 00007840'         .long   bbbcc,bbbcc
+     589 00004da0 000074c0'         .long   bbacc,bbacc
+     590 00004de0 00007840'         .long   bbbcc,bbbcc,bbbcc
+     591 00004e40 000074c0'         .long   bbacc,bbacc,bbacc
+     592 00004ea0 00007840'         .long   bbbcc,bbbcc,bbbcc
+     593 00004f00 00007840'         .long   bbbcc,bbbcc
+     594 00004f40 000074c0'         .long   bbacc,bbacc
+     595 00004f80 00007840'         .long   bbbcc,bbbcc,bbbcc
+     596 00004fe0 000074c0'         .long   bbacc,bbacc,bbacc
+     597 00005040 00007840'         .long   bbbcc,bbbcc,bbbcc
+     598 000050a0 000074c0'         .long   bbacc
+     599 000050c0 000074c0'         .long   bbacc
+     600 000050e0 00000000          .long   0
+     601                    
+     602                    
+     603 00005100 00007bc0' wgcbt1  .long   bbaec,bbaec
+     604 00005140 00007f40'         .long   bbbfc,bbbfc
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   14
+
+     605 00005180 00007bc0'         .long   bbaec,bbaec
+     606 000051c0 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     607 00005220 00007bc0'         .long   bbaec,bbaec,bbaec
+     608 00005280 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     609 000052e0 00007bc0'         .long   bbaec,bbaec,bbaec,bbaec
+     610 00005360 00007f40'         .long   bbbfc,bbbfc
+     611 000053a0 00007bc0'         .long   bbaec,bbaec
+     612 000053e0 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     613 00005440 00007bc0'         .long   bbaec,bbaec,bbaec
+     614 000054a0 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     615 00005500 00007bc0'         .long   bbaec,bbaec,bbaec,bbaec
+     616 00005580 00007f40'         .long   bbbfc,bbbfc
+     617 000055c0 00007bc0'         .long   bbaec,bbaec
+     618 00005600 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     619 00005660 00007bc0'         .long   bbaec,bbaec,bbaec
+     620 000056c0 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     621 00005720 00007f40'         .long   bbbfc,bbbfc
+     622 00005760 00007bc0'         .long   bbaec,bbaec
+     623 000057a0 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     624 00005800 00007bc0'         .long   bbaec,bbaec,bbaec
+     625 00005860 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     626 000058c0 00007bc0'         .long   bbaec
+     627 000058e0 000074c0'         .long   bbacc
+     628 00005900 00000000          .long   0
+     629                    
+     630 00005920 00007bc0' wgcbt1b .long   bbaec,bbaec
+     631 00005960 00007f40'         .long   bbbfc,bbbfc
+     632 000059a0 00007bc0'         .long   bbaec,bbaec
+     633 000059e0 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     634 00005a40 00007bc0'         .long   bbaec,bbaec,bbaec
+     635 00005aa0 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     636 00005b00 00007bc0'         .long   bbaec,bbaec,bbaec,bbaec
+     637 00005b80 00007f40'         .long   bbbfc,bbbfc
+     638 00005bc0 00007bc0'         .long   bbaec,bbaec
+     639 00005c00 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     640 00005c60 00007bc0'         .long   bbaec,bbaec,bbaec
+     641 00005cc0 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     642 00005d20 00007bc0'         .long   bbaec,bbaec,bbaec,bbaec
+     643 00005da0 00007f40'         .long   bbbfc,bbbfc
+     644 00005de0 00007bc0'         .long   bbaec,bbaec
+     645 00005e20 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     646 00005e80 00007bc0'         .long   bbaec,bbaec,bbaec
+     647 00005ee0 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     648 00005f40 00007f40'         .long   bbbfc,bbbfc
+     649 00005f80 00007bc0'         .long   bbaec,bbaec
+     650 00005fc0 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     651 00006020 00007bc0'         .long   bbaec,bbaec,bbaec
+     652 00006080 00007f40'         .long   bbbfc,bbbfc,bbbfc
+     653 000060e0 00007f40'         .long   bbbfc,bbbfh
+     654 00006120 000089c0'         .long   bbaeh,bbaeh
+     655 00006160 000097c0'         .long   bbbfi,bbbfi,bbbfi
+     656 000061c0 000090c0'         .long   bbaej,bbaej,bbaej
+     657 00006220 00009b40'         .long   bbbfj,bbbfj,bbbfj
+     658 00006280 000090c0'         .long   bbaej
+     659 000062a0 000074c0'         .long   bbacc
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   15
+
+     660 000062c0 00000000          .long   0
+     661                    
+     662 000062e0 000082c0' wgcbt2  .long   bbace,bbace
+     663 00006320 00008640'         .long   bbbcf,bbbcf
+     664 00006360 000082c0'         .long   bbace,bbace
+     665 000063a0 00008640'         .long   bbbcf,bbbcf,bbbcf
+     666 00006400 000082c0'         .long   bbace,bbace,bbace
+     667 00006460 00008640'         .long   bbbcf,bbbcf,bbbcf
+     668 000064c0 000082c0'         .long   bbace,bbace,bbace,bbace
+     669 00006540 00008640'         .long   bbbcf,bbbcf
+     670 00006580 000082c0'         .long   bbace,bbace
+     671 000065c0 00008640'         .long   bbbcf,bbbcf,bbbcf
+     672 00006620 000082c0'         .long   bbace,bbace,bbace
+     673 00006680 00008640'         .long   bbbcf,bbbcf,bbbcf
+     674 000066e0 000082c0'         .long   bbace,bbace,bbace,bbace
+     675 00006760 00008640'         .long   bbbcf,bbbcf
+     676 000067a0 000082c0'         .long   bbace,bbace
+     677 000067e0 00008640'         .long   bbbcf,bbbcf,bbbcf
+     678 00006840 000082c0'         .long   bbace,bbace,bbace
+     679 000068a0 00008640'         .long   bbbcf,bbbcf,bbbcf
+     680 00006900 00008640'         .long   bbbcf,bbbcf
+     681 00006940 000082c0'         .long   bbace,bbace
+     682 00006980 00008640'         .long   bbbcf,bbbcf,bbbcf
+     683 000069e0 000082c0'         .long   bbace,bbace,bbace
+     684 00006a40 00008640'         .long   bbbcf,bbbcf,bbbcf
+     685 00006aa0 000082c0'         .long   bbace
+     686 00006ac0 000074c0'         .long   bbacc
+     687 00006ae0 00000000          .long   0
+     688                    
+     689 00006b00 000082c0' wgcbt2b .long   bbace,bbace
+     690 00006b40 00008640'         .long   bbbcf,bbbcf
+     691 00006b80 000082c0'         .long   bbace,bbace
+     692 00006bc0 00008640'         .long   bbbcf,bbbcf,bbbcf
+     693 00006c20 000082c0'         .long   bbace,bbace,bbace
+     694 00006c80 00008640'         .long   bbbcf,bbbcf,bbbcf
+     695 00006ce0 000082c0'         .long   bbace,bbace,bbace,bbace
+     696 00006d60 00008640'         .long   bbbcf,bbbcf
+     697 00006da0 000082c0'         .long   bbace,bbace
+     698 00006de0 00008640'         .long   bbbcf,bbbcf,bbbcf
+     699 00006e40 000082c0'         .long   bbace,bbace,bbace
+     700 00006ea0 00008640'         .long   bbbcf,bbbcf,bbbcf
+     701 00006f00 000082c0'         .long   bbace,bbace,bbace,bbace
+     702 00006f80 00008640'         .long   bbbcf,bbbcf
+     703 00006fc0 000082c0'         .long   bbace,bbace
+     704 00007000 00008640'         .long   bbbcf,bbbcf,bbbcf
+     705 00007060 000082c0'         .long   bbace,bbace,bbace
+     706 000070c0 00008640'         .long   bbbcf,bbbcf,bbbcf
+     707 00007120 00008640'         .long   bbbcf,bbbcf
+     708 00007160 000082c0'         .long   bbace,bbace
+     709 000071a0 00008640'         .long   bbbcf,bbbcf,bbbcf
+     710 00007200 000082c0'         .long   bbace,bbace,bbace
+     711 00007260 00008640'         .long   bbbcf,bbbcf,bbbcf
+     712 000072c0 00008640'         .long   bbbcf,bbbhf
+     713 00007300 00009ec0'         .long   bbahe,bbahe
+     714 00007340 0000acc0'         .long   bbbif,bbbif,bbbif
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   16
+
+     715 000073a0 0000a5c0'         .long   bbaje,bbaje,bbaje
+     716 00007400 0000b040'         .long   bbbjf,bbbjf,bbbjf
+     717 00007460 0000a5c0'         .long   bbaje
+     718 00007480 000074c0'         .long   bbacc
+     719 000074a0 00000000          .long   0
+     720                    
+     721 000074c0 00004380" bbacc   .long   DSIDEB28
+     722 000074e0 00000000"         .long   CSECS01,CSECS02,CSECS03,CSECS04,CSECS05
+     723 00007580 00000c60"         .long   CSECS06c,CSECS07c,CSECS08c
+     724 000075e0 00000e10"         .long   CSECS09c,CSECS010c,CSECS011c
+     725 00007640 000002d0"         .long   CSECS12,CSECS13,CSECS14,CSECS15,CSECS16,CSECS17
+     726 00007700 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17,CSECS17,CSECS17
+     727 000077c0 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17
+     728                    
+     729 00007840 00004410" bbbcc   .long   DSIDEB28b
+     730 00007860 00000630"         .long   CSECS01b,CSECS02b,CSECS03b,CSECS04b,CSECS05b
+     731 00007900 00000c60"         .long   CSECS06c,CSECS07c,CSECS08c
+     732 00007960 00000e10"         .long   CSECS09c,CSECS010c,CSECS011c
+     733 000079c0 00000900"         .long   CSECS12b,CSECS13b,CSECS14b,CSECS15b,CSECS16b,CSECS17b
+     734 00007a80 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     735 00007b40 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     736                    
+     737 00007bc0 00004380" bbaec   .long   DSIDEB28
+     738 00007be0 00000000"         .long   CSECS01,CSECS02,CSECS03,CSECS04,CSECS05
+     739 00007c80 00000fc0"         .long   CSECS06e,CSECS07e,CSECS08e
+     740 00007ce0 00000e10"         .long   CSECS09c,CSECS010c,CSECS011c
+     741 00007d40 000002d0"         .long   CSECS12,CSECS13,CSECS14,CSECS15,CSECS16,CSECS17
+     742 00007e00 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17,CSECS17,CSECS17
+     743 00007ec0 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17
+     744                    
+     745 00007f40 00004410" bbbfc   .long   DSIDEB28b
+     746 00007f60 00000630"         .long   CSECS01b,CSECS02b,CSECS03b,CSECS04b,CSECS05b
+     747 00008000 00001320"         .long   CSECS06f,CSECS07f,CSECS08f
+     748 00008060 00000e10"         .long   CSECS09c,CSECS010c,CSECS011c
+     749 000080c0 00000900"         .long   CSECS12b,CSECS13b,CSECS14b,CSECS15b,CSECS16b,CSECS17b
+     750 00008180 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     751 00008240 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     752                    
+     753 000082c0 00004380" bbace   .long   DSIDEB28
+     754 000082e0 00000000"         .long   CSECS01,CSECS02,CSECS03,CSECS04,CSECS05
+     755 00008380 00000c60"         .long   CSECS06c,CSECS07c,CSECS08c
+     756 000083e0 00001170"         .long   CSECS09e,CSECS010e,CSECS011e
+     757 00008440 000002d0"         .long   CSECS12,CSECS13,CSECS14,CSECS15,CSECS16,CSECS17
+     758 00008500 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17,CSECS17,CSECS17
+     759 000085c0 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17
+     760                    
+     761 00008640 00004410" bbbcf   .long   DSIDEB28b
+     762 00008660 00000630"         .long   CSECS01b,CSECS02b,CSECS03b,CSECS04b,CSECS05b
+     763 00008700 00000c60"         .long   CSECS06c,CSECS07c,CSECS08c
+     764 00008760 000014d0"         .long   CSECS09f,CSECS10f,CSECS11f
+     765 000087c0 00000900"         .long   CSECS12b,CSECS13b,CSECS14b,CSECS15b,CSECS16b,CSECS17b
+     766 00008880 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     767 00008940 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     768                    
+     769 000089c0 00004380" bbaeh   .long   DSIDEB28
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   17
+
+     770 000089e0 00000000"         .long   CSECS01,CSECS02,CSECS03,CSECS04,CSECS05
+     771 00008a80 00000fc0"         .long   CSECS06e,CSECS07e,CSECS08e
+     772 00008ae0 00001830"         .long   CSECS09h,CSECS10h,CSECS11h
+     773 00008b40 000002d0"         .long   CSECS12,CSECS13,CSECS14,CSECS15,CSECS16,CSECS17
+     774 00008c00 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17,CSECS17,CSECS17
+     775 00008cc0 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17
+     776                    
+     777 00008d40 00004380" bbaei   .long   DSIDEB28
+     778 00008d60 00000000"         .long   CSECS01,CSECS02,CSECS03,CSECS04,CSECS05
+     779 00008e00 00000fc0"         .long   CSECS06e,CSECS07e,CSECS08e
+     780 00008e60 00001b90"         .long   CSECS09i,CSECS10i,CSECS11i
+     781 00008ec0 000002d0"         .long   CSECS12,CSECS13,CSECS14,CSECS15,CSECS16,CSECS17
+     782 00008f80 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17,CSECS17,CSECS17
+     783 00009040 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17
+     784                    
+     785 000090c0 00004380" bbaej   .long   DSIDEB28
+     786 000090e0 00000000"         .long   CSECS01,CSECS02,CSECS03,CSECS04,CSECS05
+     787 00009180 00000fc0"         .long   CSECS06e,CSECS07e,CSECS08e
+     788 000091e0 00001ef0"         .long   CSECS09j,CSECS10j,CSECS11j
+     789 00009240 000002d0"         .long   CSECS12,CSECS13,CSECS14,CSECS15,CSECS16,CSECS17
+     790 00009300 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17,CSECS17,CSECS17
+     791 000093c0 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17
+     792                    
+     793 00009440 00004410" bbbfh   .long   DSIDEB28b
+     794 00009460 00000630"         .long   CSECS01b,CSECS02b,CSECS03b,CSECS04b,CSECS05b
+     795 00009500 00001320"         .long   CSECS06f,CSECS07f,CSECS08f
+     796 00009560 00001830"         .long   CSECS09h,CSECS10h,CSECS11h
+     797 000095c0 00000900"         .long   CSECS12b,CSECS13b,CSECS14b,CSECS15b,CSECS16b,CSECS17b
+     798 00009680 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     799 00009740 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     800                    
+     801 000097c0 00004410" bbbfi   .long   DSIDEB28b
+     802 000097e0 00000630"         .long   CSECS01b,CSECS02b,CSECS03b,CSECS04b,CSECS05b
+     803 00009880 00001320"         .long   CSECS06f,CSECS07f,CSECS08f
+     804 000098e0 00001b90"         .long   CSECS09i,CSECS10i,CSECS11i
+     805 00009940 00000900"         .long   CSECS12b,CSECS13b,CSECS14b,CSECS15b,CSECS16b,CSECS17b
+     806 00009a00 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     807 00009ac0 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     808                    
+     809 00009b40 00004410" bbbfj   .long   DSIDEB28b
+     810 00009b60 00000630"         .long   CSECS01b,CSECS02b,CSECS03b,CSECS04b,CSECS05b
+     811 00009c00 00001320"         .long   CSECS06f,CSECS07f,CSECS08f
+     812 00009c60 00001ef0"         .long   CSECS09j,CSECS10j,CSECS11j
+     813 00009cc0 00000900"         .long   CSECS12b,CSECS13b,CSECS14b,CSECS15b,CSECS16b,CSECS17b
+     814 00009d80 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     815 00009e40 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     816                    
+     817 00009ec0 00004380" bbahe   .long   DSIDEB28
+     818 00009ee0 00000000"         .long   CSECS01,CSECS02,CSECS03,CSECS04,CSECS05
+     819 00009f80 00001680"         .long   CSECS06h,CSECS07h,CSECS08h
+     820 00009fe0 00001170"         .long   CSECS09e,CSECS010e,CSECS011e
+     821 0000a040 000002d0"         .long   CSECS12,CSECS13,CSECS14,CSECS15,CSECS16,CSECS17
+     822 0000a100 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17,CSECS17,CSECS17
+     823 0000a1c0 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17
+     824                    
+TMS340 COFF Macro Assembler Version 6.10     Wed Apr 21 11:38:40 2021
+ Copyright (c) 1985-1991  Texas Instruments Incorporated 
+
+                                                                     PAGE   18
+
+     825 0000a240 00004380" bbaie   .long   DSIDEB28
+     826 0000a260 00000000"         .long   CSECS01,CSECS02,CSECS03,CSECS04,CSECS05
+     827 0000a300 000019e0"         .long   CSECS06i,CSECS07i,CSECS08i
+     828 0000a360 00001170"         .long   CSECS09e,CSECS010e,CSECS011e
+     829 0000a3c0 000002d0"         .long   CSECS12,CSECS13,CSECS14,CSECS15,CSECS16,CSECS17
+     830 0000a480 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17,CSECS17,CSECS17
+     831 0000a540 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17
+     832                    
+     833 0000a5c0 00004380" bbaje   .long   DSIDEB28
+     834 0000a5e0 00000000"         .long   CSECS01,CSECS02,CSECS03,CSECS04,CSECS05
+     835 0000a680 00001d40"         .long   CSECS06j,CSECS07j,CSECS08j
+     836 0000a6e0 00001170"         .long   CSECS09e,CSECS010e,CSECS011e
+     837 0000a740 000002d0"         .long   CSECS12,CSECS13,CSECS14,CSECS15,CSECS16,CSECS17
+     838 0000a800 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17,CSECS17,CSECS17
+     839 0000a8c0 000005a0"         .long   CSECS17,CSECS17,CSECS17,CSECS17
+     840                    
+     841 0000a940 00004410" bbbhf   .long   DSIDEB28b
+     842 0000a960 00000630"         .long   CSECS01b,CSECS02b,CSECS03b,CSECS04b,CSECS05b
+     843 0000aa00 00001680"         .long   CSECS06h,CSECS07h,CSECS08h
+     844 0000aa60 000014d0"         .long   CSECS09f,CSECS10f,CSECS11f
+     845 0000aac0 00000900"         .long   CSECS12b,CSECS13b,CSECS14b,CSECS15b,CSECS16b,CSECS17b
+     846 0000ab80 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     847 0000ac40 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     848                    
+     849 0000acc0 00004410" bbbif   .long   DSIDEB28b
+     850 0000ace0 00000630"         .long   CSECS01b,CSECS02b,CSECS03b,CSECS04b,CSECS05b
+     851 0000ad80 000019e0"         .long   CSECS06i,CSECS07i,CSECS08i
+     852 0000ade0 000014d0"         .long   CSECS09f,CSECS10f,CSECS11f
+     853 0000ae40 00000900"         .long   CSECS12b,CSECS13b,CSECS14b,CSECS15b,CSECS16b,CSECS17b
+     854 0000af00 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     855 0000afc0 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     856                    
+     857 0000b040 00004410" bbbjf   .long   DSIDEB28b
+     858 0000b060 00000630"         .long   CSECS01b,CSECS02b,CSECS03b,CSECS04b,CSECS05b
+     859 0000b100 00001d40"         .long   CSECS06j,CSECS07j,CSECS08j
+     860 0000b160 000014d0"         .long   CSECS09f,CSECS10f,CSECS11f
+     861 0000b1c0 00000900"         .long   CSECS12b,CSECS13b,CSECS14b,CSECS15b,CSECS16b,CSECS17b
+     862 0000b280 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b,CSECS17b
+     863 0000b340 00000bd0"         .long   CSECS17b,CSECS17b,CSECS17b,CSECS17b
+
+ No Errors,  No Warnings
